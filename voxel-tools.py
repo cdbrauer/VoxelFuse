@@ -24,20 +24,48 @@ def make_mi(vertices, triangles, vertex_colors = None, face_colors = None, drawE
     #mesh_item = pgo.GLMeshItem(meshdata = mesh_data, shader='shaded', drawEdges=False, smooth=True, computeNormals = True, glOptions='opaque')
     return mesh_item
 
-def isolate_material(input_model, material):
-    model = np.copy(input_model)
-
-    # Loop through model data
-    for x in range(len(model[0, 0, :])):
-        for y in range(len(model[:, 0, 0])):
-            for z in range(len(model[0, :, 0])):
-                # If voxel does not contain the requested material
-                if model[y, z, x] != material:
-                    # Clear voxel
-                    model[y, z, x] = 0
-
+def isolate_material(base_model, material):
+    model = np.copy(base_model)
+    model[model != material] = 0
     return model
 
+# Boolean operations, material from second argument takes priority
+def model_union(base_model, model_to_add):
+    modelA = np.copy(base_model)
+    modelA[model_to_add != 0] = 0
+    modelA = modelA + model_to_add
+    return modelA
+
+def model_difference(base_model, model_to_subtract):
+    modelA = np.copy(base_model)
+    modelA[model_to_subtract != 0] = 0
+    return modelA
+
+def model_intersection(base_model, model_to_intersect):
+    modelB = np.copy(model_to_intersect)
+    modelB[base_model == 0] = 0
+    return modelB
+
+def model_xor(base_model, model_2):
+    modelA = model_union(base_model, model_2)
+    modelB = model_intersection(base_model, model_2)
+    modelA = modelA - modelB
+    return modelA
+
+def model_not(base_model):
+    modelA = np.copy(base_model)
+    modelA[modelA == 0] = 1
+    modelA = modelA - base_model
+    return modelA
+
+def model_nor(base_model, model_2):
+    modelA = base_model+model_2
+    modelA[modelA == 0] = 1
+    modelA = modelA - base_model
+    modelA = modelA - model_2
+    return modelA
+
+# Convert voxel data to mesh data
 def model_to_mesh(model):
     # Initialize arrays
     verts = []
@@ -166,13 +194,13 @@ if __name__=='__main__':
 
 
     # Isolate flexible components ###############################################
-    modelR = isolate_material(model1, 217)
+    modelFlex = isolate_material(model1, 217)
 
     # Initialize application 2
     app2, w2 = prep()
 
     # Convert model to mesh data
-    v, vc, t = model_to_mesh(modelR)
+    v, vc, t = model_to_mesh(modelFlex)
 
     # Create mesh item and add to plot
     mi = make_mi(v, t, vc, drawEdges=True, edgeColor=(1, 1, 1, 0.5))
