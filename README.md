@@ -2,8 +2,8 @@
 
 Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at ASU.
 
-## voxel-tools.py
-Demonstration of functions for manipulating voxel data. Should be run with a path to a .vox file as only parameter.
+## Import Demo
+Demonstration of functions for importing and manipulating voxel data. Should be run with a path to a .vox file as only parameter.
 
 ### Working
 - .vox file import
@@ -18,7 +18,7 @@ Demonstration of functions for manipulating voxel data. Should be run with a pat
 
 ![Sample output](https://github.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/blob/master/voxel-tools-fig1.png "Sample output")
 
-## voxel-tools-bool.py
+## Boolean Functions Demo
 Demonstration of boolean functions.  Should have paths to two .vox files as parameters.
 ### Union
 ![Union](https://github.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/blob/master/voxel-tools-bool-fig1.png "Union")

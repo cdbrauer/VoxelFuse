@@ -3,7 +3,7 @@
 Copyright 2018
 Dan Aukes, Cole Brauer
 
-Run with paths to two .vox files as parameters
+Run with path to .vox file as parameter
 """
 
 import PyQt5.QtGui as qg
@@ -170,31 +170,20 @@ def show_plot(widget):
 if __name__=='__main__':
     coloredlogs.install(level='DEBUG')
 
-    # Import models ##############################################################
-    m1 = VoxParser(sys.argv[1]).parse()
-    model1 = m1.to_dense()
+    # Import model ##############################################################
+    # m = VoxParser(sys.argv[1]).parse()
+    m = VoxParser('joint4.vox').parse()
+    model1 = m.to_dense()
     model1 = np.flip(model1, 1)
 
-    m2 = VoxParser(sys.argv[2]).parse()
-    model2 = m2.to_dense()
-    model2 = np.flip(model2, 1)
-
-    # Perform Boolean Operations ###############################################
-
-    # Initialize application
+    # Initialize application 1
     app1, w1 = prep()
-    w2 = pgo.GLViewWidget()
-    w3 = pgo.GLViewWidget()
-    w4 = pgo.GLViewWidget()
-    w5 = pgo.GLViewWidget()
-    w6 = pgo.GLViewWidget()
 
-    # Union ###############################################
-    modelBool = model_union(model1, model2)
+    # Convert model to mesh data
+    v, vc, t = model_to_mesh(model1)
 
-    # Convert model to mesh data and add to plot
-    v, vc, t = model_to_mesh(modelBool)
-    mi = make_mi(v, t, vc, drawEdges=True, edgeColor=(1, 1, 1, 0.5))
+    # Create mesh item and add to plot
+    mi = make_mi(v, t, vc, drawEdges = True, edgeColor=(1,1,1,0.5))
     w1.addItem(mi)
 
     # Show plot 1
@@ -202,13 +191,19 @@ if __name__=='__main__':
 
     # Save screenshot of plot 1
     w1.paintGL()
-    w1.grabFrameBuffer().save('voxel-tools-bool-fig1.png')
+    #w1.grabFrameBuffer().save('voxel-tools-fig1.png')
 
-    # Difference ###############################################
-    modelBool = model_difference(model1, model2)
 
-    # Convert model to mesh data and add to plot
-    v, vc, t = model_to_mesh(modelBool)
+    # Isolate flexible components ###############################################
+    modelFlex = isolate_material(model1, 217)
+
+    # Initialize application 2
+    app2, w2 = prep()
+
+    # Convert model to mesh data
+    v, vc, t = model_to_mesh(modelFlex)
+
+    # Create mesh item and add to plot
     mi = make_mi(v, t, vc, drawEdges=True, edgeColor=(1, 1, 1, 0.5))
     w2.addItem(mi)
 
@@ -217,66 +212,6 @@ if __name__=='__main__':
 
     # Save screenshot of plot 2
     w2.paintGL()
-    w2.grabFrameBuffer().save('voxel-tools-bool-fig2.png')
+    #w2.grabFrameBuffer().save('voxel-tools-fig2.png')
 
-    # Intersection ###############################################
-    modelBool = model_intersection(model1, model2)
-
-    # Convert model to mesh data and add to plot
-    v, vc, t = model_to_mesh(modelBool)
-    mi = make_mi(v, t, vc, drawEdges=True, edgeColor=(1, 1, 1, 0.5))
-    w3.addItem(mi)
-
-    # Show plot 2
-    show_plot(w3)
-
-    # Save screenshot of plot 3
-    w3.paintGL()
-    w3.grabFrameBuffer().save('voxel-tools-bool-fig3.png')
-
-    # XOR ###############################################
-    modelBool = model_xor(model1, model2)
-
-    # Convert model to mesh data and add to plot
-    v, vc, t = model_to_mesh(modelBool)
-    mi = make_mi(v, t, vc, drawEdges=True, edgeColor=(1, 1, 1, 0.5))
-    w4.addItem(mi)
-
-    # Show plot 2
-    show_plot(w4)
-
-    # Save screenshot of plot 4
-    w4.paintGL()
-    w4.grabFrameBuffer().save('voxel-tools-bool-fig4.png')
-
-    # NOR ###############################################
-    modelBool = model_nor(model1, model2)
-
-    # Convert model to mesh data and add to plot
-    v, vc, t = model_to_mesh(modelBool)
-    mi = make_mi(v, t, vc, drawEdges=True, edgeColor=(1, 1, 1, 0.5))
-    w5.addItem(mi)
-
-    # Show plot 2
-    show_plot(w5)
-
-    # Save screenshot of plot 3
-    w5.paintGL()
-    w5.grabFrameBuffer().save('voxel-tools-bool-fig5.png')
-
-    # NOT ###############################################
-    modelBool = model_not(model1)
-
-    # Convert model to mesh data and add to plot
-    v, vc, t = model_to_mesh(modelBool)
-    mi = make_mi(v, t, vc, drawEdges=True, edgeColor=(1, 1, 1, 0.5))
-    w6.addItem(mi)
-
-    # Show plot 2
-    show_plot(w6)
-
-    # Save screenshot of plot 4
-    w6.paintGL()
-    w6.grabFrameBuffer().save('voxel-tools-bool-fig6.png')
-
-    app1.exec_()
+    app2.exec_()
