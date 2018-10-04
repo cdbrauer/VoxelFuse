@@ -85,6 +85,28 @@ def model_shell_outside(base_model):
     model = model_difference(model, base_model)
     return model
 
+# Create a shell around a model
+def model_shell_inside(base_model):
+    # Initialize output array
+    model = np.zeros_like(base_model)
+    ones = np.ones((3, 2, 3))
+
+    xlen = len(base_model[0, 0, :])
+    ylen = len(base_model[:, 0, 0])
+    zlen = len(base_model[0, :, 0])
+
+    # Loop through model data
+    for x in range(1, xlen-1):
+        for y in range(1, ylen-1):
+            for z in range(0, zlen-1):
+                # If voxel is empty
+                if base_model[y, z, x] == 0:
+                    model[y-1:y+2, z:z+2, x-1:x+2] = ones
+
+
+    model = model_difference(model, model_not(base_model))
+    return model
+
 # Convert voxel data to mesh data
 def model_to_mesh(model):
     # Initialize arrays
@@ -237,7 +259,7 @@ if __name__=='__main__':
     show_plot(w2, flexComponents)
 
     # Save screenshot of plot 2
-    w2.paintGL()
-    # w2.grabFrameBuffer().save('voxel-tools-fig2.png')
+    #w2.paintGL()
+    #w2.grabFrameBuffer().save('shell-fig2.png')
 
     app2.exec_()
