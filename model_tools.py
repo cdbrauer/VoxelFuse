@@ -4,6 +4,14 @@ Dan Aukes, Cole Brauer
 """
 
 import numpy as np
+from pyvox.parser import VoxParser
+
+def import_vox(filename):
+    # m1 = VoxParser(sys.argv[1]).parse()
+    m1 = VoxParser(filename).parse()
+    new_model = m1.to_dense()
+    new_model = np.flip(new_model, 1)
+    return new_model
 
 # Selection operations #############################################################
 # Get all voxels with a specified material
