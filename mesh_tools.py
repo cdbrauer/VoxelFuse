@@ -4,6 +4,54 @@ Dan Aukes, Cole Brauer
 """
 
 import numpy as np
+import meshio
+
+def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
+    x_len = len(input_model[0, 0, :])
+
+    if x_dir == 1:
+        x_coord_new = x_coord+1
+    else:
+        x_coord_new = x_coord-1
+
+    if (x_coord_new < x_len) and (x_coord_new >= 0) and (input_model[y_coord, z_coord, x_coord_new] != input_model[y_coord, z_coord, x_coord]):
+        return True
+    elif (x_coord_new >= x_len) or (x_coord_new < 0):
+        return True
+    else:
+        return False
+
+
+def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
+    y_len = len(input_model[:, 0, 0])
+
+    if y_dir == 1:
+        y_coord_new = y_coord + 1
+    else:
+        y_coord_new = y_coord - 1
+
+    if (y_coord_new < y_len) and (y_coord_new >= 0) and (input_model[y_coord_new, z_coord, x_coord] != input_model[y_coord, z_coord, x_coord]):
+        return True
+    elif (y_coord_new >= y_len) or (y_coord_new < 0):
+        return True
+    else:
+        return False
+
+
+def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
+    z_len = len(input_model[0, :, 0])
+
+    if z_dir == 1:
+        z_coord_new = z_coord + 1
+    else:
+        z_coord_new = z_coord - 1
+
+    if (z_coord_new < z_len) and (z_coord_new >= 0) and (input_model[y_coord, z_coord_new, x_coord] != input_model[y_coord, z_coord, x_coord]):
+        return True
+    elif (z_coord_new >= z_len) or (z_coord_new < 0):
+        return True
+    else:
+        return False
 
 # Create mesh from voxel data
 def create_from_model(input_model):
@@ -11,7 +59,7 @@ def create_from_model(input_model):
     verts = []
     verts_colors = []
     tris = []
-    vi = 0  # Tracks starting index for defining triangles
+    vi = 1  # Tracks current vertex index
 
     x_len = len(input_model[0, 0, :])
     y_len = len(input_model[:, 0, 0])
@@ -30,43 +78,93 @@ def create_from_model(input_model):
                         voxel_color = [1, 0, 0, 1]
                     elif input_model[y, z, x] == 226:  # Green
                         voxel_color = [0, 1, 0, 1]
-                    else:  # Yellow - default if material not recognized
+                    else: # Yellow - default if material not recognized
                         voxel_color = [1, 1, 0, 1]
 
                     # Add voxel to mesh item arrays
+                    verts_indices = [0, 0, 0, 0, 0, 0, 0, 0]
+
                     # Add cube vertices
-                    verts.append([x + 0.5, y + 0.5, z + 0.5])
-                    verts.append([x + 0.5, y - 0.5, z + 0.5])
-                    verts.append([x - 0.5, y + 0.5, z + 0.5])
-                    verts.append([x - 0.5, y - 0.5, z + 0.5])
-                    verts.append([x + 0.5, y + 0.5, z - 0.5])
-                    verts.append([x + 0.5, y - 0.5, z - 0.5])
-                    verts.append([x - 0.5, y + 0.5, z - 0.5])
-                    verts.append([x - 0.5, y - 0.5, z - 0.5])
+                    if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 1):
+                        verts.append([x + 0.5, y + 0.5, z + 0.5])
+                        verts_indices[0] = vi
+                        vi = vi+1
+
+                    if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 1):
+                        verts.append([x + 0.5, y - 0.5, z + 0.5])
+                        verts_indices[1] = vi
+                        vi = vi+1
+
+                    if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 1):
+                        verts.append([x - 0.5, y + 0.5, z + 0.5])
+                        verts_indices[2] = vi
+                        vi = vi + 1
+
+                    if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 1):
+                        verts.append([x - 0.5, y - 0.5, z + 0.5])
+                        verts_indices[3] = vi
+                        vi = vi + 1
+
+                    if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 0):
+                        verts.append([x + 0.5, y + 0.5, z - 0.5])
+                        verts_indices[4] = vi
+                        vi = vi + 1
+
+                    if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 0):
+                        verts.append([x + 0.5, y - 0.5, z - 0.5])
+                        verts_indices[5] = vi
+                        vi = vi + 1
+
+                    if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 0):
+                        verts.append([x - 0.5, y + 0.5, z - 0.5])
+                        verts_indices[6] = vi
+                        vi = vi + 1
+
+                    if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 0):
+                        verts.append([x - 0.5, y - 0.5, z - 0.5])
+                        verts_indices[7] = vi
+                        vi = vi + 1
 
                     # Apply color to all vertices
-                    for i in range(0, 8):
+                    for i in range(0, np.count_nonzero(verts_indices)):
                         verts_colors.append(voxel_color)
 
                     # Add face triangles
-                    tris.append([vi + 0, vi + 1, vi + 2])
-                    tris.append([vi + 1, vi + 2, vi + 3])
-                    tris.append([vi + 0, vi + 1, vi + 4])
-                    tris.append([vi + 1, vi + 4, vi + 5])
-                    tris.append([vi + 0, vi + 2, vi + 4])
-                    tris.append([vi + 2, vi + 4, vi + 6])
-                    tris.append([vi + 2, vi + 3, vi + 6])
-                    tris.append([vi + 3, vi + 6, vi + 7])
-                    tris.append([vi + 1, vi + 3, vi + 5])
-                    tris.append([vi + 3, vi + 5, vi + 7])
-                    tris.append([vi + 4, vi + 5, vi + 6])
-                    tris.append([vi + 5, vi + 6, vi + 7])
+                    if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[2] != 0) and (verts_indices[3] != 0):
+                        tris.append([verts_indices[0]-1, verts_indices[1]-1, verts_indices[2]-1])
+                        tris.append([verts_indices[1]-1, verts_indices[2]-1, verts_indices[3]-1])
 
-                    # Increment index by 8 vertices
-                    vi = vi + 8
+                    if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[4] != 0) and (verts_indices[5] != 0):
+                        tris.append([verts_indices[0]-1, verts_indices[1]-1, verts_indices[4]-1])
+                        tris.append([verts_indices[1]-1, verts_indices[4]-1, verts_indices[5]-1])
+
+                    if (verts_indices[0] != 0) and (verts_indices[2] != 0) and (verts_indices[4] != 0) and (verts_indices[6] != 0):
+                        tris.append([verts_indices[0]-1, verts_indices[2]-1, verts_indices[4]-1])
+                        tris.append([verts_indices[2]-1, verts_indices[4]-1, verts_indices[6]-1])
+
+                    if (verts_indices[2] != 0) and (verts_indices[3] != 0) and (verts_indices[6] != 0) and (verts_indices[7] != 0):
+                        tris.append([verts_indices[2]-1, verts_indices[3]-1, verts_indices[6]-1])
+                        tris.append([verts_indices[3]-1, verts_indices[6]-1, verts_indices[7]-1])
+
+                    if (verts_indices[1] != 0) and (verts_indices[3] != 0) and (verts_indices[5] != 0) and (verts_indices[7] != 0):
+                        tris.append([verts_indices[1]-1, verts_indices[3]-1, verts_indices[5]-1])
+                        tris.append([verts_indices[3]-1, verts_indices[5]-1, verts_indices[7]-1])
+
+                    if (verts_indices[4] != 0) and (verts_indices[5] != 0) and (verts_indices[6] != 0) and (verts_indices[7] != 0):
+                        tris.append([verts_indices[4]-1, verts_indices[5]-1, verts_indices[6]-1])
+                        tris.append([verts_indices[5]-1, verts_indices[6]-1, verts_indices[7]-1])
 
     verts = np.array(verts)
     verts_colors = np.array(verts_colors)
     tris = np.array(tris)
 
     return verts, verts_colors, tris
+
+# Export model from mesh data
+def export(filename, verts, tris):
+    cells = {
+        "triangle": tris
+    }
+
+    output_mesh = meshio.Mesh(verts, cells)
+    meshio.write(filename, output_mesh)

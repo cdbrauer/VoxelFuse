@@ -44,6 +44,8 @@ if __name__=='__main__':
     # Convert model to mesh data
     v, vc, t = mesh.create_from_model(modelFlex)
 
+    mesh.export("flex.stl", v, t)
+
     # Create mesh item and add to plot
     mi = plot.make_mi(v, t, vc, drawEdges=True, edgeColor=(1, 1, 1, 0.5))
     w2.addItem(mi)
