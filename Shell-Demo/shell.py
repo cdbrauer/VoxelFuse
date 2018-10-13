@@ -15,16 +15,16 @@ if __name__=='__main__':
     # Import model ##############################################################
     joint1 = model.import_vox('joint5.vox')
 
-    outsideShell = model.shell_outside(joint1)
+    shell1 = model.shell_xy(joint1, 1, 226)
 
     # Initialize application 1
     app1, w1 = plot.prep()
 
     # Convert model to mesh data
-    v, vc, t = mesh.create_from_model(model.union(joint1, outsideShell))
+    v, vc, t = mesh.create_from_model(model.union(shell1, joint1))
 
     # Create mesh item and add to plot
-    mi = plot.make_mi(v, t, vc, drawEdges = True, edgeColor=(1,1,1,0.5))
+    mi = plot.make_mi(v, t, vc, drawEdges = True)
     w1.addItem(mi)
 
     # Show plot 1
@@ -36,16 +36,16 @@ if __name__=='__main__':
 
     # Isolate flexible components ###############################################
     flexComponents = model.isolate_material(joint1, 217)
-    outsideShell = model.shell_outside(flexComponents)
+    shell2 = model.shell_xy(flexComponents, 1, 226)
 
     # Initialize application 2
     w2 = plot.add_widget()
 
     # Convert model to mesh data
-    v, vc, t = mesh.create_from_model(model.union(flexComponents, outsideShell))
+    v, vc, t = mesh.create_from_model(model.union(shell2, flexComponents))
 
     # Create mesh item and add to plot
-    mi = plot.make_mi(v, t, vc, drawEdges=True, edgeColor=(1, 1, 1, 0.5))
+    mi = plot.make_mi(v, t, vc, drawEdges=True)
     w2.addItem(mi)
 
     # Show plot 2
