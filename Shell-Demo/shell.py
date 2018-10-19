@@ -34,9 +34,9 @@ if __name__=='__main__':
     #w1.paintGL()
     #w1.grabFrameBuffer().save('shell-fig1.png')
 
-    # Isolate flexible components ###############################################
+    # Isolate flexible components and generate shell ###############################################
     flexComponents = model.isolate_material(joint1, 217)
-    shell2 = model.shell_xy(flexComponents, 1, 226)
+    shell2 = model.shell(flexComponents, 1, 226)
 
     # Initialize application 2
     w2 = plot.add_widget()
@@ -53,6 +53,6 @@ if __name__=='__main__':
 
     # Save screenshot of plot 2
     #w2.paintGL()
-    #w2.grabFrameBuffer().save('shell-fig2.png')
+    #w2.grabFrameBuffer().save('shell-fig4.png')
 
     app1.exec_()
