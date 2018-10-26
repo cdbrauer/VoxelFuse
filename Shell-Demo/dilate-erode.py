@@ -16,15 +16,15 @@ if __name__=='__main__':
     # Import model
     joint1 = model.import_vox('joint5lw.vox')
 
-    # Isolate flexible components and generate outer shell
+    # Isolate flexible components and dilate
     flexComponents = model.isolate_material(joint1, 217)
-    shell1 = model.shell(flexComponents, 1, 1, 226)
+    model1 = model.dilate(flexComponents, 1, 217)
 
     # Initialize application 1
     app1, w1 = plot.prep()
 
     # Convert model to mesh data
-    v, vc, t = mesh.create_from_model(shell1)
+    v, vc, t = mesh.create_from_model(model1)
 
     # Create mesh item and add to plot
     mi = plot.make_mi(v, t, vc, drawEdges = True)
@@ -35,16 +35,16 @@ if __name__=='__main__':
 
     # Save screenshot of plot 1
     #w1.paintGL()
-    #w1.grabFrameBuffer().save('shell-fig1.png')
+    #w1.grabFrameBuffer().save('dilate-fig1.png')
 
-    # Generate inner shell
-    shell2 = model.shell(flexComponents, 1, 0, 226)
+    # Erode
+    model2 = model.erode(flexComponents, 1, 217)
 
     # Initialize application 2
     w2 = plot.add_widget()
 
     # Convert model to mesh data
-    v, vc, t = mesh.create_from_model(shell2)
+    v, vc, t = mesh.create_from_model(model2)
 
     # Create mesh item and add to plot
     mi = plot.make_mi(v, t, vc, drawEdges=True)
@@ -55,6 +55,6 @@ if __name__=='__main__':
 
     # Save screenshot of plot 2
     #w2.paintGL()
-    #w2.grabFrameBuffer().save('shell-fig2.png')
+    #w2.grabFrameBuffer().save('erode-fig1.png')
 
     app1.exec_()
