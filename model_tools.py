@@ -126,7 +126,6 @@ def erode(base_model, radius, output_material):
 def shell(base_model, thickness, inside_outside, output_material):
     # Initialize output array
     new_model = np.zeros_like(base_model)
-    ones = np.ones((1+(2*thickness), 1+(2*thickness), 1+(2*thickness)))
 
     x_len = len(base_model[0, 0, :])
     y_len = len(base_model[:, 0, 0])
@@ -138,10 +137,10 @@ def shell(base_model, thickness, inside_outside, output_material):
             for z in range(thickness, z_len-thickness):
                 # If voxel is empty
                 if (inside_outside == 'inside') and (base_model[y, z, x] == 0):
-                    new_model[y-thickness:y+thickness+1, z-thickness:z+thickness+1, x-thickness:x+thickness+1] = ones
+                    new_model[y-thickness:y+thickness+1, z-thickness:z+thickness+1, x-thickness:x+thickness+1].fill(1)
                 # If voxel is not empty
                 elif (inside_outside == 'outside') and (base_model[y, z, x] != 0):
-                    new_model[y-thickness:y+thickness+1, z-thickness:z+thickness+1, x-thickness:x+thickness+1] = ones
+                    new_model[y-thickness:y+thickness+1, z-thickness:z+thickness+1, x-thickness:x+thickness+1].fill(1)
 
     if inside_outside == 'inside':
         new_model = difference(new_model, invert(base_model))
@@ -151,3 +150,44 @@ def shell(base_model, thickness, inside_outside, output_material):
     new_model = new_model*output_material
 
     return new_model
+
+# Generation functions #############################################################
+def keepout(base_model, method):
+    new_model = np.zeros_like(base_model)
+
+    x_len = len(base_model[0, 0, :])
+    y_len = len(base_model[:, 0, 0])
+    z_len = len(base_model[0, :, 0])
+
+    if method == 'laser':
+        # Loop through model data
+        for x in range(0, x_len):
+            for y in range(0, y_len):
+                if np.sum(base_model[y, :, x]) > 0:
+                    new_model[y, :, x] = np.ones(z_len)
+
+        for z in range(z_len-1, -1, -1):
+            if np.sum(base_model[:, z, :]) == 0:
+                new_model[:, z, :].fill(0)
+            else:
+                break
+
+    elif method == 'mill':
+        # Loop through model data
+        for x in range(0, x_len):
+            for y in range(0, y_len):
+                for z in range(0, z_len):
+                    if (np.sum(base_model[y, :, x]) > 0) and (base_model[y, z, x] == 0):
+                        new_model[y, z, x] = 1
+                    else:
+                        break
+
+    return new_model
+
+#def clearance(base_model, method):
+#    if method == 'laser':
+#        ...
+#    elif method == 'mill':
+#        ...
+#
+#    return new_model
