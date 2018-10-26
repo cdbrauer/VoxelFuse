@@ -20,6 +20,11 @@ def isolate_material(base_model, material):
     new_model[new_model != material] = 0
     return new_model
 
+def isolate_layer(base_model, layer):
+    new_model = np.zeros_like(base_model)
+    new_model[:, layer, :] = base_model[:, layer, :]
+    return new_model
+
 # Boolean operations, material from first argument takes priority ##################
 def union(base_model, model_to_add):
     model_B = np.copy(model_to_add)
@@ -56,10 +61,7 @@ def nor(base_model, model_2):
     model_A = model_A - model_2
     return model_A
 
-# Generation operations ############################################################
-
-
-# Dilate, erode, and shell operations ##############################################
+# Dilate, erode, and shell #########################################################
 def dilate(base_model, radius, output_material):
     # Initialize output array
     new_model = np.copy(base_model)
@@ -135,15 +137,15 @@ def shell(base_model, thickness, inside_outside, output_material):
         for y in range(thickness, y_len-thickness):
             for z in range(thickness, z_len-thickness):
                 # If voxel is empty
-                if (inside_outside == 0) and (base_model[y, z, x] == 0):
+                if (inside_outside == 'inside') and (base_model[y, z, x] == 0):
                     new_model[y-thickness:y+thickness+1, z-thickness:z+thickness+1, x-thickness:x+thickness+1] = ones
                 # If voxel is not empty
-                elif (inside_outside == 1) and (base_model[y, z, x] != 0):
+                elif (inside_outside == 'outside') and (base_model[y, z, x] != 0):
                     new_model[y-thickness:y+thickness+1, z-thickness:z+thickness+1, x-thickness:x+thickness+1] = ones
 
-    if inside_outside == 0:
+    if inside_outside == 'inside':
         new_model = difference(new_model, invert(base_model))
-    else:
+    elif inside_outside == 'outside':
         new_model = difference(new_model, base_model)
 
     new_model = new_model*output_material

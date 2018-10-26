@@ -18,13 +18,13 @@ if __name__=='__main__':
 
     # Isolate flexible components and generate outer shell
     flexComponents = model.isolate_material(joint1, 217)
-    shell1 = model.shell(flexComponents, 1, 1, 226)
+    shell1 = model.shell(flexComponents, 1, 'outside', 226)
 
     # Initialize application 1
     app1, w1 = plot.prep()
 
     # Convert model to mesh data
-    v, vc, t = mesh.create_from_model(shell1)
+    v, vc, t = mesh.create_from_model(model.isolate_layer(shell1, 24))
 
     # Create mesh item and add to plot
     mi = plot.make_mi(v, t, vc, drawEdges = True)
@@ -38,13 +38,13 @@ if __name__=='__main__':
     #w1.grabFrameBuffer().save('shell-fig1.png')
 
     # Generate inner shell
-    shell2 = model.shell(flexComponents, 1, 0, 226)
+    shell2 = model.shell(flexComponents, 1, 'inside', 226)
 
     # Initialize application 2
     w2 = plot.add_widget()
 
     # Convert model to mesh data
-    v, vc, t = mesh.create_from_model(shell2)
+    v, vc, t = mesh.create_from_model(model.isolate_layer(shell2, 24))
 
     # Create mesh item and add to plot
     mi = plot.make_mi(v, t, vc, drawEdges=True)
