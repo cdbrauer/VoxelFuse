@@ -16,14 +16,14 @@ if __name__=='__main__':
     # Import model
     joint1 = model.import_vox('steps1lw.vox')
 
-    model1 = model.keepout(joint1, 'mill')
+    model1 = model.clearance(joint1, 'laser')
 
     # Initialize application 1
     app1, w1 = plot.prep()
 
     # Convert model to mesh data
-    v, vc, t = mesh.create_from_model(model.union(joint1, model1))
-    #v, vc, t = mesh.create_from_model(model1)
+    #v, vc, t = mesh.create_from_model(model.union(joint1, model1))
+    v, vc, t = mesh.create_from_model(model1)
 
     # Create mesh item and add to plot
     mi = plot.make_mi(v, t, vc, drawEdges = True)

@@ -177,17 +177,23 @@ def keepout(base_model, method):
         for x in range(0, x_len):
             for y in range(0, y_len):
                 for z in range(0, z_len):
-                    if (np.sum(base_model[y, :, x]) > 0) and (base_model[y, z, x] == 0):
+                    if np.sum(base_model[y, z:, x]) > 0:
                         new_model[y, z, x] = 1
-                    else:
+                    elif np.sum(base_model[y, z:, x]) == 0:
                         break
 
     return new_model
 
-#def clearance(base_model, method):
-#    if method == 'laser':
-#        ...
-#    elif method == 'mill':
-#        ...
-#
-#    return new_model
+def clearance(base_model, method):
+    # Initialize output array
+    new_model = np.zeros_like(base_model)
+
+    Kl = keepout(base_model, 'laser')
+    Km = keepout(base_model, 'mill')
+
+    if method == 'laser':
+        new_model = difference(Kl, base_model)
+    elif method == 'mill':
+        new_model = difference(Kl, Km)
+
+    return new_model
