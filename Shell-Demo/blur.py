@@ -16,9 +16,9 @@ if __name__=='__main__':
     # Import model
     joint1 = model.import_vox('joint5lw.vox')
 
-    # Isolate flexible components and dilate
+    # Isolate flexible components and blur
     flexComponents = model.isolate_material(joint1, 217)
-    model1 = model.dilate(flexComponents, 3, 217)
+    model1 = model.blur(flexComponents, 0, 217)
 
     # Initialize application 1
     app1, w1 = plot.prep()
@@ -34,27 +34,7 @@ if __name__=='__main__':
     plot.show(w1, joint1)
 
     # Save screenshot of plot 1
-    #w1.paintGL()
-    #w1.grabFrameBuffer().save('dilate-fig1.png')
-
-    # Erode
-    model2 = model.erode(flexComponents, 2, 217)
-
-    # Initialize application 2
-    w2 = plot.add_widget()
-
-    # Convert model to mesh data
-    v, vc, t = mesh.create_from_model(model2)
-
-    # Create mesh item and add to plot
-    mi = plot.make_mi(v, t, vc, drawEdges=True)
-    w2.addItem(mi)
-
-    # Show plot 2
-    plot.show(w2, flexComponents)
-
-    # Save screenshot of plot 2
-    #w2.paintGL()
-    #w2.grabFrameBuffer().save('erode-fig1.png')
+    # w1.paintGL()
+    # w1.grabFrameBuffer().save('blur-fig1.png')
 
     app1.exec_()

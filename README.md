@@ -45,9 +45,8 @@ Demonstration of boolean functions.
 <img width="300" src="https://github.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/blob/master/Boolean-Functions-Demo/voxel-tools-bool-fig6.png">
 
 ## Shell Demo
-Demonstration of functions for generating shells.
+Demonstrations of function for generating shells, blur function, and dilate/erode functions.
 
-<img width="600" src="https://github.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/blob/master/Shell-Demo/shell-fig2.png">
 
 ## .vox File Generation
 I have been using [MagicaVoxel](https://ephtracy.github.io) to generate voxel files for testing. Files should be created using the "export" function rather than the "save" function. The [py-vox-io](https://github.com/gromgull/py-vox-io) library allows the .vox files to be imported into Python as NumPy arrays.

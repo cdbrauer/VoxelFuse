@@ -62,33 +62,41 @@ def nor(base_model, model_2):
     return model_A
 
 # Dilate, erode, and shell #########################################################
-def dilate(base_model, radius, output_material):
+def blur(base_model, threshold, output_material):
     # Initialize output array
-    new_model = np.copy(base_model)
+    new_model = np.zeros_like(base_model).astype(float)
+    base_model_ones = np.copy(base_model)
+    base_model_ones[base_model_ones != 0] = 1
 
-    ones = np.array([[[0, 0, 0], [0, 1, 0], [0, 0, 0]],
-                     [[0, 1, 0], [1, 1, 1], [0, 1, 0]],
-                     [[0, 0, 0], [0, 1, 0], [0, 0, 0]]])
+    kernel = np.array([[[1.0, 2.0, 1.0], [2.0, 4.0, 2.0], [1.0, 2.0, 1.0]],
+                       [[2.0, 4.0, 2.0], [4.0, 8.0, 4.0], [2.0, 4.0, 2.0]],
+                       [[1.0, 2.0, 1.0], [2.0, 4.0, 2.0], [1.0, 2.0, 1.0]]]) * (1.0/64.0)
 
     x_len = len(base_model[0, 0, :])
     y_len = len(base_model[:, 0, 0])
     z_len = len(base_model[0, :, 0])
 
+    # Loop through model data
+    for x in range(1, x_len-1):
+        for y in range(1, y_len-1):
+            for z in range(1, z_len-1):
+                new_model[y, z, x] = np.sum(np.multiply(base_model_ones[y-1:y+2, z-1:z+2, x-1:x+2], kernel))
+
+    if threshold != 0: # Input zero for no threshold effect
+        new_model[new_model >= threshold] = 1
+        new_model[new_model < threshold] = 0
+        new_model = new_model.astype(int)
+
+    new_model[new_model != 0] = (new_model[new_model != 0] * 10) + output_material - 10
+
+    return new_model
+
+def dilate(base_model, radius, output_material):
+    # Initialize output array
+    new_model = np.copy(base_model)
+
     for i in range(radius):
-        new_voxels = np.zeros_like(base_model)
-
-        # Loop through model data
-        for x in range(1, x_len-1):
-            for y in range(1, y_len-1):
-                for z in range(1, z_len-1):
-                    # If voxel is not empty
-                    if new_model[y, z, x] != 0:
-                        new_voxels[y-1:y+2, z-1:z+2, x-1:x+2] = new_voxels[y-1:y+2, z-1:z+2, x-1:x+2] + ones
-
-        new_model = new_model+new_voxels
-
-    new_model[new_model != 0] = 1
-    new_model = new_model*output_material
+        new_model = blur(new_model, 0.18, output_material)
 
     return new_model
 
@@ -96,29 +104,8 @@ def erode(base_model, radius, output_material):
     # Initialize output array
     new_model = np.copy(base_model)
 
-    ones = np.array([[[0, 0, 0], [0, 1, 0], [0, 0, 0]],
-                     [[0, 1, 0], [1, 1, 1], [0, 1, 0]],
-                     [[0, 0, 0], [0, 1, 0], [0, 0, 0]]])
-
-    x_len = len(base_model[0, 0, :])
-    y_len = len(base_model[:, 0, 0])
-    z_len = len(base_model[0, :, 0])
-
     for i in range(radius):
-        new_voxels = np.zeros_like(base_model)
-
-        # Loop through model data
-        for x in range(1, x_len-1):
-            for y in range(1, y_len-1):
-                for z in range(1, z_len-1):
-                    # If voxel is empty
-                    if new_model[y, z, x] == 0:
-                        new_voxels[y-1:y+2, z-1:z+2, x-1:x+2] = new_voxels[y-1:y+2, z-1:z+2, x-1:x+2] + ones
-
-        new_model = difference(new_model, new_voxels)
-
-    new_model[new_model != 0] = 1
-    new_model = new_model*output_material
+        new_model = blur(new_model, 0.82, output_material)
 
     return new_model
 

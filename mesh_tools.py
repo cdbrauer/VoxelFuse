@@ -69,17 +69,21 @@ def create_from_model(input_model):
     for x in range(x_len):
         for y in range(y_len):
             for z in range(z_len):
+                color_index = input_model[y, z, x]
+
                 # If voxel is not empty
-                if input_model[y, z, x] != 0:
+                if color_index != 0:
                     # Set color based on material
-                    if input_model[y, z, x] == 236:  # Blue
-                        voxel_color = [0, 0, 1, 1]
-                    elif input_model[y, z, x] == 217:  # Red
-                        voxel_color = [1, 0, 0, 1]
-                    elif input_model[y, z, x] == 226:  # Green
-                        voxel_color = [0, 1, 0, 1]
+                    if color_index <= 207: # Yellow - default if material not recognized
+                        voxel_color = [1, 1, 0, 0.2]
+                    elif color_index <= 217:  # Red
+                        voxel_color = [1, 0, 0, (color_index-207)/10.0]
+                    elif color_index <= 227:  # Green
+                        voxel_color = [0, 1, 0, (color_index-217)/10.0]
+                    elif color_index <= 237:  # Blue
+                        voxel_color = [0, 0, 1, (color_index-227)/10.0]
                     else: # Yellow - default if material not recognized
-                        voxel_color = [1, 1, 0, 1]
+                        voxel_color = [1, 1, 0, 0.2]
 
                     # Add voxel to mesh item arrays
                     verts_indices = [0, 0, 0, 0, 0, 0, 0, 0]
