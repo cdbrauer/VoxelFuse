@@ -14,9 +14,9 @@ if __name__=='__main__':
     coloredlogs.install(level='DEBUG')
 
     # Import model
-    joint1 = model.import_vox('steps1lw.vox')
+    joint1 = model.import_vox('sample-object-1.vox')
 
-    model1 = model.clearance(joint1, 'laser')
+    model1 = model.clearance(joint1, 'mill') * 21
 
     # Initialize application 1
     app1, w1 = plot.prep()
@@ -30,10 +30,10 @@ if __name__=='__main__':
     w1.addItem(mi)
 
     # Show plot 1
-    plot.show(w1, joint1)
+    plot.show(w1, joint1, grids = True)
 
     # Save screenshot of plot 1
-    #w1.paintGL()
-    #w1.grabFrameBuffer().save('keepout-fig1.png')
+    # w1.paintGL()
+    # w1.grabFrameBuffer().save('clearance-fig1.png')
 
     app1.exec_()

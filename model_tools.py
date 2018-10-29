@@ -20,9 +20,36 @@ def isolate_material(base_model, material):
     new_model[new_model != material] = 0
     return new_model
 
+# Get all voxels in a specified layer
 def isolate_layer(base_model, layer):
     new_model = np.zeros_like(base_model)
     new_model[:, layer, :] = base_model[:, layer, :]
+    return new_model
+
+# Get R, G, and B color matrices from a model
+def separate_colors(base_model):
+    new_model = np.copy(base_model).astype(int)
+    new_model[new_model != 0] = new_model[new_model != 0] - 1
+
+    b = (new_model % 5)
+    g = (((new_model - b) / 5) % 5)
+    r = (((new_model - (g * 5) - b) / 25) % 5)
+
+    b = b / 4.0
+    g = g / 4.0
+    r = r / 4.0
+
+    return r, g, b
+
+# Convert R, G, and B color matrices to a model
+def combine_colors(r, g, b):
+    r = (r * 4).astype(int)
+    g = (g * 4).astype(int)
+    b = (b * 4).astype(int)
+
+    new_model = ((25*r) + (5*g) + b)
+    new_model[new_model != 0] = new_model[new_model != 0] + 1
+
     return new_model
 
 # Boolean operations, material from first argument takes priority ##################
@@ -62,15 +89,17 @@ def nor(base_model, model_2):
     return model_A
 
 # Dilate, erode, and shell #########################################################
-def blur(base_model, threshold, output_material):
+def blur(base_model, threshold = 0.0):
     # Initialize output array
-    new_model = np.zeros_like(base_model).astype(float)
-    base_model_ones = np.copy(base_model)
-    base_model_ones[base_model_ones != 0] = 1
+    new_r = np.zeros_like(base_model).astype(float)
+    new_g = np.zeros_like(base_model).astype(float)
+    new_b = np.zeros_like(base_model).astype(float)
 
     kernel = np.array([[[1.0, 2.0, 1.0], [2.0, 4.0, 2.0], [1.0, 2.0, 1.0]],
                        [[2.0, 4.0, 2.0], [4.0, 8.0, 4.0], [2.0, 4.0, 2.0]],
                        [[1.0, 2.0, 1.0], [2.0, 4.0, 2.0], [1.0, 2.0, 1.0]]]) * (1.0/64.0)
+
+    r, g, b = separate_colors(base_model)
 
     x_len = len(base_model[0, 0, :])
     y_len = len(base_model[:, 0, 0])
@@ -80,14 +109,15 @@ def blur(base_model, threshold, output_material):
     for x in range(1, x_len-1):
         for y in range(1, y_len-1):
             for z in range(1, z_len-1):
-                new_model[y, z, x] = np.sum(np.multiply(base_model_ones[y-1:y+2, z-1:z+2, x-1:x+2], kernel))
+                new_r[y, z, x] = np.sum(np.multiply(r[y-1:y+2, z-1:z+2, x-1:x+2], kernel))
+                new_g[y, z, x] = np.sum(np.multiply(g[y-1:y+2, z-1:z+2, x-1:x+2], kernel))
+                new_b[y, z, x] = np.sum(np.multiply(b[y-1:y+2, z-1:z+2, x-1:x+2], kernel))
+
+    new_model = combine_colors(new_r, new_g, new_b)
+    new_model_brightness = (new_r + new_g + new_b)
 
     if threshold != 0: # Input zero for no threshold effect
-        new_model[new_model >= threshold] = 1
-        new_model[new_model < threshold] = 0
-        new_model = new_model.astype(int)
-
-    new_model[new_model != 0] = (new_model[new_model != 0] * 10) + output_material - 10
+        new_model[new_model_brightness < threshold] = 0
 
     return new_model
 
@@ -96,7 +126,10 @@ def dilate(base_model, radius, output_material):
     new_model = np.copy(base_model)
 
     for i in range(radius):
-        new_model = blur(new_model, 0.18, output_material)
+        new_model = blur(new_model, 0.18)
+        new_model[new_model != 0] = 101
+
+    new_model[new_model != 0] = output_material
 
     return new_model
 
@@ -105,7 +138,10 @@ def erode(base_model, radius, output_material):
     new_model = np.copy(base_model)
 
     for i in range(radius):
-        new_model = blur(new_model, 0.82, output_material)
+        new_model = blur(new_model, 0.82)
+        new_model[new_model != 0] = 101
+
+    new_model[new_model != 0] = output_material
 
     return new_model
 

@@ -15,7 +15,7 @@ if __name__=='__main__':
     coloredlogs.install(level='DEBUG')
 
     # Import model ##############################################################
-    model1 = model.import_vox('joint4.vox')
+    model1 = model.import_vox('sample-joint-1.vox')
 
     # Initialize application 1
     app1, w1 = plot.prep()
@@ -36,7 +36,7 @@ if __name__=='__main__':
 
 
     # Isolate flexible components ###############################################
-    modelFlex = model.isolate_material(model1, 217)
+    modelFlex = model.isolate_material(model1, 101)
 
     # Initialize application 2
     app2, w2 = plot.prep()

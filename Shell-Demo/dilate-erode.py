@@ -14,11 +14,11 @@ if __name__=='__main__':
     coloredlogs.install(level='DEBUG')
 
     # Import model
-    joint1 = model.import_vox('joint5lw.vox')
+    joint1 = model.import_vox('sample-joint-1.vox')
 
     # Isolate flexible components and dilate
-    flexComponents = model.isolate_material(joint1, 217)
-    model1 = model.dilate(flexComponents, 3, 217)
+    flexComponents = model.isolate_material(joint1, 101)
+    model1 = model.dilate(flexComponents, 3, 101)
 
     # Initialize application 1
     app1, w1 = plot.prep()
@@ -38,7 +38,7 @@ if __name__=='__main__':
     #w1.grabFrameBuffer().save('dilate-fig1.png')
 
     # Erode
-    model2 = model.erode(flexComponents, 2, 217)
+    model2 = model.erode(flexComponents, 2, 101)
 
     # Initialize application 2
     w2 = plot.add_widget()
