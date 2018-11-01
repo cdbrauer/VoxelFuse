@@ -14,11 +14,11 @@ if __name__=='__main__':
     coloredlogs.install(level='DEBUG')
 
     # Import model
-    joint1 = model.import_vox('sample-joint-1.vox')
+    joint1 = model.import_vox('Shell-Demo/sample-joint-1.vox')
 
     # Isolate flexible components and generate outer shell
     flexComponents = model.isolate_material(joint1, 101)
-    shell1 = model.shell(flexComponents, 1, 'outside', 21)
+    shell1 = model.difference(model.dilate(flexComponents, 1), flexComponents)
 
     # Initialize application 1
     app1, w1 = plot.prep()
@@ -35,10 +35,10 @@ if __name__=='__main__':
 
     # Save screenshot of plot 1
     #w1.paintGL()
-    #w1.grabFrameBuffer().save('shell-fig1.png')
+    #w1.grabFrameBuffer().save('Shell-Demo/shell-fig3.png')
 
     # Generate inner shell
-    shell2 = model.shell(flexComponents, 1, 'inside', 21)
+    shell2 = model.difference(flexComponents, model.erode(flexComponents, 1))
 
     # Initialize application 2
     w2 = plot.add_widget()
@@ -55,6 +55,6 @@ if __name__=='__main__':
 
     # Save screenshot of plot 2
     #w2.paintGL()
-    #w2.grabFrameBuffer().save('shell-fig2.png')
+    #w2.grabFrameBuffer().save('Shell-Demo/shell-fig4.png')
 
     app1.exec_()

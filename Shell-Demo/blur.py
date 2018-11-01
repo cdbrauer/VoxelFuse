@@ -14,12 +14,13 @@ if __name__=='__main__':
     coloredlogs.install(level='DEBUG')
 
     # Import model
-    joint1 = model.import_vox('sample-joint-1.vox')
+    joint1 = model.import_vox('Shell-Demo/sample-joint-1.vox')
+    #joint1 = model.import_vox('Shell-Demo/sample-object-2.vox')
 
     # Isolate flexible components and blur
     flexComponents = model.isolate_material(joint1, 101)
-    model1 = model.blur(flexComponents)
-    #model1 = model.isolate_layer(model.blur(joint1, 0), 24)
+    #model1 = model.blur(flexComponents)
+    model1 = model.isolate_layer(model.blur(joint1, 0.5), 24)
 
     # Initialize application 1
     app1, w1 = plot.prep()

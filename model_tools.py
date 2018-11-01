@@ -88,9 +88,9 @@ def nor(base_model, model_2):
     model_A = model_A - model_2
     return model_A
 
-# Dilate, erode, and shell #########################################################
+# Blur, Dilate, and Erode #########################################################
 def blur(base_model, threshold = 0.0):
-    # Initialize output array
+    # Initialize output arrays
     new_r = np.zeros_like(base_model).astype(float)
     new_g = np.zeros_like(base_model).astype(float)
     new_b = np.zeros_like(base_model).astype(float)
@@ -121,56 +121,67 @@ def blur(base_model, threshold = 0.0):
 
     return new_model
 
-def dilate(base_model, radius, output_material):
-    # Initialize output array
-    new_model = np.copy(base_model)
+def dilate(base_model, radius, threshold = 0.0):
+    # Initialize output arrays
+    new_r = np.zeros_like(base_model).astype(float)
+    new_g = np.zeros_like(base_model).astype(float)
+    new_b = np.zeros_like(base_model).astype(float)
 
-    for i in range(radius):
-        new_model = blur(new_model, 0.18)
-        new_model[new_model != 0] = 101
-
-    new_model[new_model != 0] = output_material
-
-    return new_model
-
-def erode(base_model, radius, output_material):
-    # Initialize output array
-    new_model = np.copy(base_model)
-
-    for i in range(radius):
-        new_model = blur(new_model, 0.82)
-        new_model[new_model != 0] = 101
-
-    new_model[new_model != 0] = output_material
-
-    return new_model
-
-# Create a shell around a model
-def shell(base_model, thickness, inside_outside, output_material):
-    # Initialize output array
-    new_model = np.zeros_like(base_model)
+    r, g, b = separate_colors(base_model)
 
     x_len = len(base_model[0, 0, :])
     y_len = len(base_model[:, 0, 0])
     z_len = len(base_model[0, :, 0])
 
-    # Loop through model data
-    for x in range(thickness, x_len-thickness):
-        for y in range(thickness, y_len-thickness):
-            for z in range(thickness, z_len-thickness):
-                # If voxel is empty
-                if (inside_outside == 'inside') and (base_model[y, z, x] == 0):
-                    new_model[y-thickness:y+thickness+1, z-thickness:z+thickness+1, x-thickness:x+thickness+1].fill(1)
-                # If voxel is not empty
-                elif (inside_outside == 'outside') and (base_model[y, z, x] != 0):
-                    new_model[y-thickness:y+thickness+1, z-thickness:z+thickness+1, x-thickness:x+thickness+1].fill(1)
+    for i in range(radius):
+        for x in range(1, x_len-1):
+            for y in range(1, y_len-1):
+                for z in range(1, z_len-1):
+                    new_r[y, z, x] = np.max(r[y-1:y+2, z-1:z+2, x-1:x+2])
+                    new_g[y, z, x] = np.max(g[y-1:y+2, z-1:z+2, x-1:x+2])
+                    new_b[y, z, x] = np.max(b[y-1:y+2, z-1:z+2, x-1:x+2])
 
-    if inside_outside == 'inside':
-        new_model = difference(new_model, invert(base_model))
-    elif inside_outside == 'outside':
-        new_model = difference(new_model, base_model)
+        r = np.copy(new_r)
+        g = np.copy(new_g)
+        b = np.copy(new_b)
 
-    new_model = new_model*output_material
+    new_model = combine_colors(r, g, b)
+    new_model_brightness = (r + g + b)
+
+    if threshold != 0: # Input zero for no threshold effect
+        new_model[new_model_brightness < threshold] = 0
+
+    return new_model
+
+def erode(base_model, radius, threshold = 0.0):
+    # Initialize output arrays
+    new_r = np.zeros_like(base_model).astype(float)
+    new_g = np.zeros_like(base_model).astype(float)
+    new_b = np.zeros_like(base_model).astype(float)
+
+    r, g, b = separate_colors(base_model)
+
+    x_len = len(base_model[0, 0, :])
+    y_len = len(base_model[:, 0, 0])
+    z_len = len(base_model[0, :, 0])
+
+    for i in range(radius):
+        for x in range(1, x_len-1):
+            for y in range(1, y_len-1):
+                for z in range(1, z_len-1):
+                    new_r[y, z, x] = np.min(r[y-1:y+2, z-1:z+2, x-1:x+2])
+                    new_g[y, z, x] = np.min(g[y-1:y+2, z-1:z+2, x-1:x+2])
+                    new_b[y, z, x] = np.min(b[y-1:y+2, z-1:z+2, x-1:x+2])
+
+        r = np.copy(new_r)
+        g = np.copy(new_g)
+        b = np.copy(new_b)
+
+    new_model = combine_colors(r, g, b)
+    new_model_brightness = (r + g + b)
+
+    if threshold != 0: # Input zero for no threshold effect
+        new_model[new_model_brightness < threshold] = 0
 
     return new_model
 
