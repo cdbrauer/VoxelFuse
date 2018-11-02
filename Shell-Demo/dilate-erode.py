@@ -14,10 +14,11 @@ if __name__=='__main__':
     coloredlogs.install(level='DEBUG')
 
     # Import model
-    joint1 = model.import_vox('Shell-Demo/sample-joint-1.vox')
+    joint1 = model.import_vox('sample-joint-1.vox')
 
     # Dilate
-    model1 = model.isolate_layer(model.dilate(joint1, 1), 24)
+    model2 = model.dilate(joint1, 1, effect='blur')
+    model1 = model.isolate_layer(model2, 24)
 
     # Initialize application 1
     app1, w1 = plot.prep()
@@ -33,8 +34,8 @@ if __name__=='__main__':
     plot.show(w1, model1, grids=True)
 
     # Save screenshot of plot 1
-    w1.paintGL()
-    w1.grabFrameBuffer().save('Shell-Demo/dilate-fig1.png')
+    #w1.paintGL()
+    #w1.grabFrameBuffer().save('dilate-fig1.3.png')
 
     # Erode
     model2 = model.isolate_layer(model.erode(joint1, 1), 24)
@@ -53,7 +54,7 @@ if __name__=='__main__':
     plot.show(w2, model2, grids=True)
 
     # Save screenshot of plot 2
-    w2.paintGL()
-    w2.grabFrameBuffer().save('Shell-Demo/erode-fig1.png')
+    #w2.paintGL()
+    #w2.grabFrameBuffer().save('erode-fig1.png')
 
     app1.exec_()

@@ -15,7 +15,7 @@ if __name__=='__main__':
     coloredlogs.install(level='DEBUG')
 
     # Import model ##############################################################
-    model1 = model.import_vox('Import-Demo/sample-joint-1.vox')
+    model1 = model.import_vox('sample-joint-1.vox')
 
     # Initialize application 1
     app1, w1 = plot.prep()

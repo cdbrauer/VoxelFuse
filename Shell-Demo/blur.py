@@ -14,8 +14,8 @@ if __name__=='__main__':
     coloredlogs.install(level='DEBUG')
 
     # Import model
-    joint1 = model.import_vox('Shell-Demo/sample-joint-1.vox')
-    #joint1 = model.import_vox('Shell-Demo/sample-object-2.vox')
+    joint1 = model.import_vox('sample-joint-1.vox')
+    #joint1 = model.import_vox('sample-object-2.vox')
 
     # Isolate flexible components and blur
     flexComponents = model.isolate_material(joint1, 101)

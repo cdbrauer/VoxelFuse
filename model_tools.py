@@ -121,7 +121,7 @@ def blur(base_model, threshold = 0.0):
 
     return new_model
 
-def dilate(base_model, radius, threshold = 0.0):
+def dilate(base_model, radius, effect = 'overlap'):
     # Initialize output arrays
     new_r = np.zeros_like(base_model).astype(float)
     new_g = np.zeros_like(base_model).astype(float)
@@ -145,15 +145,47 @@ def dilate(base_model, radius, threshold = 0.0):
         g = np.copy(new_g)
         b = np.copy(new_b)
 
-    new_model = combine_colors(r, g, b)
-    new_model_brightness = (r + g + b)
+    if effect == 'blur':
+        new_model_brightness = (r + g + b)
 
-    if threshold != 0: # Input zero for no threshold effect
-        new_model[new_model_brightness < threshold] = 0
+        kernel = np.array([[[1.0, 2.0, 1.0], [2.0, 4.0, 2.0], [1.0, 2.0, 1.0]],
+                           [[2.0, 4.0, 2.0], [4.0, 8.0, 4.0], [2.0, 4.0, 2.0]],
+                           [[1.0, 2.0, 1.0], [2.0, 4.0, 2.0], [1.0, 2.0, 1.0]]]) * (1.0 / 64.0)
+
+        # Loop through model data
+        for x in range(1, x_len - 1):
+            for y in range(1, y_len - 1):
+                for z in range(1, z_len - 1):
+                    if new_model_brightness[y, z, x] > 1:
+                        new_r[y, z, x] = np.sum(np.multiply(r[y - 1:y + 2, z - 1:z + 2, x - 1:x + 2], kernel))
+                        new_g[y, z, x] = np.sum(np.multiply(g[y - 1:y + 2, z - 1:z + 2, x - 1:x + 2], kernel))
+                        new_b[y, z, x] = np.sum(np.multiply(b[y - 1:y + 2, z - 1:z + 2, x - 1:x + 2], kernel))
+
+        r = np.copy(new_r)
+        g = np.copy(new_g)
+        b = np.copy(new_b)
+
+    if effect == 'avg': # or effect == 'blur':
+        new_model_brightness = (r + g + b)
+
+        # Loop through model data
+        for x in range(1, x_len - 1):
+            for y in range(1, y_len - 1):
+                for z in range(1, z_len - 1):
+                    if new_model_brightness[y, z, x] > 1:
+                        new_r[y, z, x] = (r[y, z, x] / new_model_brightness[y, z, x])
+                        new_g[y, z, x] = (g[y, z, x] / new_model_brightness[y, z, x])
+                        new_b[y, z, x] = (b[y, z, x] / new_model_brightness[y, z, x])
+
+        r = np.copy(new_r)
+        g = np.copy(new_g)
+        b = np.copy(new_b)
+
+    new_model = combine_colors(r, g, b)
 
     return new_model
 
-def erode(base_model, radius, threshold = 0.0):
+def erode(base_model, radius):
     # Initialize output arrays
     new_r = np.zeros_like(base_model).astype(float)
     new_g = np.zeros_like(base_model).astype(float)
@@ -178,10 +210,6 @@ def erode(base_model, radius, threshold = 0.0):
         b = np.copy(new_b)
 
     new_model = combine_colors(r, g, b)
-    new_model_brightness = (r + g + b)
-
-    if threshold != 0: # Input zero for no threshold effect
-        new_model[new_model_brightness < threshold] = 0
 
     return new_model
 
