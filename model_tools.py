@@ -165,7 +165,7 @@ def dilate(base_model, radius, effect = 'overlap'):
         g = np.copy(new_g)
         b = np.copy(new_b)
 
-    if effect == 'avg': # or effect == 'blur':
+    if effect == 'avg' or effect == 'blur':
         new_model_brightness = (r + g + b)
 
         # Loop through model data
@@ -214,6 +214,52 @@ def erode(base_model, radius):
     return new_model
 
 # Generation functions #############################################################
+def bounding_box(base_model):
+    new_model = np.zeros_like(base_model)
+
+    x_len = len(base_model[0, 0, :])
+    y_len = len(base_model[:, 0, 0])
+    z_len = len(base_model[0, :, 0])
+
+    x_min = -1
+    x_max = -1
+    y_min = -1
+    y_max = -1
+    z_min = -1
+    z_max = -1
+
+    # Loop through model data
+    for x in range(0, x_len):
+        if x_min == -1:
+            if np.sum(base_model[:, :, x]) > 0:
+                x_min = x
+        else:
+            if np.sum(base_model[:, :, x]) == 0:
+                x_max = x
+                break
+
+    for y in range(0, y_len):
+        if y_min == -1:
+            if np.sum(base_model[y, :, :]) > 0:
+                y_min = y
+        else:
+            if np.sum(base_model[y, :, :]) == 0:
+                y_max = y
+                break
+
+    for z in range(0, z_len):
+        if z_min == -1:
+            if np.sum(base_model[:, z, :]) > 0:
+                z_min = z
+        else:
+            if np.sum(base_model[:, z, :]) == 0:
+                z_max = z
+                break
+
+    new_model[y_min:y_max, z_min:z_max, x_min:x_max].fill(1)
+
+    return new_model
+
 def keepout(base_model, method):
     new_model = np.zeros_like(base_model)
 
@@ -257,5 +303,19 @@ def clearance(base_model, method):
         new_model = difference(Kl, base_model)
     elif method == 'mill':
         new_model = difference(Kl, Km)
+
+    return new_model
+
+def web(base_model, method, layer, r1=1, r2=1):
+    if method == 'laser':
+        new_model = isolate_layer(keepout(base_model, 'laser'), layer)*2
+
+    elif method == 'mill':
+        new_model = isolate_layer(keepout(base_model, 'mill'), layer)*2
+
+    model_B = isolate_layer(dilate(new_model, r1), layer)
+    model_C = isolate_layer(dilate(model_B, r2), layer)
+    model_D = bounding_box(model_C)
+    new_model = difference(model_D, model_B)
 
     return new_model
