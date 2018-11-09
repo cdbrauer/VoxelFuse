@@ -15,15 +15,20 @@ if __name__=='__main__':
 
     # Import model
     joint1 = model.import_vox('sample-object-1.vox')
+    support1 = model.import_vox('user-support-1.vox')
 
-    model1 = model.support(joint1, 'laser', 1, 2) * 5
+    support1 = model.merge_support(joint1, support1, 'laser')
+    #support1 = model.support(joint1, 'laser') * 21
+
+    web1 = model.web(joint1, 'laser', 23, 1, 5) * 21
+    support1 = model.union(model.isolate_layer(support1, 23), web1)
 
     # Initialize application 1
     app1, w1 = plot.prep()
 
     # Convert model to mesh data
-    #v, vc, t = mesh.create_from_model(model.union(joint1, model1))
-    v, vc, t = mesh.create_from_model(model1)
+    v, vc, t = mesh.create_from_model(model.union(joint1, support1))
+    #v, vc, t = mesh.create_from_model(model1)
 
     # Create mesh item and add to plot
     mi = plot.make_mi(v, t, vc, drawEdges = True)

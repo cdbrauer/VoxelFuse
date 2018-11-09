@@ -121,7 +121,7 @@ def blur(base_model, threshold = 0.0):
 
     return new_model
 
-def dilate(base_model, radius, effect = 'overlap'):
+def dilate(base_model, radius, effect = 'overlap', plane = 'xyz'):
     # Initialize output arrays
     new_r = np.zeros_like(base_model).astype(float)
     new_g = np.zeros_like(base_model).astype(float)
@@ -133,17 +133,57 @@ def dilate(base_model, radius, effect = 'overlap'):
     y_len = len(base_model[:, 0, 0])
     z_len = len(base_model[0, :, 0])
 
-    for i in range(radius):
-        for x in range(1, x_len-1):
-            for y in range(1, y_len-1):
-                for z in range(1, z_len-1):
-                    new_r[y, z, x] = np.max(r[y-1:y+2, z-1:z+2, x-1:x+2])
-                    new_g[y, z, x] = np.max(g[y-1:y+2, z-1:z+2, x-1:x+2])
-                    new_b[y, z, x] = np.max(b[y-1:y+2, z-1:z+2, x-1:x+2])
+    if plane == 'xy':
+        for i in range(radius):
+            for x in range(1, x_len-1):
+                for y in range(1, y_len-1):
+                    for z in range(1, z_len-1):
+                        new_r[y, z, x] = np.max(r[y-1:y+2, z, x-1:x+2])
+                        new_g[y, z, x] = np.max(g[y-1:y+2, z, x-1:x+2])
+                        new_b[y, z, x] = np.max(b[y-1:y+2, z, x-1:x+2])
 
-        r = np.copy(new_r)
-        g = np.copy(new_g)
-        b = np.copy(new_b)
+            r = np.copy(new_r)
+            g = np.copy(new_g)
+            b = np.copy(new_b)
+
+    elif plane == 'xz':
+        for i in range(radius):
+            for x in range(1, x_len-1):
+                for y in range(1, y_len-1):
+                    for z in range(1, z_len-1):
+                        new_r[y, z, x] = np.max(r[y, z-1:z+2, x-1:x+2])
+                        new_g[y, z, x] = np.max(g[y, z-1:z+2, x-1:x+2])
+                        new_b[y, z, x] = np.max(b[y, z-1:z+2, x-1:x+2])
+
+            r = np.copy(new_r)
+            g = np.copy(new_g)
+            b = np.copy(new_b)
+
+    elif plane == 'yz':
+        for i in range(radius):
+            for x in range(1, x_len-1):
+                for y in range(1, y_len-1):
+                    for z in range(1, z_len-1):
+                        new_r[y, z, x] = np.max(r[y-1:y+2, z-1:z+2, x])
+                        new_g[y, z, x] = np.max(g[y-1:y+2, z-1:z+2, x])
+                        new_b[y, z, x] = np.max(b[y-1:y+2, z-1:z+2, x])
+
+            r = np.copy(new_r)
+            g = np.copy(new_g)
+            b = np.copy(new_b)
+
+    else:
+        for i in range(radius):
+            for x in range(1, x_len-1):
+                for y in range(1, y_len-1):
+                    for z in range(1, z_len-1):
+                        new_r[y, z, x] = np.max(r[y-1:y+2, z-1:z+2, x-1:x+2])
+                        new_g[y, z, x] = np.max(g[y-1:y+2, z-1:z+2, x-1:x+2])
+                        new_b[y, z, x] = np.max(b[y-1:y+2, z-1:z+2, x-1:x+2])
+
+            r = np.copy(new_r)
+            g = np.copy(new_g)
+            b = np.copy(new_b)
 
     if effect == 'blur':
         new_model_brightness = (r + g + b)
@@ -274,12 +314,6 @@ def keepout(base_model, method):
                 if np.sum(base_model[y, :, x]) > 0:
                     new_model[y, :, x] = np.ones(z_len)
 
-        for z in range(z_len-1, -1, -1):
-            if np.sum(base_model[:, z, :]) == 0:
-                new_model[:, z, :].fill(0)
-            else:
-                break
-
     elif method == 'mill':
         # Loop through model data
         for x in range(0, x_len):
@@ -321,7 +355,7 @@ def web(base_model, method, layer, r1=1, r2=1):
 
     return new_model
 
-def support(base_model, method, r1=1, r2=2):
+def support(base_model, method, r1=1, r2=1, plane = 'xy'):
     if method == 'mill':
         model_A = keepout(base_model, 'mill') * 2
 
@@ -329,10 +363,16 @@ def support(base_model, method, r1=1, r2=2):
         model_A = keepout(base_model, 'laser') * 2
 
     model_B = difference(model_A, base_model)
-    model_C = dilate(model_B, r1)
-    model_D = dilate(model_A, r2)
+    model_C = dilate(model_B, r1, plane = plane)
+    model_D = dilate(model_A, r2, plane = plane)
     model_E = difference(model_D, model_A)
     new_model = difference(model_E, model_C)
     new_model[new_model != 0] = 1
+
+    return new_model
+
+def merge_support(base_model, support_model, method, r1=1, r2=1, plane = 'xy'):
+    model_A = support(base_model, method, r1, r2, plane)
+    new_model = intersection(support_model, model_A)
 
     return new_model
