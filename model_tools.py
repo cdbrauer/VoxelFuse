@@ -307,15 +307,32 @@ def clearance(base_model, method):
     return new_model
 
 def web(base_model, method, layer, r1=1, r2=1):
-    if method == 'laser':
-        new_model = isolate_layer(keepout(base_model, 'laser'), layer)*2
+    if method == 'mill':
+        model_A = isolate_layer(keepout(base_model, 'mill'), layer) * 2
 
-    elif method == 'mill':
-        new_model = isolate_layer(keepout(base_model, 'mill'), layer)*2
+    else: #if method == 'laser':
+        model_A = isolate_layer(keepout(base_model, 'laser'), layer) * 2
 
-    model_B = isolate_layer(dilate(new_model, r1), layer)
+    model_B = isolate_layer(dilate(model_A, r1), layer)
     model_C = isolate_layer(dilate(model_B, r2), layer)
     model_D = bounding_box(model_C)
     new_model = difference(model_D, model_B)
+    new_model[new_model != 0] = 1
+
+    return new_model
+
+def support(base_model, method, r1=1, r2=2):
+    if method == 'mill':
+        model_A = keepout(base_model, 'mill') * 2
+
+    else:  # if method == 'laser':
+        model_A = keepout(base_model, 'laser') * 2
+
+    model_B = difference(model_A, base_model)
+    model_C = dilate(model_B, r1)
+    model_D = dilate(model_A, r2)
+    model_E = difference(model_D, model_A)
+    new_model = difference(model_E, model_C)
+    new_model[new_model != 0] = 1
 
     return new_model
