@@ -18,7 +18,7 @@ if __name__=='__main__':
     support1 = model.import_vox('user-support-1.vox')
 
     support1 = model.merge_support(joint1, support1, 'laser')
-    #support1 = model.support(joint1, 'laser') * 21
+    #support1 = model.support(joint1, 'laser', plane='xy') * 21
 
     web1 = model.web(joint1, 'laser', 23, 1, 5) * 21
     support1 = model.union(model.isolate_layer(support1, 23), web1)
