@@ -27,9 +27,22 @@ def remove_to_string(gcode, string):
             break
     return 1
 
-def pause_at_layer(gcode, layer):
+def pause_before_voxel(gcode, voxel):
     for i in range(len(gcode)):
-        if gcode[i] == (';LAYER:' + str(layer) + '\n'):
-            gcode.insert(i + 1, 'M601 ;Pause print\n')
+        if gcode[i] == (';V' + str(voxel) + '\n'):
+            gcode.insert(i, 'M601 ;Pause print\n')
             break
+    return 1
+
+def find_voxels(gcode, voxel_size = 1):
+    voxel = 0
+
+    for i in range(len(gcode)):
+        z_index = gcode[i].find(" Z")
+        if z_index != -1:
+            z = float(gcode[i][z_index+2:-1])
+            if z > voxel*voxel_size:
+                gcode.insert(i, ';V' + str(voxel) + '\n')
+                gcode.insert(i+1, ';Start of voxel ' + str(voxel) + '\n')
+                voxel = voxel+1
     return 1

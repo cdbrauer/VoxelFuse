@@ -1,3 +1,8 @@
+"""
+Copyright 2018-2019
+Dan Aukes, Cole Brauer
+"""
+
 import numpy as np
 import PyQt5.QtGui as qg
 import pyqtgraph.opengl as pgo
