@@ -5,16 +5,17 @@ Dan Aukes, Cole Brauer
 
 import numpy as np
 import meshio
+from materials import materials
 
 def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
-    x_len = len(input_model[0, 0, :])
+    x_len = len(input_model[0, 0, :, 0])
 
     if x_dir == 1:
         x_coord_new = x_coord+1
     else:
         x_coord_new = x_coord-1
 
-    if (x_coord_new < x_len) and (x_coord_new >= 0) and (input_model[y_coord, z_coord, x_coord_new] != input_model[y_coord, z_coord, x_coord]):
+    if (x_coord_new < x_len) and (x_coord_new >= 0) and (input_model[y_coord, z_coord, x_coord_new, :] != input_model[y_coord, z_coord, x_coord, :]).all():
         return True
     elif (x_coord_new >= x_len) or (x_coord_new < 0):
         return True
@@ -22,14 +23,14 @@ def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
         return False
 
 def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
-    y_len = len(input_model[:, 0, 0])
+    y_len = len(input_model[:, 0, 0, 0])
 
     if y_dir == 1:
         y_coord_new = y_coord + 1
     else:
         y_coord_new = y_coord - 1
 
-    if (y_coord_new < y_len) and (y_coord_new >= 0) and (input_model[y_coord_new, z_coord, x_coord] != input_model[y_coord, z_coord, x_coord]):
+    if (y_coord_new < y_len) and (y_coord_new >= 0) and (input_model[y_coord_new, z_coord, x_coord, :] != input_model[y_coord, z_coord, x_coord, :]).all():
         return True
     elif (y_coord_new >= y_len) or (y_coord_new < 0):
         return True
@@ -37,14 +38,14 @@ def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
         return False
 
 def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
-    z_len = len(input_model[0, :, 0])
+    z_len = len(input_model[0, :, 0, 0])
 
     if z_dir == 1:
         z_coord_new = z_coord + 1
     else:
         z_coord_new = z_coord - 1
 
-    if (z_coord_new < z_len) and (z_coord_new >= 0) and (input_model[y_coord, z_coord_new, x_coord] != input_model[y_coord, z_coord, x_coord]):
+    if (z_coord_new < z_len) and (z_coord_new >= 0) and (input_model[y_coord, z_coord_new, x_coord, :] != input_model[y_coord, z_coord, x_coord, :]).all():
         return True
     elif (z_coord_new >= z_len) or (z_coord_new < 0):
         return True
@@ -73,27 +74,30 @@ class Mesh:
         tris = []
         vi = 1  # Tracks current vertex index
 
-        x_len = len(input_model[0, 0, :])
-        y_len = len(input_model[:, 0, 0])
-        z_len = len(input_model[0, :, 0])
+        x_len = len(input_model[0, 0, :, 0])
+        y_len = len(input_model[:, 0, 0, 0])
+        z_len = len(input_model[0, :, 0, 0])
 
         # Loop through input_model data
         for x in range(x_len):
             for y in range(y_len):
                 for z in range(z_len):
-                    color_index = input_model[y, z, x]
+                    material_count =  sum(input_model[y, z, x, :])
 
                     # If voxel is not empty
-                    if color_index != 0:
-                        color_index = color_index - 1
+                    if material_count != 0:
+                        r = 0
+                        g = 0
+                        b = 0
 
-                        b = color_index % 5
-                        g = ((color_index - b) / 5) % 5
-                        r = ((color_index - (g * 5) - b) / 25) % 5
+                        for i in range(len(materials)):
+                            r = r + input_model[y, z, x, i] * materials[i]['r']
+                            g = g + input_model[y, z, x, i] * materials[i]['g']
+                            b = b + input_model[y, z, x, i] * materials[i]['b']
 
-                        b = b / 4.0
-                        g = g / 4.0
-                        r = r / 4.0
+                        r = 1 if r > 1 else r
+                        g = 1 if g > 1 else g
+                        b = 1 if b > 1 else b
 
                         a = 1  # if (r + g + b) > 1 else (r + g + b)
 
@@ -103,58 +107,42 @@ class Mesh:
                         verts_indices = [0, 0, 0, 0, 0, 0, 0, 0]
 
                         # Add cube vertices
-                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z,
-                                                                                         1) or check_adjacent_z(
-                                input_model, x, y, z, 1):
+                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 1):
                             verts.append([x + 0.5, y + 0.5, z + 0.5])
                             verts_indices[0] = vi
                             vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z,
-                                                                                         0) or check_adjacent_z(
-                                input_model, x, y, z, 1):
+                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 1):
                             verts.append([x + 0.5, y - 0.5, z + 0.5])
                             verts_indices[1] = vi
                             vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z,
-                                                                                         1) or check_adjacent_z(
-                                input_model, x, y, z, 1):
+                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 1):
                             verts.append([x - 0.5, y + 0.5, z + 0.5])
                             verts_indices[2] = vi
                             vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z,
-                                                                                         0) or check_adjacent_z(
-                                input_model, x, y, z, 1):
+                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 1):
                             verts.append([x - 0.5, y - 0.5, z + 0.5])
                             verts_indices[3] = vi
                             vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z,
-                                                                                         1) or check_adjacent_z(
-                                input_model, x, y, z, 0):
+                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 0):
                             verts.append([x + 0.5, y + 0.5, z - 0.5])
                             verts_indices[4] = vi
                             vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z,
-                                                                                         0) or check_adjacent_z(
-                                input_model, x, y, z, 0):
+                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 0):
                             verts.append([x + 0.5, y - 0.5, z - 0.5])
                             verts_indices[5] = vi
                             vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z,
-                                                                                         1) or check_adjacent_z(
-                                input_model, x, y, z, 0):
+                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 0):
                             verts.append([x - 0.5, y + 0.5, z - 0.5])
                             verts_indices[6] = vi
                             vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z,
-                                                                                         0) or check_adjacent_z(
-                                input_model, x, y, z, 0):
+                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 0):
                             verts.append([x - 0.5, y - 0.5, z - 0.5])
                             verts_indices[7] = vi
                             vi = vi + 1

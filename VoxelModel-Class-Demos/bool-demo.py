@@ -14,8 +14,8 @@ if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
     # Import models ##############################################################
-    model1 = VoxelModel.fromFile('square-Le.vox')
-    model2 = VoxelModel.fromFile('square-Re.vox')
+    model1 = VoxelModel.fromFile('square-blue-L.vox')
+    model2 = VoxelModel.fromFile('square-red-R.vox')
 
     # Perform Boolean Operations ###############################################
     modelAdd = model1 + model2
@@ -36,6 +36,6 @@ if __name__=='__main__':
     plot1.export('voxel-tools-bool-fig1.png')
 
     # Export mesh
-    mesh1.export('result.stl')
+    #mesh1.export('result.stl')
 
     app1.exec_()
