@@ -15,7 +15,7 @@ def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
     else:
         x_coord_new = x_coord-1
 
-    if (x_coord_new < x_len) and (x_coord_new >= 0) and (input_model[y_coord, z_coord, x_coord_new, :] != input_model[y_coord, z_coord, x_coord, :]).all():
+    if (x_coord_new < x_len) and (x_coord_new >= 0) and not np.allclose(input_model[y_coord, z_coord, x_coord_new, :], input_model[y_coord, z_coord, x_coord, :]):
         return True
     elif (x_coord_new >= x_len) or (x_coord_new < 0):
         return True
@@ -30,7 +30,7 @@ def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
     else:
         y_coord_new = y_coord - 1
 
-    if (y_coord_new < y_len) and (y_coord_new >= 0) and (input_model[y_coord_new, z_coord, x_coord, :] != input_model[y_coord, z_coord, x_coord, :]).all():
+    if (y_coord_new < y_len) and (y_coord_new >= 0) and not np.allclose(input_model[y_coord_new, z_coord, x_coord, :], input_model[y_coord, z_coord, x_coord, :]):
         return True
     elif (y_coord_new >= y_len) or (y_coord_new < 0):
         return True
@@ -45,7 +45,7 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
     else:
         z_coord_new = z_coord - 1
 
-    if (z_coord_new < z_len) and (z_coord_new >= 0) and (input_model[y_coord, z_coord_new, x_coord, :] != input_model[y_coord, z_coord, x_coord, :]).all():
+    if (z_coord_new < z_len) and (z_coord_new >= 0) and not np.allclose(input_model[y_coord, z_coord_new, x_coord, :], input_model[y_coord, z_coord, x_coord, :]):
         return True
     elif (z_coord_new >= z_len) or (z_coord_new < 0):
         return True

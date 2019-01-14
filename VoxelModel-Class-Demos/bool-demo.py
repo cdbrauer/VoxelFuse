@@ -14,8 +14,8 @@ if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
     # Import models ##############################################################
-    model1 = VoxelModel.fromFile('square-blue-L.vox')
-    model2 = VoxelModel.fromFile('square-red-R.vox')
+    model1 = VoxelModel.fromFile('sphere-blue.vox', 0, 0, 0)
+    model2 = VoxelModel.fromFile('sphere-red.vox', -4, 4, 4)
 
     # Perform Boolean Operations ###############################################
     modelAdd = model1 + model2
@@ -27,7 +27,7 @@ if __name__=='__main__':
 
     # Create plot
     plot1 = Plot(mesh1)
-    plot2 = Plot(mesh2)
+    #plot2 = Plot(mesh2)
 
     # Process all events
     app1.processEvents()

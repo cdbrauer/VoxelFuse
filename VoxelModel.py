@@ -8,6 +8,35 @@ from pyvox.parser import VoxParser
 from materials import materials
 
 """
+Function to make object dimensions compatible for solid body operations.  Takes location coordinates into account.
+"""
+def alignDims(modelA, modelB):
+    xMaxA = modelA.x + len(modelA.model[0, 0, :, 0])
+    yMaxA = modelA.y + len(modelA.model[:, 0, 0, 0])
+    zMaxA = modelA.z + len(modelA.model[0, :, 0, 0])
+
+    xMaxB = modelB.x + len(modelB.model[0, 0, :, 0])
+    yMaxB = modelB.y + len(modelB.model[:, 0, 0, 0])
+    zMaxB = modelB.z + len(modelB.model[0, :, 0, 0])
+
+    xNew = min(modelA.x, modelB.x)
+    yNew = min(modelA.y, modelB.y)
+    zNew = min(modelA.z, modelB.z)
+
+    xMaxNew = max(xMaxA, xMaxB)
+    yMaxNew = max(yMaxA, yMaxB)
+    zMaxNew = max(zMaxA, zMaxB)
+
+    modelANew = np.zeros((yMaxNew - yNew, zMaxNew - zNew, xMaxNew - xNew, len(modelA.model[0, 0, 0, :])))
+    modelBNew = np.zeros((yMaxNew - yNew, zMaxNew - zNew, xMaxNew - xNew, len(modelB.model[0, 0, 0, :])))
+
+    modelANew[(modelA.y - yNew):(yMaxA - yNew), (modelA.z - zNew):(zMaxA - zNew), (modelA.x - xNew):(xMaxA - xNew), :] = modelA.model
+    modelBNew[(modelB.y - yNew):(yMaxB - yNew), (modelB.z - zNew):(zMaxB - zNew), (modelB.x - xNew):(xMaxB - xNew), :] = modelB.model
+
+    return VoxelModel(modelANew, xNew, yNew, zNew), VoxelModel(modelBNew, xNew, yNew, zNew)
+
+
+"""
 VoxelModel Class
 
 Initialized from a model array or file and position coordinates
@@ -48,17 +77,19 @@ class VoxelModel:
         return cls(new_model, x_coord, y_coord, z_coord)
 
     def union(self, model_to_add):
-        new_model = self.model + model_to_add.model
+        a, b = alignDims(self, model_to_add)
+        new_model = a.model + b.model
         new_model[new_model > 1] = 1
-        return VoxelModel(new_model)
+        return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __add__(self, other):
         return self.union(other)
 
     def difference(self, model_to_sub):
-        new_model = self.model - model_to_sub.model
+        a, b = alignDims(self, model_to_sub)
+        new_model = a.model - b.model
         new_model[new_model < 0] = 0
-        return VoxelModel(new_model)
+        return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __sub__(self, other):
         return self.difference(other)
