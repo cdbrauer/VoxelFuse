@@ -79,7 +79,7 @@ class VoxelModel:
     def union(self, model_to_add):
         a, b = alignDims(self, model_to_add)
         new_model = a.model + b.model
-        new_model[new_model > 1] = 1
+        new_model[new_model > 1] = 1 # move to mesh code
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __add__(self, other):
@@ -88,8 +88,30 @@ class VoxelModel:
     def difference(self, model_to_sub):
         a, b = alignDims(self, model_to_sub)
         new_model = a.model - b.model
-        new_model[new_model < 0] = 0
+        new_model[new_model < 0] = 0 # same here?
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __sub__(self, other):
         return self.difference(other)
+
+    def intersection(self, model_2):
+        a, b = alignDims(self, model_2)
+
+        new_model = np.zeros_like(a.model)
+
+        x_len = len(a.model[0, 0, :, 0])
+        y_len = len(a.model[:, 0, 0, 0])
+        z_len = len(a.model[0, :, 0, 0])
+
+        # Loop through input_model data
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    material_count_a = sum(a.model[y, z, x, :])
+                    material_count_b = sum(b.model[y, z, x, :])
+
+                    if (material_count_a > 0) and (material_count_b > 0):
+                        new_model[y, z, x, :] = a.model[y, z, x, :] + b.model[y, z, x, :]
+
+        new_model[new_model > 1] = 1
+        return VoxelModel(new_model, a.x, a.y, a.z)

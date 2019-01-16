@@ -20,14 +20,15 @@ if __name__=='__main__':
     # Perform Boolean Operations ###############################################
     modelAdd = model1 + model2
     modelSub = model1 - model2
+    modelInt = model1.intersection(model2)
 
     # Create mesh data
     mesh1 = Mesh(modelAdd)
     mesh2 = Mesh(modelSub)
+    mesh3 = Mesh(modelInt)
 
     # Create plot
-    plot1 = Plot(mesh1)
-    #plot2 = Plot(mesh2)
+    plot1 = Plot(mesh3)
 
     # Process all events
     app1.processEvents()
