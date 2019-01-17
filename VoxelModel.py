@@ -79,7 +79,7 @@ class VoxelModel:
     def union(self, model_to_add):
         a, b = alignDims(self, model_to_add)
         new_model = a.model + b.model
-        new_model[new_model > 1] = 1 # move to mesh code
+        #new_model[new_model > 1] = 1 # move to mesh code
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __add__(self, other):
@@ -88,7 +88,7 @@ class VoxelModel:
     def difference(self, model_to_sub):
         a, b = alignDims(self, model_to_sub)
         new_model = a.model - b.model
-        new_model[new_model < 0] = 0 # same here?
+        #new_model[new_model < 0] = 0 # same here?
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __sub__(self, other):

@@ -95,9 +95,11 @@ class Mesh:
                             g = g + input_model[y, z, x, i] * materials[i]['g']
                             b = b + input_model[y, z, x, i] * materials[i]['b']
 
-                        r = 1 if r > 1 else r
-                        g = 1 if g > 1 else g
-                        b = 1 if b > 1 else b
+                        rgbSum = r + g + b
+
+                        r = r / rgbSum #1 if r > 1 else r
+                        g = g / rgbSum #1 if g > 1 else g
+                        b = b / rgbSum #1 if b > 1 else b
 
                         a = 1  # if (r + g + b) > 1 else (r + g + b)
 
