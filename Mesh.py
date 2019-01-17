@@ -66,7 +66,9 @@ class Mesh:
     # Create mesh from voxel data
     def __init__(self, voxel_model):
         # Get voxel array
-        input_model = voxel_model.model
+        input_model = np.copy(voxel_model.model)
+
+        input_model[input_model < 0] = 0
 
         # Initialize arrays
         verts = []

@@ -19,14 +19,12 @@ if __name__=='__main__':
     model3 = VoxelModel.fromFile('sphere-blue.vox', 0, 4, 4)
 
     # Perform Boolean Operations ###############################################
-    modelAdd = model1 + model2 + model3
-    modelSub = model1 - model2
-    modelInt = model1.intersection(model2)
+    #modelAdd = model1.addMaterial(model2)
+    modelSub = model1.subtractMaterial(model2)
+    #modelInt = model1.intersection(model2)
 
     # Create mesh data
-    mesh1 = Mesh(modelAdd)
-    mesh2 = Mesh(modelSub)
-    mesh3 = Mesh(modelInt)
+    mesh1 = Mesh(modelSub)
 
     # Create plot
     plot1 = Plot(mesh1)
@@ -35,7 +33,7 @@ if __name__=='__main__':
     app1.processEvents()
 
     # Save screenshot of plot 1
-    plot1.export('voxel-tools-bool-fig1.png')
+    #plot1.export('voxel-tools-bool-fig1.png')
 
     # Export mesh
     #mesh1.export('result.stl')

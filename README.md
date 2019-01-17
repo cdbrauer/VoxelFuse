@@ -2,6 +2,14 @@
 
 Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at ASU.
 
+### Required Libraries
+- numpy
+- pyqt5
+- pyqtgraph
+- pyopengl
+- py-vox-io
+- meshio
+
 ### Working Features
 - .vox file import
 - Isolation of specific materials

@@ -76,23 +76,61 @@ class VoxelModel:
 
         return cls(new_model, x_coord, y_coord, z_coord)
 
-    def union(self, model_to_add):
+    def addVolume(self, model_to_add):
+        a, b = alignDims(self, model_to_add)
+
+        x_len = len(a.model[0, 0, :, 0])
+        y_len = len(a.model[:, 0, 0, 0])
+        z_len = len(a.model[0, :, 0, 0])
+
+        # Loop through input_model data
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    material_count = sum(a.model[y, z, x, :])
+
+                    # If voxel is not empty
+                    if material_count != 0:
+                        b.model[y, z, x, :] = np.zeros(len(materials))
+
+        new_model = a.model + b.model
+        return VoxelModel(new_model, a.x, a.y, a.z)
+
+    def addMaterial(self, model_to_add):
         a, b = alignDims(self, model_to_add)
         new_model = a.model + b.model
-        #new_model[new_model > 1] = 1 # move to mesh code
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __add__(self, other):
-        return self.union(other)
+        return self.addMaterial(other)
 
-    def difference(self, model_to_sub):
+    def subtractVolume(self, model_to_add):
+        a, b = alignDims(self, model_to_add)
+
+        x_len = len(a.model[0, 0, :, 0])
+        y_len = len(a.model[:, 0, 0, 0])
+        z_len = len(a.model[0, :, 0, 0])
+
+        # Loop through input_model data
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    material_count = sum(b.model[y, z, x, :])
+
+                    # If voxel is not empty
+                    if material_count != 0:
+                        a.model[y, z, x, :] = np.zeros(len(materials))
+
+        new_model = a.model
+        return VoxelModel(new_model, a.x, a.y, a.z)
+
+    def subtractMaterial(self, model_to_sub):
         a, b = alignDims(self, model_to_sub)
         new_model = a.model - b.model
-        #new_model[new_model < 0] = 0 # same here?
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __sub__(self, other):
-        return self.difference(other)
+        return self.subtractMaterial(other)
 
     def intersection(self, model_2):
         a, b = alignDims(self, model_2)
