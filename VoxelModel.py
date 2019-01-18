@@ -132,7 +132,7 @@ class VoxelModel:
     def __sub__(self, other):
         return self.subtractMaterial(other)
 
-    def intersection(self, model_2):
+    def intersectVolume(self, model_2):
         a, b = alignDims(self, model_2)
 
         new_model = np.zeros_like(a.model)
@@ -151,5 +151,12 @@ class VoxelModel:
                     if (material_count_a > 0) and (material_count_b > 0):
                         new_model[y, z, x, :] = a.model[y, z, x, :] + b.model[y, z, x, :]
 
-        new_model[new_model > 1] = 1
+        new_model[a.model == b.model] = 1
         return VoxelModel(new_model, a.x, a.y, a.z)
+
+    def intersectMaterial(self, model_2):
+        a, b = alignDims(self, model_2)
+        new_model = np.zeros_like(a.model)
+        new_model[a.model == b.model] = 1
+        return VoxelModel(new_model, a.x, a.y, a.z)
+

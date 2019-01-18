@@ -19,12 +19,12 @@ if __name__=='__main__':
     model3 = VoxelModel.fromFile('sphere-blue.vox', 0, 4, 4)
 
     # Perform Boolean Operations ###############################################
-    #modelAdd = model1.addMaterial(model2)
-    modelSub = model1.subtractMaterial(model2)
-    #modelInt = model1.intersection(model2)
+    #modelResult = model1.addMaterial(model2)
+    #modelResult = model1.subtractMaterial(model2)
+    modelResult = model1.intersectMaterial(model2)
 
     # Create mesh data
-    mesh1 = Mesh(modelSub)
+    mesh1 = Mesh(modelResult)
 
     # Create plot
     plot1 = Plot(mesh1)
