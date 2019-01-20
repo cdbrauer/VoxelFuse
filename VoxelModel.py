@@ -76,6 +76,24 @@ class VoxelModel:
 
         return cls(new_model, x_coord, y_coord, z_coord)
 
+    # Selection operations #############################################################
+    # Get all voxels with a specified material
+    def isolateMaterial(self, material):
+        material_vector = np.zeros(len(materials))
+        material_vector[material] = 1
+        mask = (self.model == material_vector).all(3)
+        mask = np.repeat(mask[..., None], len(materials), axis=3)
+        new_model = np.multiply(self.model, mask)
+        return VoxelModel(new_model, self.x, self.y, self.z)
+
+    # Get all voxels in a specified layer
+    def isolateLayer(self, layer):
+        new_model = np.zeros_like(self.model)
+        new_model[:, layer, :, :] = self.model[:, layer, :, :]
+        return VoxelModel(new_model, self.x, self.y, self.z)
+
+    # Boolean operations ###############################################################
+    # Material from base model takes priority in volume operations
     def addVolume(self, model_to_add):
         a, b = alignDims(self, model_to_add)
 
@@ -104,8 +122,8 @@ class VoxelModel:
     def __add__(self, other):
         return self.addMaterial(other)
 
-    def subtractVolume(self, model_to_add):
-        a, b = alignDims(self, model_to_add)
+    def subtractVolume(self, model_to_sub):
+        a, b = alignDims(self, model_to_sub)
 
         x_len = len(a.model[0, 0, :, 0])
         y_len = len(a.model[:, 0, 0, 0])
@@ -127,6 +145,7 @@ class VoxelModel:
     def subtractMaterial(self, model_to_sub):
         a, b = alignDims(self, model_to_sub)
         new_model = a.model - b.model
+        new_model[new_model < 0] = 0
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __sub__(self, other):
@@ -149,14 +168,14 @@ class VoxelModel:
                     material_count_b = sum(b.model[y, z, x, :])
 
                     if (material_count_a > 0) and (material_count_b > 0):
-                        new_model[y, z, x, :] = a.model[y, z, x, :] + b.model[y, z, x, :]
+                        new_model[y, z, x, :] = a.model[y, z, x, :]
 
-        new_model[a.model == b.model] = 1
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def intersectMaterial(self, model_2):
         a, b = alignDims(self, model_2)
-        new_model = np.zeros_like(a.model)
-        new_model[a.model == b.model] = 1
+        overlap = np.multiply(a.model, b.model)
+        overlap[overlap > 0] = 0.5
+        new_model = np.multiply(a.model, overlap) + np.multiply(b.model, overlap)
         return VoxelModel(new_model, a.x, a.y, a.z)
 
