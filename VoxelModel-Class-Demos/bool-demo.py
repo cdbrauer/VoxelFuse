@@ -15,15 +15,17 @@ if __name__=='__main__':
 
     # Import models ##############################################################
     model1 = VoxelModel.fromFile('sphere-blue.vox', 0, 0, 0)
-    model2 = VoxelModel.fromFile('sphere-red.vox', 0, 4, 4)
-    model3 = VoxelModel.fromFile('sphere-blue.vox', -4, 4, 4)
+    model2 = VoxelModel.fromFile('sphere-red.vox', 4, 4, 4)
+    model3 = VoxelModel.fromFile('sphere-blue.vox', 4, 4, 4)
+    model4 = model2 + model3
 
     # Perform Boolean Operations ###############################################
     #modelResult = model3.isolateLayer(2)
-    modelResult = model1 + model2 + model3
-    #modelResult = model1.subtractMaterial(model2)
-    #modelResult = model1.intersectMaterial(model4)
-    modelResult = modelResult.isolateMaterial(2)
+    #modelResult = model1 + model2 + model3
+    #modelResult = model1.subtractVolume(model2)
+    modelResult = model4.intersectVolume(model1)
+    #modelResult = model1.addVolume(model2)
+    #modelResult = modelResult.isolateMaterial(0)
 
     # Create mesh data
     mesh1 = Mesh(modelResult)

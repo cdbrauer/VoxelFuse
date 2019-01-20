@@ -96,22 +96,10 @@ class VoxelModel:
     # Material from base model takes priority in volume operations
     def addVolume(self, model_to_add):
         a, b = alignDims(self, model_to_add)
-
-        x_len = len(a.model[0, 0, :, 0])
-        y_len = len(a.model[:, 0, 0, 0])
-        z_len = len(a.model[0, :, 0, 0])
-
-        # Loop through input_model data
-        for x in range(x_len):
-            for y in range(y_len):
-                for z in range(z_len):
-                    material_count = sum(a.model[y, z, x, :])
-
-                    # If voxel is not empty
-                    if material_count != 0:
-                        b.model[y, z, x, :] = np.zeros(len(materials))
-
-        new_model = a.model + b.model
+        mask = (a.model == np.zeros(len(materials))).all(3)
+        mask = np.repeat(mask[..., None], len(materials), axis=3)
+        new_model = np.multiply(b.model, mask)
+        new_model = new_model + a.model
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def addMaterial(self, model_to_add):
@@ -124,22 +112,9 @@ class VoxelModel:
 
     def subtractVolume(self, model_to_sub):
         a, b = alignDims(self, model_to_sub)
-
-        x_len = len(a.model[0, 0, :, 0])
-        y_len = len(a.model[:, 0, 0, 0])
-        z_len = len(a.model[0, :, 0, 0])
-
-        # Loop through input_model data
-        for x in range(x_len):
-            for y in range(y_len):
-                for z in range(z_len):
-                    material_count = sum(b.model[y, z, x, :])
-
-                    # If voxel is not empty
-                    if material_count != 0:
-                        a.model[y, z, x, :] = np.zeros(len(materials))
-
-        new_model = a.model
+        mask = (b.model == np.zeros(len(materials))).all(3)
+        mask = np.repeat(mask[..., None], len(materials), axis=3)
+        new_model = np.multiply(a.model, mask)
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def subtractMaterial(self, model_to_sub):
@@ -153,29 +128,17 @@ class VoxelModel:
 
     def intersectVolume(self, model_2):
         a, b = alignDims(self, model_2)
-
-        new_model = np.zeros_like(a.model)
-
-        x_len = len(a.model[0, 0, :, 0])
-        y_len = len(a.model[:, 0, 0, 0])
-        z_len = len(a.model[0, :, 0, 0])
-
-        # Loop through input_model data
-        for x in range(x_len):
-            for y in range(y_len):
-                for z in range(z_len):
-                    material_count_a = sum(a.model[y, z, x, :])
-                    material_count_b = sum(b.model[y, z, x, :])
-
-                    if (material_count_a > 0) and (material_count_b > 0):
-                        new_model[y, z, x, :] = a.model[y, z, x, :]
-
+        mask1 = (a.model != np.zeros(len(materials))).any(3)
+        mask2 = (b.model != np.zeros(len(materials))).any(3)
+        mask = np.multiply(mask1, mask2)
+        mask = np.repeat(mask[..., None], len(materials), axis=3)
+        new_model = np.multiply(a.model, mask)
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def intersectMaterial(self, model_2):
         a, b = alignDims(self, model_2)
         overlap = np.multiply(a.model, b.model)
-        overlap[overlap > 0] = 0.5
+        overlap[overlap > 0] = 1
         new_model = np.multiply(a.model, overlap) + np.multiply(b.model, overlap)
         return VoxelModel(new_model, a.x, a.y, a.z)
 
