@@ -142,3 +142,13 @@ class VoxelModel:
         new_model = np.multiply(a.model, overlap) + np.multiply(b.model, overlap)
         return VoxelModel(new_model, a.x, a.y, a.z)
 
+    def xor(self, model_2):
+        a, b = alignDims(self, model_2)
+        mask1 = (a.model == np.zeros(len(materials))).all(3)
+        mask2 = (b.model == np.zeros(len(materials))).all(3)
+        mask1 = np.repeat(mask1[..., None], len(materials), axis=3)
+        mask2 = np.repeat(mask2[..., None], len(materials), axis=3)
+        a.model = np.multiply(a.model, mask2)
+        b.model = np.multiply(b.model, mask1)
+        new_model = a.model + b.model
+        return VoxelModel(new_model, a.x, a.y, a.z)
