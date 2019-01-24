@@ -152,3 +152,18 @@ class VoxelModel:
         b.model = np.multiply(b.model, mask1)
         new_model = a.model + b.model
         return VoxelModel(new_model, a.x, a.y, a.z)
+
+    def nor(self, model_2):
+        a, b = alignDims(self, model_2)
+        mask1 = (a.model == np.zeros(len(materials))).all(3)
+        mask2 = (b.model == np.zeros(len(materials))).all(3)
+        mask = np.multiply(mask1, mask2)
+        mask = np.repeat(mask[..., None], len(materials), axis=3)
+        return VoxelModel(mask, a.x, a.y, a.z)
+
+    def invert(self):
+        mask = (self.model == np.zeros(len(materials))).all(3)
+        mask = np.repeat(mask[..., None], len(materials), axis=3)
+        return VoxelModel(mask, self.x, self.y, self.z)
+
+    # Dilate and Erode #################################################################
