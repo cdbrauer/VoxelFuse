@@ -228,3 +228,55 @@ class VoxelModel:
             current_model = np.copy(new_model)
 
         return VoxelModel(current_model, self.x, self.y, self.z)
+
+    # Cleanup ##########################################################################
+    def normalize(self):
+        x_len = len(self.model[0, 0, :, 0])
+        y_len = len(self.model[:, 0, 0, 0])
+        z_len = len(self.model[0, :, 0, 0])
+
+        new_model = np.zeros_like(self.model)
+
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    m_sum = np.sum(self.model[y, z, x, :])
+                    if m_sum > 0:
+                        for m in range(len(materials)):
+                            new_model[y, z, x, m] = self.model[y, z, x, m] / m_sum
+
+        new_model = np.around(new_model, 3)
+
+        return VoxelModel(new_model, self.x, self.y, self.z)
+
+    def blur(self, region = 'all', threshold = 0.5):
+        x_len = len(self.model[0, 0, :, 0]) + 2
+        y_len = len(self.model[:, 0, 0, 0]) + 2
+        z_len = len(self.model[0, :, 0, 0]) + 2
+
+        current_model = np.zeros((y_len, z_len, x_len, len(materials)))
+        current_model[1:-1, 1:-1, 1:-1, :] = self.model
+
+        new_model = np.zeros((y_len, z_len, x_len, len(materials)))
+
+        kernel = np.array([[[1.0, 2.0, 1.0], [2.0, 4.0, 2.0], [1.0, 2.0, 1.0]],
+                           [[2.0, 4.0, 2.0], [4.0, 8.0, 4.0], [2.0, 4.0, 2.0]],
+                           [[1.0, 2.0, 1.0], [2.0, 4.0, 2.0], [1.0, 2.0, 1.0]]]) * (1.0 / 64.0)
+
+        for x in range(1, x_len - 1):
+            for y in range(1, y_len - 1):
+                for z in range(1, z_len - 1):
+                    if region == 'overlap':
+                        if np.sum(current_model[y, z, x, :]) > 1:
+                            for m in range(len(materials)):
+                                new_model[y, z, x, m] = np.sum(np.multiply(current_model[y - 1:y + 2, z - 1:z + 2, x - 1:x + 2, m], kernel))
+                        else:
+                            new_model[y, z, x, :] = current_model[y, z, x, :]
+                    else:
+                        for m in range(len(materials)):
+                            new_model[y, z, x, m] = np.sum(np.multiply(current_model[y - 1:y + 2, z - 1:z + 2, x - 1:x + 2, m], kernel))
+
+                    if np.sum(new_model[y, z, x, :]) < threshold:
+                        new_model[y, z, x, :] = np.zeros(len(materials))
+
+        return VoxelModel(new_model, self.x, self.y, self.z).normalize()
