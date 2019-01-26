@@ -280,3 +280,79 @@ class VoxelModel:
                         new_model[y, z, x, :] = np.zeros(len(materials))
 
         return VoxelModel(new_model, self.x, self.y, self.z).normalize()
+
+    # Manufacturing Features ###########################################################
+    def bounding_box(self):
+        x_len = len(self.model[0, 0, :, 0])
+        y_len = len(self.model[:, 0, 0, 0])
+        z_len = len(self.model[0, :, 0, 0])
+
+        new_model = np.zeros_like(self.model)
+
+        x_min = -1
+        x_max = -1
+        y_min = -1
+        y_max = -1
+        z_min = -1
+        z_max = -1
+
+        for x in range(x_len):
+            if x_min == -1:
+                if np.sum(self.model[:, :, x, :]) > 0:
+                    x_min = x
+            else:
+                if np.sum(self.model[:, :, x, :]) == 0:
+                    x_max = x
+                    break
+
+        for y in range(y_len):
+            if y_min == -1:
+                if np.sum(self.model[y, :, :, :]) > 0:
+                    y_min = y
+            else:
+                if np.sum(self.model[y, :, :, :]) == 0:
+                    y_max = y
+                    break
+
+        for z in range(z_len):
+            if z_min == -1:
+                if np.sum(self.model[:, z, :, :]) > 0:
+                    z_min = z
+            else:
+                if np.sum(self.model[:, z, :, :]) == 0:
+                    z_max = z
+                    break
+
+        x_max = x_len if x_max == -1 else x_max
+        y_max = y_len if y_max == -1 else y_max
+        z_max = z_len if z_max == -1 else z_max
+
+        new_model[y_min:y_max, z_min:z_max, x_min:x_max, :].fill(1)
+
+        return VoxelModel(new_model, self.x, self.y, self.z)
+
+    def keepout(self, method):
+        new_model = np.zeros_like(self.model)
+
+        x_len = len(self.model[0, 0, :, 0])
+        y_len = len(self.model[:, 0, 0, 0])
+        z_len = len(self.model[0, :, 0, 0])
+
+        if method == 'laser':
+            # Loop through model data
+            for x in range(x_len):
+                for y in range(y_len):
+                    if np.sum(self.model[y, :, x, :]) > 0:
+                        new_model[y, :, x, :] = np.ones((z_len, len(materials)))
+
+        elif method == 'mill':
+            # Loop through model data
+            for x in range(x_len):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        if np.sum(self.model[y, z:, x, :]) > 0:
+                            new_model[y, z, x, :] = np.ones(len(materials))
+                        elif np.sum(self.model[y, z:, x, :]) == 0:
+                            break
+
+        return VoxelModel(new_model, self.x, self.y, self.z)
