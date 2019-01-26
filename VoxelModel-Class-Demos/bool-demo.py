@@ -23,10 +23,12 @@ if __name__=='__main__':
     #modelResult = model3.isolateLayer(2)
     #modelResult = model1 + model2 + model3
     #modelResult = model1.subtractVolume(model2)
-    modelResult = model4.intersectVolume(model1)
+    #modelResult = model4.intersectVolume(model1)
     #modelResult = model1.addVolume(model2)
     #modelResult = modelResult.isolateMaterial(0)
     #modelResult = model1.invert()
+    #modelResult = model1.erode(radius=1, plane='xy')
+    #modelResult = model1
 
     # Create mesh data
     mesh1 = Mesh(modelResult)

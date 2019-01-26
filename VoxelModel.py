@@ -167,3 +167,64 @@ class VoxelModel:
         return VoxelModel(mask, self.x, self.y, self.z)
 
     # Dilate and Erode #################################################################
+    def dilate(self, radius = 1, plane = 'xyz'):
+        x_len = len(self.model[0, 0, :, 0]) + (radius*2) + 2
+        y_len = len(self.model[:, 0, 0, 0]) + (radius*2) + 2
+        z_len = len(self.model[0, :, 0, 0]) + (radius*2) + 2
+
+        current_model = np.zeros((y_len, z_len, x_len, len(materials)))
+        current_model[radius+1:-(radius+1), radius+1:-(radius+1), radius+1:-(radius+1), :] = self.model
+
+        new_model = np.zeros((y_len, z_len, x_len, len(materials)))
+
+        for i in range(radius):
+            for x in range(1, x_len-1):
+                for y in range(1, y_len-1):
+                    for z in range(1, z_len-1):
+                        for m in range(len(materials)):
+                            if plane == 'xy':
+                                new_model[y, z, x, m] = np.max(current_model[y-1:y+2, z, x-1:x+2, m])
+
+                            elif plane == 'xz':
+                                new_model[y, z, x, m] = np.max(current_model[y, z-1:z+2, x-1:x+2, m])
+
+                            elif plane == 'yz':
+                                new_model[y, z, x, m] = np.max(current_model[y-1:y+2, z-1:z+2, x, m])
+
+                            else:
+                                new_model[y, z, x, m] = np.max(current_model[y-1:y+2, z-1:z+2, x-1:x+2, m])
+
+            current_model = np.copy(new_model)
+
+        return VoxelModel(current_model, self.x, self.y, self.z)
+
+    def erode(self, radius = 1, plane = 'xyz'):
+        x_len = len(self.model[0, 0, :, 0]) + 2
+        y_len = len(self.model[:, 0, 0, 0]) + 2
+        z_len = len(self.model[0, :, 0, 0]) + 2
+
+        current_model = np.zeros((y_len, z_len, x_len, len(materials)))
+        current_model[1:-1, 1:-1, 1:-1, :] = self.model
+
+        new_model = np.zeros((y_len, z_len, x_len, len(materials)))
+
+        for i in range(radius):
+            for x in range(1, x_len-1):
+                for y in range(1, y_len-1):
+                    for z in range(1, z_len-1):
+                        for m in range(len(materials)):
+                            if plane == 'xy':
+                                new_model[y, z, x, m] = np.min(current_model[y-1:y+2, z, x-1:x+2, m])
+
+                            elif plane == 'xz':
+                                new_model[y, z, x, m] = np.min(current_model[y, z-1:z+2, x-1:x+2, m])
+
+                            elif plane == 'yz':
+                                new_model[y, z, x, m] = np.min(current_model[y-1:y+2, z-1:z+2, x, m])
+
+                            else:
+                                new_model[y, z, x, m] = np.min(current_model[y-1:y+2, z-1:z+2, x-1:x+2, m])
+
+            current_model = np.copy(new_model)
+
+        return VoxelModel(current_model, self.x, self.y, self.z)
