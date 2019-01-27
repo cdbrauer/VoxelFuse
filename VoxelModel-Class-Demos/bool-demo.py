@@ -29,20 +29,21 @@ if __name__=='__main__':
     #modelResult = model4.dilate()
     #modelResult = model4.erode()
 
-    model1 = VoxelModel.fromFile('square-blue-L.vox', 0, 0, 0)
-    model2 = VoxelModel.fromFile('square-red-R.vox', 0, 0, 0)
-    modelResult = model1 + model2
-    modelResult = modelResult.blur(region='object', threshold=0)
+    #model1 = VoxelModel.fromFile('square-blue-L.vox', 0, 0, 0)
+    #model2 = VoxelModel.fromFile('square-red-R.vox', 0, 0, 0)
+    #modelResult = model1 + model2
+    #modelResult = modelResult.blur(region='object', threshold=0)
 
-    #model1 = VoxelModel.fromFile('sample-object-1.vox', 0, 0, 0)
+    model1 = VoxelModel.fromFile('sample-object-1.vox', 0, 0, 0)
     #model2 = VoxelModel.fromFile('user-support-1.vox', 0, 0, 0)
     #modelResult = model1.keepout(method='laser')
     #modelResult = model1.clearance(method='mill')
-    #modelResult = model1.web('laser', 25, 1, 5)
+    modelResult = model1.web('laser', 25, 1, 5)
     #modelResult = model1.support('laser')
     #modelResult = model1.mergeSupport(model2, 'laser')
-    #modelResult = model1.addVolume(modelResult)
-
+    modelResult = modelResult.setMaterial(0)
+    modelResult = model1.addVolume(modelResult)
+    
     #modelResult = modelResult.normalize()
 
     # Create mesh data

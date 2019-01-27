@@ -92,6 +92,23 @@ class VoxelModel:
         new_model[:, layer - self.z, :, :] = self.model[:, layer - self.z, :, :]
         return VoxelModel(new_model, self.x, self.y, self.z)
 
+    # Mask operations ##################################################################
+    def clearMaterial(self):
+        mask = (self.model != np.zeros(len(materials))).any(3)
+        mask = np.repeat(mask[..., None], len(materials), axis=3)
+        return VoxelModel(mask, self.x, self.y, self.z)
+
+    def setMaterial(self, material):
+        x_len = len(self.model[0, 0, :, 0])
+        y_len = len(self.model[:, 0, 0, 0])
+        z_len = len(self.model[0, :, 0, 0])
+        new_model = self.clearMaterial().model
+        material_vector = np.zeros(len(materials))
+        material_vector[material] = 1
+        material_array = np.tile(material_vector[None, None, None, :], (y_len, z_len, x_len, 1))
+        new_model = np.multiply(new_model, material_array)
+        return VoxelModel(new_model, self.x, self.y, self.z)
+
     # Boolean operations ###############################################################
     # Material from base model takes priority in volume operations
     def addVolume(self, model_to_add):
