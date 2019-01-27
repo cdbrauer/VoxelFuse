@@ -89,7 +89,7 @@ class VoxelModel:
     # Get all voxels in a specified layer
     def isolateLayer(self, layer):
         new_model = np.zeros_like(self.model)
-        new_model[:, layer, :, :] = self.model[:, layer, :, :]
+        new_model[:, layer - self.z, :, :] = self.model[:, layer - self.z, :, :]
         return VoxelModel(new_model, self.x, self.y, self.z)
 
     # Boolean operations ###############################################################
@@ -196,7 +196,7 @@ class VoxelModel:
 
             current_model = np.copy(new_model)
 
-        return VoxelModel(current_model, self.x, self.y, self.z)
+        return VoxelModel(current_model, self.x - (radius+1), self.y - (radius+1), self.z - (radius+1))
 
     def erode(self, radius = 1, plane = 'xyz'):
         x_len = len(self.model[0, 0, :, 0]) + 2
@@ -227,7 +227,7 @@ class VoxelModel:
 
             current_model = np.copy(new_model)
 
-        return VoxelModel(current_model, self.x, self.y, self.z)
+        return VoxelModel(current_model, self.x - 1, self.y - 1, self.z - 1)
 
     # Cleanup ##########################################################################
     def normalize(self):
@@ -279,10 +279,10 @@ class VoxelModel:
                     if np.sum(new_model[y, z, x, :]) < threshold:
                         new_model[y, z, x, :] = np.zeros(len(materials))
 
-        return VoxelModel(new_model, self.x, self.y, self.z).normalize()
+        return VoxelModel(new_model, self.x - 1, self.y - 1, self.z - 1).normalize()
 
     # Manufacturing Features ###########################################################
-    def bounding_box(self):
+    def boundingBox(self):
         x_len = len(self.model[0, 0, :, 0])
         y_len = len(self.model[:, 0, 0, 0])
         z_len = len(self.model[0, :, 0, 0])
@@ -356,3 +356,39 @@ class VoxelModel:
                             break
 
         return VoxelModel(new_model, self.x, self.y, self.z)
+
+    def clearance(self, method):
+        new_model = VoxelModel(np.zeros_like(self.model), self.x, self.y, self.z)
+
+        Kl = self.keepout('laser')
+
+        if method == 'laser':
+            new_model = Kl.subtractVolume(self)
+        elif method == 'mill':
+            Km = self.keepout('mill')
+            new_model = Kl.subtractVolume(Km)
+
+        return new_model
+
+    def web(self, method, layer, r1=1, r2=1):
+        model_A = self.keepout(method)
+        model_A = model_A.isolateLayer(layer)
+        model_B = model_A.dilate(r1, 'xy')
+        model_C = model_B.dilate(r2, 'xy')
+        model_D = model_C.boundingBox()
+        new_model = model_D.subtractVolume(model_B)
+        return new_model
+
+    def support(self, method, r1=1, r2=1, plane='xy'):
+        model_A = self.keepout(method)
+        model_B = model_A.subtractVolume(self)
+        model_C = model_B.dilate(r1, plane)
+        model_D = model_A.dilate(r2, plane)
+        model_E = model_D.subtractVolume(model_A)
+        new_model = model_E.subtractVolume(model_C)
+        return new_model
+
+    def mergeSupport(self, support_model, method, r1=1, r2=1, plane='xy'):
+        model_A = self.support(method, r1, r2, plane)
+        new_model = support_model.intersectVolume(model_A)
+        return new_model

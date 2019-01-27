@@ -58,6 +58,7 @@ class Plot:
         widget.resize(1920 / 2, 1080 / 2)
 
         # Show plot
+        #widget.setWindowTitle(str())
         widget.show()
 
         self.widget = widget

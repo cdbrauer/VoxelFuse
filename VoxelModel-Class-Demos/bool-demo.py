@@ -13,17 +13,10 @@ from Plot import Plot
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
-    # Import models ##############################################################
     #model1 = VoxelModel.fromFile('sphere-blue.vox', 0, 0, 0)
     #model2 = VoxelModel.fromFile('sphere-red.vox', -4, 4, 4)
     #model3 = VoxelModel.fromFile('sphere-blue.vox', -4, 4, 4)
     #model4 = model2 + model3
-
-    #model1 = VoxelModel.fromFile('square-blue-L.vox', 0, 0, 0)
-    #model2 = VoxelModel.fromFile('square-red-R.vox', 0, 0, 0)
-
-    model1 = VoxelModel.fromFile('sample-object-1.vox', 0, 0, 0)
-
     #modelResult = model3.isolateLayer(2)
     #modelResult = model2 + model1
     #modelResult = model4 - model1
@@ -36,25 +29,29 @@ if __name__=='__main__':
     #modelResult = model4.xor(model1)
     #modelResult = model4.dilate()
     #modelResult = model4.erode()
-    #modelResult = modelResult.blur(region='all', threshold=0.5)
-    modelResult = model1.addVolume(model1.keepout(method='mill'))
 
-    #normalizedResult = modelResult.normalize()
+    # model1 = VoxelModel.fromFile('square-blue-L.vox', 0, 0, 0)
+    # model2 = VoxelModel.fromFile('square-red-R.vox', 0, 0, 0)
+    #modelResult = modelResult.blur(region='all', threshold=0.5)
+
+    model1 = VoxelModel.fromFile('sample-object-1.vox', 0, 0, 0)
+    model2 = VoxelModel.fromFile('user-support-1.vox', 0, 0, 0)
+    #modelResult = model1.keepout(method='laser')
+    #modelResult = model1.clearance(method='mill')
+    #modelResult = model1.web('laser', 25, 1, 5)
+    #modelResult = model1.support('laser')
+    modelResult = model1.mergeSupport(model2, 'laser')
+    modelResult = model1.addVolume(modelResult)
+
+    #modelResult = modelResult.normalize()
 
     # Create mesh data
-    mesh1 = Mesh(model1)
-    mesh2 = Mesh(modelResult)
+    mesh1 = Mesh(modelResult)
 
     # Create plot
     plot1 = Plot(mesh1, grids=True)
-    plot2 = Plot(mesh2, grids=True)
-
-    # Process all events
     app1.processEvents()
-
-    # Save screenshot of plot 1
-    plot1.export('voxel-tools-bool-fig1.png')
-    plot2.export('voxel-tools-bool-fig2.png')
+    #plot1.export('voxel-tools-bool-fig1.png')
 
     # Export mesh
     #mesh1.export('result.stl')
