@@ -18,7 +18,6 @@ if __name__=='__main__':
     #model3 = VoxelModel.fromFile('sphere-blue.vox', -4, 4, 4)
     #model4 = model2 + model3
     #modelResult = model3.isolateLayer(2)
-    #modelResult = model2 + model1
     #modelResult = model4 - model1
     #modelResult = model4.subtractVolume(model1)
     #modelResult = model4.intersectVolume(model1)
@@ -30,18 +29,19 @@ if __name__=='__main__':
     #modelResult = model4.dilate()
     #modelResult = model4.erode()
 
-    # model1 = VoxelModel.fromFile('square-blue-L.vox', 0, 0, 0)
-    # model2 = VoxelModel.fromFile('square-red-R.vox', 0, 0, 0)
-    #modelResult = modelResult.blur(region='all', threshold=0.5)
+    model1 = VoxelModel.fromFile('square-blue-L.vox', 0, 0, 0)
+    model2 = VoxelModel.fromFile('square-red-R.vox', 0, 0, 0)
+    modelResult = model1 + model2
+    modelResult = modelResult.blur(region='object', threshold=0)
 
-    model1 = VoxelModel.fromFile('sample-object-1.vox', 0, 0, 0)
-    model2 = VoxelModel.fromFile('user-support-1.vox', 0, 0, 0)
+    #model1 = VoxelModel.fromFile('sample-object-1.vox', 0, 0, 0)
+    #model2 = VoxelModel.fromFile('user-support-1.vox', 0, 0, 0)
     #modelResult = model1.keepout(method='laser')
     #modelResult = model1.clearance(method='mill')
     #modelResult = model1.web('laser', 25, 1, 5)
     #modelResult = model1.support('laser')
-    modelResult = model1.mergeSupport(model2, 'laser')
-    modelResult = model1.addVolume(modelResult)
+    #modelResult = model1.mergeSupport(model2, 'laser')
+    #modelResult = model1.addVolume(modelResult)
 
     #modelResult = modelResult.normalize()
 
@@ -49,7 +49,7 @@ if __name__=='__main__':
     mesh1 = Mesh(modelResult)
 
     # Create plot
-    plot1 = Plot(mesh1, grids=True)
+    plot1 = Plot(mesh1)
     app1.processEvents()
     #plot1.export('voxel-tools-bool-fig1.png')
 

@@ -266,18 +266,23 @@ class VoxelModel:
         for x in range(1, x_len - 1):
             for y in range(1, y_len - 1):
                 for z in range(1, z_len - 1):
-                    if region == 'overlap':
+                    if region == 'overlap': # Regions containing overlapping materials
                         if np.sum(current_model[y, z, x, :]) > 1:
                             for m in range(len(materials)):
                                 new_model[y, z, x, m] = np.sum(np.multiply(current_model[y - 1:y + 2, z - 1:z + 2, x - 1:x + 2, m], kernel))
                         else:
                             new_model[y, z, x, :] = current_model[y, z, x, :]
-                    else:
+
+                    elif region == 'object': # Regions containing any material
+                        if np.sum(current_model[y, z, x, :]) > 0:
+                            for m in range(len(materials)):
+                                new_model[y, z, x, m] = np.sum(np.multiply(current_model[y - 1:y + 2, z - 1:z + 2, x - 1:x + 2, m], kernel))
+
+                    else: # Entire workspace - may add or remove voxels depending on threshold
                         for m in range(len(materials)):
                             new_model[y, z, x, m] = np.sum(np.multiply(current_model[y - 1:y + 2, z - 1:z + 2, x - 1:x + 2, m], kernel))
-
-                    if np.sum(new_model[y, z, x, :]) < threshold:
-                        new_model[y, z, x, :] = np.zeros(len(materials))
+                        if np.sum(new_model[y, z, x, :]) < threshold:
+                            new_model[y, z, x, :] = np.zeros(len(materials))
 
         return VoxelModel(new_model, self.x - 1, self.y - 1, self.z - 1).normalize()
 
