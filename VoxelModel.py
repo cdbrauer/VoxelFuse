@@ -76,6 +76,11 @@ class VoxelModel:
 
         return cls(new_model, x_coord, y_coord, z_coord)
 
+    @classmethod
+    def emptyLike(cls, voxel_model):
+        new_model = np.zeros_like(voxel_model.model)
+        return cls(new_model, voxel_model.x, voxel_model.y, voxel_model.z)
+
     # Selection operations #############################################################
     # Get all voxels with a specified material
     def isolateMaterial(self, material):
@@ -125,7 +130,7 @@ class VoxelModel:
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __add__(self, other):
-        return self.addMaterial(other)
+        return self.addVolume(other)
 
     def subtractVolume(self, model_to_sub):
         a, b = alignDims(self, model_to_sub)
@@ -141,7 +146,7 @@ class VoxelModel:
         return VoxelModel(new_model, a.x, a.y, a.z)
 
     def __sub__(self, other):
-        return self.subtractMaterial(other)
+        return self.subtractVolume(other)
 
     def intersectVolume(self, model_2):
         a, b = alignDims(self, model_2)
