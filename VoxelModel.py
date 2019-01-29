@@ -191,66 +191,46 @@ class VoxelModel:
 
     # Dilate and Erode #################################################################
     def dilate(self, radius = 1, plane = 'xyz'):
-        x_len = len(self.model[0, 0, :, 0]) + (radius*2) + 2
-        y_len = len(self.model[:, 0, 0, 0]) + (radius*2) + 2
-        z_len = len(self.model[0, :, 0, 0]) + (radius*2) + 2
-
-        current_model = np.zeros((y_len, z_len, x_len, len(materials)))
-        current_model[radius+1:-(radius+1), radius+1:-(radius+1), radius+1:-(radius+1), :] = self.model
+        x_len = len(self.model[0, 0, :, 0]) + (radius * 2)
+        y_len = len(self.model[:, 0, 0, 0]) + (radius * 2)
+        z_len = len(self.model[0, :, 0, 0]) + (radius * 2)
 
         new_model = np.zeros((y_len, z_len, x_len, len(materials)))
+        new_model[radius:-radius, radius:-radius, radius:-radius, :] = self.model
 
-        for i in range(radius):
-            for x in range(1, x_len-1):
-                for y in range(1, y_len-1):
-                    for z in range(1, z_len-1):
-                        for m in range(len(materials)):
-                            if plane == 'xy':
-                                new_model[y, z, x, m] = np.max(current_model[y-1:y+2, z, x-1:x+2, m])
+        diameter = (radius * 2) + 1
 
-                            elif plane == 'xz':
-                                new_model[y, z, x, m] = np.max(current_model[y, z-1:z+2, x-1:x+2, m])
+        if plane == 'xy':
+            size = (diameter, 1, diameter)
+        elif plane == 'xz':
+            size = (1, diameter, diameter)
+        elif plane == 'yz':
+            size = (diameter, diameter, 1)
+        else:
+            size = (diameter, diameter, diameter)
 
-                            elif plane == 'yz':
-                                new_model[y, z, x, m] = np.max(current_model[y-1:y+2, z-1:z+2, x, m])
+        for m in range(len(materials)):
+            new_model[:, :, :, m] = ndimage.grey_dilation(new_model[:, :, :, m], size)
 
-                            else:
-                                new_model[y, z, x, m] = np.max(current_model[y-1:y+2, z-1:z+2, x-1:x+2, m])
-
-            current_model = np.copy(new_model)
-
-        return VoxelModel(current_model, self.x - (radius+1), self.y - (radius+1), self.z - (radius+1))
+        return VoxelModel(new_model, self.x - radius, self.y - radius, self.z - radius)
 
     def erode(self, radius = 1, plane = 'xyz'):
-        x_len = len(self.model[0, 0, :, 0]) + 2
-        y_len = len(self.model[:, 0, 0, 0]) + 2
-        z_len = len(self.model[0, :, 0, 0]) + 2
+        new_model = np.copy(self.model)
+        diameter = (radius * 2) + 1
 
-        current_model = np.zeros((y_len, z_len, x_len, len(materials)))
-        current_model[1:-1, 1:-1, 1:-1, :] = self.model
+        if plane == 'xy':
+            size = (diameter, 1, diameter)
+        elif plane == 'xz':
+            size = (1, diameter, diameter)
+        elif plane == 'yz':
+            size = (diameter, diameter, 1)
+        else:
+            size = (diameter, diameter, diameter)
 
-        new_model = np.zeros((y_len, z_len, x_len, len(materials)))
+        for m in range(len(materials)):
+            new_model[:, :, :, m] = ndimage.grey_erosion(new_model[:, :, :, m], size)
 
-        for i in range(radius):
-            for x in range(1, x_len-1):
-                for y in range(1, y_len-1):
-                    for z in range(1, z_len-1):
-                        for m in range(len(materials)):
-                            if plane == 'xy':
-                                new_model[y, z, x, m] = np.min(current_model[y-1:y+2, z, x-1:x+2, m])
-
-                            elif plane == 'xz':
-                                new_model[y, z, x, m] = np.min(current_model[y, z-1:z+2, x-1:x+2, m])
-
-                            elif plane == 'yz':
-                                new_model[y, z, x, m] = np.min(current_model[y-1:y+2, z-1:z+2, x, m])
-
-                            else:
-                                new_model[y, z, x, m] = np.min(current_model[y-1:y+2, z-1:z+2, x-1:x+2, m])
-
-            current_model = np.copy(new_model)
-
-        return VoxelModel(current_model, self.x - 1, self.y - 1, self.z - 1)
+        return VoxelModel(new_model, self.x, self.y, self.z)
 
     # Cleanup ##########################################################################
     def normalize(self):
