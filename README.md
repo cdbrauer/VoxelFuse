@@ -6,6 +6,7 @@ Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at 
 
 ### Required Libraries
 - numpy
+- scipy.ndimage
 - pyqt5
 - pyqtgraph
 - pyopengl
