@@ -14,9 +14,9 @@ if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
     #model1 = VoxelModel.fromFile('sphere-blue.vox', 0, 0, 0)
-    model2 = VoxelModel.fromFile('sphere-red.vox', -4, 4, 4)
-    model3 = VoxelModel.fromFile('sphere-blue.vox', -4, 4, 4)
-    model4 = model2 + model3
+    #model2 = VoxelModel.fromFile('sphere-red.vox', -4, 4, 4)
+    #model3 = VoxelModel.fromFile('sphere-blue.vox', -4, 4, 4)
+    #model4 = model2 + model3
     #modelResult = model3.isolateLayer(2)
     #modelResult = model4 - model1
     #modelResult = model4.subtractVolume(model1)
@@ -27,31 +27,31 @@ if __name__=='__main__':
     #modelResult = model4.invert()
     #modelResult = model4.xor(model1)
     #modelResult = model4.dilate(5, 'xy')
-    modelResult = model4.erode(3, 'xy')
+    #modelResult = model4.erode(3, 'xy')
 
     #model1 = VoxelModel.fromFile('square-blue-L.vox', 0, 0, 0)
     #model2 = VoxelModel.fromFile('square-red-R.vox', 0, 0, 0)
     #modelResult = model1.addMaterial(model2)
     #modelResult = modelResult.blur(radius=1, region='all')
 
-    #model1 = VoxelModel.fromFile('sample-object-1.vox', 0, 0, 0)
-    #model2 = VoxelModel.fromFile('user-support-1.vox', 0, 0, 0)
+    model1 = VoxelModel.fromFile('sample-object-1.vox', 0, 0, 0)
+    model2 = VoxelModel.fromFile('user-support-1.vox', 0, 0, 0)
     #modelResult = model1.keepout(method='laser')
     #modelResult = model1.clearance(method='mill')
-    #modelResult = model1.web('laser', 25, 1, 5)
+    modelResult = model1.web('laser', 25, 1, 5)
     #modelResult = model1.support('laser')
     #modelResult = model1.mergeSupport(model2, 'laser')
     #modelResult = modelResult.setMaterial(0)
-    #modelResult = model1.addVolume(modelResult)
+    modelResult = model1.addVolume(modelResult)
 
     #modelResult = modelResult.normalize()
 
     # Create mesh data
-    mesh1 = Mesh(model4)
+    #mesh1 = Mesh(model4)
     mesh2 = Mesh(modelResult)
 
     # Create plot
-    plot1 = Plot(mesh1)
+    #plot1 = Plot(mesh1)
     plot2 = Plot(mesh2)
     app1.processEvents()
 

@@ -82,6 +82,11 @@ class VoxelModel:
         new_model = np.zeros_like(voxel_model.model)
         return cls(new_model, voxel_model.x, voxel_model.y, voxel_model.z)
 
+    @classmethod
+    def copy(cls, voxel_model):
+        new_model = np.copy(voxel_model.model)
+        return cls(new_model, voxel_model.x, voxel_model.y, voxel_model.z)
+
     # Selection operations #############################################################
     # Get all voxels with a specified material
     def isolateMaterial(self, material):
@@ -259,6 +264,18 @@ class VoxelModel:
         new_model = new_model + self
 
         return new_model
+
+    def rotate(self, angle, axis):
+        if axis == 'x':
+            plane = (0, 1)
+        elif axis == 'y':
+            plane = (1, 2)
+        elif axis == 'z':
+            plane = (0, 2)
+
+        new_model = ndimage.rotate(self.model, angle, plane, order=0)
+
+        return VoxelModel(new_model, self.x, self.y, self.z)
 
     # Manufacturing Features ###########################################################
     def boundingBox(self):
