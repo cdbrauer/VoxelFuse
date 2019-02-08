@@ -4,9 +4,7 @@ Dan Aukes, Cole Brauer
 
 Example 1 - Multimaterial 3D printing with blurring
 
-User inputs a model and the program will automatically
-apply blurring to materials with blurring defined in
-the materials file
+User inputs a model and the program will apply blurring to requested materials
 
 three-boxes.vox demonstrates two blurred materials and one non-blurred material
 joint2.1.vox demonstrates a dog bone joint with blurring
@@ -29,7 +27,7 @@ if __name__=='__main__':
     # User preferences
     # modelName = 'three-boxes.vox'
     modelName = 'joint2.1.vox'
-    blur = True
+    blur = [0, 2] # materials to blur
     blurRadius = 3
 
     # Import model
@@ -38,19 +36,16 @@ if __name__=='__main__':
     # Initialize object to hold result
     modelResult = VoxelModel.emptyLike(modelIn)
 
-    # If blurring was requested
-    if blur:
-        # Isolate materials compatible with blurring
-        modelBlur = VoxelModel.emptyLike(modelIn)
-        for i in range(len(materials)):
-            if materials[i]['blur']:
-                modelBlur = modelBlur + modelIn.isolateMaterial(i)
+    # Isolate materials with blurring requested
+    modelBlur = VoxelModel.emptyLike(modelIn)
+    for i in range(len(blur)):
+        modelBlur = modelBlur + modelIn.isolateMaterial(blur[i])
 
-        # Blur compatible materials
-        modelBlur = modelBlur.blur(blurRadius)
+    # Blur compatible materials
+    modelBlur = modelBlur.blur(blurRadius)
 
-        # Add to result
-        modelResult = modelBlur + modelResult
+    # Add to result
+    modelResult = modelBlur + modelResult
 
     # Add unmodified voxels to result
     modelResult = modelResult + modelIn
