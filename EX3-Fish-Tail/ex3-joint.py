@@ -21,14 +21,15 @@ if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
     # User preferences
-    modelName = 'joint-1.vox'
+    #modelName = 'joint-2.vox'
+    modelName = 'tail-holder-1r.vox'
     clearance = [1, 3] # materials to leave clearance around
 
     # Import model
     modelIn = VoxelModel.fromFile(modelName)
 
     # Rotate to best orientation for printing
-    modelIn = modelIn.rotate(90, 'y')
+    #modelIn = modelIn.rotate(90, 'y')
 
     # Initialize object to hold result
     modelResult = VoxelModel.copy(modelIn)
@@ -57,7 +58,7 @@ if __name__=='__main__':
 
             # Identify tops of parts
             if np.sum(insertedComponents.model[:, z-1, :, :]) > 0:
-                print(z) # replace with save to array
+                print(z-1) # replace with save to array
 
     insertedComponents = insertedComponents + insertedComponentsClearance
 
@@ -68,7 +69,8 @@ if __name__=='__main__':
     mesh1 = Mesh(modelResult)
 
     # Export .stl file
-    mesh1.export('joint.stl')
+    #mesh1.export('joint-2.stl')
+    mesh1.export('tail-holder.stl')
 
     # Slice .stl file
 
