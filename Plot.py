@@ -20,6 +20,7 @@ class Plot:
         # mesh_item = pgo.GLMeshItem(meshdata = mesh_data, shader='shaded', drawEdges=False, smooth=True, computeNormals = True, glOptions='opaque')
 
         widget = pgo.GLViewWidget()
+        widget.setBackgroundColor('w')
         widget.addItem(mesh_item)
 
         if grids:
@@ -51,11 +52,11 @@ class Plot:
             widget.addItem(pltz)
 
         # Set plot options
-        widget.opts['center'] = qg.QVector3D((len(mesh.model[0, 0, :, 0])) / 2, (len(mesh.model[:, 0, 0, 0])) / 2, (len(mesh.model[0, :, 0, 0])) / 2)
-        widget.opts['elevation'] = 40
-        widget.opts['azimuth'] = 30
-        widget.opts['distance'] = 60
-        widget.resize(1920 / 2, 1080 / 2)
+        widget.opts['center'] = qg.QVector3D((len(mesh.model[0, 0, :, 0])) / 2, (len(mesh.model[:, 0, 0, 0])) / 2, ((len(mesh.model[0, :, 0, 0])) / 2))
+        widget.opts['elevation'] = 40 #30
+        widget.opts['azimuth'] = 30 #30
+        widget.opts['distance'] = 50 #50
+        widget.resize(1440 / 1.5, 1080 / 1.5)
 
         # Show plot
         #widget.setWindowTitle(str())

@@ -351,6 +351,14 @@ class VoxelModel:
                         elif np.sum(self.model[y, z:, x, :]) == 0:
                             break
 
+        elif method == 'ins':
+            # Loop through model data
+            for x in range(x_len):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        if np.sum(self.model[y, :z, x, :]) > 0:
+                            new_model[y, z, x, :] = np.ones(len(materials))
+
         return VoxelModel(new_model, self.x, self.y, self.z)
 
     def clearance(self, method):
@@ -363,12 +371,15 @@ class VoxelModel:
         elif method == 'mill':
             Km = self.keepout('mill')
             new_model = Kl.subtractVolume(Km)
+        elif method == 'ins':
+            Ki = self.keepout('ins')
+            new_model = Ki
 
         return new_model
 
     def web(self, method, layer, r1=1, r2=1):
         model_A = self.keepout(method)
-        model_A = model_A.isolateLayer(layer)
+        #model_A = model_A.isolateLayer(layer)
         model_B = model_A.dilate(r1, 'xy')
         model_C = model_B.dilate(r2, 'xy')
         model_D = model_C.boundingBox()
