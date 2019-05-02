@@ -28,7 +28,7 @@ if __name__=='__main__':
     modelIn = VoxelModel.fromFile(modelName)
 
     # Rotate to best orientation for printing
-    #modelIn = modelIn.rotate(90, 'y')
+    modelIn = modelIn.rotate(90, 'y')
 
     # Initialize object to hold result
     modelResult = VoxelModel.copy(modelIn)

@@ -86,10 +86,11 @@ class Mesh:
         # Loop through input_model data
         for x in range(x_len):
             for y in range(y_len):
-                current_iter = current_iter + z_len
-#                print("%s / %s" % (current_iter, max_iter))
-
                 for z in range(z_len):
+                    if current_iter%1000 == 0:
+                        print("%s / %s" % (current_iter, max_iter))
+                    current_iter = current_iter + 1
+
                     material_count =  sum(input_model[y, z, x, :])
 
                     # If voxel is not empty
