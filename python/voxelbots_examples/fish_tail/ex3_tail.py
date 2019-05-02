@@ -11,11 +11,10 @@ import PyQt5.QtGui as qg
 import sys
 import numpy as np
 
-from VoxelModel import VoxelModel
-from Mesh import Mesh
-from Plot import Plot
-
-from materials import materials
+from voxelbots.voxel_model import VoxelModel
+from voxelbots.mesh import Mesh
+from voxelbots.plot import Plot
+from voxelbots.materials import materials
 
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)

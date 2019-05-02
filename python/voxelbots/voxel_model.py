@@ -5,7 +5,7 @@ Dan Aukes, Cole Brauer
 
 import numpy as np
 from pyvox.parser import VoxParser
-from materials import materials
+from voxelbots.materials import materials
 from scipy import ndimage
 
 """

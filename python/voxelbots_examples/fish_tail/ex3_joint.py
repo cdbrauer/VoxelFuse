@@ -11,25 +11,24 @@ import PyQt5.QtGui as qg
 import sys
 import numpy as np
 
-from VoxelModel import VoxelModel
-from Mesh import Mesh
-from Plot import Plot
-
-from materials import materials
+from voxelbots.voxel_model import VoxelModel
+from voxelbots.mesh import Mesh
+from voxelbots.plot import Plot
+from voxelbots.materials import materials
 
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
     # User preferences
     modelName = 'joint-2.vox'
-    #modelName = 'tail-holder-1r.vox'
+#    modelName = 'tail-holder-1r.vox'
     clearance = [1, 3] # materials to leave clearance around
 
     # Import model
     modelIn = VoxelModel.fromFile(modelName)
 
     # Rotate to best orientation for printing
-    modelIn = modelIn.rotate(90, 'y')
+    #modelIn = modelIn.rotate(90, 'y')
 
     # Initialize object to hold result
     modelResult = VoxelModel.copy(modelIn)
@@ -66,11 +65,11 @@ if __name__=='__main__':
     modelResult = modelResult - insertedComponents
 
     # Create mesh data
-    mesh1 = Mesh(modelIn)
+    mesh1 = Mesh(modelResult)
 
     # Export .stl file
     #mesh1.export('joint-2.stl')
-    #mesh1.export('tail-holder.stl')
+    mesh1.export('tail-holder.stl')
 
     # Slice .stl file
 

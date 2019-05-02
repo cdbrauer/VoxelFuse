@@ -5,7 +5,7 @@ Dan Aukes, Cole Brauer
 
 import numpy as np
 import meshio
-from materials import materials
+from voxelbots.materials import materials
 
 def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
     x_len = len(input_model[0, 0, :, 0])
@@ -87,7 +87,7 @@ class Mesh:
         for x in range(x_len):
             for y in range(y_len):
                 current_iter = current_iter + z_len
-                print("%s / %s" % (current_iter, max_iter))
+#                print("%s / %s" % (current_iter, max_iter))
 
                 for z in range(z_len):
                     material_count =  sum(input_model[y, z, x, :])
