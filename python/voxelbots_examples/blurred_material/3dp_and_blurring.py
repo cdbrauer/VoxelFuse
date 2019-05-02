@@ -54,12 +54,13 @@ if __name__=='__main__':
     # Sort by material percentages
 
     # Create mesh data for each material
-    mesh1 = Mesh(modelResult)
+    mesh1 = Mesh.fromVoxelModel(modelResult)
 
     # Export .stl file for each material
 
     # Create plot
     plot1 = Plot(mesh1)
+    plot1.show()
     app1.processEvents()
     plot1.export('fig1.png')
 

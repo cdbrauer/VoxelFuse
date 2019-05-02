@@ -14,8 +14,15 @@ Initialized from mesh data
 """
 class Plot:
     def __init__(self, mesh, grids = False, drawEdges=True, edgeColor=(1, 1, 1, 0.5)):
-        mesh_data = pgo.MeshData(vertexes=mesh.verts, faces=mesh.tris, vertexColors=mesh.colors, faceColors=None)
-        mesh_item = pgo.GLMeshItem(meshdata=mesh_data, shader='balloon', drawEdges=drawEdges, edgeColor=edgeColor,
+        self.mesh = mesh
+        self.grids = grids
+        self.drawEdges = drawEdges
+        self.edgeColor = edgeColor
+        self.widget = None
+
+    def show(self):
+        mesh_data = pgo.MeshData(vertexes=self.mesh.verts, faces=self.mesh.tris, vertexColors=self.mesh.colors, faceColors=None)
+        mesh_item = pgo.GLMeshItem(meshdata=mesh_data, shader='balloon', drawEdges=self.drawEdges, edgeColor=self.edgeColor,
                                    smooth=False, computeNormals=False, glOptions='translucent')
         # mesh_item = pgo.GLMeshItem(meshdata = mesh_data, shader='shaded', drawEdges=False, smooth=True, computeNormals = True, glOptions='opaque')
 
@@ -23,7 +30,7 @@ class Plot:
         widget.setBackgroundColor('w')
         widget.addItem(mesh_item)
 
-        if grids:
+        if self.grids:
             # Add grids
             gx = pgo.GLGridItem()
             gx.setSize(x=50, y=50, z=50)
@@ -52,7 +59,7 @@ class Plot:
             widget.addItem(pltz)
 
         # Set plot options
-        widget.opts['center'] = qg.QVector3D((len(mesh.model[0, 0, :, 0])) / 2, (len(mesh.model[:, 0, 0, 0])) / 2, ((len(mesh.model[0, :, 0, 0])) / 2))
+        widget.opts['center'] = qg.QVector3D((len(self.mesh.model[0, 0, :, 0])) / 2, (len(self.mesh.model[:, 0, 0, 0])) / 2, ((len(self.mesh.model[0, :, 0, 0])) / 2))
         widget.opts['elevation'] = 40 #30
         widget.opts['azimuth'] = 30 #30
         widget.opts['distance'] = 50 #50
@@ -65,5 +72,6 @@ class Plot:
         self.widget = widget
 
     def export(self, filename):
-        self.widget.paintGL()
-        self.widget.grabFrameBuffer().save(filename)
+        if self.widget is not None:
+            self.widget.paintGL()
+            self.widget.grabFrameBuffer().save(filename)

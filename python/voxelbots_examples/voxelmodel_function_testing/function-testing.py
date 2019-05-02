@@ -57,11 +57,12 @@ if __name__=='__main__':
 
     # Create mesh data
     #mesh1 = Mesh(model1)
-    mesh2 = Mesh(modelResult)
+    mesh2 = Mesh.fromVoxelModel(modelResult)
 
     # Create plot
     #plot1 = Plot(mesh1)
     plot2 = Plot(mesh2)
+    plot2.show()
     app1.processEvents()
 
     plot2.export('voxel-tools-bool-fig1.png')

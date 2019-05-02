@@ -65,7 +65,7 @@ if __name__=='__main__':
     modelResult = modelResult - insertedComponents
 
     # Create mesh data
-    mesh1 = Mesh(modelResult)
+    mesh1 = Mesh.fromVoxelModel(modelResult)
 
     # Export .stl file
     #mesh1.export('joint-2.stl')
@@ -77,6 +77,7 @@ if __name__=='__main__':
 
     # Create plot
     plot1 = Plot(mesh1)
+    plot1.show()
     app1.processEvents()
     plot1.export('fig1.png')
 

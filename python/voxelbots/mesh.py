@@ -63,8 +63,15 @@ Properties:
   tris - sets of vertices associated with triangular faces
 """
 class Mesh:
+    def __init__(self, input_model, verts, verts_colors, tris):
+        self.verts = verts
+        self.colors = verts_colors
+        self.tris = tris
+        self.model = input_model
+
     # Create mesh from voxel data
-    def __init__(self, voxel_model):
+    @classmethod
+    def fromVoxelModel(cls, voxel_model):
         # Get voxel array
         input_model = np.copy(voxel_model.model)
 
@@ -197,10 +204,7 @@ class Mesh:
         verts_colors = np.array(verts_colors)
         tris = np.array(tris)
 
-        self.verts = verts
-        self.colors = verts_colors
-        self.tris = tris
-        self.model = input_model
+        return cls(input_model, verts, verts_colors, tris)
 
     # Export model from mesh data
     def export(self, filename):
