@@ -53,8 +53,10 @@ res = 0
 data = make_mesh('cylinder.stl',True)
 
 points = data.points
+ii_tri = data.cells['triangle']
 ii_tet = data.cells['tetra']
 
+tris= points[ii_tri]
 tets= points[ii_tet]
 T=numpy.concatenate((tets,tets[:,:,0:1]*0+1),2)
 T_inv = numpy.zeros(T.shape)
@@ -113,3 +115,6 @@ ax.voxels(kernel, facecolors=colors2, edgecolor='k')
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 ax.voxels(v2, facecolors=colors, edgecolor='k')
+
+#for tri in tris:
+#    ax.plot3D(tri[(0,1,2,0),0],tri[(0,1,2,0),1],tri[(0,1,2,0),2],'k-')
