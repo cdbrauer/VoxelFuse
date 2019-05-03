@@ -38,7 +38,7 @@ def generate_outer(v):
     
     v2 = scipy.signal.convolve(voxels*1,kernel,mode='same')
     v2 = v2.round()
-    v2 = v2==len(kernel.nonzero()[0])
+    v2 = v&(v2<len(kernel.nonzero()[0]))
     return v2,kernel
 
 template = '''
