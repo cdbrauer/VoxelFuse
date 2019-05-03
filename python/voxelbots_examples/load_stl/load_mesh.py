@@ -12,6 +12,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
+import scipy.signal
 
 def make_mesh(filename,delete_files=True):
 
@@ -28,6 +29,17 @@ def make_mesh(filename,delete_files=True):
         os.remove('output.msh')
         os.remove('output.geo')
     return data
+
+def generate_outer(v):
+    kernel = numpy.zeros((3,3,3))
+    kernel[:,1,1]=1
+    kernel[1,:,1]=1
+    kernel[1,1,:]=1
+    
+    v2 = scipy.signal.convolve(voxels*1,kernel,mode='same')
+    v2 = v2.round()
+    v2 = v2==len(kernel.nonzero()[0])
+    return v2,kernel
 
 template = '''
 Merge "{0}";
@@ -87,10 +99,17 @@ lmn = ijk_mid2[numpy.unique(jj)]
 
 voxels = numpy.zeros(ijk_mid.shape[:3],dtype=numpy.bool)
 voxels[lmn[:,0],lmn[:,1],lmn[:,2]]=True
+v2,kernel = generate_outer(voxels)
+colors = np.empty(v2.shape, dtype=object)
+colors[v2] = 'red'
 
-colors = np.empty(voxels.shape, dtype=object)
-colors[voxels] = 'red'
+colors2 = np.empty(kernel.shape, dtype=object)
+colors2[kernel==1] = 'red'
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
-ax.voxels(voxels, facecolors=colors, edgecolor='k')
+ax.voxels(kernel, facecolors=colors2, edgecolor='k')
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+ax.voxels(v2, facecolors=colors, edgecolor='k')
