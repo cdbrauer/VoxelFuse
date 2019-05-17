@@ -50,7 +50,7 @@ Volume(1) = {{1}};
 
 res = 0
 
-data = make_mesh('cylinder.stl',True)
+data = make_mesh('tube.stl',True)
 
 points = data.points
 ii_tri = data.cells['triangle']
