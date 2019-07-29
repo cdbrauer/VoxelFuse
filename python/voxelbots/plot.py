@@ -13,7 +13,7 @@ Plot Class
 Initialized from mesh data
 """
 class Plot:
-    def __init__(self, mesh, grids = False, drawEdges=True, edgeColor=(1, 1, 1, 0.5)):
+    def __init__(self, mesh, grids = False, drawEdges=True, edgeColor=(0, 0, 0, 0.5)):
         self.mesh = mesh
         self.grids = grids
         self.drawEdges = drawEdges

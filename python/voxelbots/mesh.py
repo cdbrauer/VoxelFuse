@@ -98,26 +98,22 @@ class Mesh:
                         print("%s / %s" % (current_iter, max_iter))
                     current_iter = current_iter + 1
 
-                    material_count =  sum(input_model[y, z, x, :])
-
                     # If voxel is not empty
-                    if material_count != 0:
+                    if input_model[y, z, x, 0] != 0:
                         r = 0
                         g = 0
                         b = 0
 
                         for i in range(len(materials)):
-                            r = r + input_model[y, z, x, i] * materials[i]['r']
-                            g = g + input_model[y, z, x, i] * materials[i]['g']
-                            b = b + input_model[y, z, x, i] * materials[i]['b']
+                            r = r + input_model[y, z, x, i+1] * materials[i]['r']
+                            g = g + input_model[y, z, x, i+1] * materials[i]['g']
+                            b = b + input_model[y, z, x, i+1] * materials[i]['b']
 
-                        rgbSum = r + g + b
+                        r = 1 if r > 1 else r
+                        g = 1 if g > 1 else g
+                        b = 1 if b > 1 else b
 
-                        r = r / rgbSum #1 if r > 1 else r
-                        g = g / rgbSum #1 if g > 1 else g
-                        b = b / rgbSum #1 if b > 1 else b
-
-                        a = 1  # if (r + g + b) > 1 else (r + g + b)
+                        a = 1 - input_model[y, z, x, 1]
 
                         voxel_color = [r, g, b, a]
 
