@@ -15,43 +15,43 @@ from voxelbots.materials import materials
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
-    model1 = VoxelModel.fromFile('cylinder-blue.vox', 0, 0, 0)
-    model2 = VoxelModel.fromFile('cylinder-red.vox', 0, 5, 0)
-    model3 = VoxelModel.fromFile('cylinder-red.vox', 0, 0, 0)
-    #model4 = model1.addMaterial(model3)
-    #model4 = model4.normalize()
-    model5 = VoxelModel.fromFile('blurregion.vox', 0, 0, 0)
+    # Basic Operations ##########################################################
+    #model1 = VoxelModel.fromVoxFile('cylinder-blue.vox', 0, 0, 0)
+    #model2 = VoxelModel.fromVoxFile('cylinder-red.vox', 0, 5, 0)
+    #model3 = VoxelModel.fromVoxFile('cylinder-red.vox', 0, 0, 0)
+    #model4 = model1+model3
+    #model4 = model4.scaleValues()
+    #model5 = VoxelModel.fromFile('blurregion.vox', 0, 0, 0)
+
+    #modelResult = model3.getUnoccupied().setMaterial(0) + model3
     #modelResult = model3.isolateLayer(2)
     #modelResult = model4 - model2
-    #modelResult = model1.addVolume(model2)
-    #modelResult = model1.intersectVolume(model2)
-    #modelResult = model4.intersectMaterial(model1)
-    #modelResult = model4.addMaterial(model2)
+    #modelResult = modelResult.removeNegatives()
+    #modelResult = model1.difference(model2)
+    #region = model1.intersection(model2)
+    #modelResult = model1.union(model2)
+    #modelResult = model1.add(model2)
     #modelResult = modelResult.isolateMaterial(2)
-    #modelResult = model4.invert()
-    #modelResult = model4.xor(model1)
-    #modelResult = model1.dilate()
-    #modelResult = model1.erode()
+    #modelResult = model1.dilate(radius=3, connectivity=2)
+    #modelResult = model1.erode(radius=2, connectivity=1)
+    #modelResult = modelResult.blur(1)
+    #modelResult = modelResult.blurRegion(3, region)
+    #modelResult = model4.rotate(90, 'x')
 
-    #model1 = VoxelModel.fromFile('square-blue-L.vox', 0, 0, 0)
-    #model2 = VoxelModel.fromFile('square-red-R.vox', 0, 0, 0)
-    modelCombined = model1.addMaterial(model2)
-    modelCombined = modelCombined.normalize()
-    modelBlur = modelCombined.blur(radius=1, region='all')
-    #modelBlur = modelBlur.intersectVolume(model5)
-    modelResult = modelBlur#.addVolume(modelCombined)
-    modelResult = modelResult.normalize()
+    # Manufacturing Feature Generation ##########################################
+    model1 = VoxelModel.fromVoxFile('sample-object-2.vox', 0, 0, 0)
+    model2 = VoxelModel.fromVoxFile('user-support-2.vox', 0, 0, 0)
 
-    #model1 = VoxelModel.fromFile('sample-object-2.vox', 0, 0, 0)
-    #model2 = VoxelModel.fromFile('user-support-2.vox', 0, 0, 0)
-    #modelResult = model1.keepout(method='laser')
-    #modelResult = model1.clearance(method='laser')
-    #modelResult = model1.web('mill', 9, 1, 5)
+    #modelResult = model1.keepout(method='mill')
+    #modelResult = model1.clearance(method='3dp')
     #modelResult = model1.support('laser')
-    #modelResult = model1.mergeSupport(model2, 'laser')
-    #modelResult = modelResult.setMaterial(0)
-    #modelResult = model1.fixture(12, 1, 5)
-    #modelResult = model1.addVolume(modelResult)
+
+    support = model1.userSupport(model2, 'laser')
+    web = model1.web('laser', 1, 5)
+    modelResult = support.union(web)
+    modelResult = modelResult.setMaterial(2)
+    modelResult = modelResult.isolateLayer(8)
+    modelResult = model1.union(modelResult)
 
     #modelResult = modelResult.normalize()
 
@@ -65,7 +65,7 @@ if __name__=='__main__':
     plot2.show()
     app1.processEvents()
 
-    plot2.export('voxel-tools-bool-fig1.png')
+    #plot2.export('voxel-tools-bool-fig1.png')
 
     # Export mesh
     #mesh1.export('result.stl')

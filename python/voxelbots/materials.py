@@ -16,7 +16,7 @@ Processes:
   ins: Inserted component
 """
 
-materials = [{'r': 0,   'g': 0,   'b': 0,   'process': 'nul'},  # 0 - Null
+materials = [{'r': 0,   'g': 0,   'b': 0,   'process': 'nul'},  # 0 - Null, used to represent densities
              {'r': 1,   'g': 0,   'b': 0,   'process': '3dp'},  # 1 - 3D printing
              {'r': 0,   'g': 1,   'b': 0,   'process': '3dp'},  # 2 - 3D printing
              {'r': 0,   'g': 0,   'b': 1,   'process': '3dp'},  # 3 - 3D printing
