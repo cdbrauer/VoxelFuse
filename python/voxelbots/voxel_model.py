@@ -7,9 +7,10 @@ import numpy as np
 from pyvox.parser import VoxParser
 from voxelbots.materials import materials
 from scipy import ndimage
+from numba import njit
 
 """
-Function to make object dimensions compatible for solid body operations.  Takes location coordinates into account.
+Function to make object dimensions compatible for solid body operations. Takes location coordinates into account.
 """
 def alignDims(modelA, modelB):
     xMaxA = modelA.x + len(modelA.model[0, 0, :, 0])
@@ -37,6 +38,33 @@ def alignDims(modelA, modelB):
     return VoxelModel(modelANew, xNew, yNew, zNew), VoxelModel(modelBNew, xNew, yNew, zNew)
 
 """
+Function to convert vox file data into VoxelModel format. Separated to allow for acceleration using Numba.
+[color index] -> [a, m0, m1, ... mn]
+"""
+@njit()
+def formatVoxData(input_matrix, material_count):
+    x_len = len(input_matrix[0, 0, :])
+    y_len = len(input_matrix[:, 0, 0])
+    z_len = len(input_matrix[0, :, 0])
+
+    new_model = np.zeros((y_len, z_len, x_len, material_count+1))
+
+    # Loop through input_model data
+    for x in range(x_len):
+        for y in range(y_len):
+            for z in range(z_len):
+                color_index = input_matrix[y, z, x]
+                if (color_index > 0) and (color_index < material_count):
+                    new_model[y, z, x, 0] = 1
+                    new_model[y, z, x, color_index + 1] = 1
+                elif color_index >= material_count:
+                    # print('Unrecognized material index: ' + str(color_index) + '. Setting to null') # Not compatible with @njit
+                    new_model[y, z, x, 0] = 1
+                    new_model[y, z, x, 1] = 1
+
+    return new_model
+
+"""
 VoxelModel Class
 
 Initialized from a model array or file and position coordinates
@@ -56,29 +84,10 @@ class VoxelModel:
 
     @classmethod
     def fromVoxFile(cls, filename, x_coord = 0, y_coord = 0, z_coord = 0):
-        m1 = VoxParser(filename).parse()
+        m1 = VoxParser(filename).parse() # Import data and align axes
         m2 = m1.to_dense()
         m2 = np.flip(m2, 1)
-
-        x_len = len(m2[0, 0, :])
-        y_len = len(m2[:, 0, 0])
-        z_len = len(m2[0, :, 0])
-
-        new_model = np.zeros((y_len, z_len, x_len, len(materials)+1))
-
-        # Loop through input_model data
-        for x in range(x_len):
-            for y in range(y_len):
-                for z in range(z_len):
-                    color_index = m2[y, z, x]
-                    if (color_index > 0) and (color_index < len(materials)):
-                        new_model[y, z, x, 0] = 1
-                        new_model[y, z, x, color_index+1] = 1
-                    elif color_index >= len(materials):
-                        print('Unrecognized material index: ' + str(color_index) + '. Setting to null')
-                        new_model[y, z, x, 0] = 1
-                        new_model[y, z, x, 1] = 1
-
+        new_model = formatVoxData(m2, len(materials)) # Reformat data
         return cls(new_model, x_coord, y_coord, z_coord)
 
     @classmethod
