@@ -6,6 +6,7 @@ Dan Aukes, Cole Brauer
 import PyQt5.QtGui as qg
 import sys
 import numpy as np
+import time
 
 from voxelbots.voxel_model import VoxelModel
 from voxelbots.mesh import Mesh
@@ -16,14 +17,22 @@ if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
     # Basic Operations ##########################################################
-    model1 = VoxelModel.fromVoxFile('cylinder-blue.vox', 0, 0, 0)
+    start = time.time()
+    #modelResult = VoxelModel.fromVoxFile('8-colors.vox', 0, 0, 0)
+    #model1 = VoxelModel.fromVoxFile('cylinder-blue.vox', 0, 0, 0)
     #model2 = VoxelModel.fromVoxFile('cylinder-red.vox', 0, 5, 0)
     #model3 = VoxelModel.fromVoxFile('cylinder-red.vox', 0, 0, 0)
+    #model1 = VoxelModel.fromVoxFile('sample-object-2.vox', 0, 0, 0)
+    #model2 = VoxelModel.fromVoxFile('user-support-2.vox', 0, 0, 0)
+    model1 = VoxelModel.fromVoxFile('projection-test.vox', 0, 0, 0)
+    end = time.time()
+    importTime = (end - start)
+
+    start = time.time()
     #model4 = model1+model3
     #model4 = model4.scaleValues()
     #model5 = VoxelModel.fromFile('blurregion.vox', 0, 0, 0)
 
-    modelResult = model1
     #modelResult = model3.getUnoccupied().setMaterial(0) + model3
     #modelResult = model3.isolateLayer(2)
     #modelResult = model4 - model2
@@ -44,12 +53,11 @@ if __name__=='__main__':
     #modelResult = exteriorVoxels.isolateLayer(6)
 
     # Manufacturing Feature Generation ##########################################
-    #model1 = VoxelModel.fromVoxFile('sample-object-2.vox', 0, 0, 0)
-    #model2 = VoxelModel.fromVoxFile('user-support-2.vox', 0, 0, 0)
-
+    modelResult = model1.projection('down')
     #modelResult = model1.keepout(method='mill')
     #modelResult = model1.clearance(method='3dp')
     #modelResult = model1.support('laser')
+    #modelResult = model1.web('laser', 1, 5)
 
     #support = model1.userSupport(model2, 'laser')
     #web = model1.web('laser', 1, 5)
@@ -60,9 +68,20 @@ if __name__=='__main__':
 
     #modelResult = modelResult.normalize()
 
+    end = time.time()
+    processingTime = (end - start)
+
     # Create mesh data
-    #mesh1 = Mesh(model1)
+    start = time.time()
+    #mesh1 = Mesh.fromVoxelModel(model1)
     mesh2 = Mesh.fromVoxelModel(modelResult)
+    end = time.time()
+    meshingTime = (end - start)
+
+    # Print elapsed times
+    print("Import time = %s" % importTime)
+    print("Processing time = %s" % processingTime)
+    print("Meshing time = %s" % meshingTime)
 
     # Create plot
     #plot1 = Plot(mesh1)

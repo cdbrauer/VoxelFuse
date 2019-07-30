@@ -21,4 +21,7 @@ materials = [{'r': 0,   'g': 0,   'b': 0,   'process': 'nul'},  # 0 - Null, used
              {'r': 0,   'g': 1,   'b': 0,   'process': '3dp'},  # 2 - 3D printing
              {'r': 0,   'g': 0,   'b': 1,   'process': '3dp'},  # 3 - 3D printing
              {'r': 0.5, 'g': 0.5, 'b': 0.5, 'process': 'ins'},  # 4 - inserted component
-             {'r': 1,   'g': 1,   'b': 0,   'process': '3dp'}]  # 5 - 3D printing
+             {'r': 1,   'g': 1,   'b': 0,   'process': '3dp'},  # 5 - 3D printing
+             {'r': 0,   'g': 1,   'b': 1,   'process': '3dp'},  # 6 - 3D printing
+             {'r': 1,   'g': 0,   'b': 1,   'process': '3dp'},  # 7 - 3D printing
+             {'r': 0.25,'g': 0.25,'b': 0.25,'process': '3dp'}]  # 8 - 3D printing
