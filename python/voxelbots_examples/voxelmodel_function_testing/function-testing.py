@@ -16,7 +16,7 @@ if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
     # Basic Operations ##########################################################
-    #model1 = VoxelModel.fromVoxFile('cylinder-blue.vox', 0, 0, 0)
+    model1 = VoxelModel.fromVoxFile('cylinder-blue.vox', 0, 0, 0)
     #model2 = VoxelModel.fromVoxFile('cylinder-red.vox', 0, 5, 0)
     #model3 = VoxelModel.fromVoxFile('cylinder-red.vox', 0, 0, 0)
     #model4 = model1+model3
@@ -38,20 +38,24 @@ if __name__=='__main__':
     #modelResult = modelResult.blurRegion(3, region)
     #modelResult = model4.rotate(90, 'x')
 
+    interiorVoxels = model1.erode(radius=1, connectivity=1)
+    exteriorVoxels = model1.difference(interiorVoxels)
+    modelResult = exteriorVoxels.isolateLayer(6)
+
     # Manufacturing Feature Generation ##########################################
-    model1 = VoxelModel.fromVoxFile('sample-object-2.vox', 0, 0, 0)
-    model2 = VoxelModel.fromVoxFile('user-support-2.vox', 0, 0, 0)
+    #model1 = VoxelModel.fromVoxFile('sample-object-2.vox', 0, 0, 0)
+    #model2 = VoxelModel.fromVoxFile('user-support-2.vox', 0, 0, 0)
 
     #modelResult = model1.keepout(method='mill')
     #modelResult = model1.clearance(method='3dp')
     #modelResult = model1.support('laser')
 
-    support = model1.userSupport(model2, 'laser')
-    web = model1.web('laser', 1, 5)
-    modelResult = support.union(web)
-    modelResult = modelResult.setMaterial(2)
-    modelResult = modelResult.isolateLayer(8)
-    modelResult = model1.union(modelResult)
+    #support = model1.userSupport(model2, 'laser')
+    #web = model1.web('laser', 1, 5)
+    #modelResult = support.union(web)
+    #modelResult = modelResult.setMaterial(2)
+    #modelResult = modelResult.isolateLayer(8)
+    #modelResult = model1.union(modelResult)
 
     #modelResult = modelResult.normalize()
 

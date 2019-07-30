@@ -297,7 +297,7 @@ class VoxelModel:
             for m in range(len(materials)):
                 new_model[:, :, :, m+1] = ndimage.grey_erosion(new_model[:, :, :, m+1], footprint=struct)
 
-        return VoxelModel(new_model, self.x, self.y, self.z)
+        return VoxelModel(new_model, self.x - radius, self.y - radius, self.z - radius)
 
     # Material Interface Modification ##################################################
     def blur(self, radius=1):
