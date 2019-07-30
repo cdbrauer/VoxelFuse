@@ -5,6 +5,7 @@ Dan Aukes, Cole Brauer
 
 import numpy as np
 import meshio
+from voxelbots.voxel_model import VoxelModel, alignDims
 from voxelbots.materials import materials
 
 def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
@@ -67,13 +68,27 @@ class Mesh:
     # Create mesh from voxel data
     @classmethod
     def fromVoxelModel(cls, voxel_model):
+        # Find exterior voxels
+        interior_voxels = voxel_model.erode(radius=1, connectivity=1)
+        exterior_voxels = voxel_model.difference(interior_voxels)
+
+        voxel_model, exterior_voxels = alignDims(voxel_model, exterior_voxels)
+        
+        y_len = len(voxel_model.model[:, 0, 0, 0])
+        z_len = len(voxel_model.model[0, :, 0, 0])
+        x_len = len(voxel_model.model[0, 0, :, 0])
+        
+        # Create list of exterior voxel coordinates
+        exterior_voxels_coords = []
+        for y in range(y_len):
+            for z in range(z_len):
+                for x in range(x_len):
+                    if exterior_voxels.model[y, z, x, 0] == 1:
+                        exterior_voxels_coords.append([y, z, x])
+
         # Get voxel array
         input_model = np.copy(voxel_model.model)
-
         input_model[input_model < 0] = 0
-
-        # TODO: Get the coordinates of the voxels that form the outside surface of the model
-        exterior_voxels = []
 
         # Initialize arrays
         verts = []
@@ -81,18 +96,16 @@ class Mesh:
         tris = []
         vi = 1  # Tracks current vertex index
 
-        x_len = len(input_model[0, 0, :, 0])
-        y_len = len(input_model[:, 0, 0, 0])
-        z_len = len(input_model[0, :, 0, 0])
-
         current_iter = 0
         max_iter = x_len * y_len * z_len
 
         # Loop through input_model data
-        for voxel_coords in exterior_voxels:
-            x = voxel_coords[0]
-            y = voxel_coords[1]
-            z = voxel_coords[2]
+        for voxel_coords in exterior_voxels_coords:
+            print(voxel_coords)
+
+            y = voxel_coords[0]
+            z = voxel_coords[1]
+            x = voxel_coords[2]
 
             if current_iter%1000 == 0:
                 print("%s / %s" % (current_iter, max_iter))
@@ -120,7 +133,7 @@ class Mesh:
                 # Add voxel to mesh item arrays
                 verts_indices = [0, 0, 0, 0, 0, 0, 0, 0]
 
-                adjacent = check_adjacent(input_model, x, y, x)
+                adjacent = check_adjacent(input_model, x, y, z)
 
                 # Add cube vertices
                 if adjacent[0][0] or adjacent[1][0] or adjacent[2][0]:
