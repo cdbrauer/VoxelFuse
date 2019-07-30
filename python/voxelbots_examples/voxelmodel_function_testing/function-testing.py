@@ -39,9 +39,9 @@ if __name__=='__main__':
     #modelResult = modelResult.blurRegion(3, region)
     #modelResult = model4.rotate(90, 'x')
 
-    interiorVoxels = model1.erode(radius=1, connectivity=1)
-    exteriorVoxels = model1.difference(interiorVoxels)
-    modelResult = exteriorVoxels.isolateLayer(6)
+    #interiorVoxels = model1.erode(radius=1, connectivity=1)
+    #exteriorVoxels = model1.difference(interiorVoxels)
+    #modelResult = exteriorVoxels.isolateLayer(6)
 
     # Manufacturing Feature Generation ##########################################
     #model1 = VoxelModel.fromVoxFile('sample-object-2.vox', 0, 0, 0)

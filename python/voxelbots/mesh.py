@@ -72,6 +72,8 @@ class Mesh:
         interior_voxels = voxel_model.erode(radius=1, connectivity=1)
         exterior_voxels = voxel_model.difference(interior_voxels)
 
+        # Update array dimensions - these need to match so the array coords will correlate correctly
+        # (exterior_voxels will be larger as a result of the erode operation)
         voxel_model, exterior_voxels = alignDims(voxel_model, exterior_voxels)
         
         y_len = len(voxel_model.model[:, 0, 0, 0])
@@ -97,12 +99,10 @@ class Mesh:
         vi = 1  # Tracks current vertex index
 
         current_iter = 0
-        max_iter = x_len * y_len * z_len
+        max_iter = len(exterior_voxels_coords)
 
         # Loop through input_model data
         for voxel_coords in exterior_voxels_coords:
-            print(voxel_coords)
-
             y = voxel_coords[0]
             z = voxel_coords[1]
             x = voxel_coords[2]
