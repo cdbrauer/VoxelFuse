@@ -9,11 +9,7 @@ from voxelbots.materials import materials
 
 def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
     x_len = len(input_model[0, 0, :, 0])
-
-    if x_dir == 1:
-        x_coord_new = x_coord+1
-    else:
-        x_coord_new = x_coord-1
+    x_coord_new = x_coord+x_dir
 
     if (x_coord_new < x_len) and (x_coord_new >= 0) and not np.allclose(input_model[y_coord, z_coord, x_coord_new, :], input_model[y_coord, z_coord, x_coord, :]):
         return True
@@ -24,11 +20,7 @@ def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
 
 def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
     y_len = len(input_model[:, 0, 0, 0])
-
-    if y_dir == 1:
-        y_coord_new = y_coord + 1
-    else:
-        y_coord_new = y_coord - 1
+    y_coord_new = y_coord+y_dir
 
     if (y_coord_new < y_len) and (y_coord_new >= 0) and not np.allclose(input_model[y_coord_new, z_coord, x_coord, :], input_model[y_coord, z_coord, x_coord, :]):
         return True
@@ -39,11 +31,7 @@ def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
 
 def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
     z_len = len(input_model[0, :, 0, 0])
-
-    if z_dir == 1:
-        z_coord_new = z_coord + 1
-    else:
-        z_coord_new = z_coord - 1
+    z_coord_new = z_coord+z_dir
 
     if (z_coord_new < z_len) and (z_coord_new >= 0) and not np.allclose(input_model[y_coord, z_coord_new, x_coord, :], input_model[y_coord, z_coord, x_coord, :]):
         return True
@@ -51,6 +39,13 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
         return True
     else:
         return False
+
+def check_adjacent(input_model, x_coord, y_coord, z_coord):
+    return [
+        [check_adjacent_x(input_model, x_coord, y_coord, z_coord, 1), check_adjacent_x(input_model, x_coord, y_coord, z_coord, -1)],
+        [check_adjacent_y(input_model, x_coord, y_coord, z_coord, 1), check_adjacent_y(input_model, x_coord, y_coord, z_coord, -1)],
+        [check_adjacent_z(input_model, x_coord, y_coord, z_coord, 1), check_adjacent_z(input_model, x_coord, y_coord, z_coord, -1)],
+    ]
 
 """
 Mesh Class
@@ -77,6 +72,9 @@ class Mesh:
 
         input_model[input_model < 0] = 0
 
+        # TODO: Get the coordinates of the voxels that form the outside surface of the model
+        exterior_voxels = []
+
         # Initialize arrays
         verts = []
         verts_colors = []
@@ -91,110 +89,114 @@ class Mesh:
         max_iter = x_len * y_len * z_len
 
         # Loop through input_model data
-        for x in range(x_len):
-            for y in range(y_len):
-                for z in range(z_len):
-                    if current_iter%1000 == 0:
-                        print("%s / %s" % (current_iter, max_iter))
-                    current_iter = current_iter + 1
+        for voxel_coords in exterior_voxels:
+            x = voxel_coords[0]
+            y = voxel_coords[1]
+            z = voxel_coords[2]
 
-                    # If voxel is not empty
-                    if input_model[y, z, x, 0] != 0:
-                        r = 0
-                        g = 0
-                        b = 0
+            if current_iter%1000 == 0:
+                print("%s / %s" % (current_iter, max_iter))
+            current_iter = current_iter + 1
 
-                        for i in range(len(materials)):
-                            r = r + input_model[y, z, x, i+1] * materials[i]['r']
-                            g = g + input_model[y, z, x, i+1] * materials[i]['g']
-                            b = b + input_model[y, z, x, i+1] * materials[i]['b']
+            # If voxel is not empty
+            if input_model[y, z, x, 0] != 0:
+                r = 0
+                g = 0
+                b = 0
 
-                        r = 1 if r > 1 else r
-                        g = 1 if g > 1 else g
-                        b = 1 if b > 1 else b
+                for i in range(len(materials)):
+                    r = r + input_model[y, z, x, i+1] * materials[i]['r']
+                    g = g + input_model[y, z, x, i+1] * materials[i]['g']
+                    b = b + input_model[y, z, x, i+1] * materials[i]['b']
 
-                        a = 1 - input_model[y, z, x, 1]
+                r = 1 if r > 1 else r
+                g = 1 if g > 1 else g
+                b = 1 if b > 1 else b
 
-                        voxel_color = [r, g, b, a]
+                a = 1 - input_model[y, z, x, 1]
 
-                        # Add voxel to mesh item arrays
-                        verts_indices = [0, 0, 0, 0, 0, 0, 0, 0]
+                voxel_color = [r, g, b, a]
 
-                        # Add cube vertices
-                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 1):
-                            verts.append([x + 0.5, y + 0.5, z + 0.5])
-                            verts_indices[0] = vi
-                            vi = vi + 1
+                # Add voxel to mesh item arrays
+                verts_indices = [0, 0, 0, 0, 0, 0, 0, 0]
 
-                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 1):
-                            verts.append([x + 0.5, y - 0.5, z + 0.5])
-                            verts_indices[1] = vi
-                            vi = vi + 1
+                adjacent = check_adjacent(input_model, x, y, x)
 
-                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 1):
-                            verts.append([x - 0.5, y + 0.5, z + 0.5])
-                            verts_indices[2] = vi
-                            vi = vi + 1
+                # Add cube vertices
+                if adjacent[0][0] or adjacent[1][0] or adjacent[2][0]:
+                    verts.append([x + 0.5, y + 0.5, z + 0.5])
+                    verts_indices[0] = vi
+                    vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 1):
-                            verts.append([x - 0.5, y - 0.5, z + 0.5])
-                            verts_indices[3] = vi
-                            vi = vi + 1
+                if adjacent[0][0] or adjacent[1][1] or adjacent[2][0]:
+                    verts.append([x + 0.5, y - 0.5, z + 0.5])
+                    verts_indices[1] = vi
+                    vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 0):
-                            verts.append([x + 0.5, y + 0.5, z - 0.5])
-                            verts_indices[4] = vi
-                            vi = vi + 1
+                if adjacent[0][1] or adjacent[1][0] or adjacent[2][0]:
+                    verts.append([x - 0.5, y + 0.5, z + 0.5])
+                    verts_indices[2] = vi
+                    vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 1) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 0):
-                            verts.append([x + 0.5, y - 0.5, z - 0.5])
-                            verts_indices[5] = vi
-                            vi = vi + 1
+                if adjacent[0][1] or adjacent[1][1] or adjacent[2][0]:
+                    verts.append([x - 0.5, y - 0.5, z + 0.5])
+                    verts_indices[3] = vi
+                    vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 1) or check_adjacent_z(input_model, x, y, z, 0):
-                            verts.append([x - 0.5, y + 0.5, z - 0.5])
-                            verts_indices[6] = vi
-                            vi = vi + 1
+                if adjacent[0][0] or adjacent[1][0] or adjacent[2][1]:
+                    verts.append([x + 0.5, y + 0.5, z - 0.5])
+                    verts_indices[4] = vi
+                    vi = vi + 1
 
-                        if check_adjacent_x(input_model, x, y, z, 0) or check_adjacent_y(input_model, x, y, z, 0) or check_adjacent_z(input_model, x, y, z, 0):
-                            verts.append([x - 0.5, y - 0.5, z - 0.5])
-                            verts_indices[7] = vi
-                            vi = vi + 1
+                if adjacent[0][0] or adjacent[1][1] or adjacent[2][1]:
+                    verts.append([x + 0.5, y - 0.5, z - 0.5])
+                    verts_indices[5] = vi
+                    vi = vi + 1
 
-                        # Apply color to all vertices
-                        for i in range(0, np.count_nonzero(verts_indices)):
-                            verts_colors.append(voxel_color)
+                if adjacent[0][1] or adjacent[1][0] or adjacent[2][1]:
+                    verts.append([x - 0.5, y + 0.5, z - 0.5])
+                    verts_indices[6] = vi
+                    vi = vi + 1
 
-                        # Add face triangles
-                        if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[2] != 0) and (
-                                verts_indices[3] != 0):
-                            tris.append([verts_indices[0] - 1, verts_indices[1] - 1, verts_indices[2] - 1])
-                            tris.append([verts_indices[1] - 1, verts_indices[3] - 1, verts_indices[2] - 1])
+                if adjacent[0][1] or adjacent[1][1] or adjacent[2][1]:
+                    verts.append([x - 0.5, y - 0.5, z - 0.5])
+                    verts_indices[7] = vi
+                    vi = vi + 1
 
-                        if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[4] != 0) and (
-                                verts_indices[5] != 0):
-                            tris.append([verts_indices[1] - 1, verts_indices[0] - 1, verts_indices[5] - 1])
-                            tris.append([verts_indices[0] - 1, verts_indices[4] - 1, verts_indices[5] - 1])
+                # Apply color to all vertices
+                for i in range(0, np.count_nonzero(verts_indices)):
+                    verts_colors.append(voxel_color)
 
-                        if (verts_indices[0] != 0) and (verts_indices[2] != 0) and (verts_indices[4] != 0) and (
-                                verts_indices[6] != 0):
-                            tris.append([verts_indices[0] - 1, verts_indices[2] - 1, verts_indices[4] - 1])
-                            tris.append([verts_indices[2] - 1, verts_indices[6] - 1, verts_indices[4] - 1])
+                # Add face triangles
+                if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[2] != 0) and (
+                        verts_indices[3] != 0):
+                    tris.append([verts_indices[0] - 1, verts_indices[1] - 1, verts_indices[2] - 1])
+                    tris.append([verts_indices[1] - 1, verts_indices[3] - 1, verts_indices[2] - 1])
 
-                        if (verts_indices[2] != 0) and (verts_indices[3] != 0) and (verts_indices[6] != 0) and (
-                                verts_indices[7] != 0):
-                            tris.append([verts_indices[2] - 1, verts_indices[3] - 1, verts_indices[6] - 1])
-                            tris.append([verts_indices[3] - 1, verts_indices[7] - 1, verts_indices[6] - 1])
+                if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[4] != 0) and (
+                        verts_indices[5] != 0):
+                    tris.append([verts_indices[1] - 1, verts_indices[0] - 1, verts_indices[5] - 1])
+                    tris.append([verts_indices[0] - 1, verts_indices[4] - 1, verts_indices[5] - 1])
 
-                        if (verts_indices[1] != 0) and (verts_indices[3] != 0) and (verts_indices[5] != 0) and (
-                                verts_indices[7] != 0):
-                            tris.append([verts_indices[3] - 1, verts_indices[1] - 1, verts_indices[7] - 1])
-                            tris.append([verts_indices[1] - 1, verts_indices[5] - 1, verts_indices[7] - 1])
+                if (verts_indices[0] != 0) and (verts_indices[2] != 0) and (verts_indices[4] != 0) and (
+                        verts_indices[6] != 0):
+                    tris.append([verts_indices[0] - 1, verts_indices[2] - 1, verts_indices[4] - 1])
+                    tris.append([verts_indices[2] - 1, verts_indices[6] - 1, verts_indices[4] - 1])
 
-                        if (verts_indices[4] != 0) and (verts_indices[5] != 0) and (verts_indices[6] != 0) and (
-                                verts_indices[7] != 0):
-                            tris.append([verts_indices[5] - 1, verts_indices[4] - 1, verts_indices[7] - 1])
-                            tris.append([verts_indices[4] - 1, verts_indices[6] - 1, verts_indices[7] - 1])
+                if (verts_indices[2] != 0) and (verts_indices[3] != 0) and (verts_indices[6] != 0) and (
+                        verts_indices[7] != 0):
+                    tris.append([verts_indices[2] - 1, verts_indices[3] - 1, verts_indices[6] - 1])
+                    tris.append([verts_indices[3] - 1, verts_indices[7] - 1, verts_indices[6] - 1])
+
+                if (verts_indices[1] != 0) and (verts_indices[3] != 0) and (verts_indices[5] != 0) and (
+                        verts_indices[7] != 0):
+                    tris.append([verts_indices[3] - 1, verts_indices[1] - 1, verts_indices[7] - 1])
+                    tris.append([verts_indices[1] - 1, verts_indices[5] - 1, verts_indices[7] - 1])
+
+                if (verts_indices[4] != 0) and (verts_indices[5] != 0) and (verts_indices[6] != 0) and (
+                        verts_indices[7] != 0):
+                    tris.append([verts_indices[5] - 1, verts_indices[4] - 1, verts_indices[7] - 1])
+                    tris.append([verts_indices[4] - 1, verts_indices[6] - 1, verts_indices[7] - 1])
 
         verts = np.array(verts)
         verts_colors = np.array(verts_colors)
