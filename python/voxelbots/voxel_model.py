@@ -81,6 +81,9 @@ class VoxelModel:
         self.x = x_coord
         self.y = y_coord
         self.z = z_coord
+        self.numComponents = 0
+        s = np.shape(model)
+        self.components = np.zeros(s[:3])
 
     @classmethod
     def fromVoxFile(cls, filename, x_coord = 0, y_coord = 0, z_coord = 0):
@@ -115,6 +118,23 @@ class VoxelModel:
     def isolateLayer(self, layer):
         new_model = np.zeros_like(self.model)
         new_model[:, layer - self.z, :, :] = self.model[:, layer - self.z, :, :]
+        return VoxelModel(new_model, self.x, self.y, self.z)
+
+    # Update component labels for a model.  This uses a disconnected components algorithm and assumes that adjacent voxels with different materials are connected.
+    def getComponents(self, connectivity = 1):
+        mask = self.model[:, :, :, 0]
+        struct = ndimage.generate_binary_structure(3, connectivity)
+        self.components, self.numComponents = ndimage.label(mask, structure=struct)
+
+    # Isolate component by component label
+    # Components must first be updated with getComponents
+    # Unrecognized component labels will return an empty object
+    def isolateComponent(self, component):
+        mask = np.copy(self.components)
+        mask[mask != component] = 0
+        mask[mask == component] = 1
+        mask = np.repeat(mask[..., None], len(materials) + 1, axis=3)
+        new_model = np.multiply(self.model, mask)
         return VoxelModel(new_model, self.x, self.y, self.z)
 
     # Mask operations ##################################################################

@@ -19,12 +19,13 @@ if __name__=='__main__':
     # Basic Operations ##########################################################
     start = time.time()
     #modelResult = VoxelModel.fromVoxFile('8-colors.vox', 0, 0, 0)
+    model1 = VoxelModel.fromVoxFile('multiple-components.vox', 0, 0, 0)
     #model1 = VoxelModel.fromVoxFile('cylinder-blue.vox', 0, 0, 0)
     #model2 = VoxelModel.fromVoxFile('cylinder-red.vox', 0, 5, 0)
     #model3 = VoxelModel.fromVoxFile('cylinder-red.vox', 0, 0, 0)
     #model1 = VoxelModel.fromVoxFile('sample-object-2.vox', 0, 0, 0)
     #model2 = VoxelModel.fromVoxFile('user-support-2.vox', 0, 0, 0)
-    model1 = VoxelModel.fromVoxFile('projection-test.vox', 0, 0, 0)
+    #model1 = VoxelModel.fromVoxFile('projection-test.vox', 0, 0, 0)
     end = time.time()
     importTime = (end - start)
 
@@ -53,7 +54,7 @@ if __name__=='__main__':
     #modelResult = exteriorVoxels.isolateLayer(6)
 
     # Manufacturing Feature Generation ##########################################
-    modelResult = model1.projection('down')
+    #modelResult = model1.projection('down')
     #modelResult = model1.keepout(method='mill')
     #modelResult = model1.clearance(method='3dp')
     #modelResult = model1.support('laser')
@@ -67,6 +68,13 @@ if __name__=='__main__':
     #modelResult = model1.union(modelResult)
 
     #modelResult = modelResult.normalize()
+
+    model1.getComponents()
+    modelResult = VoxelModel.emptyLike(model1)
+
+    for i in range(model1.numComponents):
+        currentComponent = model1.isolateComponent(i+1)
+        modelResult = modelResult.union(currentComponent)
 
     end = time.time()
     processingTime = (end - start)
@@ -92,6 +100,6 @@ if __name__=='__main__':
     #plot2.export('voxel-tools-bool-fig1.png')
 
     # Export mesh
-    #mesh1.export('result.stl')
+    #mesh2.export('result2.stl')
 
     app1.exec_()
