@@ -74,23 +74,22 @@ class Mesh:
 
         # Update array dimensions - these need to match so the array coords will correlate correctly
         # (exterior_voxels will be larger as a result of the erode operation)
-        voxel_model, exterior_voxels = alignDims(voxel_model, exterior_voxels)
+        voxel_model_array, exterior_voxels_array, x_new, y_new, z_new = alignDims(voxel_model, exterior_voxels)
         
-        y_len = len(voxel_model.model[:, 0, 0, 0])
-        z_len = len(voxel_model.model[0, :, 0, 0])
-        x_len = len(voxel_model.model[0, 0, :, 0])
+        y_len = len(voxel_model_array[:, 0, 0, 0])
+        z_len = len(voxel_model_array[0, :, 0, 0])
+        x_len = len(voxel_model_array[0, 0, :, 0])
         
         # Create list of exterior voxel coordinates
         exterior_voxels_coords = []
         for y in range(y_len):
             for z in range(z_len):
                 for x in range(x_len):
-                    if exterior_voxels.model[y, z, x, 0] == 1:
+                    if exterior_voxels_array[y, z, x, 0] == 1:
                         exterior_voxels_coords.append([y, z, x])
 
         # Get voxel array
-        input_model = np.copy(voxel_model.model)
-        input_model[input_model < 0] = 0
+        voxel_model_array[voxel_model_array < 0] = 0
 
         # Initialize arrays
         verts = []
@@ -101,7 +100,7 @@ class Mesh:
         current_iter = 0
         max_iter = len(exterior_voxels_coords)
 
-        # Loop through input_model data
+        # Loop through voxel_model_array data
         for voxel_coords in exterior_voxels_coords:
             y = voxel_coords[0]
             z = voxel_coords[1]
@@ -112,28 +111,28 @@ class Mesh:
             current_iter = current_iter + 1
 
             # If voxel is not empty
-            if input_model[y, z, x, 0] != 0:
+            if voxel_model_array[y, z, x, 0] != 0:
                 r = 0
                 g = 0
                 b = 0
 
                 for i in range(len(materials)):
-                    r = r + input_model[y, z, x, i+1] * materials[i]['r']
-                    g = g + input_model[y, z, x, i+1] * materials[i]['g']
-                    b = b + input_model[y, z, x, i+1] * materials[i]['b']
+                    r = r + voxel_model_array[y, z, x, i+1] * materials[i]['r']
+                    g = g + voxel_model_array[y, z, x, i+1] * materials[i]['g']
+                    b = b + voxel_model_array[y, z, x, i+1] * materials[i]['b']
 
                 r = 1 if r > 1 else r
                 g = 1 if g > 1 else g
                 b = 1 if b > 1 else b
 
-                a = 1 - input_model[y, z, x, 1]
+                a = 1 - voxel_model_array[y, z, x, 1]
 
                 voxel_color = [r, g, b, a]
 
                 # Add voxel to mesh item arrays
                 verts_indices = [0, 0, 0, 0, 0, 0, 0, 0]
 
-                adjacent = check_adjacent(input_model, x, y, z)
+                adjacent = check_adjacent(voxel_model_array, x, y, z)
 
                 # Add cube vertices
                 if adjacent[0][0] or adjacent[1][0] or adjacent[2][0]:
@@ -215,7 +214,7 @@ class Mesh:
         verts_colors = np.array(verts_colors)
         tris = np.array(tris)
 
-        return cls(input_model, verts, verts_colors, tris)
+        return cls(voxel_model_array, verts, verts_colors, tris)
 
     # Export model from mesh data
     def export(self, filename):

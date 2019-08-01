@@ -62,7 +62,7 @@ def alignDims(modelA, modelB):
     modelANew[(modelA.y - yNew):(yMaxA - yNew), (modelA.z - zNew):(zMaxA - zNew), (modelA.x - xNew):(xMaxA - xNew), :] = modelA.model
     modelBNew[(modelB.y - yNew):(yMaxB - yNew), (modelB.z - zNew):(zMaxB - zNew), (modelB.x - xNew):(xMaxB - xNew), :] = modelB.model
 
-    return VoxelModel(modelANew, xNew, yNew, zNew), VoxelModel(modelBNew, xNew, yNew, zNew)
+    return modelANew, modelBNew, xNew, yNew, zNew
 
 """
 VoxelModel Class
@@ -252,61 +252,61 @@ class VoxelModel:
     - Material from base model takes priority by default
     """
     def difference(self, model_to_sub):
-        a, b = alignDims(self, model_to_sub)
-        # mask = np.logical_and(a.model[:, :, :, 0], np.logical_not(b.model[:, :, :, 0])) # Full comparison as defined in paper
-        mask = np.logical_not(b.model[:, :, :, 0]) # Shortened version, gives same result due to multiplication step
+        a, b, x_new, y_new, z_new = alignDims(self, model_to_sub)
+        # mask = np.logical_and(a[:, :, :, 0], np.logical_not(b[:, :, :, 0])) # Full comparison as defined in paper
+        mask = np.logical_not(b[:, :, :, 0]) # Shortened version, gives same result due to multiplication step
         mask = np.repeat(mask[..., None], len(materials)+1, axis=3)
-        new_model = np.multiply(a.model, mask)
-        return VoxelModel(new_model, a.x, a.y, a.z)
+        new_model = np.multiply(a, mask)
+        return VoxelModel(new_model, x_new, y_new, z_new)
 
     def intersection(self, model_2, material_priority = 'l'):
-        a, b = alignDims(self, model_2)
-        mask = np.logical_and(a.model[:, :, :, 0], b.model[:, :, :, 0])
+        a, b, x_new, y_new, z_new = alignDims(self, model_2)
+        mask = np.logical_and(a[:, :, :, 0], b[:, :, :, 0])
         mask = np.repeat(mask[..., None], len(materials)+1, axis=3)
 
         if material_priority == 'r':
-            new_model = np.multiply(b.model, mask) # material from right model takes priority
+            new_model = np.multiply(b, mask) # material from right model takes priority
         else:
-            new_model = np.multiply(a.model, mask) # material from left model takes priority
+            new_model = np.multiply(a, mask) # material from left model takes priority
 
-        return VoxelModel(new_model, a.x, a.y, a.z)
+        return VoxelModel(new_model, x_new, y_new, z_new)
 
     def union(self, model_to_add, material_priority = 'l'):
-        a, b = alignDims(self, model_to_add)
+        a, b, x_new, y_new, z_new = alignDims(self, model_to_add)
 
         # Paper uses a symmetric difference operation combined with the left/right intersection
         # A condensed version of this operation is used here for code simplicity
         if material_priority == 'r':
-            mask = np.logical_not(b.model[:, :, :, 0])
+            mask = np.logical_not(b[:, :, :, 0])
             mask = np.repeat(mask[..., None], len(materials)+1, axis=3)
-            new_model = np.multiply(a.model, mask)
-            new_model = new_model + b.model # material from right model takes priority
+            new_model = np.multiply(a, mask)
+            new_model = new_model + b # material from right model takes priority
         else:
-            mask = np.logical_not(a.model[:, :, :, 0])
+            mask = np.logical_not(a[:, :, :, 0])
             mask = np.repeat(mask[..., None], len(materials)+1, axis=3)
-            new_model = np.multiply(b.model, mask)
-            new_model = new_model + a.model # material from left model takes priority
+            new_model = np.multiply(b, mask)
+            new_model = new_model + a # material from left model takes priority
 
-        return VoxelModel(new_model, a.x, a.y, a.z)
+        return VoxelModel(new_model, x_new, y_new, z_new)
 
     # Material is computed
     def add(self, model_to_add):
-        a, b = alignDims(self, model_to_add)
-        mask = np.logical_or(a.model[:, :, :, 0], b.model[:, :, :, 0])
-        new_model = a.model + b.model
+        a, b, x_new, y_new, z_new = alignDims(self, model_to_add)
+        mask = np.logical_or(a[:, :, :, 0], b[:, :, :, 0])
+        new_model = a + b
         new_model[:, :, :, 0] = mask
-        return VoxelModel(new_model, a.x, a.y, a.z)
+        return VoxelModel(new_model, x_new, y_new, z_new)
 
     def __add__(self, other):
         return self.add(other)
 
     # Material is computed
     def subtract(self, model_to_sub):
-        a, b = alignDims(self, model_to_sub)
-        mask = np.logical_or(a.model[:, :, :, 0], b.model[:, :, :, 0]) # Note that negative material values are retained
-        new_model = a.model - b.model
+        a, b, x_new, y_new, z_new = alignDims(self, model_to_sub)
+        mask = np.logical_or(a[:, :, :, 0], b[:, :, :, 0]) # Note that negative material values are retained
+        new_model = a - b
         new_model[:, :, :, 0] = mask
-        return VoxelModel(new_model, a.x, a.y, a.z)
+        return VoxelModel(new_model, x_new, y_new, z_new)
 
     def __sub__(self, other):
         return self.subtract(other)
