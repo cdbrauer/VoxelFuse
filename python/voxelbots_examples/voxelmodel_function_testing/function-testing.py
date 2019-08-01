@@ -30,6 +30,8 @@ if __name__=='__main__':
     importTime = (end - start)
 
     start = time.time()
+    #model1.fitWorkspace()
+    #modelResult = model1
     #model4 = model1+model3
     #model4 = model4.scaleValues()
     #model5 = VoxelModel.fromFile('blurregion.vox', 0, 0, 0)
@@ -58,7 +60,8 @@ if __name__=='__main__':
     #modelResult = model1.keepout(method='mill')
     #modelResult = model1.clearance(method='3dp')
     #modelResult = model1.support('laser')
-    #modelResult = model1.web('laser', 1, 5)
+    modelResult = model1.web('laser', 1, 5)
+    modelResult = model1.union(modelResult)
 
     #support = model1.userSupport(model2, 'laser')
     #web = model1.web('laser', 1, 5)
@@ -69,12 +72,12 @@ if __name__=='__main__':
 
     #modelResult = modelResult.normalize()
 
-    model1.getComponents()
-    modelResult = VoxelModel.emptyLike(model1)
+    #model1.getComponents()
+    #modelResult = VoxelModel.emptyLike(model1)
 
-    for i in range(model1.numComponents):
-        currentComponent = model1.isolateComponent(i+1)
-        modelResult = modelResult.union(currentComponent)
+    #for i in range(model1.numComponents):
+    #    currentComponent = model1.isolateComponent(i+1)
+    #    modelResult = modelResult.union(currentComponent)
 
     end = time.time()
     processingTime = (end - start)
