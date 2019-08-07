@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.signal
+from scipy import ndimage
 
 from voxelbots.voxel_model import VoxelModel
 from voxelbots.voxel_model import formatVoxData
@@ -58,9 +59,9 @@ if __name__=='__main__':
     tets= points[ii_tet]
     T=numpy.concatenate((tets,tets[:,:,0:1]*0+1),2)
     T_inv = numpy.zeros(T.shape)
+
     for ii,t in enumerate(T):
         T_inv[ii] = numpy.linalg.inv(t).T
-
 
     points_min = points.min(0)
     points_max = points.max(0)
@@ -84,7 +85,7 @@ if __name__=='__main__':
     ijk_mid = numpy.array(numpy.meshgrid(numpy.r_[:len(xx_mid)],numpy.r_[:len(yy_mid)],numpy.r_[:len(zz_mid)],indexing='ij'))
     ijk_mid = ijk_mid.transpose(1,2,3,0)
     ijk_mid2 = ijk_mid.reshape(-1,3)
-    #
+
     u2 = T_inv.dot(xyz_mid.T)
 
     f1 = ((u2[:,:,:]>=0).sum(1)==4)
@@ -100,8 +101,11 @@ if __name__=='__main__':
     voxels = numpy.zeros(ijk_mid.shape[:3],dtype=numpy.bool)
     voxels[lmn[:,0],lmn[:,1],lmn[:,2]]=True
 
-    modelData = formatVoxData(voxels, len(materials))
-    model = VoxelModel(modelData)
+    m1 = numpy.rot90(voxels, axes=(0, 2))
+    m1 = numpy.rot90(m1, 3,  axes=(0, 1))
+    m2 = formatVoxData(m1, len(materials))
+    model = VoxelModel(m2)
+    model = VoxelModel.fromVoxFile('cylinder-blue.vox', 0, 0, 0).union(model)
 
     # Create mesh data
     mesh1 = Mesh.fromVoxelModel(model)

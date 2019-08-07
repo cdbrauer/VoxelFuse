@@ -423,7 +423,7 @@ class VoxelModel:
         new_model[:,:,:,1] = material_sums
         return VoxelModel(new_model, self.x, self.y, self.z)
 
-    def rotate(self, angle, axis):
+    def rotate(self, angle, axis): # TODO: Check that coords are handled correctly, test with non-cubic models
         if axis == 'x':
             plane = (0, 1)
         elif axis == 'y':
@@ -434,6 +434,8 @@ class VoxelModel:
         new_model = ndimage.rotate(self.model, angle, plane, order=0)
 
         return VoxelModel(new_model, self.x, self.y, self.z)
+
+    # TODO: Add rotate90 based on np.rot90
 
     """
     Manufacturing Features
