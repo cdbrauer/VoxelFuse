@@ -2,7 +2,9 @@
 Copyright 2018-2019
 Dan Aukes, Cole Brauer
 """
-
+import os
+import subprocess
+import meshio
 import numpy as np
 from pyvox.parser import VoxParser
 from voxelbots.materials import materials
@@ -35,6 +37,31 @@ def formatVoxData(input_matrix, material_count):
                     new_model[y, z, x, 1] = 1
 
     return new_model
+
+"""
+Function to import mesh data from file
+"""
+def make_mesh(filename, delete_files=True):
+    template = '''
+    Merge "{0}";
+    Surface Loop(1) = {{1}};
+    //+
+    Volume(1) = {{1}};
+    '''
+
+    geo_string = template.format(filename)
+    with open('output.geo', 'w') as f:
+        f.writelines(geo_string)
+
+    command_string = 'gmsh output.geo -3 -format msh'
+    p = subprocess.Popen(command_string, shell=True)
+    p.wait()
+    mesh_file = 'output.msh'
+    data = meshio.read(mesh_file)
+    if delete_files:
+        os.remove('output.msh')
+        os.remove('output.geo')
+    return data
 
 """
 Function to make object dimensions compatible for solid body operations. Takes location coordinates into account.
@@ -91,6 +118,63 @@ class VoxelModel:
         m2 = m1.to_dense()
         m2 = np.flip(m2, 1)
         new_model = formatVoxData(m2, len(materials)) # Reformat data
+        return cls(new_model, x_coord, y_coord, z_coord)
+
+    @classmethod
+    def fromMeshFile(cls, filename, x_coord=0, y_coord=0, z_coord=0):
+        res = 0
+        data = make_mesh(filename, True)
+
+        points = data.points
+        ii_tri = data.cells['triangle']
+        ii_tet = data.cells['tetra']
+        tris = points[ii_tri]
+        tets = points[ii_tet]
+        T = np.concatenate((tets, tets[:, :, 0:1] * 0 + 1), 2)
+        T_inv = np.zeros(T.shape)
+
+        for ii, t in enumerate(T):
+            T_inv[ii] = np.linalg.inv(t).T
+
+        points_min = points.min(0)
+        points_max = points.max(0)
+        points_min_r = np.round(points_min, res)
+        points_max_r = np.round(points_max, res)
+
+        xx = np.r_[points_min_r[0]:points_max_r[0]:10 ** (-res)]
+        yy = np.r_[points_min_r[1]:points_max_r[1]:10 ** (-res)]
+        zz = np.r_[points_min_r[2]:points_max_r[2]:10 ** (-res)]
+
+        xx_mid = (xx[1:] + xx[:-1]) / 2
+        yy_mid = (yy[1:] + yy[:-1]) / 2
+        zz_mid = (zz[1:] + zz[:-1]) / 2
+
+        xyz_mid = np.array(np.meshgrid(xx_mid, yy_mid, zz_mid, indexing='ij'))
+        xyz_mid = xyz_mid.transpose(1, 2, 3, 0)
+        xyz_mid = xyz_mid.reshape(-1, 3)
+        xyz_mid = np.concatenate((xyz_mid, xyz_mid[:, 0:1] * 0 + 1), 1)
+
+        ijk_mid = np.array(
+            np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing='ij'))
+        ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
+        ijk_mid2 = ijk_mid.reshape(-1, 3)
+
+        u2 = T_inv.dot(xyz_mid.T)
+
+        f1 = ((u2[:, :, :] >= 0).sum(1) == 4)
+        f2 = ((u2[:, :, :] <= 1).sum(1) == 4)
+        f3 = f1 & f2
+        ii, jj = f3.nonzero()
+
+        lmn = ijk_mid2[np.unique(jj)]
+
+        voxels = np.zeros(ijk_mid.shape[:3], dtype=np.bool)
+        voxels[lmn[:, 0], lmn[:, 1], lmn[:, 2]] = True
+
+        new_model = np.rot90(voxels, axes=(0, 2))
+        new_model = np.rot90(new_model, 3, axes=(0, 1))
+        new_model = formatVoxData(new_model, len(materials))
+        
         return cls(new_model, x_coord, y_coord, z_coord)
 
     @classmethod
@@ -423,7 +507,7 @@ class VoxelModel:
         new_model[:,:,:,1] = material_sums
         return VoxelModel(new_model, self.x, self.y, self.z)
 
-    def rotate(self, angle, axis):
+    def rotate(self, angle, axis = 'z'): # TODO: Check that coords are handled correctly
         if axis == 'x':
             plane = (0, 1)
         elif axis == 'y':
@@ -432,6 +516,18 @@ class VoxelModel:
             plane = (0, 2)
 
         new_model = ndimage.rotate(self.model, angle, plane, order=0)
+
+        return VoxelModel(new_model, self.x, self.y, self.z)
+
+    def rotate90(self, times = 1, axis = 'z'): # TODO: Check that coords are handled correctly
+        if axis == 'x':
+            plane = (0, 1)
+        elif axis == 'y':
+            plane = (1, 2)
+        else: # axis == 'z'
+            plane = (0, 2)
+
+        new_model = np.rot90(self.model, times, axes=plane)
 
         return VoxelModel(new_model, self.x, self.y, self.z)
 
