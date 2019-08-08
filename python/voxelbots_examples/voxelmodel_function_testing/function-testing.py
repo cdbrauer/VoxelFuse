@@ -5,13 +5,11 @@ Dan Aukes, Cole Brauer
 
 import PyQt5.QtGui as qg
 import sys
-import numpy as np
 import time
 
 from voxelbots.voxel_model import VoxelModel
 from voxelbots.mesh import Mesh
 from voxelbots.plot import Plot
-from voxelbots.materials import materials
 
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
@@ -24,7 +22,7 @@ if __name__=='__main__':
     #model2 = VoxelModel.fromVoxFile('cylinder-red.vox', 0, 5, 0)
     #model3 = VoxelModel.fromVoxFile('cylinder-red.vox', 0, 0, 0)
     model1 = VoxelModel.fromVoxFile('sample-object-2.vox', 0, 0, 0)
-    model2 = VoxelModel.fromVoxFile('user-support-2.vox', 0, 0, 0)
+    #model2 = VoxelModel.fromVoxFile('user-support-2.vox', 0, 0, 0)
     #model1 = VoxelModel.fromVoxFile('projection-test.vox', 0, 0, 0)
     end = time.time()
     importTime = (end - start)
@@ -49,7 +47,8 @@ if __name__=='__main__':
     #modelResult = model1.erode(radius=2, connectivity=1)
     #modelResult = modelResult.blur(1)
     #modelResult = modelResult.blurRegion(3, region)
-    #modelResult = model4.rotate(90, 'x')
+    #modelResult = model1.rotate(30)
+    modelResult = model1.rotate90(1)
 
     #interiorVoxels = model1.erode(radius=1, connectivity=1)
     #exteriorVoxels = model1.difference(interiorVoxels)
@@ -63,12 +62,12 @@ if __name__=='__main__':
     #modelResult = model1.web('laser', 1, 5)
     #modelResult = model1.union(modelResult)
 
-    support = model1.userSupport(model2, 'laser')
-    web = model1.web('laser', 1, 5)
-    modelResult = support.union(web)
-    modelResult = modelResult.setMaterial(2)
-    modelResult = modelResult.isolateLayer(8)
-    modelResult = model1.union(modelResult)
+    #support = model1.userSupport(model2, 'laser')
+    #web = model1.web('laser', 1, 5)
+    #modelResult = support.union(web)
+    #modelResult = modelResult.setMaterial(2)
+    #modelResult = modelResult.isolateLayer(8)
+    #modelResult = model1.union(modelResult)
 
     #modelResult = modelResult.normalize()
 

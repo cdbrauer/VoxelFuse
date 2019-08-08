@@ -507,7 +507,7 @@ class VoxelModel:
         new_model[:,:,:,1] = material_sums
         return VoxelModel(new_model, self.x, self.y, self.z)
 
-    def rotate(self, angle, axis): # TODO: Check that coords are handled correctly, test with non-cubic models
+    def rotate(self, angle, axis = 'z'): # TODO: Check that coords are handled correctly
         if axis == 'x':
             plane = (0, 1)
         elif axis == 'y':
@@ -519,7 +519,17 @@ class VoxelModel:
 
         return VoxelModel(new_model, self.x, self.y, self.z)
 
-    # TODO: Add rotate90 based on np.rot90
+    def rotate90(self, times = 1, axis = 'z'): # TODO: Check that coords are handled correctly
+        if axis == 'x':
+            plane = (0, 1)
+        elif axis == 'y':
+            plane = (1, 2)
+        else: # axis == 'z'
+            plane = (0, 2)
+
+        new_model = np.rot90(self.model, times, axes=plane)
+
+        return VoxelModel(new_model, self.x, self.y, self.z)
 
     """
     Manufacturing Features
