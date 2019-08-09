@@ -5,7 +5,7 @@ Dan Aukes, Cole Brauer
 Program adds a pause to the input gcode file at the specified voxel layer
 """
 
-import gcode_tools as gcode
+import voxelbots.gcode_tools as gcode
 
 #gc1 = gcode.import_gcode('joint-2.gcode')
 gc1 = gcode.import_gcode('tail-holder.gcode')

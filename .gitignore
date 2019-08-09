@@ -1,5 +1,6 @@
 # User Defined
 python/voxelbots_examples/voxelmodel_function_testing/
+reinforced_beam/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
