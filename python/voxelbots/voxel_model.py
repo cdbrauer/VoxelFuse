@@ -159,7 +159,7 @@ class VoxelModel:
         ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
         ijk_mid2 = ijk_mid.reshape(-1, 3)
 
-        u2 = T_inv.dot(xyz_mid.T)
+        u2 = T_inv.dot(xyz_mid.T) # TODO: Make this faster
 
         f1 = ((u2[:, :, :] >= 0).sum(1) == 4)
         f2 = ((u2[:, :, :] <= 1).sum(1) == 4)

@@ -1,6 +1,8 @@
 """
-Copyright 2018
+Copyright 2019
 Dan Aukes, Cole Brauer
+
+Program adds a pause to the input gcode file at the specified voxel layer
 """
 
 import gcode_tools as gcode
