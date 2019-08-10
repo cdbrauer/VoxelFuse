@@ -31,7 +31,7 @@ if __name__=='__main__':
     # Isolate materials with blurring requested
     modelBlur = VoxelModel.emptyLike(modelIn)
     for i in blur:
-        modelBlur = modelBlur + modelIn.isolateMaterial(i)
+        modelBlur = modelBlur.union(modelIn.isolateMaterial(i))
 
     # Blur compatible materials
     modelBlur = modelBlur.blur(blurRadius)
