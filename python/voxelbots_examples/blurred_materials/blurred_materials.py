@@ -35,13 +35,14 @@ if __name__=='__main__':
         modelBlur = modelBlur + modelIn.isolateMaterial(i)
 
     # Blur compatible materials
-    modelBlur = modelBlur.blur(blurRadius)
+    modelBlur = modelBlur.dither(blurRadius)
+    # modelBlur = modelBlur.blur(blurRadius)
 
     # Add unmodified voxels to result
-    modelResult = modelBlur.union(modelIn)
+    modelResult = modelBlur #.union(modelIn)
 
     # Clean up result
-    modelResult = modelResult.scaleValues()
+    # modelResult = modelResult.scaleValues()
 
     # TODO: Create list of all materials present in model
 
