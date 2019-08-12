@@ -429,6 +429,21 @@ class VoxelModel:
         elif plane == 'yz':
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
+        elif plane == 'x':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+        elif plane == 'y':
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
+        elif plane == 'z':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
 
         for i in range(radius):
             new_model[:, :, :, 0] = ndimage.binary_dilation(new_model[:, :, :, 0], structure=struct)

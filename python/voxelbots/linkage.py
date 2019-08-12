@@ -24,7 +24,7 @@ class Linkage(VoxelModel):
         tab_l = int(len(template.model[0, 0, :, 0]) - 1)
         tab_w = int((len(template.model[:, 0, 0, 0]) - 1) / 2)
 
-        new_model = VoxelModel.emptyLike(self)
+        new_model = Linkage.emptyLike(self)
 
         for i in range(len(x_coords)): # For each coordinate set
             for z in range(z_len): # For each layer
