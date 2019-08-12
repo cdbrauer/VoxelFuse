@@ -329,6 +329,16 @@ class VoxelModel:
         new_model = np.multiply(new_model, material_array)
         return VoxelModel(new_model, self.x, self.y, self.z)
 
+    # Set the material of a mask or model
+    def setMaterialVector(self, material_vector):  # material input is the desired material vector
+        x_len = len(self.model[0, 0, :, 0])
+        y_len = len(self.model[:, 0, 0, 0])
+        z_len = len(self.model[0, :, 0, 0])
+        new_model = self.getOccupied().model  # Converts input model to a mask, no effect if input is already a mask
+        material_array = np.tile(material_vector[None, None, None, :], (y_len, z_len, x_len, 1))
+        new_model = np.multiply(new_model, material_array)
+        return VoxelModel(new_model, self.x, self.y, self.z)
+
     """
     Boolean operations
     
