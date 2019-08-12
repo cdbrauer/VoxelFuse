@@ -487,6 +487,39 @@ class VoxelModel:
         return new_model
 
     # Add dithering options
+    def dither(self, radius=1):
+        new_model = self.blur(radius)
+        new_model = new_model.scaleValues()
+
+        x_len = len(new_model.model[0, 0, :])
+        y_len = len(new_model.model[:, 0, 0])
+        z_len = len(new_model.model[0, :, 0])
+
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    voxel = new_model.model[y, z, x]
+                    if voxel[0] > 0:
+                        max_i = voxel[1:].argmax()+1
+                        for i in range(1, len(voxel)):
+                            old = new_model.model[y, z, x, i]
+
+                            if i == max_i:
+                                new_model.model[y, z, x, i] = 1
+                            else:
+                                new_model.model[y, z, x, i] = 0
+
+                            error = old - new_model.model[y, z, x, i]
+                            if y+1 < y_len:
+                                new_model.model[y+1, z, x, i] += error * (3/10) * new_model.model[y+1, z, x, 0]
+                            if y+1 < y_len and x+1 < x_len:
+                                new_model.model[y+1, z, x+1, i] += error * (1/5) * new_model.model[y+1, z, x+1, 0]
+                            if y+1 < y_len and x+1 < x_len and z+1 < z_len:
+                                new_model.model[y+1, z+1, x+1, i] += error * (1/5) * new_model.model[y+1, z+1, x+1, 0]
+                            if x+1 < x_len:
+                                new_model.model[y, z, x+1, i] += error * (3/10) * new_model.model[y, z, x+1, 0]
+
+        return new_model
 
     """
     Cleanup
