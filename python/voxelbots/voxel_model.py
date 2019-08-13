@@ -9,7 +9,7 @@ import numpy as np
 from pyvox.parser import VoxParser
 from voxelbots.materials import materials
 from scipy import ndimage
-from numba import njit
+from numba import njit, prange
 
 """
 Function to convert vox file data into VoxelModel format. Separated to allow for acceleration using Numba.
@@ -91,6 +91,56 @@ def alignDims(modelA, modelB):
 
     return modelANew, modelBNew, xNew, yNew, zNew
 
+def dot3d(a, b):
+    return dot3d_numba(np.asarray(a, order='c'), np.asarray(b, order='c'))
+
+@njit(parallel=True)
+def dot3d_numba(a, b):
+    x_len = len(a[:, 0, 0])
+    y_len = len(a[0, :, 0])
+    z_len = len(b[:, 0])
+
+    result = np.zeros((x_len, y_len, z_len), dtype=np.float32)
+
+    for x in prange(x_len):
+        for y in prange(y_len):
+            for z in prange(z_len):
+                result[x, y, z] = a[x, y, :].dot(b[z, :])
+
+    return result
+
+@njit()
+def dither_numba(model):
+    x_len = len(model[0, 0, :])
+    y_len = len(model[:, 0, 0])
+    z_len = len(model[0, :, 0])
+
+    for x in range(x_len):
+        for y in range(y_len):
+            for z in range(z_len):
+                voxel = model[y, z, x]
+                if voxel[0] > 0:
+                    max_i = voxel[1:].argmax()+1
+                    for i in range(1, len(voxel)):
+                        old = model[y, z, x, i]
+
+                        if i == max_i:
+                            model[y, z, x, i] = 1
+                        else:
+                            model[y, z, x, i] = 0
+
+                        error = old - model[y, z, x, i]
+                        if y+1 < y_len:
+                            model[y+1, z, x, i] += error * (3/10) * model[y+1, z, x, 0]
+                        if y+1 < y_len and x+1 < x_len:
+                            model[y+1, z, x+1, i] += error * (1/5) * model[y+1, z, x+1, 0]
+                        if y+1 < y_len and x+1 < x_len and z+1 < z_len:
+                            model[y+1, z+1, x+1, i] += error * (1/5) * model[y+1, z+1, x+1, 0]
+                        if x+1 < x_len:
+                            model[y, z, x+1, i] += error * (3/10) * model[y, z, x+1, 0]
+
+    return model
+
 """
 VoxelModel Class
 
@@ -141,9 +191,9 @@ class VoxelModel:
         points_min_r = np.round(points_min, res)
         points_max_r = np.round(points_max, res)
 
-        xx = np.r_[points_min_r[0]:points_max_r[0]:10 ** (-res)]
-        yy = np.r_[points_min_r[1]:points_max_r[1]:10 ** (-res)]
-        zz = np.r_[points_min_r[2]:points_max_r[2]:10 ** (-res)]
+        xx = np.r_[points_min_r[0]:points_max_r[0]+1:10 ** (-res)]
+        yy = np.r_[points_min_r[1]:points_max_r[1]+1:10 ** (-res)]
+        zz = np.r_[points_min_r[2]:points_max_r[2]+1:10 ** (-res)]
 
         xx_mid = (xx[1:] + xx[:-1]) / 2
         yy_mid = (yy[1:] + yy[:-1]) / 2
@@ -159,7 +209,7 @@ class VoxelModel:
         ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
         ijk_mid2 = ijk_mid.reshape(-1, 3)
 
-        u2 = T_inv.dot(xyz_mid.T) # TODO: Make this faster
+        u2 = dot3d(T_inv, xyz_mid)
 
         f1 = ((u2[:, :, :] >= 0).sum(1) == 4)
         f2 = ((u2[:, :, :] <= 1).sum(1) == 4)
@@ -505,35 +555,7 @@ class VoxelModel:
     def dither(self, radius=1):
         new_model = self.blur(radius)
         new_model = new_model.scaleValues()
-
-        x_len = len(new_model.model[0, 0, :])
-        y_len = len(new_model.model[:, 0, 0])
-        z_len = len(new_model.model[0, :, 0])
-
-        for x in range(x_len):
-            for y in range(y_len):
-                for z in range(z_len):
-                    voxel = new_model.model[y, z, x]
-                    if voxel[0] > 0:
-                        max_i = voxel[1:].argmax()+1
-                        for i in range(1, len(voxel)):
-                            old = new_model.model[y, z, x, i]
-
-                            if i == max_i:
-                                new_model.model[y, z, x, i] = 1
-                            else:
-                                new_model.model[y, z, x, i] = 0
-
-                            error = old - new_model.model[y, z, x, i]
-                            if y+1 < y_len:
-                                new_model.model[y+1, z, x, i] += error * (3/10) * new_model.model[y+1, z, x, 0]
-                            if y+1 < y_len and x+1 < x_len:
-                                new_model.model[y+1, z, x+1, i] += error * (1/5) * new_model.model[y+1, z, x+1, 0]
-                            if y+1 < y_len and x+1 < x_len and z+1 < z_len:
-                                new_model.model[y+1, z+1, x+1, i] += error * (1/5) * new_model.model[y+1, z+1, x+1, 0]
-                            if x+1 < x_len:
-                                new_model.model[y, z, x+1, i] += error * (3/10) * new_model.model[y, z, x+1, 0]
-
+        new_model.model = dither_numba(new_model.model)
         return new_model
 
     """
