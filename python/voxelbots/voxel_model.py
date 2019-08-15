@@ -9,87 +9,7 @@ import numpy as np
 from pyvox.parser import VoxParser
 from voxelbots.materials import materials
 from scipy import ndimage
-from numba import njit
-
-"""
-Function to convert vox file data into VoxelModel format. Separated to allow for acceleration using Numba.
-[color index] -> [a, m0, m1, ... mn]
-"""
-@njit()
-def formatVoxData(input_matrix, material_count):
-    x_len = len(input_matrix[0, 0, :])
-    y_len = len(input_matrix[:, 0, 0])
-    z_len = len(input_matrix[0, :, 0])
-
-    new_model = np.zeros((y_len, z_len, x_len, material_count+1))
-
-    # Loop through input_model data
-    for x in range(x_len):
-        for y in range(y_len):
-            for z in range(z_len):
-                color_index = input_matrix[y, z, x]
-                if (color_index > 0) and (color_index < material_count):
-                    new_model[y, z, x, 0] = 1
-                    new_model[y, z, x, color_index + 1] = 1
-                elif color_index >= material_count:
-                    # print('Unrecognized material index: ' + str(color_index) + '. Setting to null') # Not compatible with @njit
-                    new_model[y, z, x, 0] = 1
-                    new_model[y, z, x, 1] = 1
-
-    return new_model
-
-"""
-Function to import mesh data from file
-"""
-def make_mesh(filename, delete_files=True):
-    template = '''
-    Merge "{0}";
-    Surface Loop(1) = {{1}};
-    //+
-    Volume(1) = {{1}};
-    '''
-
-    geo_string = template.format(filename)
-    with open('output.geo', 'w') as f:
-        f.writelines(geo_string)
-
-    command_string = 'gmsh output.geo -3 -format msh'
-    p = subprocess.Popen(command_string, shell=True)
-    p.wait()
-    mesh_file = 'output.msh'
-    data = meshio.read(mesh_file)
-    if delete_files:
-        os.remove('output.msh')
-        os.remove('output.geo')
-    return data
-
-"""
-Function to make object dimensions compatible for solid body operations. Takes location coordinates into account.
-"""
-def alignDims(modelA, modelB):
-    xMaxA = modelA.x + len(modelA.model[0, 0, :, 0])
-    yMaxA = modelA.y + len(modelA.model[:, 0, 0, 0])
-    zMaxA = modelA.z + len(modelA.model[0, :, 0, 0])
-
-    xMaxB = modelB.x + len(modelB.model[0, 0, :, 0])
-    yMaxB = modelB.y + len(modelB.model[:, 0, 0, 0])
-    zMaxB = modelB.z + len(modelB.model[0, :, 0, 0])
-
-    xNew = min(modelA.x, modelB.x)
-    yNew = min(modelA.y, modelB.y)
-    zNew = min(modelA.z, modelB.z)
-
-    xMaxNew = max(xMaxA, xMaxB)
-    yMaxNew = max(yMaxA, yMaxB)
-    zMaxNew = max(zMaxA, zMaxB)
-
-    modelANew = np.zeros((yMaxNew - yNew, zMaxNew - zNew, xMaxNew - xNew, len(modelA.model[0, 0, 0, :])))
-    modelBNew = np.zeros((yMaxNew - yNew, zMaxNew - zNew, xMaxNew - xNew, len(modelB.model[0, 0, 0, :])))
-
-    modelANew[(modelA.y - yNew):(yMaxA - yNew), (modelA.z - zNew):(zMaxA - zNew), (modelA.x - xNew):(xMaxA - xNew), :] = modelA.model
-    modelBNew[(modelB.y - yNew):(yMaxB - yNew), (modelB.z - zNew):(zMaxB - zNew), (modelB.x - xNew):(xMaxB - xNew), :] = modelB.model
-
-    return modelANew, modelBNew, xNew, yNew, zNew
+from numba import njit, prange
 
 """
 VoxelModel Class
@@ -123,7 +43,7 @@ class VoxelModel:
     @classmethod
     def fromMeshFile(cls, filename, x_coord=0, y_coord=0, z_coord=0):
         res = 0
-        data = make_mesh(filename, True)
+        data = makeMesh(filename, True)
 
         points = data.points
         ii_tri = data.cells['triangle']
@@ -141,9 +61,9 @@ class VoxelModel:
         points_min_r = np.round(points_min, res)
         points_max_r = np.round(points_max, res)
 
-        xx = np.r_[points_min_r[0]:points_max_r[0]:10 ** (-res)]
-        yy = np.r_[points_min_r[1]:points_max_r[1]:10 ** (-res)]
-        zz = np.r_[points_min_r[2]:points_max_r[2]:10 ** (-res)]
+        xx = np.r_[points_min_r[0]:points_max_r[0]+1:10 ** (-res)]
+        yy = np.r_[points_min_r[1]:points_max_r[1]+1:10 ** (-res)]
+        zz = np.r_[points_min_r[2]:points_max_r[2]+1:10 ** (-res)]
 
         xx_mid = (xx[1:] + xx[:-1]) / 2
         yy_mid = (yy[1:] + yy[:-1]) / 2
@@ -159,7 +79,7 @@ class VoxelModel:
         ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
         ijk_mid2 = ijk_mid.reshape(-1, 3)
 
-        u2 = T_inv.dot(xyz_mid.T) # TODO: Make this faster
+        u2 = dot3d(np.asarray(T_inv, order='c'), np.asarray(xyz_mid, order='c'))
 
         f1 = ((u2[:, :, :] >= 0).sum(1) == 4)
         f2 = ((u2[:, :, :] <= 1).sum(1) == 4)
@@ -505,35 +425,7 @@ class VoxelModel:
     def dither(self, radius=1):
         new_model = self.blur(radius)
         new_model = new_model.scaleValues()
-
-        x_len = len(new_model.model[0, 0, :])
-        y_len = len(new_model.model[:, 0, 0])
-        z_len = len(new_model.model[0, :, 0])
-
-        for x in range(x_len):
-            for y in range(y_len):
-                for z in range(z_len):
-                    voxel = new_model.model[y, z, x]
-                    if voxel[0] > 0:
-                        max_i = voxel[1:].argmax()+1
-                        for i in range(1, len(voxel)):
-                            old = new_model.model[y, z, x, i]
-
-                            if i == max_i:
-                                new_model.model[y, z, x, i] = 1
-                            else:
-                                new_model.model[y, z, x, i] = 0
-
-                            error = old - new_model.model[y, z, x, i]
-                            if y+1 < y_len:
-                                new_model.model[y+1, z, x, i] += error * (3/10) * new_model.model[y+1, z, x, 0]
-                            if y+1 < y_len and x+1 < x_len:
-                                new_model.model[y+1, z, x+1, i] += error * (1/5) * new_model.model[y+1, z, x+1, 0]
-                            if y+1 < y_len and x+1 < x_len and z+1 < z_len:
-                                new_model.model[y+1, z+1, x+1, i] += error * (1/5) * new_model.model[y+1, z+1, x+1, 0]
-                            if x+1 < x_len:
-                                new_model.model[y, z, x+1, i] += error * (3/10) * new_model.model[y, z, x+1, 0]
-
+        new_model.model = dither(new_model.model)
         return new_model
 
     """
@@ -675,3 +567,132 @@ class VoxelModel:
         model_D = model_C.getBoundingBox() # Make support rectangular
         new_model = model_D.difference(model_B)
         return new_model
+
+# Helper methods ##############################################################
+
+"""
+Function to import mesh data from file
+"""
+def makeMesh(filename, delete_files=True):
+    template = '''
+    Merge "{0}";
+    Surface Loop(1) = {{1}};
+    //+
+    Volume(1) = {{1}};
+    '''
+
+    geo_string = template.format(filename)
+    with open('output.geo', 'w') as f:
+        f.writelines(geo_string)
+
+    command_string = 'gmsh output.geo -3 -format msh'
+    p = subprocess.Popen(command_string, shell=True)
+    p.wait()
+    mesh_file = 'output.msh'
+    data = meshio.read(mesh_file)
+    if delete_files:
+        os.remove('output.msh')
+        os.remove('output.geo')
+    return data
+
+"""
+Function to make object dimensions compatible for solid body operations. Takes location coordinates into account.
+"""
+def alignDims(modelA, modelB):
+    xMaxA = modelA.x + len(modelA.model[0, 0, :, 0])
+    yMaxA = modelA.y + len(modelA.model[:, 0, 0, 0])
+    zMaxA = modelA.z + len(modelA.model[0, :, 0, 0])
+
+    xMaxB = modelB.x + len(modelB.model[0, 0, :, 0])
+    yMaxB = modelB.y + len(modelB.model[:, 0, 0, 0])
+    zMaxB = modelB.z + len(modelB.model[0, :, 0, 0])
+
+    xNew = min(modelA.x, modelB.x)
+    yNew = min(modelA.y, modelB.y)
+    zNew = min(modelA.z, modelB.z)
+
+    xMaxNew = max(xMaxA, xMaxB)
+    yMaxNew = max(yMaxA, yMaxB)
+    zMaxNew = max(zMaxA, zMaxB)
+
+    modelANew = np.zeros((yMaxNew - yNew, zMaxNew - zNew, xMaxNew - xNew, len(modelA.model[0, 0, 0, :])))
+    modelBNew = np.zeros((yMaxNew - yNew, zMaxNew - zNew, xMaxNew - xNew, len(modelB.model[0, 0, 0, :])))
+
+    modelANew[(modelA.y - yNew):(yMaxA - yNew), (modelA.z - zNew):(zMaxA - zNew), (modelA.x - xNew):(xMaxA - xNew), :] = modelA.model
+    modelBNew[(modelB.y - yNew):(yMaxB - yNew), (modelB.z - zNew):(zMaxB - zNew), (modelB.x - xNew):(xMaxB - xNew), :] = modelB.model
+
+    return modelANew, modelBNew, xNew, yNew, zNew
+
+"""
+Function to convert vox file data into VoxelModel format. Separated to allow for acceleration using Numba.
+[color index] -> [a, m0, m1, ... mn]
+"""
+@njit()
+def formatVoxData(input_matrix, material_count):
+    x_len = len(input_matrix[0, 0, :])
+    y_len = len(input_matrix[:, 0, 0])
+    z_len = len(input_matrix[0, :, 0])
+
+    new_model = np.zeros((y_len, z_len, x_len, material_count+1))
+
+    # Loop through input_model data
+    for x in range(x_len):
+        for y in range(y_len):
+            for z in range(z_len):
+                color_index = input_matrix[y, z, x]
+                if (color_index > 0) and (color_index < material_count):
+                    new_model[y, z, x, 0] = 1
+                    new_model[y, z, x, color_index + 1] = 1
+                elif color_index >= material_count:
+                    # print('Unrecognized material index: ' + str(color_index) + '. Setting to null') # Not compatible with @njit
+                    new_model[y, z, x, 0] = 1
+                    new_model[y, z, x, 1] = 1
+
+    return new_model
+
+@njit(parallel=True)
+def dot3d(a, b):
+    x_len = len(a[:, 0, 0])
+    y_len = len(a[0, :, 0])
+    z_len = len(b[:, 0])
+
+    result = np.zeros((x_len, y_len, z_len), dtype=np.float32)
+
+    for x in prange(x_len):
+        for y in prange(y_len):
+            for z in prange(z_len):
+                result[x, y, z] = a[x, y, :].dot(b[z, :])
+
+    return result
+
+@njit()
+def dither(model):
+    x_len = len(model[0, 0, :])
+    y_len = len(model[:, 0, 0])
+    z_len = len(model[0, :, 0])
+
+    for x in range(x_len):
+        for y in range(y_len):
+            for z in range(z_len):
+                voxel = model[y, z, x]
+                if voxel[0] > 0:
+                    max_i = voxel[1:].argmax()+1
+                    for i in range(1, len(voxel)):
+                        old = model[y, z, x, i]
+
+                        if i == max_i:
+                            model[y, z, x, i] = 1
+                        else:
+                            model[y, z, x, i] = 0
+
+                        error = old - model[y, z, x, i]
+                        if y+1 < y_len:
+                            model[y+1, z, x, i] += error * (3/10) * model[y+1, z, x, 0]
+                        if y+1 < y_len and x+1 < x_len:
+                            model[y+1, z, x+1, i] += error * (1/5) * model[y+1, z, x+1, 0]
+                        if y+1 < y_len and x+1 < x_len and z+1 < z_len:
+                            model[y+1, z+1, x+1, i] += error * (1/5) * model[y+1, z+1, x+1, 0]
+                        if x+1 < x_len:
+                            model[y, z, x+1, i] += error * (3/10) * model[y, z, x+1, 0]
+
+    return model
