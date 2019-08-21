@@ -19,9 +19,9 @@ if __name__=='__main__':
     stl = False
 
     tabs = True
-    tabDesign = 'hook'
+    tabDesign = 'puzzle'
 
-    blur = True
+    blur = False
     blurRadius = 2
 
     fixture = True
