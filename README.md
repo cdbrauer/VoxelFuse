@@ -141,19 +141,101 @@ Returns a model with all occupied voxels in the input model set to the specified
 	model2 = model1.getBoundingBox()
 	model3 = model2.setMaterial(2)
 
-### setMaterialVector(self, material_vector)
+### setMaterialVector(self, material\_vector)
 
 Returns a model with all occupied voxels in the input model set to the specified material vector.
 
 	material_vector = np.zeros(len(materials) + 1)	# Length of materials table +1
-    material_vector[0] = 1							# Set a to 1
-    material_vector[3] = 0.3						# Set material 3 to 30%
-    material_vector[4] = 0.7						# Set material 4 to 70%
+    material_vector[0] = 1		# Set a to 1
+    material_vector[3] = 0.3	# Set material 3 to 30%
+    material_vector[4] = 0.7	# Set material 4 to 70%
     model2 = model1.setMaterialVector(material_vector)
 
 ## Solid Geometry Operations
 
-...
+### union(self, model\_to\_add, material\_priority = 'l')
+
+Returns a model containing the union of two models. In areas where the models overlap, the material from the left (l) or right (r) input model will be used based on the material\_priority parameter.
+
+	model3 = model1.union(model2, 'r')
+
+### difference(self, model\_to\_sub)
+
+Returns a model containing the difference of two models.
+
+	model3 = model1.difference(model2)
+
+### intersection(self, model\_2, material\_priority = 'l')
+
+Returns a model containing the intersection of two models. The result uses the material from the left (l) or right (r) input model based on the material\_priority parameter.
+
+	model3 = model1.intersection(model2, 'l')
+
+### add(self, model\_to\_add)
+
+Returns a model containing the result of adding two models together. The materials of the result are calculated by adding the material vectors for each voxel together.
+
+Example -- Adding a voxel containing material 1 and a voxel containing material 3:
+
+1. Voxel A = [1, 0, 1, 0, 0]
+2. Voxel B = [1, 0, 0, 0, 1]
+3. A + B = [1, 0, 1, 0, 1]
+4. Scale Result (see below) &rarr; [1, 0, 0.5, 0, 0.5]
+
+This operation can also be applied using the + operator.
+
+	model3 = model1.add(model2) 
+	model3 = model1 + model2
+
+### subtract(self, model\_to\_sub)
+
+Returns a model containing the result of subtracting one model from another. The materials of the result are calculated by subtracting the second material vector from the first.
+
+Example -- Subtracting a voxel containing material 3 from the result of the addition example:
+
+1. Voxel A = [1, 0, 0.5, 0, 0.5]
+2. Voxel B = [1, 0, 0, 0, 1]
+3. A - B = [1, 0, 0.5, 0, -0.5]
+4. Scale Result (see below) &rarr; [1, 0, 0.5, 0, 0]
+
+This operation can also be applied using the - operator.
+
+	model3 = model1.subtract(model2) 
+	model3 = model1 - model2
+
+### dilate(self, radius = 1, plane = 'xyz', connectivity = 3)
+
+Dilate the model using a structuring element with the defined connectivity. Plane can be set to x, y, z, xy, yz, xz, or xyz and defines the axes along which the model will be dilated.
+
+	model2 = model1.dilate(3)
+	model4 = model3.dilate(1, 'xy', 2)
+
+### erode(self, radius = 1, plane = 'xyz', connectivity = 3)
+
+Erode the model using a structuring element with the defined connectivity. Plane defines the axes along which the model will be eroded.
+
+	model2 = model1.erode(5, connectivity=1)
+	model4 = model3.erode(2, 'x', 1)
+
+## Material Interface Modification
+
+### blur(self, radius=1)
+
+Apply a Gaussian blur with the defined radius to the entire model.
+
+	model2 = model1.blur(2)
+
+### blurRegion(self, radius, region)
+
+Apply a Gaussian blur with the defined radius to voxels that intersect with the region model. The material of the region model is ignored.
+
+	model2 = model1.blurRegion(3, regionModel)
+
+### dither(self, radius=1)
+
+Apply a Gaussian blur with the defined radius to the entire model, then use a dithering algorithm to covert the result to distinct materials..
+
+	model2 = model1.dither(5)
 
 ## Manufacturing Features
 

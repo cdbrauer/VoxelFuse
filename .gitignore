@@ -112,3 +112,5 @@ venv.bak/
 *.ods#
 
 \.vscode/
+
+python/voxelbots_examples/strength_test_coupon/in_progress/
