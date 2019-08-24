@@ -1,6 +1,6 @@
 # Multi-Material Manufacturing Process Planning Tools
 
-<img src="https://github.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/blob/master/main.png?raw=true">
+<img src="https://raw.githubusercontent.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/master/main.png">
 
 This library provides a set of tools for processing 3D components requiring multiple materials and manufacturing processes.
 
@@ -53,3 +53,7 @@ Using MagicaVoxel and the .vox format will limit you to using distinct voxel mat
 ## Documentation
 
 Please see the [wiki](https://github.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/wiki) for code documentation.
+
+<br/><br/>
+
+<a href="http://idealab.asu.edu/" target="_blank"><img src="https://raw.githubusercontent.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/master/footer.png"/></a>
