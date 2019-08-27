@@ -33,7 +33,7 @@ def opencl_dot3d(a, b):
     program = cl.Program(context, """
         __kernel void matrix_dot_vector(__global const float4 *a, __global const float4 *b, const unsigned int x_len, const int y_len, const int z_len, __global float *result) {
             int gid = get_global_id(0);
-            int i = gid % z_len;
+            int i = gid % (z_len * 2);
             int j = gid / (x_len * y_len);
             result[gid] = dot(a[i], b[j]);
             //result[gid] = b[z].s0;
@@ -59,7 +59,18 @@ def opencl_dot3d(a, b):
     cl.enqueue_copy(queue, result, result_buf)
 
     print(len(result))
-    return result
+
+    #charles' crappy attempt at a deflattener
+    unflattened = np.zeros((x_len, y_len, z_len), dtype=np.float32)
+    index_result = 0
+    for z in prange(z_len):
+        for x in prange(x_len):
+            for y in prange(y_len):
+                unflattened[x, y, z] = result[index_result]
+                index_result += 1
+
+    #return result
+    return unflattened
 
 @njit(parallel=True)
 def numba_dot3d(a, b):
@@ -75,6 +86,8 @@ def numba_dot3d(a, b):
                 result[x, y, z] = a[x, y, :].dot(b[z, :])
 
     return result
+
+
 
 if __name__ == "__main__":
     x = np.array([[
