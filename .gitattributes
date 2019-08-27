@@ -29,10 +29,10 @@
 *.ipynb  text
 
 # G-Code
-*.gcode binary linguist-generated=true
-*.gc    binary linguist-generated=true
-*.nc    binary linguist-generated=true
-*.tap   binary linguist-generated=true
+*.gcode text linguist-generated=true
+*.gc    text linguist-generated=true
+*.nc    text linguist-generated=true
+*.tap   text linguist-generated=true
 
 # Documents
 *.bibtex   text diff=bibtex
