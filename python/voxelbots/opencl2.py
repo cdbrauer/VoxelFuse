@@ -33,7 +33,7 @@ def opencl_dot3d(a, b):
     program = cl.Program(context, """
         __kernel void matrix_dot_vector(__global const float4 *a, __global const float4 *b, const unsigned int x_len, const int y_len, const int z_len, __global float *result) {
             int gid = get_global_id(0);
-            int i = gid % (z_len * 2);
+            int i = gid % (z_len*4);
             int j = gid / (x_len * y_len);
             result[gid] = dot(a[i], b[j]);
             //result[gid] = b[z].s0;
@@ -94,12 +94,22 @@ if __name__ == "__main__":
         [1, 2, 4, 8],
         [16, 32, 64, 128],
         [3, 6, 9, 12],
-        [-0.6820, 0.0755, -0.3125, -21.8564]
+        [-0.6820, 0.0755, -0.3125, -21.8564],
+        [3, 6, 9, 12],
+        [-0.6820, 0.0755, -0.3125, -21.8564],
+        [3, 6, 9, 12],
+        [-0.6820, 0.0755, -0.3125, -21.8564],
+        [16, 32, 64, 128]
     ], [
         [16, 32, 64, 128],
         [1, 2, 4, 8],
         [3, 6, 9, 12],
-        [-0.6820, 0.0755, -0.3125, -21.8564]
+        [-0.6820, 0.0755, -0.3125, -21.8564],
+        [3, 6, 9, 12],
+        [-0.6820, 0.0755, -0.3125, -21.8564],
+        [3, 6, 9, 12],
+        [-0.6820, 0.0755, -0.3125, -21.8564],
+        [16, 32, 64, 128]
     ]], dtype=np.float32)
 
     y = np.array([

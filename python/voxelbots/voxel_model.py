@@ -647,7 +647,7 @@ def formatVoxData(input_matrix, material_count):
     y_len = len(input_matrix[:, 0, 0])
     z_len = len(input_matrix[0, :, 0])
 
-    new_model = np.zeros((y_len, z_len, x_len, material_count+1))
+    new_model = np.zeros((y_len, z_len, x_len, material_count+1), dtype=float16)
 
     # Loop through input_model data
     for x in range(x_len):
