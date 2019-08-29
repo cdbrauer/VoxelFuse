@@ -10,7 +10,6 @@ from pyvox.parser import VoxParser
 from voxelbots.materials import materials
 from scipy import ndimage
 from numba import njit, prange
-import pyopencl as cl
 from voxelbots.opencl2 import opencl_dot3d
 
 """
