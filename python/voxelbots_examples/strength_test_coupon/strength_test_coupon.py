@@ -16,7 +16,7 @@ from voxelbots.materials import materials
 
 if __name__=='__main__':
     # Settings
-    stl = False
+    stl = True
 
     tabs = True
     tabDesign = 'puzzle'
