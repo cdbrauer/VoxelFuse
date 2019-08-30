@@ -33,11 +33,13 @@ def opencl_dot3d(a, b):
     program = cl.Program(context, """
         __kernel void matrix_dot_vector(__global const float4 *a, __global const float4 *b, const unsigned int x_len, const int y_len, const int z_len, __global float *result) {
             int gid = get_global_id(0);
-            int i = gid % (z_len * 2);
-            int j = gid / (x_len * y_len);
-            result[gid] = dot(a[i], b[j]);
-            //result[gid] = b[z].s0;
-            //result[gid] = a[y].s0;
+            
+            int z = gid / (x_len * y_len);
+            int l = gid % (x_len * y_len);
+            int y = l / x_len;
+            int x = l % x_len;
+            
+            result[gid] = dot(a[y*x_len + x], b[z]);
         }
     """).build()
 
@@ -46,12 +48,8 @@ def opencl_dot3d(a, b):
     mem_flags = cl.mem_flags
     a_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=a_flat)
     b_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=b)
-    # x_len_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=np.int32(x_len))
-    # y_len_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=np.int32(y_len))
-    # z_len_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=np.int32(z_len))
 
     result = np.zeros((x_len * y_len * z_len), np.float32)
-    # result = np.zeros(4, np.float32)
     result_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, result.nbytes)
 
     program.matrix_dot_vector(queue, result.shape, None, a_buf, b_buf, x_len, y_len, z_len, result_buf)
@@ -63,9 +61,9 @@ def opencl_dot3d(a, b):
     #charles' crappy attempt at a deflattener
     unflattened = np.zeros((x_len, y_len, z_len), dtype=np.float32)
     index_result = 0
-    for z in prange(z_len):
-        for x in prange(x_len):
-            for y in prange(y_len):
+    for z in range(z_len):
+        for x in range(x_len):
+            for y in range(y_len):
                 unflattened[x, y, z] = result[index_result]
                 index_result += 1
 
@@ -87,17 +85,19 @@ def numba_dot3d(a, b):
 
     return result
 
-
-
 if __name__ == "__main__":
     x = np.array([[
         [1, 2, 4, 8],
         [16, 32, 64, 128],
         [3, 6, 9, 12],
+        [1, 2, 4, 8],
+        [16, 32, 64, 128],
         [-0.6820, 0.0755, -0.3125, -21.8564]
     ], [
         [16, 32, 64, 128],
         [1, 2, 4, 8],
+        [3, 6, 9, 12],
+        [-0.6820, 0.0755, -0.3125, -21.8564],
         [3, 6, 9, 12],
         [-0.6820, 0.0755, -0.3125, -21.8564]
     ]], dtype=np.float32)
