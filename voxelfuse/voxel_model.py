@@ -7,10 +7,10 @@ import subprocess
 import meshio
 import numpy as np
 from pyvox.parser import VoxParser
-from voxelbots.materials import materials
+from voxelfuse.materials import materials
 from scipy import ndimage
 from numba import njit, prange
-from voxelbots.opencl import opencl_dot3d
+from voxelfuse.opencl import opencl_dot3d
 
 """
 VoxelModel Class

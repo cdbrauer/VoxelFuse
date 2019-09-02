@@ -10,9 +10,9 @@ Program applies blurring to the specified materials
 import PyQt5.QtGui as qg
 import sys
 
-from voxelbots.voxel_model import VoxelModel
-from voxelbots.mesh import Mesh
-from voxelbots.plot import Plot
+from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.mesh import Mesh
+from voxelfuse.plot import Plot
 
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)

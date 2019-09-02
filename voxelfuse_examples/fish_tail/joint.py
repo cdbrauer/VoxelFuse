@@ -13,10 +13,10 @@ import sys
 import numpy as np
 import time
 
-from voxelbots.voxel_model import VoxelModel
-from voxelbots.mesh import Mesh
-from voxelbots.plot import Plot
-from voxelbots.materials import materials
+from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.mesh import Mesh
+from voxelfuse.plot import Plot
+from voxelfuse.materials import materials
 
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)

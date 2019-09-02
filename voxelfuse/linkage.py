@@ -5,7 +5,7 @@ Dan Aukes, Cole Brauer
 Extends the VoxelModel class with functions for generating linkages
 """
 
-from voxelbots.voxel_model import VoxelModel
+from voxelfuse.voxel_model import VoxelModel
 
 class Linkage(VoxelModel):
     def insertTabs(self, template, x_coords, y_coords, rotation_increments):

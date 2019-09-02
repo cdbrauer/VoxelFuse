@@ -2,7 +2,7 @@
 Copyright 2019
 Dan Aukes, Cole Brauer
 
-Example 1 - Multimaterial 3D printing with blurring
+Multimaterial 3D printing with blurring/dithering
 
 User inputs a model and the program will apply blurring to requested materials
 
@@ -13,9 +13,9 @@ joint2.1.vox demonstrates a dog bone joint with blurring
 import PyQt5.QtGui as qg
 import sys
 
-from voxelbots.voxel_model import VoxelModel
-from voxelbots.mesh import Mesh
-from voxelbots.plot import Plot
+from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.mesh import Mesh
+from voxelfuse.plot import Plot
 
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
@@ -39,7 +39,7 @@ if __name__=='__main__':
     # modelBlur = modelBlur.blur(blurRadius)
 
     # Add unmodified voxels to result
-    modelResult = modelBlur #.union(modelIn)
+    modelResult = modelBlur.union(modelIn)
 
     # Clean up result
     # modelResult = modelResult.scaleValues()
