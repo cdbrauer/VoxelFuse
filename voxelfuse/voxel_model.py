@@ -372,6 +372,24 @@ class VoxelModel:
 
         return VoxelModel(new_model, self.x - radius, self.y - radius, self.z - radius)
 
+    def dilateLarge(self, radius = 1):
+        x_len = len(self.model[0, 0, :, 0]) + (radius * 2)
+        y_len = len(self.model[:, 0, 0, 0]) + (radius * 2)
+        z_len = len(self.model[0, :, 0, 0]) + (radius * 2)
+
+        new_model = np.zeros((y_len, z_len, x_len, len(materials)+1))
+        new_model[radius:-radius, radius:-radius, radius:-radius, :] = self.model
+
+        r = (radius * 2) + 1
+        struct = np.ones((r, r, r))
+
+        new_model[:, :, :, 0] = ndimage.binary_dilation(new_model[:, :, :, 0], structure=struct)
+
+        for m in range(len(materials)):
+            new_model[:, :, :, m+1] = ndimage.grey_dilation(new_model[:, :, :, m+1], footprint=struct)
+
+        return VoxelModel(new_model, self.x - radius, self.y - radius, self.z - radius)
+
     def erode(self, radius = 1, plane = 'xyz', connectivity = 3):
         x_len = len(self.model[0, 0, :, 0]) + (radius * 2)
         y_len = len(self.model[:, 0, 0, 0]) + (radius * 2)

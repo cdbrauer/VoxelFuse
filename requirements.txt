@@ -1,8 +1,0 @@
-numpy
-scipy
-pyqt5
-pyqtgraph
-pyopengl
-py-vox-io
-meshio
-numba
