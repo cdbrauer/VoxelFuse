@@ -1,24 +1,23 @@
-# Multi-Material Manufacturing Process Planning Tools
+# <img src="https://raw.githubusercontent.com/Team-Automata/VoxelFuse/master/logo.png" alt="VoxelFuse">
 
-<img src="https://raw.githubusercontent.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/master/main.png">
+The multi-material manufacturing toolkit.
 
-This library provides a set of tools for processing 3D components requiring multiple materials and manufacturing processes.
+<img src="https://raw.githubusercontent.com/Team-Automata/VoxelFuse/master/main.png">
+
+VoxelFuse provides a set of Python commands for importing, modifying, displaying, and exporting multi-material 3D model data.  This library allows scripts to be quickly created for processing different classes of models and generating the files needed to produce them.
 
 Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at ASU.
 
 ## Features
 - .vox and .stl file import
-- Model rendering with grids and axes
-- Conversion of voxel data to mesh surfaces
 - Isolation of specific materials and layers
 - Boolean operations for both volumes and materials
 - Dilate and Erode Operations
 - Gaussian Blurring
+- Conversion of voxel data to mesh surfaces
+- Model rendering with grids and axes
 - .stl file export
-
-### To-do
-- Dithering option
-- Improvements to mesh conversion to remove duplicate vertices
+- .gcode file modification
 
 ## Installation
 
