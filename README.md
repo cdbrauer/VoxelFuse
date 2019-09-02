@@ -1,8 +1,8 @@
-# <img src="https://raw.githubusercontent.com/Team-Automata/VoxelFuse/master/logo.png" alt="VoxelFuse">
+# <img src="https://raw.githubusercontent.com/cdbrauer/VoxelFuse/master/logo.png" alt="VoxelFuse">
 
 The multi-material manufacturing toolkit.
 
-<img src="https://raw.githubusercontent.com/Team-Automata/VoxelFuse/master/main.png">
+<img src="https://raw.githubusercontent.com/cdbrauer/VoxelFuse/master/main.png">
 
 VoxelFuse provides a set of Python commands for importing, modifying, displaying, and exporting multi-material 3D model data.  This library allows scripts to be quickly created for processing different classes of models and generating the files needed to produce them.
 
@@ -21,29 +21,16 @@ Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at 
 
 ## Installation
 
-This project uses Python 3 and requires the following libraries:
+The voxelfuse library can be installed using pip.
 
-- numpy
-- scipy.ndimage
-- pyqt5
-- pyqtgraph
-- pyopengl
-- py-vox-io
-- meshio
-- numba
+    pip3 install voxelfuse
 
-These can be installed from the requirements.txt file using pip by running the following command in the project directory:
-
-    pip3 install -r requirements.txt
-
-After cloning the repository, make sure that the following folder is accessible by Python. Depending on your IDE, this can be done by adding it to the system PATH variable or the project path settings.
-
-	C:\<clone directory>\Multi-Material-Manufacturing-Process-Planning-Tools\python\voxelbots
+To use the .stl file import commands/examples, [Gmsh](http://gmsh.info/) must also be installed.
 
 ## .vox File Generation
 If desired, input models can be created in a .vox file format to allow different materials to be specified in a single model.  This also speeds up import times. My process using [MagicaVoxel](https://ephtracy.github.io) is as follows:
 
-1. Use the "Open" button under the "Palette" section to open the [color-palette-8mat.png](https://github.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/raw/master/color-palette-8mat.png) file. This will give you 8 colors that correspond to the materials defined in materials.py
+1. Use the "Open" button under the "Palette" section to open the [color-palette-8mat.png](https://github.com/cdbrauer/VoxelFuse/raw/master/color-palette-8mat.png) file. This will give you 8 colors that correspond to the materials defined in materials.py
 2. Create your model. By default the library will use a scale of 1mm per voxel when importing/exporting.
 3. Save the model as a .vox file using the "export" function  (NOT the "save" function).
 
@@ -51,8 +38,8 @@ Using MagicaVoxel and the .vox format will limit you to using distinct voxel mat
 
 ## Documentation
 
-Please see the [wiki](https://github.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/wiki) for code documentation.
+Please see the [wiki](https://github.com/cdbrauer/VoxelFuse/wiki) for code documentation.
 
 <br/><br/>
 
-<a href="http://idealab.asu.edu/" target="_blank"><img src="https://raw.githubusercontent.com/Team-Automata/Multi-Material-Manufacturing-Process-Planning-Tools/master/footer.png"/></a>
+<a href="http://idealab.asu.edu/" target="_blank"><img src="https://raw.githubusercontent.com/cdbrauer/VoxelFuse/master/footer.png"/></a>
