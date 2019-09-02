@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Apr 30 15:30:42 2019
+Copyright 2019
+Dan Aukes, Cole Brauer
 
-@author: daukes
+VoxelFuse: The multi-material manufacturing toolkit
 """
 
+name = "voxelfuse"
+__version__ = "1.0.0"
