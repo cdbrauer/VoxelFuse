@@ -31,7 +31,7 @@ def opencl_dot3d(a, b):
     # context = cl.create_some_context()
 
     program = cl.Program(context, """
-        __kernel void matrix_dot_vector(__global const float4 *a, __global const float4 *b, const unsigned int x_len, const int y_len, const int z_len, __global float *result) {
+        __kernel void matrix_dot_vector(__global const double4 *a, __global const double4 *b, const unsigned int x_len, const int y_len, const int z_len, __global double *result) {
             int gid = get_global_id(0);
             
             int z = gid / (x_len * y_len);
@@ -49,7 +49,7 @@ def opencl_dot3d(a, b):
     a_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=a_flat)
     b_buf = cl.Buffer(context, mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR, hostbuf=b)
 
-    result = np.zeros((x_len * y_len * z_len), np.float32)
+    result = np.zeros((x_len * y_len * z_len), np.float64)
     result_buf = cl.Buffer(context, mem_flags.WRITE_ONLY, result.nbytes)
 
     program.matrix_dot_vector(queue, result.shape, None, a_buf, b_buf, x_len, y_len, z_len, result_buf)
@@ -86,48 +86,15 @@ def numba_dot3d(a, b):
     return result
 
 if __name__ == "__main__":
-    x = np.array([[
-        [1, 2, 4, 8],
-        [16, 32, 64, 128],
-        [3, 6, 9, 12],
-        [-0.6820, 0.0755, -0.3125, -21.8564],
-        [3, 6, 9, 12],
-        [-0.6820, 0.0755, -0.3125, -21.8564],
-        [3, 6, 9, 12],
-        [-0.6820, 0.0755, -0.3125, -21.8564],
-        [16, 32, 64, 128]
-    ], [
-        [16, 32, 64, 128],
-        [1, 2, 4, 8],
-        [3, 6, 9, 12],
-        [-0.6820, 0.0755, -0.3125, -21.8564],
-        [3, 6, 9, 12],
-        [-0.6820, 0.0755, -0.3125, -21.8564],
-        [3, 6, 9, 12],
-        [-0.6820, 0.0755, -0.3125, -21.8564],
-        [16, 32, 64, 128]
-    ]], dtype=np.float32)
+    x = np.random.rand(133, 4, 4).astype(np.float64)
+    y = np.random.rand(3960, 4).astype(np.float64)
 
-    y = np.array([
-        [1, 2, 4, 8],
-        [16, 32, 64, 128],
-        [3, 6, 9, 12],
-        [-81.5, -9.5, 0.5, 1.0]
-    ], dtype=np.float32)
-
-    # x_len = 3
-    # y_len = 3
-    # z_len = 3
-    # for i in range(27):
-    #     z = i // (x_len * y_len)
-    #     l = i % (z*(x_len * y_len))
-    #     y = l // x_len
-    #     x = l % x_len
-    #     print(x)
-    #     print(y)
-    #     print(z)
+    opencl_res = opencl_dot3d(x, y)
+    numba_res = numba_dot3d(x, y)
 
     print("OpenCL:")
-    print(opencl_dot3d(x, y))
+    print(opencl_res)
     print("Numba:")
-    print(numba_dot3d(x, y))
+    print(numba_res)
+
+    print(np.allclose(opencl_res, numba_res))

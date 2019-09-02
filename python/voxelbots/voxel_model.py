@@ -10,7 +10,7 @@ from pyvox.parser import VoxParser
 from voxelbots.materials import materials
 from scipy import ndimage
 from numba import njit, prange
-from voxelbots.opencl2 import opencl_dot3d
+from voxelbots.opencl import opencl_dot3d
 
 """
 VoxelModel Class
@@ -82,18 +82,6 @@ class VoxelModel:
 
         #u2 = dot3d(np.asarray(T_inv, order='c'), np.asarray(xyz_mid, order='c'))
         u2 = opencl_dot3d(np.asarray(T_inv, order='c'), np.asarray(xyz_mid, order='c'))
-
-        x_len = np.int32(len(u2[:, 0, 0]))
-        y_len = np.int32(len(u2[0, :, 0]))
-        z_len = np.int32(len(u2[:, 0]))
-        nan_number = 0;
-        for x in prange(x_len):
-            for y in prange(y_len):
-                for z in prange(z_len):
-                    if np.isnan(u2[x, y, z]):
-                        nan_number += 1
-                        print(x, ", ", y, ", ", z, " is NaN")
-        print("There are ", nan_number, " NaNs in the array")
 
         f1 = ((u2[:, :, :] >= 0).sum(1) == 4)
         f2 = ((u2[:, :, :] <= 1).sum(1) == 4)
@@ -647,7 +635,7 @@ def formatVoxData(input_matrix, material_count):
     y_len = len(input_matrix[:, 0, 0])
     z_len = len(input_matrix[0, :, 0])
 
-    new_model = np.zeros((y_len, z_len, x_len, material_count+1), dtype=np.float16)
+    new_model = np.zeros((y_len, z_len, x_len, material_count+1), dtype=np.float32)
 
     # Loop through input_model data
     for x in range(x_len):
