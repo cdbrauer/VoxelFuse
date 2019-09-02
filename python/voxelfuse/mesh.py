@@ -7,8 +7,8 @@ import numpy as np
 import meshio
 from numba import njit
 
-from voxelbots.voxel_model import alignDims
-from voxelbots.materials import materials
+from voxelfuse.voxel_model import alignDims
+from voxelfuse.materials import materials
 
 """
 Mesh Class

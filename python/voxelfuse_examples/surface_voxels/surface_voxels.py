@@ -7,7 +7,7 @@ Finds the surface voxels of a model and outputs a list of their coordinates
 Used by the Mesh class to improve meshing speed
 """
 
-from voxelbots.voxel_model import VoxelModel
+from voxelfuse.voxel_model import VoxelModel
 
 if __name__=='__main__':
     # User preferences
