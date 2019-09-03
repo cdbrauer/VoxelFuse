@@ -3,6 +3,8 @@
 The multi-material manufacturing toolkit.
 
 <img src="https://raw.githubusercontent.com/cdbrauer/VoxelFuse/master/main.png">
+<br/><br/>
+<img src="https://raw.githubusercontent.com/cdbrauer/VoxelFuse/master/main2.png">
 
 VoxelFuse provides a set of Python commands for importing, modifying, displaying, and exporting multi-material 3D model data.  This library allows scripts to be quickly created for processing different classes of models and generating the files needed to produce them.
 
