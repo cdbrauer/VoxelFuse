@@ -331,6 +331,9 @@ class VoxelModel:
     - Return a model
     """
     def dilate(self, radius = 1, plane = 'xyz', connectivity = 3):
+        if radius == 0:
+            return VoxelModel.copy(self)
+
         x_len = len(self.model[0, 0, :, 0]) + (radius * 2)
         y_len = len(self.model[:, 0, 0, 0]) + (radius * 2)
         z_len = len(self.model[0, :, 0, 0]) + (radius * 2)
@@ -375,6 +378,9 @@ class VoxelModel:
         return VoxelModel(new_model, self.x - radius, self.y - radius, self.z - radius)
 
     def dilateBounded(self, radius = 1, plane = 'xyz', connectivity = 3): # Dilates a model without increasing the size of its bounding box
+        if radius == 0:
+            return VoxelModel.copy(self)
+
         self.fitWorkspace()
         new_model = np.copy(self.model)
 
@@ -415,6 +421,9 @@ class VoxelModel:
         return VoxelModel(new_model, self.x, self.y, self.z)
 
     def erode(self, radius = 1, plane = 'xyz', connectivity = 3):
+        if radius == 0:
+            return VoxelModel.copy(self)
+
         x_len = len(self.model[0, 0, :, 0]) + (radius * 2)
         y_len = len(self.model[:, 0, 0, 0]) + (radius * 2)
         z_len = len(self.model[0, :, 0, 0]) + (radius * 2)
@@ -479,7 +488,7 @@ class VoxelModel:
     """
     def removeNegatives(self): # Remove negative material values (which have no physical meaning)
         new_model = np.copy(self.model)
-        new_model[new_model < 0] = 0
+        new_model[new_model < 1e-10] = 0
         material_sums = np.sum(new_model[:,:,:,1:], 3) # This and following update the a values
         material_sums[material_sums > 0] = 1
         new_model[:, :, :, 0] = material_sums
