@@ -365,30 +365,54 @@ class VoxelModel:
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
 
+        #print('Dilate:')
         for i in range(radius):
+            #print(str(i) + '/' + str(radius))
             new_model[:, :, :, 0] = ndimage.binary_dilation(new_model[:, :, :, 0], structure=struct)
             for m in range(len(materials)):
                 new_model[:, :, :, m+1] = ndimage.grey_dilation(new_model[:, :, :, m+1], footprint=struct)
 
         return VoxelModel(new_model, self.x - radius, self.y - radius, self.z - radius)
 
-    def dilateLarge(self, radius = 1):
-        x_len = len(self.model[0, 0, :, 0]) + (radius * 2)
-        y_len = len(self.model[:, 0, 0, 0]) + (radius * 2)
-        z_len = len(self.model[0, :, 0, 0]) + (radius * 2)
+    def dilateBounded(self, radius = 1, plane = 'xyz', connectivity = 3): # Dilates a model without increasing the size of its bounding box
+        self.fitWorkspace()
+        new_model = np.copy(self.model)
 
-        new_model = np.zeros((y_len, z_len, x_len, len(materials)+1))
-        new_model[radius:-radius, radius:-radius, radius:-radius, :] = self.model
+        struct = ndimage.generate_binary_structure(3, connectivity)
 
-        r = (radius * 2) + 1
-        struct = np.ones((r, r, r))
+        if plane == 'xy':
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+        elif plane == 'xz':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+        elif plane == 'yz':
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
+        elif plane == 'x':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+        elif plane == 'y':
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
+        elif plane == 'z':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
 
-        new_model[:, :, :, 0] = ndimage.binary_dilation(new_model[:, :, :, 0], structure=struct)
+        #print('Dilate Bounded:')
+        for i in range(radius):
+            #print(str(i) + '/' + str(radius))
+            new_model[:, :, :, 0] = ndimage.binary_dilation(new_model[:, :, :, 0], structure=struct)
+            for m in range(len(materials)):
+                new_model[:, :, :, m+1] = ndimage.grey_dilation(new_model[:, :, :, m+1], footprint=struct)
 
-        for m in range(len(materials)):
-            new_model[:, :, :, m+1] = ndimage.grey_dilation(new_model[:, :, :, m+1], footprint=struct)
-
-        return VoxelModel(new_model, self.x - radius, self.y - radius, self.z - radius)
+        return VoxelModel(new_model, self.x, self.y, self.z)
 
     def erode(self, radius = 1, plane = 'xyz', connectivity = 3):
         x_len = len(self.model[0, 0, :, 0]) + (radius * 2)
@@ -410,7 +434,9 @@ class VoxelModel:
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
 
+        #print('Erode:')
         for i in range(radius):
+            #print(str(i) + '/' + str(radius))
             new_model[:, :, :, 0] = ndimage.binary_erosion(new_model[:, :, :, 0], structure=struct)
             for m in range(len(materials)):
                 new_model[:, :, :, m+1] = ndimage.grey_erosion(new_model[:, :, :, m+1], footprint=struct)
