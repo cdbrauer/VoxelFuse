@@ -1,10 +1,10 @@
-# <img src="https://raw.githubusercontent.com/cdbrauer/VoxelFuse/master/images/logo.png" alt="VoxelFuse">
+# ![VoxelFuse](../master/images/logo.png?raw=true)
 
 The multi-material manufacturing toolkit.
 
-<img src="https://raw.githubusercontent.com/cdbrauer/VoxelFuse/master/images/main.png">
+![Example 1](../master/images/main.png?raw=true)
 
-<img src="https://raw.githubusercontent.com/cdbrauer/VoxelFuse/master/images/main2.png">
+![Example 2](../master/images/main2.png?raw=true)
 
 VoxelFuse provides a set of Python commands for importing, modifying, displaying, and exporting multi-material 3D model data.  This library allows scripts to be quickly created for processing different classes of models and generating the files needed to produce them.
 
@@ -32,7 +32,7 @@ To use the .stl file import commands/examples, [Gmsh](http://gmsh.info/) must al
 ## .vox File Generation
 If desired, input models can be created in a .vox file format to allow different materials to be specified in a single model.  This also speeds up import times. My process using [MagicaVoxel](https://ephtracy.github.io) is as follows:
 
-1. Use the "Open" button under the "Palette" section to open the [color-palette-8mat.png](https://github.com/cdbrauer/VoxelFuse/raw/master/images/color-palette-8mat.png) file. This will give you 8 colors that correspond to the materials defined in materials.py
+1. Use the "Open" button under the "Palette" section to open the [color-palette-8mat.png](../master/images/color-palette-8mat.png) file. This will give you 8 colors that correspond to the materials defined in materials.py
 2. Create your model. By default the library will use a scale of 1mm per voxel when importing/exporting.
 3. Save the model as a .vox file using the "export" function  (NOT the "save" function).
 
@@ -44,4 +44,4 @@ Please see the [wiki](https://github.com/cdbrauer/VoxelFuse/wiki) for code docum
 
 <br/><br/>
 
-<a href="http://idealab.asu.edu/" target="_blank"><img src="https://raw.githubusercontent.com/cdbrauer/VoxelFuse/master/images/footer.png"/></a>
+<a href="http://idealab.asu.edu/" target="_blank">![IDEAlab](../master/images/footer.png?raw=true)</a>
