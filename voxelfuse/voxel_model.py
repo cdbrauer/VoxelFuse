@@ -46,34 +46,47 @@ class VoxelModel:
         data = makeMesh(filename, True)
 
         points = data.points
+
+        # Get lists of indices of point
         ii_tri = data.cells['triangle']
         ii_tet = data.cells['tetra']
+
+        # Convert lists of indices to lists of points
         tris = points[ii_tri]
         tets = points[ii_tet]
+
+        # Create barycentric coordinate system
         T = np.concatenate((tets, tets[:, :, 0:1] * 0 + 1), 2)
         T_inv = np.zeros(T.shape)
 
         for ii, t in enumerate(T):
             T_inv[ii] = np.linalg.inv(t).T
 
+        # Find bounding box
         points_min = points.min(0)
         points_max = points.max(0)
         points_min_r = np.round(points_min, res)
         points_max_r = np.round(points_max, res)
 
+        # Create 3D grid
         xx = np.r_[points_min_r[0]:points_max_r[0]+1:10 ** (-res)]
         yy = np.r_[points_min_r[1]:points_max_r[1]+1:10 ** (-res)]
         zz = np.r_[points_min_r[2]:points_max_r[2]+1:10 ** (-res)]
 
+        # Find center of every grid point
         xx_mid = (xx[1:] + xx[:-1]) / 2
         yy_mid = (yy[1:] + yy[:-1]) / 2
         zz_mid = (zz[1:] + zz[:-1]) / 2
 
+        # Create grid of voxel centers
         xyz_mid = np.array(np.meshgrid(xx_mid, yy_mid, zz_mid, indexing='ij'))
         xyz_mid = xyz_mid.transpose(1, 2, 3, 0)
+        # Convert to list of points
         xyz_mid = xyz_mid.reshape(-1, 3)
+        # Add 1 to allow conversion to barycentric coordinates
         xyz_mid = np.concatenate((xyz_mid, xyz_mid[:, 0:1] * 0 + 1), 1)
 
+        # Create list of indices of each voxel
         ijk_mid = np.array(
             np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing='ij'))
         ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
