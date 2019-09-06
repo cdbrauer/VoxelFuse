@@ -47,34 +47,47 @@ class VoxelModel:
         data = makeMesh(filename, True)
 
         points = data.points
+
+        # Get lists of indices of point
         ii_tri = data.cells['triangle']
         ii_tet = data.cells['tetra']
+
+        # Convert lists of indices to lists of points
         tris = points[ii_tri]
         tets = points[ii_tet]
+
+        # Create barycentric coordinate system
         T = np.concatenate((tets, tets[:, :, 0:1] * 0 + 1), 2)
         T_inv = np.zeros(T.shape)
 
         for ii, t in enumerate(T):
             T_inv[ii] = np.linalg.inv(t).T
 
+        # Find bounding box
         points_min = points.min(0)
         points_max = points.max(0)
         points_min_r = np.round(points_min, res)
         points_max_r = np.round(points_max, res)
 
+        # Create 3D grid
         xx = np.r_[points_min_r[0]:points_max_r[0]+1:10 ** (-res)]
         yy = np.r_[points_min_r[1]:points_max_r[1]+1:10 ** (-res)]
         zz = np.r_[points_min_r[2]:points_max_r[2]+1:10 ** (-res)]
 
+        # Find center of every grid point
         xx_mid = (xx[1:] + xx[:-1]) / 2
         yy_mid = (yy[1:] + yy[:-1]) / 2
         zz_mid = (zz[1:] + zz[:-1]) / 2
 
+        # Create grid of voxel centers
         xyz_mid = np.array(np.meshgrid(xx_mid, yy_mid, zz_mid, indexing='ij'))
         xyz_mid = xyz_mid.transpose(1, 2, 3, 0)
+        # Convert to list of points
         xyz_mid = xyz_mid.reshape(-1, 3)
+        # Add 1 to allow conversion to barycentric coordinates
         xyz_mid = np.concatenate((xyz_mid, xyz_mid[:, 0:1] * 0 + 1), 1)
 
+        # Create list of indices of each voxel
         ijk_mid = np.array(
             np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing='ij'))
         ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
@@ -333,6 +346,9 @@ class VoxelModel:
     - Return a model
     """
     def dilate(self, radius = 1, plane = 'xyz', connectivity = 3):
+        if radius == 0:
+            return VoxelModel.copy(self)
+
         x_len = len(self.model[0, 0, :, 0]) + (radius * 2)
         y_len = len(self.model[:, 0, 0, 0]) + (radius * 2)
         z_len = len(self.model[0, :, 0, 0]) + (radius * 2)
@@ -367,14 +383,62 @@ class VoxelModel:
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
 
+        #print('Dilate:')
         for i in range(radius):
+            #print(str(i) + '/' + str(radius))
             new_model[:, :, :, 0] = ndimage.binary_dilation(new_model[:, :, :, 0], structure=struct)
             for m in range(len(materials)):
                 new_model[:, :, :, m+1] = ndimage.grey_dilation(new_model[:, :, :, m+1], footprint=struct)
 
         return VoxelModel(new_model, self.x - radius, self.y - radius, self.z - radius)
 
+    def dilateBounded(self, radius = 1, plane = 'xyz', connectivity = 3): # Dilates a model without increasing the size of its bounding box
+        if radius == 0:
+            return VoxelModel.copy(self)
+
+        self.fitWorkspace()
+        new_model = np.copy(self.model)
+
+        struct = ndimage.generate_binary_structure(3, connectivity)
+
+        if plane == 'xy':
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+        elif plane == 'xz':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+        elif plane == 'yz':
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
+        elif plane == 'x':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+        elif plane == 'y':
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
+        elif plane == 'z':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
+
+        #print('Dilate Bounded:')
+        for i in range(radius):
+            #print(str(i) + '/' + str(radius))
+            new_model[:, :, :, 0] = ndimage.binary_dilation(new_model[:, :, :, 0], structure=struct)
+            for m in range(len(materials)):
+                new_model[:, :, :, m+1] = ndimage.grey_dilation(new_model[:, :, :, m+1], footprint=struct)
+
+        return VoxelModel(new_model, self.x, self.y, self.z)
+
     def erode(self, radius = 1, plane = 'xyz', connectivity = 3):
+        if radius == 0:
+            return VoxelModel.copy(self)
+
         x_len = len(self.model[0, 0, :, 0]) + (radius * 2)
         y_len = len(self.model[:, 0, 0, 0]) + (radius * 2)
         z_len = len(self.model[0, :, 0, 0]) + (radius * 2)
@@ -394,7 +458,9 @@ class VoxelModel:
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
 
+        #print('Erode:')
         for i in range(radius):
+            #print(str(i) + '/' + str(radius))
             new_model[:, :, :, 0] = ndimage.binary_erosion(new_model[:, :, :, 0], structure=struct)
             for m in range(len(materials)):
                 new_model[:, :, :, m+1] = ndimage.grey_erosion(new_model[:, :, :, m+1], footprint=struct)
@@ -437,7 +503,7 @@ class VoxelModel:
     """
     def removeNegatives(self): # Remove negative material values (which have no physical meaning)
         new_model = np.copy(self.model)
-        new_model[new_model < 0] = 0
+        new_model[new_model < 1e-10] = 0
         material_sums = np.sum(new_model[:,:,:,1:], 3) # This and following update the a values
         material_sums[material_sums > 0] = 1
         new_model[:, :, :, 0] = material_sums

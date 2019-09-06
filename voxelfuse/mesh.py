@@ -62,6 +62,7 @@ class Mesh:
         current_iter = 0
         max_iter = len(exterior_voxels_coords)
 
+        print('Mesh:')
         # Loop through voxel_model_array data
         for voxel_coords in exterior_voxels_coords:
             y = voxel_coords[0]
@@ -69,7 +70,7 @@ class Mesh:
             x = voxel_coords[2]
 
             if current_iter%1000 == 0:
-                print("%s / %s" % (current_iter, max_iter))
+                print("%s/%s" % (current_iter, max_iter))
             current_iter = current_iter + 1
 
             # If voxel is not empty
