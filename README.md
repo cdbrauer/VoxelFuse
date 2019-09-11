@@ -29,6 +29,12 @@ The voxelfuse library can be installed using pip.
 
 To use the .stl file import commands/examples, [Gmsh](http://gmsh.info/) must also be installed.
 
+## Extensions
+
+### VoxelFuse-Primitives
+
+Additional classes to generate 3D primitives and assist in the generation of new models. See [VoxelFuse-Primitives](https://github.com/cdbrauer/VoxelFuse-Primitives) for details.
+
 ## .vox File Generation
 If desired, input models can be created in a .vox file format to allow different materials to be specified in a single model.  This also speeds up import times. My process using [MagicaVoxel](https://ephtracy.github.io) is as follows:
 
