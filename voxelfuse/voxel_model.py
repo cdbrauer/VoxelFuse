@@ -236,6 +236,9 @@ class VoxelModel:
         mask = np.repeat(mask[..., None], len(materials)+1, axis=3)
         return VoxelModel(mask, self.x, self.y, self.z)
 
+    def __invert__(self):
+        return self.getUnoccupied()
+
     # Return a mask of all voxels occupied by the input model
     def getOccupied(self):
         mask = self.model[:, :, :, 0]
@@ -298,6 +301,9 @@ class VoxelModel:
 
         return VoxelModel(new_model, x_new, y_new, z_new)
 
+    def __and__(self, other):
+        return self.intersection(other)
+
     def union(self, model_to_add, material_priority = 'l'):
         a, b, x_new, y_new, z_new = alignDims(self, model_to_add)
 
@@ -315,6 +321,25 @@ class VoxelModel:
             new_model = new_model + a # material from left model takes priority
 
         return VoxelModel(new_model, x_new, y_new, z_new)
+
+    def __or__(self, other):
+        return self.union(other)
+
+    def xor(self, model_to_add):
+        a, b, x_new, y_new, z_new = alignDims(self, model_to_add)
+
+        mask1 = np.logical_not(b[:, :, :, 0])
+        mask1 = np.repeat(mask1[..., None], len(materials)+1, axis=3)
+
+        mask2 = np.logical_not(a[:, :, :, 0])
+        mask2 = np.repeat(mask2[..., None], len(materials) + 1, axis=3)
+
+        new_model = np.multiply(a, mask1) + np.multiply(b, mask2)
+
+        return VoxelModel(new_model, x_new, y_new, z_new)
+
+    def __xor__(self, other):
+        return self.xor(other)
 
     # Material is computed
     def add(self, model_to_add):
