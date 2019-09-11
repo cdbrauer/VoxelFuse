@@ -11,15 +11,11 @@ import numpy as np
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
-from voxelfuse.linkage import Linkage
 from voxelfuse.materials import materials
 
 if __name__=='__main__':
     # Settings
     stl = False
-
-    tabs = True
-    tabDesign = 'puzzle'
 
     blur = False
     blurRadius = 2
@@ -37,7 +33,6 @@ if __name__=='__main__':
 
     app1 = qg.QApplication(sys.argv)
 
-
     # Import coupon components
     if stl:
         # TODO: Improve dimensional accuracy of stl model import and use these files instead of vox file
@@ -51,23 +46,9 @@ if __name__=='__main__':
         center = center.setMaterial(2)
 
         # Combine components
-        coupon = Linkage.copy(end1.union(center.union(end2)))
+        coupon = VoxelModel.copy(end1.union(center.union(end2)))
     else: # use vox file
-        coupon = Linkage.fromVoxFile('coupon.vox') # Should use materials 1 and 2 (red and green)
-
-
-    # Apply effects to material interface
-    if tabs: # Add connecting tabs
-        # Load tab template
-        tab_template = VoxelModel.fromVoxFile('tab_' + tabDesign + '.vox')
-
-        # Set tab locations
-        xVals = [79, 46]
-        yVals = [9, 9]
-        rVals = [0, 2]
-
-        # Generate tabs
-        coupon = coupon.insertTabs(tab_template, xVals, yVals, rVals)
+        coupon = VoxelModel.fromVoxFile('coupon.vox') # Should use materials 1 and 2 (red and green)
 
     if blur: # Blur materials
         coupon = coupon.blur(blurRadius)
