@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="voxelfuse",
-    version="1.0.1",
+    version="1.0.2",
     author="Cole Brauer",
     description="A toolkit for processing 3D components made with mixtures of materials and multiple manufacturing processes",
     long_description=long_description,
