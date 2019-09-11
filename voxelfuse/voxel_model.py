@@ -22,6 +22,7 @@ Properties:
          
   x_coord, y_coord, z_coord: position of model origin
 """
+
 class VoxelModel:
     def __init__(self, model, x_coord = 0, y_coord = 0, z_coord = 0):
         self.model = model
@@ -29,15 +30,16 @@ class VoxelModel:
         self.y = y_coord
         self.z = z_coord
         self.numComponents = 0
-        s = np.shape(model)
-        self.components = np.zeros(s[:3])
+        self.components = np.zeros_like(model)
 
     @classmethod
-    def fromVoxFile(cls, filename, x_coord = 0, y_coord = 0, z_coord = 0):
-        m1 = VoxParser(filename).parse() # Import data and align axes
+    def fromVoxFile(cls, filename, x_coord = 0, y_coord = 0, z_coord = 0): # Import data and align axes
+        m1 = VoxParser(filename).parse()
         m2 = m1.to_dense()
         m2 = np.flip(m2, 1)
-        new_model = formatVoxData(m2, len(materials)) # Reformat data
+        m2 = np.rot90(m2, 1, (2, 0))
+        m2 = np.rot90(m2, 1, (1, 2))
+        #new_model = formatVoxData(m2, len(materials)) # Reformat data
         return cls(new_model, x_coord, y_coord, z_coord)
 
     @classmethod
