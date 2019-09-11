@@ -16,7 +16,7 @@ import time
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
-from voxelfuse.materials import materials
+from voxelfuse.materials import material_properties
 
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
@@ -48,8 +48,8 @@ if __name__=='__main__':
     insertedComponents = VoxelModel.emptyLike(modelResult)
 
     # Find inserted components
-    for m in range(len(materials)):
-        if materials[m]['process'] == 'ins':
+    for m in range(len(material_properties)):
+        if material_properties[m]['process'] == 'ins':
             insertedComponents = insertedComponents.union(modelIn.isolateMaterial(m).dilate())
 
     # Find clearance for inserted components

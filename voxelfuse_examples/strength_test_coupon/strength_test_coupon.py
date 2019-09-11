@@ -11,7 +11,7 @@ import numpy as np
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
-from voxelfuse.materials import materials
+from voxelfuse.materials import material_properties
 
 if __name__=='__main__':
     # Settings
@@ -60,7 +60,7 @@ if __name__=='__main__':
 
     if mold and not simpleMold: # Generate mold feature around material 2
         # Find all voxels containing <50% material 2
-        material_vector = np.zeros(len(materials) + 1)
+        material_vector = np.zeros(len(material_properties) + 1)
         material_vector[0] = 1
         material_vector[3] = 0.5
         printed_components = coupon - coupon.setMaterialVector(material_vector)
@@ -110,7 +110,7 @@ if __name__=='__main__':
 
     # Get non-cast components
     # Find all voxels containing <50% material 2
-    material_vector = np.zeros(len(materials) + 1)
+    material_vector = np.zeros(len(material_properties) + 1)
     material_vector[0] = 1
     material_vector[3] = 0.5
     printed_components = coupon_supported - coupon_supported.setMaterialVector(material_vector)

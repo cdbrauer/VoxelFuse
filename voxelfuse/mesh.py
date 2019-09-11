@@ -8,7 +8,7 @@ import meshio
 from numba import njit
 
 from voxelfuse.voxel_model import alignDims
-from voxelfuse.materials import materials
+from voxelfuse.materials import material_properties
 
 """
 Mesh Class
@@ -79,10 +79,10 @@ class Mesh:
                 g = 0
                 b = 0
 
-                for i in range(len(materials)):
-                    r = r + voxel_model_array[y, z, x, i+1] * materials[i]['r']
-                    g = g + voxel_model_array[y, z, x, i+1] * materials[i]['g']
-                    b = b + voxel_model_array[y, z, x, i+1] * materials[i]['b']
+                for i in range(len(material_properties)):
+                    r = r + voxel_model_array[y, z, x, i+1] * material_properties[i]['r']
+                    g = g + voxel_model_array[y, z, x, i+1] * material_properties[i]['g']
+                    b = b + voxel_model_array[y, z, x, i+1] * material_properties[i]['b']
 
                 r = 1 if r > 1 else r
                 g = 1 if g > 1 else g
