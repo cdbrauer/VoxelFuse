@@ -34,20 +34,27 @@ class VoxelModel:
         self.components = np.zeros_like(voxels)
 
     @classmethod
-    def fromVoxFile(cls, filename, x_coord = 0, y_coord = 0, z_coord = 0): # Import data and align axes
-        m1 = VoxParser(filename).parse()
-        m2 = m1.to_dense()
-        m2 = np.flip(m2, 1)
-        m2 = np.rot90(m2, 1, (2, 0))
-        m2 = np.rot90(m2, 1, (1, 2))
+    def fromVoxFile(cls, filename, x_coord = 0, y_coord = 0, z_coord = 0):
+        # Import data and align axes
+        v1 = VoxParser(filename).parse()
+        v2 = np.array(v1.to_dense(), dtype=np.int32)
+        v2 = np.flip(v2, 1)
+        v2 = np.rot90(v2, 1, (2, 0))
+        v2 = np.rot90(v2, 1, (1, 2))
 
-        materials = np.identity(len(material_properties))
-        materials[0, 0] = 0
-        a = np.ones((len(material_properties), 1))
-        a[0, 0] = 0
-        materials = np.hstack((a, materials))
+        # Generate materials table assuming indices match materials in material_properties
+        i = 0
+        materials = np.zeros(len(material_properties) + 1, dtype=np.float)
+        for m in np.unique(v2):
+            if m != 0:
+                i = i+1
+                material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
+                material_vector[0] = 1
+                material_vector[m+1] = 1
+                materials = np.vstack((materials, material_vector))
+                v2[v2 == m] = i
 
-        return cls(m2, materials, x_coord, y_coord, z_coord)
+        return cls(v2, materials, x_coord, y_coord, z_coord)
 
     @classmethod
     def fromMeshFile(cls, filename, x_coord=0, y_coord=0, z_coord=0):
@@ -116,17 +123,18 @@ class VoxelModel:
         m1 = np.rot90(voxels, 1, (0, 2))
         m1 = np.rot90(m1, 3, (0, 1))
 
-        materials = np.identity(len(material_properties))
-        materials[0, 0] = 0
-        a = np.ones((len(material_properties), 1))
-        a[0, 0] = 0
-        materials = np.hstack((a, materials))
+        # Assume material 1
+        materials = np.zeros(len(material_properties) + 1, dtype=np.float)
+        material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
+        material_vector[0] = 1
+        material_vector[2] = 1
+        materials = np.vstack((materials, material_vector))
         
         return cls(m1, materials, x_coord, y_coord, z_coord)
 
     @classmethod
     def emptyLike(cls, voxel_model):
-        new_model = cls(np.zeros_like(voxel_model.voxels), voxel_model.materials, voxel_model.x, voxel_model.y, voxel_model.z)
+        new_model = cls(np.zeros_like(voxel_model.voxels, dtype=np.int32), voxel_model.materials, voxel_model.x, voxel_model.y, voxel_model.z)
         return new_model
 
     @classmethod
@@ -204,7 +212,7 @@ class VoxelModel:
 
     # Update component labels for a model.  This uses a disconnected components algorithm and assumes that adjacent voxels with different materials are connected.
     def getComponents(self, connectivity=1):
-        mask = np.array(self.voxels[:, :, :] > 0)
+        mask = np.array(self.voxels[:, :, :] > 0, dtype=np.bool)
         struct = ndimage.generate_binary_structure(3, connectivity)
         self.components, self.numComponents = ndimage.label(mask, structure=struct)
 
@@ -214,15 +222,17 @@ class VoxelModel:
     - Return a model
     """
     # Get all voxels with a specified material
-    def isolateMaterial(self, material): # material input is an index corresponding to the materials table for the model
-        mask = np.array(self.voxels == material)
-        materials = np.zeros((2, len(material_properties)+1))
+    # TODO: This should probably reference the material properties table
+    # TODO: isolateMaterialVector
+    def isolateMaterial(self, material): # material input is an index corresponding to the materials array for the model
+        mask = np.array(self.voxels == material, dtype=np.bool)
+        materials = np.zeros((2, len(material_properties)+1), dtype=np.float)
         materials[1] = self.materials[material]
         return VoxelModel(mask.astype(int), materials, self.x, self.y, self.z)
 
     # Get all voxels in a specified layer
     def isolateLayer(self, layer):
-        new_voxels = np.zeros_like(self.voxels)
+        new_voxels = np.zeros_like(self.voxels, dtype=np.int32)
         new_voxels[:, :, layer - self.z] = self.voxels[:, :, layer - self.z]
         return VoxelModel(new_voxels, self.materials, self.x, self.y, self.z)
 
@@ -230,7 +240,7 @@ class VoxelModel:
     # Component labels must first be updated with getComponents
     # Unrecognized component labels will return an empty object
     def isolateComponent(self, component):
-        mask = np.array(self.components == component)
+        mask = np.array(self.components == component, dtype=np.bool)
         new_voxels = np.multiply(self.voxels, mask)
         return VoxelModel(new_voxels, self.materials, self.x, self.y, self.z)
 
@@ -241,7 +251,7 @@ class VoxelModel:
     """
     # Return all voxels not occupied by the input model
     def getUnoccupied(self):
-        mask = np.array(self.voxels == 0)
+        mask = np.array(self.voxels == 0, dtype=np.bool)
         return VoxelModel(mask, self.materials[0:2, :], self.x, self.y, self.z)
 
     def __invert__(self):
@@ -249,7 +259,7 @@ class VoxelModel:
 
     # Return all voxels occupied by the input model
     def getOccupied(self):
-        mask = np.array(self.voxels != 0)
+        mask = np.array(self.voxels != 0, dtype=np.bool)
         return VoxelModel(mask, self.materials[0:2, :], self.x, self.y, self.z)
 
     # Return the bounding box of the input model
@@ -257,29 +267,25 @@ class VoxelModel:
         new_model = VoxelModel.copy(self)
         new_model.fitWorkspace()
         new_model.voxels.fill(1)
+        new_model = new_model.getOccupied()
         new_model.materials = self.materials[0:2, :]
         return new_model
 
     # Set the material of a model
     def setMaterial(self, material): # material input is an index corresponding to the material properties table
         new_voxels = self.getOccupied().voxels # Converts input model to a mask, no effect if input is already a mask
-
-        materials = np.identity(len(material_properties))
-        materials[0, 0] = 0
-        a = np.ones((len(material_properties), 1))
-        a[0, 0] = 0
-        materials = np.hstack((a, materials))
-
-        a = np.zeros(len(material_properties)+1)
-        b = materials[material]
+        material_vector = np.zeros(len(material_properties)+1, dtype=np.float)
+        material_vector[0] = 1
+        material_vector[material+1] = 1
+        a = np.zeros(len(material_properties)+1, dtype=np.float)
+        b = material_vector
         m = np.vstack((a, b))
-
         return VoxelModel(new_voxels, m, self.x, self.y, self.z)
 
     # Set the material of a model
     def setMaterialVector(self, material_vector):  # material input is the desired material vector
         new_voxels = self.getOccupied().voxels  # Converts input model to a mask, no effect if input is already a mask
-        a = np.zeros(len(material_properties)+1)
+        a = np.zeros(len(material_properties)+1, dtype=np.float)
         b = material_vector
         materials = np.vstack((a, b))
         return VoxelModel(new_voxels, materials, self.x, self.y, self.z)
@@ -292,60 +298,68 @@ class VoxelModel:
     """
     def difference(self, model_to_sub):
         a, b, x_new, y_new, z_new = alignDims(self, model_to_sub)
-        # mask = np.logical_and(a[:, :, :, 0], np.logical_not(b[:, :, :, 0])) # Full comparison as defined in paper
-        mask = np.logical_not(b[:, :, :, 0]) # Shortened version, gives same result due to multiplication step
-        mask = np.repeat(mask[..., None], len(material_properties) + 1, axis=3)
-        new_model = np.multiply(a, mask)
-        return VoxelModel(new_model, x_new, y_new, z_new)
+        mask = np.array(b == 0, dtype=np.bool)
+        new_voxels = np.multiply(a, mask)
+        return VoxelModel(new_voxels, self.materials, x_new, y_new, z_new)
 
     def intersection(self, model_2, material_priority = 'l'):
         a, b, x_new, y_new, z_new = alignDims(self, model_2)
-        mask = np.logical_and(a[:, :, :, 0], b[:, :, :, 0])
-        mask = np.repeat(mask[..., None], len(material_properties) + 1, axis=3)
+        mask = np.logical_and(np.array(a != 0, dtype=np.bool), np.array(b != 0, dtype=np.bool))
 
         if material_priority == 'r':
-            new_model = np.multiply(b, mask) # material from right model takes priority
+            new_voxels = np.multiply(b, mask) # material from right model takes priority
+            materials = model_2.materials
         else:
-            new_model = np.multiply(a, mask) # material from left model takes priority
+            new_voxels = np.multiply(a, mask) # material from left model takes priority
+            materials = self.materials
 
-        return VoxelModel(new_model, x_new, y_new, z_new)
+        return VoxelModel(new_voxels, materials, x_new, y_new, z_new)
 
     def __and__(self, other):
         return self.intersection(other)
 
     def union(self, model_to_add, material_priority = 'l'):
+        materials = np.vstack((self.materials, model_to_add.materials[1:]))
         a, b, x_new, y_new, z_new = alignDims(self, model_to_add)
+
+        i_offset = len(self.materials) - 1
+        b = b + i_offset
+        b[b == i_offset] = 0
 
         # Paper uses a symmetric difference operation combined with the left/right intersection
         # A condensed version of this operation is used here for code simplicity
         if material_priority == 'r':
-            mask = np.logical_not(b[:, :, :, 0])
-            mask = np.repeat(mask[..., None], len(material_properties) + 1, axis=3)
-            new_model = np.multiply(a, mask)
-            new_model = new_model + b # material from right model takes priority
+            mask = np.array(b == 0, dtype=np.bool)
+            new_voxels = np.multiply(a, mask)
+            new_voxels = new_voxels + b # material from right model takes priority
         else:
-            mask = np.logical_not(a[:, :, :, 0])
-            mask = np.repeat(mask[..., None], len(material_properties) + 1, axis=3)
-            new_model = np.multiply(b, mask)
-            new_model = new_model + a # material from left model takes priority
+            mask = np.array(a == 0, dtype=np.bool)
+            new_voxels = np.multiply(b, mask)
+            new_voxels = new_voxels + a # material from left model takes priority
 
-        return VoxelModel(new_model, x_new, y_new, z_new)
+        new_voxels, materials = removeDuplicateMaterials(new_voxels, materials)
+
+        return VoxelModel(new_voxels, materials, x_new, y_new, z_new)
 
     def __or__(self, other):
         return self.union(other)
 
-    def xor(self, model_to_add):
-        a, b, x_new, y_new, z_new = alignDims(self, model_to_add)
+    def xor(self, model_2):
+        materials = np.vstack((self.materials, model_2.materials[1:]))
+        a, b, x_new, y_new, z_new = alignDims(self, model_2)
 
-        mask1 = np.logical_not(b[:, :, :, 0])
-        mask1 = np.repeat(mask1[..., None], len(material_properties) + 1, axis=3)
+        i_offset = len(self.materials) - 1
+        b = b + i_offset
+        b[b == i_offset] = 0
 
-        mask2 = np.logical_not(a[:, :, :, 0])
-        mask2 = np.repeat(mask2[..., None], len(material_properties) + 1, axis=3)
+        mask1 = np.array(b == 0, dtype=np.bool)
+        mask2 = np.array(a == 0, dtype=np.bool)
 
-        new_model = np.multiply(a, mask1) + np.multiply(b, mask2)
+        new_voxels = np.multiply(a, mask1) + np.multiply(b, mask2)
 
-        return VoxelModel(new_model, x_new, y_new, z_new)
+        new_voxels, materials = removeDuplicateMaterials(new_voxels, materials)
+
+        return VoxelModel(new_voxels, materials, x_new, y_new, z_new)
 
     def __xor__(self, other):
         return self.xor(other)
@@ -377,17 +391,16 @@ class VoxelModel:
     
     - Return a model
     """
-    def dilate(self, radius = 1, plane = 'xyz', connectivity = 3):
+    def dilate(self, radius = 1, plane = 'xyz', connectivity = 3): # TODO: Preserve overlapping materials?
         if radius == 0:
             return VoxelModel.copy(self)
 
-        x_len = len(self.voxels[0, 0, :, 0]) + (radius * 2)
-        y_len = len(self.voxels[:, 0, 0, 0]) + (radius * 2)
-        z_len = len(self.voxels[0, :, 0, 0]) + (radius * 2)
+        x_len = len(self.voxels[:, 0, 0]) + (radius * 2)
+        y_len = len(self.voxels[0, :, 0]) + (radius * 2)
+        z_len = len(self.voxels[0, 0, :]) + (radius * 2)
 
-        new_model = np.zeros((y_len, z_len, x_len, len(material_properties) + 1))
-        new_model[radius:-radius, radius:-radius, radius:-radius, :] = self.voxels
-
+        new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
+        new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
         struct = ndimage.generate_binary_structure(3, connectivity)
 
         if plane == 'xy':
@@ -415,22 +428,17 @@ class VoxelModel:
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
 
-        #print('Dilate:')
         for i in range(radius):
-            #print(str(i) + '/' + str(radius))
-            new_model[:, :, :, 0] = ndimage.binary_dilation(new_model[:, :, :, 0], structure=struct)
-            for m in range(len(material_properties)):
-                new_model[:, :, :, m+1] = ndimage.grey_dilation(new_model[:, :, :, m+1], footprint=struct)
+            new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
 
-        return VoxelModel(new_model, self.x - radius, self.y - radius, self.z - radius)
+        return VoxelModel(new_voxels, self.materials, self.x - radius, self.y - radius, self.z - radius)
 
     def dilateBounded(self, radius = 1, plane = 'xyz', connectivity = 3): # Dilates a model without increasing the size of its bounding box
         if radius == 0:
             return VoxelModel.copy(self)
 
         self.fitWorkspace()
-        new_model = np.copy(self.voxels)
-
+        new_voxels = np.copy(self.voxels)
         struct = ndimage.generate_binary_structure(3, connectivity)
 
         if plane == 'xy':
@@ -460,24 +468,20 @@ class VoxelModel:
 
         #print('Dilate Bounded:')
         for i in range(radius):
-            #print(str(i) + '/' + str(radius))
-            new_model[:, :, :, 0] = ndimage.binary_dilation(new_model[:, :, :, 0], structure=struct)
-            for m in range(len(material_properties)):
-                new_model[:, :, :, m+1] = ndimage.grey_dilation(new_model[:, :, :, m+1], footprint=struct)
+            new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
 
-        return VoxelModel(new_model, self.x, self.y, self.z)
+        return VoxelModel(new_voxels, self.materials, self.x - radius, self.y - radius, self.z - radius)
 
     def erode(self, radius = 1, plane = 'xyz', connectivity = 3):
         if radius == 0:
             return VoxelModel.copy(self)
 
-        x_len = len(self.voxels[0, 0, :, 0]) + (radius * 2)
-        y_len = len(self.voxels[:, 0, 0, 0]) + (radius * 2)
-        z_len = len(self.voxels[0, :, 0, 0]) + (radius * 2)
+        x_len = len(self.voxels[:, 0, 0]) + (radius * 2)
+        y_len = len(self.voxels[0, :, 0]) + (radius * 2)
+        z_len = len(self.voxels[0, 0, :]) + (radius * 2)
 
-        new_model = np.zeros((y_len, z_len, x_len, len(material_properties) + 1))
-        new_model[radius:-radius, radius:-radius, radius:-radius, :] = self.voxels
-
+        new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
+        new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
         struct = ndimage.generate_binary_structure(3, connectivity)
 
         if plane == 'xy':
@@ -490,14 +494,12 @@ class VoxelModel:
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
 
-        #print('Erode:')
         for i in range(radius):
-            #print(str(i) + '/' + str(radius))
-            new_model[:, :, :, 0] = ndimage.binary_erosion(new_model[:, :, :, 0], structure=struct)
-            for m in range(len(material_properties)):
-                new_model[:, :, :, m+1] = ndimage.grey_erosion(new_model[:, :, :, m+1], footprint=struct)
+            mask = np.array(new_voxels != 0, dtype=np.bool)
+            mask = ndimage.binary_erosion(mask, structure=struct)
+            new_voxels = np.multiply(new_voxels, mask)
 
-        return VoxelModel(new_model, self.x - radius, self.y - radius, self.z - radius)
+        return VoxelModel(new_voxels, self.materials, self.x - radius, self.y - radius, self.z - radius)
 
     """
     Material Interface Modification
@@ -559,27 +561,27 @@ class VoxelModel:
 
     def rotate(self, angle, axis = 'z'): # TODO: Check that coords are handled correctly
         if axis == 'x':
-            plane = (0, 1)
-        elif axis == 'y':
             plane = (1, 2)
-        else: # axis == 'z'
+        elif axis == 'y':
             plane = (0, 2)
+        else: # axis == 'z'
+            plane = (0, 1)
 
         new_model = ndimage.rotate(self.voxels, angle, plane, order=0)
 
-        return VoxelModel(new_model, self.x, self.y, self.z)
+        return VoxelModel(new_model, self.materials, self.x, self.y, self.z)
 
     def rotate90(self, times = 1, axis = 'z'): # TODO: Check that coords are handled correctly
         if axis == 'x':
-            plane = (0, 1)
-        elif axis == 'y':
             plane = (1, 2)
-        else: # axis == 'z'
+        elif axis == 'y':
             plane = (0, 2)
+        else: # axis == 'z'
+            plane = (0, 1)
 
         new_model = np.rot90(self.voxels, times, axes=plane)
 
-        return VoxelModel(new_model, self.x, self.y, self.z)
+        return VoxelModel(new_model, self.materials, self.x, self.y, self.z)
 
     """
     Manufacturing Features
@@ -715,40 +717,32 @@ def alignDims(modelA, modelB):
     yMaxNew = max(yMaxA, yMaxB)
     zMaxNew = max(zMaxA, zMaxB)
 
-    modelANew = np.zeros((xMaxNew - xNew, yMaxNew - yNew, zMaxNew - zNew))
-    modelBNew = np.zeros((xMaxNew - xNew, yMaxNew - yNew, zMaxNew - zNew))
+    modelANew = np.zeros((xMaxNew - xNew, yMaxNew - yNew, zMaxNew - zNew), dtype=np.int32)
+    modelBNew = np.zeros((xMaxNew - xNew, yMaxNew - yNew, zMaxNew - zNew), dtype=np.int32)
 
     modelANew[(modelA.x - xNew):(xMaxA - xNew), (modelA.y - yNew):(yMaxA - yNew), (modelA.z - zNew):(zMaxA - zNew)] = modelA.voxels
     modelBNew[(modelB.x - xNew):(xMaxB - xNew), (modelB.y - yNew):(yMaxB - yNew), (modelB.z - zNew):(zMaxB - zNew)] = modelB.voxels
 
     return modelANew, modelBNew, xNew, yNew, zNew
 
-"""
-Function to convert vox file data into VoxelModel format. Separated to allow for acceleration using Numba.
-[color index] -> [a, m0, m1, ... mn]
-"""
-@njit()
-def formatVoxData(input_matrix, material_count):
-    x_len = len(input_matrix[0, 0, :])
-    y_len = len(input_matrix[:, 0, 0])
-    z_len = len(input_matrix[0, :, 0])
+def removeDuplicateMaterials(input_voxels, materials):
+    new_materials = np.unique(materials, axis=0)
 
-    new_model = np.zeros((y_len, z_len, x_len, material_count+1))
+    x_len = len(input_voxels[:, 0, 0])
+    y_len = len(input_voxels[0, :, 0])
+    z_len = len(input_voxels[0, 0, :])
 
-    # Loop through input_model data
+    new_voxels = np.zeros_like(input_voxels, dtype=int)
+
     for x in range(x_len):
         for y in range(y_len):
             for z in range(z_len):
-                color_index = input_matrix[y, z, x]
-                if (color_index > 0) and (color_index < material_count):
-                    new_model[y, z, x, 0] = 1
-                    new_model[y, z, x, color_index + 1] = 1
-                elif color_index >= material_count:
-                    # print('Unrecognized material index: ' + str(color_index) + '. Setting to null') # Not compatible with @njit
-                    new_model[y, z, x, 0] = 1
-                    new_model[y, z, x, 1] = 1
+                i = input_voxels[x, y, z]
+                m = materials[i]
+                ni = np.where(np.equal(new_materials, m).all(1))[0][0]
+                new_voxels[x, y, z] = ni
 
-    return new_model
+    return new_voxels, new_materials
 
 @njit(parallel=True)
 def dot3d(a, b):
