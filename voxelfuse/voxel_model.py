@@ -576,15 +576,45 @@ class VoxelModel:
     - Return a model
     """
     def blur(self, radius=1):
-        new_model = np.zeros_like(self.voxels)
+        if radius == 0:
+            return VoxelModel.copy(self)
 
-        new_model[:, :, :, 0] = self.voxels[:, :, :, 0]
+        x_len = len(self.voxels[:, 0, 0])
+        y_len = len(self.voxels[0, :, 0])
+        z_len = len(self.voxels[0, 0, :])
+
+        full_model = np.zeros((x_len, y_len, z_len, len(material_properties)+1), dtype=np.float)
+
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    i = self.voxels[x,y,z]
+                    full_model[x,y,z,:] = self.materials[i]
+
         for m in range(len(material_properties)):
-            new_model[:, :, :, m+1] = ndimage.gaussian_filter(self.voxels[:, :, :, m+1], sigma=radius)
+            full_model[:, :, :, m+1] = ndimage.gaussian_filter(full_model[:, :, :, m+1], sigma=radius)
 
-        new_model = np.multiply(new_model, self.getOccupied().voxels)
+        mask = full_model[:, :, :, 0]
+        mask = np.repeat(mask[..., None], len(material_properties)+1, axis=3)
+        full_model = np.multiply(full_model, mask)
+        full_model[full_model < 1e-10] = 0
 
-        return VoxelModel(new_model, self.x, self.y, self.z)
+        new_voxels = np.zeros_like(self.voxels, dtype=int)
+        new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    m = full_model[x, y, z, :]
+                    i = np.where(np.equal(new_materials, m).all(1))[0]
+
+                    if len(i) > 0:
+                        new_voxels[x, y, z] = i[0]
+                    else:
+                        new_materials = np.vstack((new_materials, m))
+                        new_voxels[x, y, z] = len(new_materials) - 1
+
+        return VoxelModel(new_voxels, new_materials, self.x, self.y, self.z)
 
     def blurRegion(self, radius, region):
         new_model = self.blur(radius)
