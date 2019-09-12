@@ -44,7 +44,7 @@ class VoxelModel:
 
         # Generate materials table assuming indices match materials in material_properties
         i = 0
-        materials = np.zeros(len(material_properties) + 1, dtype=np.float)
+        materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
         for m in np.unique(v2):
             if m != 0:
                 i = i+1
@@ -124,7 +124,7 @@ class VoxelModel:
         m1 = np.rot90(m1, 3, (0, 1))
 
         # Assume material 1
-        materials = np.zeros(len(material_properties) + 1, dtype=np.float)
+        materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
         material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
         material_vector[0] = 1
         material_vector[2] = 1
@@ -209,6 +209,27 @@ class VoxelModel:
         self.y = self.y + y_min
         self.z = self.z + z_min
         self.components = new_components
+
+    # Remove duplicate rows from a model's material array
+    def removeDuplicateMaterials(self):
+        new_materials = np.unique(self.materials, axis=0)
+
+        x_len = len(self.voxels[:, 0, 0])
+        y_len = len(self.voxels[0, :, 0])
+        z_len = len(self.voxels[0, 0, :])
+
+        new_voxels = np.zeros_like(self.voxels, dtype=int)
+
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    i = self.voxels[x, y, z]
+                    m = self.materials[i]
+                    ni = np.where(np.equal(new_materials, m).all(1))[0][0]
+                    new_voxels[x, y, z] = ni
+
+        self.voxels = new_voxels
+        self.materials = new_materials
 
     # Update component labels for a model.  This uses a disconnected components algorithm and assumes that adjacent voxels with different materials are connected.
     def getComponents(self, connectivity=1):
@@ -337,9 +358,10 @@ class VoxelModel:
             new_voxels = np.multiply(b, mask)
             new_voxels = new_voxels + a # material from left model takes priority
 
-        new_voxels, materials = removeDuplicateMaterials(new_voxels, materials)
+        new_model = VoxelModel(new_voxels, materials, x_new, y_new, z_new)
+        new_model.removeDuplicateMaterials()
 
-        return VoxelModel(new_voxels, materials, x_new, y_new, z_new)
+        return new_model
 
     def __or__(self, other):
         return self.union(other)
@@ -357,9 +379,10 @@ class VoxelModel:
 
         new_voxels = np.multiply(a, mask1) + np.multiply(b, mask2)
 
-        new_voxels, materials = removeDuplicateMaterials(new_voxels, materials)
+        new_model = VoxelModel(new_voxels, materials, x_new, y_new, z_new)
+        new_model.removeDuplicateMaterials()
 
-        return VoxelModel(new_voxels, materials, x_new, y_new, z_new)
+        return new_model
 
     def __xor__(self, other):
         return self.xor(other)
@@ -367,10 +390,33 @@ class VoxelModel:
     # Material is computed
     def add(self, model_to_add):
         a, b, x_new, y_new, z_new = alignDims(self, model_to_add)
-        mask = np.logical_or(a[:, :, :, 0], b[:, :, :, 0])
-        new_model = a + b
-        new_model[:, :, :, 0] = mask
-        return VoxelModel(new_model, x_new, y_new, z_new)
+
+        x_len = len(a[:, 0, 0])
+        y_len = len(a[0, :, 0])
+        z_len = len(a[0, 0, :])
+
+        new_voxels = np.zeros_like(a, dtype=int)
+        new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float)
+
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    i1 = a[x, y, z]
+                    i2 = b[x, y, z]
+                    m1 = self.materials[i1]
+                    m2 = model_to_add.materials[i2]
+
+                    m = m1 + m2
+                    m[0] = np.logical_or(m1[0], m2[0])
+                    i = np.where(np.equal(new_materials, m).all(1))[0]
+
+                    if len(i) > 0:
+                        new_voxels[x, y, z] = i[0]
+                    else:
+                        new_materials = np.vstack((new_materials, m))
+                        new_voxels[x, y, z] = len(new_materials) - 1
+
+        return VoxelModel(new_voxels, new_materials, x_new, y_new, z_new)
 
     def __add__(self, other):
         return self.add(other)
@@ -378,10 +424,33 @@ class VoxelModel:
     # Material is computed
     def subtract(self, model_to_sub):
         a, b, x_new, y_new, z_new = alignDims(self, model_to_sub)
-        mask = np.logical_or(a[:, :, :, 0], b[:, :, :, 0]) # Note that negative material values are retained
-        new_model = a - b
-        new_model[:, :, :, 0] = mask
-        return VoxelModel(new_model, x_new, y_new, z_new)
+
+        x_len = len(a[:, 0, 0])
+        y_len = len(a[0, :, 0])
+        z_len = len(a[0, 0, :])
+
+        new_voxels = np.zeros_like(a, dtype=int)
+        new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    i1 = a[x, y, z]
+                    i2 = b[x, y, z]
+                    m1 = self.materials[i1]
+                    m2 = model_to_sub.materials[i2]
+
+                    m = m1 - m2
+                    m[0] = np.logical_or(m1[0], m2[0])
+                    i = np.where(np.equal(new_materials, m).all(1))[0]
+
+                    if len(i) > 0:
+                        new_voxels[x, y, z] = i[0]
+                    else:
+                        new_materials = np.vstack((new_materials, m))
+                        new_voxels[x, y, z] = len(new_materials) - 1
+
+        return VoxelModel(new_voxels, new_materials, x_new, y_new, z_new)
 
     def __sub__(self, other):
         return self.subtract(other)
@@ -724,25 +793,6 @@ def alignDims(modelA, modelB):
     modelBNew[(modelB.x - xNew):(xMaxB - xNew), (modelB.y - yNew):(yMaxB - yNew), (modelB.z - zNew):(zMaxB - zNew)] = modelB.voxels
 
     return modelANew, modelBNew, xNew, yNew, zNew
-
-def removeDuplicateMaterials(input_voxels, materials):
-    new_materials = np.unique(materials, axis=0)
-
-    x_len = len(input_voxels[:, 0, 0])
-    y_len = len(input_voxels[0, :, 0])
-    z_len = len(input_voxels[0, 0, :])
-
-    new_voxels = np.zeros_like(input_voxels, dtype=int)
-
-    for x in range(x_len):
-        for y in range(y_len):
-            for z in range(z_len):
-                i = input_voxels[x, y, z]
-                m = materials[i]
-                ni = np.where(np.equal(new_materials, m).all(1))[0][0]
-                new_voxels[x, y, z] = ni
-
-    return new_voxels, new_materials
 
 @njit(parallel=True)
 def dot3d(a, b):
