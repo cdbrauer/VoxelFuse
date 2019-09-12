@@ -38,20 +38,22 @@ class Mesh:
         # (exterior_voxels will be larger as a result of the erode operation)
         voxel_model_array, exterior_voxels_array, x_new, y_new, z_new = alignDims(voxel_model, exterior_voxels)
         
-        y_len = len(voxel_model_array[:, 0, 0, 0])
-        z_len = len(voxel_model_array[0, :, 0, 0])
-        x_len = len(voxel_model_array[0, 0, :, 0])
+        x_len = len(voxel_model_array[:, 0, 0])
+        y_len = len(voxel_model_array[0, :, 0])
+        z_len = len(voxel_model_array[0, 0, :])
         
         # Create list of exterior voxel coordinates
         exterior_voxels_coords = []
-        for y in range(y_len):
-            for z in range(z_len):
-                for x in range(x_len):
-                    if exterior_voxels_array[y, z, x, 0] == 1:
-                        exterior_voxels_coords.append([y, z, x])
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if exterior_voxels_array[x, y, z] != 0:
+                        exterior_voxels_coords.append([x, y, z])
 
         # Get voxel array
         voxel_model_array[voxel_model_array < 0] = 0
+
+        model_materials = voxel_model.materials
 
         # Initialize arrays
         verts = []
@@ -65,41 +67,39 @@ class Mesh:
         print('Mesh:')
         # Loop through voxel_model_array data
         for voxel_coords in exterior_voxels_coords:
-            y = voxel_coords[0]
-            z = voxel_coords[1]
-            x = voxel_coords[2]
+            x = voxel_coords[0]
+            y = voxel_coords[1]
+            z = voxel_coords[2]
 
             if current_iter%1000 == 0:
                 print("%s/%s" % (current_iter, max_iter))
             current_iter = current_iter + 1
 
-            # If voxel is not empty
-            if voxel_model_array[y, z, x, 0] != 0:
-                r = 0
-                g = 0
-                b = 0
+            r = 0
+            g = 0
+            b = 0
 
-                for i in range(len(material_properties)):
-                    r = r + voxel_model_array[y, z, x, i+1] * material_properties[i]['r']
-                    g = g + voxel_model_array[y, z, x, i+1] * material_properties[i]['g']
-                    b = b + voxel_model_array[y, z, x, i+1] * material_properties[i]['b']
+            for i in range(len(material_properties)):
+                r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['r']
+                g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['g']
+                b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['b']
 
-                r = 1 if r > 1 else r
-                g = 1 if g > 1 else g
-                b = 1 if b > 1 else b
+            r = 1 if r > 1 else r
+            g = 1 if g > 1 else g
+            b = 1 if b > 1 else b
 
-                a = 1 - voxel_model_array[y, z, x, 1]
+            a = 1 - model_materials[voxel_model_array[x, y, z]][1]
 
-                voxel_color = [r, g, b, a]
+            voxel_color = [r, g, b, a]
 
-                # Add cube vertices
-                new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, x, y, z, vi)
-                verts += new_verts
-                tris += new_tris
+            # Add cube vertices
+            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, x, y, z, vi)
+            verts += new_verts
+            tris += new_tris
 
-                # Apply color to all vertices
-                for i in range(0, np.count_nonzero(verts_indices)):
-                    verts_colors.append(voxel_color)
+            # Apply color to all vertices
+            for i in range(0, np.count_nonzero(verts_indices)):
+                verts_colors.append(voxel_color)
 
         verts = np.array(verts)
         verts_colors = np.array(verts_colors)
@@ -118,10 +118,10 @@ class Mesh:
 
 @njit()
 def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
-    x_len = len(input_model[0, 0, :, 0])
+    x_len = len(input_model[:, 0, 0])
     x_coord_new = x_coord+x_dir
 
-    if (x_coord_new < x_len) and (x_coord_new >= 0) and not np.equal(input_model[y_coord, z_coord, x_coord_new, :], input_model[y_coord, z_coord, x_coord, :]).all():
+    if (x_coord_new < x_len) and (x_coord_new >= 0) and not np.equal(input_model[x_coord_new, y_coord, z_coord], input_model[x_coord, y_coord, z_coord]):
         return True
     elif (x_coord_new >= x_len) or (x_coord_new < 0):
         return True
@@ -130,10 +130,10 @@ def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
 
 @njit()
 def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
-    y_len = len(input_model[:, 0, 0, 0])
+    y_len = len(input_model[0, :, 0])
     y_coord_new = y_coord+y_dir
 
-    if (y_coord_new < y_len) and (y_coord_new >= 0) and not np.equal(input_model[y_coord_new, z_coord, x_coord, :], input_model[y_coord, z_coord, x_coord, :]).all():
+    if (y_coord_new < y_len) and (y_coord_new >= 0) and not np.equal(input_model[x_coord, y_coord_new, z_coord], input_model[x_coord, y_coord, z_coord]):
         return True
     elif (y_coord_new >= y_len) or (y_coord_new < 0):
         return True
@@ -142,10 +142,10 @@ def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
 
 @njit()
 def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
-    z_len = len(input_model[0, :, 0, 0])
+    z_len = len(input_model[0, 0, :])
     z_coord_new = z_coord+z_dir
 
-    if (z_coord_new < z_len) and (z_coord_new >= 0) and not np.equal(input_model[y_coord, z_coord_new, x_coord, :], input_model[y_coord, z_coord, x_coord, :]).all():
+    if (z_coord_new < z_len) and (z_coord_new >= 0) and not np.equal(input_model[x_coord, y_coord, z_coord_new], input_model[x_coord, y_coord, z_coord]):
         return True
     elif (z_coord_new >= z_len) or (z_coord_new < 0):
         return True
