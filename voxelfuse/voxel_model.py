@@ -243,7 +243,7 @@ class VoxelModel:
     - Return a model
     """
     # Get all voxels with a specified material
-    # TODO: This should probably reference the material properties table
+    # TODO: Should this reference the material properties table?
     # TODO: isolateMaterialVector
     def isolateMaterial(self, material): # material input is an index corresponding to the materials array for the model
         mask = np.array(self.voxels == material, dtype=np.bool)
@@ -597,7 +597,6 @@ class VoxelModel:
         mask = full_model[:, :, :, 0]
         mask = np.repeat(mask[..., None], len(material_properties)+1, axis=3)
         full_model = np.multiply(full_model, mask)
-        full_model[full_model < 1e-10] = 0
 
         new_voxels = np.zeros_like(self.voxels, dtype=int)
         new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
@@ -635,28 +634,30 @@ class VoxelModel:
     - Return a model
     """
     def removeNegatives(self): # Remove negative material values (which have no physical meaning)
-        new_model = np.copy(self.voxels)
-        new_model[new_model < 1e-10] = 0
-        material_sums = np.sum(new_model[:,:,:,1:], 3) # This and following update the a values
+        new_model = VoxelModel.copy(self)
+        new_model.materials[new_model.materials < 1e-10] = 0
+        material_sums = np.sum(new_model.materials[:,1:], 1) # This and following update the a values
         material_sums[material_sums > 0] = 1
-        new_model[:, :, :, 0] = material_sums
-        return VoxelModel(new_model, self.x, self.y, self.z)
+        new_model.materials[:, 0] = material_sums
+        new_model.removeDuplicateMaterials()
+        return new_model
 
     def scaleValues(self): # Scale material values while maintaining the ratio between all materials
-        new_model = np.copy(self.removeNegatives().voxels)
-        material_sums = np.sum(new_model[:,:,:,1:], 3)
+        new_model = self.removeNegatives()
+        material_sums = np.sum(new_model.materials[:, 1:], 1)
         material_sums[material_sums == 0] = 1
-        material_sums = np.repeat(material_sums[..., None], len(material_properties), axis=3)
-        new_model[:,:,:,1:] = np.divide(new_model[:,:,:,1:], material_sums)
-        return VoxelModel(new_model, self.x, self.y, self.z)
+        material_sums = np.repeat(material_sums[..., None], len(material_properties), axis=1)
+        new_model.materials[:,1:] = np.divide(new_model.materials[:,1:], material_sums)
+        return new_model
 
     def scaleNull(self): # Scale null values to make all voxels contain 100% material
-        new_model = np.copy(self.removeNegatives().voxels)
-        material_sums = np.sum(new_model[:,:,:,2:], 3)
+        new_model = self.removeNegatives()
+        material_sums = np.sum(new_model.materials[:, 1:], 1)
         material_sums = np.ones(np.shape(material_sums)) - material_sums
         material_sums[material_sums < 0] = 0
-        new_model[:,:,:,1] = material_sums
-        return VoxelModel(new_model, self.x, self.y, self.z)
+        new_model.materials[:,1] = np.multiply(material_sums, new_model.materials[:,0])
+        new_model = new_model.scaleValues()
+        return new_model
 
     def rotate(self, angle, axis = 'z'): # TODO: Check that coords are handled correctly
         if axis == 'x':
