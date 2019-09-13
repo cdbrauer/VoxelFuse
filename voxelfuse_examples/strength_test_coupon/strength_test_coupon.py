@@ -58,13 +58,13 @@ if __name__=='__main__':
     # Add support features
     coupon_supported = VoxelModel.copy(coupon)
 
-    if mold and not simpleMold: # Generate mold feature around material 2
+    if mold: # Generate mold feature around material 2
         # Find all voxels containing <50% material 2
         material_vector = np.zeros(len(material_properties) + 1)
         material_vector[0] = 1
         material_vector[3] = 0.5
         printed_components = coupon - coupon.setMaterialVector(material_vector)
-        printed_components.model = np.around(printed_components.model, 0)
+        printed_components.materials = np.around(printed_components.materials, 0)
         printed_components = printed_components.scaleValues()
 
         # Find voxels containing >50% material 2
@@ -76,24 +76,6 @@ if __name__=='__main__':
 
         # Find clearance to prevent mold from sicking to model
         mold_clearance = printed_components.dilate(moldGap, plane='xy')
-
-        # Apply clearance to body
-        mold_model = mold_model.difference(mold_clearance)
-
-        # Add mold to coupon model
-        mold_model = mold_model.setMaterial(3)
-        coupon_supported = coupon_supported.union(mold_model)
-
-    if simpleMold: # Generate a basic mold feature around material 2
-        printed_components = coupon.isolateMaterial(1)
-        cast_components = coupon.isolateMaterial(2)
-
-        # Generate mold body
-        mold_model = cast_components.dilate(moldWallThickness + 1, plane='y')
-        mold_model = mold_model.difference(cast_components)
-
-        # Find clearance to prevent mold from sicking to model
-        mold_clearance = printed_components.dilate(moldGap, plane='y')
 
         # Apply clearance to body
         mold_model = mold_model.difference(mold_clearance)
@@ -114,7 +96,7 @@ if __name__=='__main__':
     material_vector[0] = 1
     material_vector[3] = 0.5
     printed_components = coupon_supported - coupon_supported.setMaterialVector(material_vector)
-    printed_components.model = np.around(printed_components.model, 0)
+    printed_components.materials = np.around(printed_components.materials, 0)
     printed_components = printed_components.scaleValues()
     printed_components = printed_components.setMaterial(1)
 
