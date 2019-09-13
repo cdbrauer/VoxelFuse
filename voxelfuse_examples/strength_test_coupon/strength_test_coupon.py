@@ -49,8 +49,8 @@ if __name__=='__main__':
             end2 = VoxelModel.fromMeshFile('end2x10.stl', 980, 0, 0)
         else:
             end1 = VoxelModel.fromMeshFile('end1.stl', 0, 0, 0)
-            center = VoxelModel.fromMeshFile('center.stl', 670, 30, 0)
-            end2 = VoxelModel.fromMeshFile('end2.stl', 980, 0, 0)
+            center = VoxelModel.fromMeshFile('center.stl', 67, 3, 0)
+            end2 = VoxelModel.fromMeshFile('end2.stl', 98, 0, 0)
 
         # Set materials
         end1 = end1.setMaterial(1)
