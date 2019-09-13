@@ -39,18 +39,22 @@ if __name__=='__main__':
     # Initialize object to hold result
     modelResult = VoxelModel.copy(modelIn)
 
-    # Subtract clearance shell around specified materials
-    for i in range(len(modelIn.materials)):
-        modelResult = modelResult.difference(modelIn.isolateMaterial(modelIn.materials[i]).dilate().difference(modelIn.isolateMaterial(modelIn.materials[i])))
+    # Initialize array for identifying library materials
+    library_materials = np.identity(len(material_properties))
+    library_materials[0, 0] = 0
+    a = np.ones((len(material_properties), 1))
+    a[0, 0] = 0
+    library_materials = np.hstack((a, library_materials))
 
     # Initialize object to hold inserted components
     insertedComponents = VoxelModel.emptyLike(modelResult)
 
     # Find inserted components
     for m in range(len(modelIn.materials)):
-
-        if material_properties[m]['process'] == 'ins':
-            insertedComponents = insertedComponents.union(modelIn.isolateMaterial(m).dilate())
+        i = np.where(np.equal(library_materials, modelIn.materials[m]).all(1))[0]
+        if len(i) > 0:
+            if material_properties[i[0]]['process'] == 'ins':
+                insertedComponents = insertedComponents.union(modelIn.isolateMaterial(m).dilate())
 
     # Find clearance for inserted components
     insertedComponentsClearance = insertedComponents.clearance('mill')
