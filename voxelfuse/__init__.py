@@ -7,4 +7,4 @@ VoxelFuse: The multi-material manufacturing toolkit
 """
 
 name = "voxelfuse"
-__version__ = "1.0.3"
+__version__ = "1.1.0"
