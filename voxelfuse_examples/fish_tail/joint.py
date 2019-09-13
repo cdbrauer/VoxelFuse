@@ -24,7 +24,6 @@ if __name__=='__main__':
     # User preferences
     modelName = 'joint-2.vox'
     # modelName = 'tail-holder-1r.vox'
-    clearance = [1, 3] # materials to leave clearance around
 
     # Import model
     start = time.time()
@@ -41,14 +40,15 @@ if __name__=='__main__':
     modelResult = VoxelModel.copy(modelIn)
 
     # Subtract clearance shell around specified materials
-    for i in range(len(clearance)):
-        modelResult = modelResult.difference(modelIn.isolateMaterial(clearance[i]).dilate().difference(modelIn.isolateMaterial(clearance[i])))
+    for i in range(len(modelIn.materials)):
+        modelResult = modelResult.difference(modelIn.isolateMaterial(modelIn.materials[i]).dilate().difference(modelIn.isolateMaterial(modelIn.materials[i])))
 
     # Initialize object to hold inserted components
     insertedComponents = VoxelModel.emptyLike(modelResult)
 
     # Find inserted components
-    for m in range(len(material_properties)):
+    for m in range(len(modelIn.materials)):
+
         if material_properties[m]['process'] == 'ins':
             insertedComponents = insertedComponents.union(modelIn.isolateMaterial(m).dilate())
 
@@ -56,14 +56,14 @@ if __name__=='__main__':
     insertedComponentsClearance = insertedComponents.clearance('mill')
 
     # Find pause layers at top of each inserted component
-    for z in range(1, len(insertedComponents.model[0, :, 0, 0])):
-        if np.sum(insertedComponents.model[:, z, :, 0]) == 0:
+    for z in range(1, len(insertedComponents.voxels[0, 0, :])):
+        if np.sum(insertedComponents.voxels[:, :, z]) == 0:
 
             # Remove clearance between parts
-            insertedComponentsClearance.model[:, z, :, :].fill(0)
+            insertedComponentsClearance.voxels[:, :, z].fill(0)
 
             # Identify tops of parts
-            if np.sum(insertedComponents.model[:, z-1, :, 0]) > 0:
+            if np.sum(insertedComponents.voxels[:, :, z-1]) > 0:
                 print(z-1) # TODO: replace with save to array
 
     insertedComponents = insertedComponents.union(insertedComponentsClearance)

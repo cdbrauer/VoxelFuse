@@ -20,16 +20,16 @@ if __name__=='__main__':
     interiorVoxels = model1.erode(radius=1, connectivity=1)
     exteriorVoxels = model1.difference(interiorVoxels)
 
-    x_len = len(exteriorVoxels.model[0, 0, :, 0])
-    y_len = len(exteriorVoxels.model[:, 0, 0, 0])
-    z_len = len(exteriorVoxels.model[0, :, 0, 0])
+    x_len = len(exteriorVoxels.voxels[:, 0, 0])
+    y_len = len(exteriorVoxels.voxels[0, :, 0])
+    z_len = len(exteriorVoxels.voxels[0, 0, :])
 
     # Create list of exterior voxel coordinates
     exterior_voxels = []
-    for y in range(y_len):
-        for x in range(x_len):
+    for x in range(x_len):
+        for y in range(y_len):
             for z in range(z_len):
-                if exteriorVoxels.model[y, z, x, 0] == 1:
-                    exterior_voxels.append([y, z, x])
+                if exteriorVoxels.voxels[x, y, z] != 0:
+                    exterior_voxels.append([x, y, z])
 
     print(exterior_voxels)

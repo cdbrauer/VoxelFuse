@@ -19,7 +19,7 @@ if __name__=='__main__':
 
     # User preferences
     modelName = 'tail-20.vox'
-    blur = [1, 3] # materials to blur
+    blur = [1, 2] # materials to blur
     blurRadius = 5
 
     # Import model

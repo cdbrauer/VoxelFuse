@@ -42,7 +42,7 @@ if __name__=='__main__':
     modelResult = modelBlur.union(modelIn)
 
     # Clean up result
-    # modelResult = modelResult.scaleValues()
+    modelResult = modelResult.scaleValues()
 
     # TODO: Create list of all materials present in model
 
