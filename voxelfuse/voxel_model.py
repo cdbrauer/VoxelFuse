@@ -767,27 +767,22 @@ class VoxelModel:
 
     def support(self, method, r1=1, r2=1, plane='xy'):
         model_A = self.keepout(method)
-        model_B = model_A.difference(self)
-        model_C = model_B.dilate(r1, plane) # Regions where support is ineffective due to proximity to inaccessible workspace regions
-        model_D = model_A.dilate(r2, plane)
-        model_E = model_D.difference(model_A) # Accesible region around part of width r2
-        new_model = model_E.difference(model_C) # Valid support regions
-        return new_model
+        model_A = model_A.dilate(r2, plane).difference(model_A)
+        model_A = model_A.difference(self.keepout(method).difference(self).dilate(r1, plane)) # Valid support regions
+        return model_A
 
     def userSupport(self, support_model, method, r1=1, r2=1, plane='xy'):
         model_A = self.support(method, r1, r2, plane)
-        new_model = support_model.intersection(model_A)
-        return new_model
+        model_A = support_model.intersection(model_A)
+        return model_A
 
     def web(self, method, r1=1, r2=1, layer=-1):
         model_A = self.keepout(method)
         if layer != -1:
             model_A = model_A.isolateLayer(layer)
-        model_B = model_A.dilate(r1, 'xy') # Clearance around part, width = r1
-        model_C = model_B.dilate(r2, 'xy')  # Support width = r2
-        model_D = model_C.getBoundingBox() # Make support rectangular
-        new_model = model_D.difference(model_B)
-        return new_model
+        model_A = model_A.dilate(r1, 'xy')
+        model_A = model_A.dilate(r2, 'xy').getBoundingBox().difference(model_A)
+        return model_A
 
 # Helper methods ##############################################################
 
