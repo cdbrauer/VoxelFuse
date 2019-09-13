@@ -120,9 +120,6 @@ class VoxelModel:
         voxels = np.zeros(ijk_mid.shape[:3], dtype=np.bool)
         voxels[lmn[:, 0], lmn[:, 1], lmn[:, 2]] = True
 
-        m1 = np.rot90(voxels, 1, (0, 2))
-        m1 = np.rot90(m1, 3, (0, 1))
-
         # Assume material 1
         materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
         material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
@@ -130,7 +127,7 @@ class VoxelModel:
         material_vector[2] = 1
         materials = np.vstack((materials, material_vector))
         
-        return cls(m1, materials, x_coord, y_coord, z_coord)
+        return cls(voxels, materials, x_coord, y_coord, z_coord)
 
     @classmethod
     def emptyLike(cls, voxel_model):
