@@ -473,29 +473,29 @@ class VoxelModel:
         struct = ndimage.generate_binary_structure(3, connectivity)
 
         if plane == 'xy':
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
-        elif plane == 'xz':
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-        elif plane == 'yz':
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
-        elif plane == 'x':
+        elif plane == 'xz':
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+        elif plane == 'yz':
             struct[0, :, :].fill(0)
             struct[2, :, :].fill(0)
+        elif plane == 'x':
             struct[:, 0, :].fill(0)
             struct[:, 2, :].fill(0)
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
         elif plane == 'y':
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
         elif plane == 'z':
             struct[0, :, :].fill(0)
             struct[2, :, :].fill(0)
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
 
         for i in range(radius):
             new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
@@ -511,29 +511,29 @@ class VoxelModel:
         struct = ndimage.generate_binary_structure(3, connectivity)
 
         if plane == 'xy':
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
-        elif plane == 'xz':
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-        elif plane == 'yz':
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
-        elif plane == 'x':
+        elif plane == 'xz':
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+        elif plane == 'yz':
             struct[0, :, :].fill(0)
             struct[2, :, :].fill(0)
+        elif plane == 'x':
             struct[:, 0, :].fill(0)
             struct[:, 2, :].fill(0)
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
         elif plane == 'y':
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
         elif plane == 'z':
             struct[0, :, :].fill(0)
             struct[2, :, :].fill(0)
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
 
         #print('Dilate Bounded:')
         for i in range(radius):
@@ -554,14 +554,29 @@ class VoxelModel:
         struct = ndimage.generate_binary_structure(3, connectivity)
 
         if plane == 'xy':
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
-        elif plane == 'xz':
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-        elif plane == 'yz':
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
+        elif plane == 'xz':
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+        elif plane == 'yz':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+        elif plane == 'x':
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
+        elif plane == 'y':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+            struct[:, :, 0].fill(0)
+            struct[:, :, 2].fill(0)
+        elif plane == 'z':
+            struct[0, :, :].fill(0)
+            struct[2, :, :].fill(0)
+            struct[:, 0, :].fill(0)
+            struct[:, 2, :].fill(0)
 
         for i in range(radius):
             mask = np.array(new_voxels != 0, dtype=np.bool)
@@ -689,27 +704,27 @@ class VoxelModel:
     - Return a mask
     """
     def projection(self, direction):
-        new_model = np.zeros_like(self.voxels)
+        new_voxels = np.zeros_like(self.voxels)
 
-        x_len = len(self.voxels[0, 0, :, 0])
-        y_len = len(self.voxels[:, 0, 0, 0])
-        z_len = len(self.voxels[0, :, 0, 0])
+        x_len = len(self.voxels[:, 0, 0])
+        y_len = len(self.voxels[0, :, 0])
+        z_len = len(self.voxels[0, 0, :])
 
         if direction == 'both':
             # Loop through model data
             for x in range(x_len):
                 for y in range(y_len):
-                    if np.sum(self.voxels[y, :, x, 0]) > 0:
-                        new_model[y, :, x, :].fill(1)
+                    if np.sum(self.voxels[x, y, :]) > 0:
+                        new_voxels[x, y, :].fill(1)
 
         elif direction == 'down':
             # Loop through model data
             for x in range(x_len):
                 for y in range(y_len):
                     for z in range(z_len):
-                        if np.sum(self.voxels[y, z:, x, 0]) > 0:
-                            new_model[y, z, x, :].fill(1)
-                        elif np.sum(self.voxels[y, z:, x, 0]) == 0:
+                        if np.sum(self.voxels[x, y, z:]) > 0:
+                            new_voxels[x, y, z] = 1
+                        elif np.sum(self.voxels[x, y, z:]) == 0:
                             break
 
         elif direction == 'up':
@@ -717,10 +732,17 @@ class VoxelModel:
             for x in range(x_len):
                 for y in range(y_len):
                     for z in range(z_len):
-                        if np.sum(self.voxels[y, :z, x, 0]) > 0:
-                            new_model[y, z, x, :].fill(1)
+                        if np.sum(self.voxels[x, y, :z]) > 0:
+                            new_voxels[x, y, z] = 1
 
-        return VoxelModel(new_model, self.x, self.y, self.z)
+        # Assume material 1
+        materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+        material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
+        material_vector[0] = 1
+        material_vector[2] = 1
+        materials = np.vstack((materials, material_vector))
+
+        return VoxelModel(new_voxels, materials, self.x, self.y, self.z)
 
     def keepout(self, method):
         if method == 'laser':
