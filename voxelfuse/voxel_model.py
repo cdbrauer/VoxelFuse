@@ -316,23 +316,19 @@ class VoxelModel:
         new_voxels = np.multiply(a, mask)
         return VoxelModel(new_voxels, self.materials, x_new, y_new, z_new)
 
-    def intersection(self, model_2, material_priority = 'l'):
+    def intersection(self, model_2):
         a, b, x_new, y_new, z_new = alignDims(self, model_2)
         mask = np.logical_and(np.array(a != 0, dtype=np.bool), np.array(b != 0, dtype=np.bool))
 
-        if material_priority == 'r':
-            new_voxels = np.multiply(b, mask) # material from right model takes priority
-            materials = model_2.materials
-        else:
-            new_voxels = np.multiply(a, mask) # material from left model takes priority
-            materials = self.materials
+        new_voxels = np.multiply(a, mask) # material from left model takes priority
+        materials = self.materials
 
         return VoxelModel(new_voxels, materials, x_new, y_new, z_new)
 
     def __and__(self, other):
         return self.intersection(other)
 
-    def union(self, model_to_add, material_priority = 'l'):
+    def union(self, model_to_add):
         materials = np.vstack((self.materials, model_to_add.materials[1:]))
         a, b, x_new, y_new, z_new = alignDims(self, model_to_add)
 
@@ -342,19 +338,11 @@ class VoxelModel:
 
         # Paper uses a symmetric difference operation combined with the left/right intersection
         # A condensed version of this operation is used here for code simplicity
-        if material_priority == 'r':
-            mask = np.array(b == 0, dtype=np.bool)
-            new_voxels = np.multiply(a, mask)
-            new_voxels = new_voxels + b # material from right model takes priority
-        else:
-            mask = np.array(a == 0, dtype=np.bool)
-            new_voxels = np.multiply(b, mask)
-            new_voxels = new_voxels + a # material from left model takes priority
+        mask = np.array(a == 0, dtype=np.bool)
+        new_voxels = np.multiply(b, mask)
+        new_voxels = new_voxels + a # material from left model takes priority
 
-        new_model = VoxelModel(new_voxels, materials, x_new, y_new, z_new)
-        new_model.removeDuplicateMaterials()
-
-        return new_model
+        return VoxelModel(new_voxels, materials, x_new, y_new, z_new)
 
     def __or__(self, other):
         return self.union(other)
@@ -372,10 +360,7 @@ class VoxelModel:
 
         new_voxels = np.multiply(a, mask1) + np.multiply(b, mask2)
 
-        new_model = VoxelModel(new_voxels, materials, x_new, y_new, z_new)
-        new_model.removeDuplicateMaterials()
-
-        return new_model
+        return VoxelModel(new_voxels, materials, x_new, y_new, z_new)
 
     def __xor__(self, other):
         return self.xor(other)
