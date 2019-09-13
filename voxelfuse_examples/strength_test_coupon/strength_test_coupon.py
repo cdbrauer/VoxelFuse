@@ -18,7 +18,7 @@ if __name__=='__main__':
     # Settings
     stl = True
 
-    highRes = True
+    highRes = False
 
     tabs = True
     tabDesign = 'puzzle'

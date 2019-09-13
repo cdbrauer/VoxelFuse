@@ -92,11 +92,16 @@ class VoxelModel:
         ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
         ijk_mid2 = ijk_mid.reshape(-1, 3)
 
-        u2 = dot3d(np.asarray(T_inv, order='c'), np.asarray(xyz_mid, order='c'))
+        A = np.asarray(T_inv, order='c')
+        B = np.asarray(xyz_mid, order='c')
 
-        f1 = ((u2[:, :, :] >= 0).sum(1) == 4)
-        f2 = ((u2[:, :, :] <= 1).sum(1) == 4)
-        f3 = f1 & f2
+        # u2 = dot3d(np.asarray(T_inv, order='c'), np.asarray(xyz_mid, order='c'))
+        #
+        # f1 = ((u2[:, :, :] >= 0).sum(1) == 4)
+        # f2 = ((u2[:, :, :] <= 1).sum(1) == 4)
+        # f3 = f1 & f2
+
+        f3 = dot3dAdvanced(np.asarray(T_inv, order='c'), np.asarray(xyz_mid, order='c'))
         ii, jj = f3.nonzero()
 
         lmn = ijk_mid2[np.unique(jj)]
@@ -730,6 +735,29 @@ def dot3d(a, b):
                 result[x, y, z] = a[x, y, :].dot(b[z, :])
 
     return result
+
+
+#@njit(parallel=True)
+def dot3dAdvanced(a, b):
+    x_len = len(a[:, 0, 0])
+    y_len = len(a[0, :, 0])
+    z_len = len(b[:, 0])
+
+    result = np.zeros((x_len, y_len, z_len), dtype=np.float32)
+
+    temp = np.zeros((y_len, z_len), dtype=np.float32)
+
+    f3 = np.zeros((x_len, z_len), dtype=np.float32)
+
+    for x in prange(x_len):
+        for y in prange(y_len):
+            for z in prange(z_len):
+                temp[y, z] = a[x, y, :].dot(b[z, :])
+        f1 = ((temp[:, :] >= 0).sum(0) == 4)
+        f2 = ((temp[:, :] <= 1).sum(0) == 4)
+        f3[x] = f1 & f2
+
+    return f3
 
 @njit()
 def dither(model):
