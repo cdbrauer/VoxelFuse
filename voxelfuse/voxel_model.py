@@ -22,7 +22,7 @@ Properties:
          
   x_coord, y_coord, z_coord: position of model origin
 """
-
+FLOATING_ERROR = 0.0000000001
 class VoxelModel:
     def __init__(self, voxels, materials, x_coord = 0, y_coord = 0, z_coord = 0):
         self.voxels = voxels
@@ -833,8 +833,8 @@ def findFilledVoxels(a, b):
         for y in range(y_len):
             for z in range(z_len):
                 temp[y, z] = a[x, y, :].dot(b[z, :])
-        f1 = ((temp[:, :] >= 0).sum(0) == 4)
-        f2 = ((temp[:, :] <= 1).sum(0) == 4)
+        f1 = ((temp[:, :] >= (0 - FLOATING_ERROR)).sum(0) == 4)
+        f2 = ((temp[:, :] <= (1 + FLOATING_ERROR)).sum(0) == 4)
         f3[x] = f1 & f2
 
     return f3
