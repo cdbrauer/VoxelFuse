@@ -17,7 +17,7 @@ if __name__=='__main__':
     # Settings
     stl = True
     highRes = False
-
+    
     blur = False
     blurRadius = 2
 

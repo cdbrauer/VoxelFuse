@@ -10,6 +10,7 @@ from pyvox.parser import VoxParser
 from voxelfuse.materials import material_properties
 from scipy import ndimage
 from numba import njit, prange
+from voxelfuse.opencl import opencl_dot3d
 
 """
 VoxelModel Class
@@ -109,6 +110,7 @@ class VoxelModel:
         ijk_mid2 = ijk_mid.reshape(-1, 3)
 
         f3 = findFilledVoxels(np.asarray(T_inv, order='c'), np.asarray(xyz_mid, order='c'))
+
         ii, jj = f3.nonzero()
 
         lmn = ijk_mid2[np.unique(jj)]
