@@ -1,6 +1,5 @@
 # User Defined
-python/voxelbots_examples/voxelmodel_function_testing/
-reinforced_beam/
+voxelfuse_examples/testing/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -112,5 +111,3 @@ venv.bak/
 *.ods#
 
 \.vscode/
-
-python/voxelbots_examples/strength_test_coupon/in_progress/
