@@ -146,9 +146,9 @@ class VoxelModel:
     """
     # Remove excess empty workspace from a model
     def fitWorkspace(self):
-        x_len = len(self.voxels[:, 0, 0])
-        y_len = len(self.voxels[0, :, 0])
-        z_len = len(self.voxels[0, 0, :])
+        x_len = self.voxels.shape[0]
+        y_len = self.voxels.shape[1]
+        z_len = self.voxels.shape[2]
 
         x_min = -1
         x_max = -1
@@ -208,9 +208,9 @@ class VoxelModel:
     def removeDuplicateMaterials(self):
         new_materials = np.unique(self.materials, axis=0)
 
-        x_len = len(self.voxels[:, 0, 0])
-        y_len = len(self.voxels[0, :, 0])
-        z_len = len(self.voxels[0, 0, :])
+        x_len = self.voxels.shape[0]
+        y_len = self.voxels.shape[1]
+        z_len = self.voxels.shape[2]
 
         new_voxels = np.zeros_like(self.voxels, dtype=int)
 
@@ -370,9 +370,9 @@ class VoxelModel:
     def add(self, model_to_add):
         a, b, x_new, y_new, z_new = alignDims(self, model_to_add)
 
-        x_len = len(a[:, 0, 0])
-        y_len = len(a[0, :, 0])
-        z_len = len(a[0, 0, :])
+        x_len = a.shape[0]
+        y_len = a.shape[1]
+        z_len = a.shape[2]
 
         new_voxels = np.zeros_like(a, dtype=int)
         new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float)
@@ -404,9 +404,9 @@ class VoxelModel:
     def subtract(self, model_to_sub):
         a, b, x_new, y_new, z_new = alignDims(self, model_to_sub)
 
-        x_len = len(a[:, 0, 0])
-        y_len = len(a[0, :, 0])
-        z_len = len(a[0, 0, :])
+        x_len = a.shape[0]
+        y_len = a.shape[1]
+        z_len = a.shape[2]
 
         new_voxels = np.zeros_like(a, dtype=int)
         new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
@@ -443,9 +443,9 @@ class VoxelModel:
         if radius == 0:
             return VoxelModel.copy(self)
 
-        x_len = len(self.voxels[:, 0, 0]) + (radius * 2)
-        y_len = len(self.voxels[0, :, 0]) + (radius * 2)
-        z_len = len(self.voxels[0, 0, :]) + (radius * 2)
+        x_len = self.voxels.shape[0] + (radius * 2)
+        y_len = self.voxels.shape[1] + (radius * 2)
+        z_len = self.voxels.shape[2] + (radius * 2)
 
         new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
         new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
@@ -524,9 +524,9 @@ class VoxelModel:
         if radius == 0:
             return VoxelModel.copy(self)
 
-        x_len = len(self.voxels[:, 0, 0]) + (radius * 2)
-        y_len = len(self.voxels[0, :, 0]) + (radius * 2)
-        z_len = len(self.voxels[0, 0, :]) + (radius * 2)
+        x_len = self.voxels.shape[0] + (radius * 2)
+        y_len = self.voxels.shape[1] + (radius * 2)
+        z_len = self.voxels.shape[2] + (radius * 2)
 
         new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
         new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
@@ -573,9 +573,9 @@ class VoxelModel:
         if radius == 0:
             return VoxelModel.copy(self)
 
-        x_len = len(self.voxels[:, 0, 0])
-        y_len = len(self.voxels[0, :, 0])
-        z_len = len(self.voxels[0, 0, :])
+        x_len = self.voxels.shape[0]
+        y_len = self.voxels.shape[1]
+        z_len = self.voxels.shape[2]
 
         full_model = np.zeros((x_len, y_len, z_len, len(material_properties)+1), dtype=np.float)
 
@@ -685,9 +685,9 @@ class VoxelModel:
     def projection(self, direction):
         new_voxels = np.zeros_like(self.voxels)
 
-        x_len = len(self.voxels[:, 0, 0])
-        y_len = len(self.voxels[0, :, 0])
-        z_len = len(self.voxels[0, 0, :])
+        x_len = self.voxels.shape[0]
+        y_len = self.voxels.shape[1]
+        z_len = self.voxels.shape[2]
 
         if direction == 'both':
             # Loop through model data
@@ -773,7 +773,6 @@ class VoxelModel:
     """
     def saveVF(self, filename):
         f = open(filename+'.vf', 'w+')
-        print("File created: " + f.name)
 
         f.write('<coords>\n' + str(self.x) + ',' + str(self.y) + ',' + str(self.z) + ',\n</coords>\n')
 
@@ -810,12 +809,12 @@ class VoxelModel:
             f.write('\n')
         f.write('</labels>\n')
 
+        print("File created: " + f.name)
         f.close()
 
     @classmethod
     def openVF(cls, filename):
         f = open(filename + '.vf', 'r')
-        print("File opened: " + f.name)
         data = f.readlines()
 
         loc = np.zeros((6,2), dtype=np.int32)
@@ -847,15 +846,12 @@ class VoxelModel:
                 loc[5,1] = i
 
         coords = np.array(data[loc[0,0]][:-2].split(","), dtype=np.int32)
-        print(coords)
 
         materials = np.array(data[loc[1,0]][:-2].split(","), dtype=np.float)
         for i in range(loc[1,0]+1, loc[1,1]):
             materials = np.vstack((materials, np.array(data[i][:-2].split(","), dtype=np.float)))
-        print(materials)
 
         size = tuple(np.array(data[loc[2,0]][:-2].split(","), dtype=np.int32))
-        print(size)
 
         voxels = np.zeros(size, dtype=np.int32)
         for i in range(loc[3,0], loc[3,1]):
@@ -866,7 +862,6 @@ class VoxelModel:
                 voxels[x, :, z] = y
 
         numComponents = int(data[loc[4,0]][:-1])
-        print(numComponents)
 
         components = np.zeros(size, dtype=np.int32)
         for i in range(loc[5,0], loc[5,1]):
@@ -879,6 +874,10 @@ class VoxelModel:
         new_model = cls(voxels, materials, coords[0], coords[1], coords[2])
         new_model.numComponents = numComponents
         new_model.components = components
+
+        print("File opened: " + f.name)
+        f.close()
+
         return new_model
 
 # Helper methods ##############################################################
@@ -911,13 +910,13 @@ def makeMesh(filename, delete_files=True):
 Function to make object dimensions compatible for solid body operations. Takes location coordinates into account.
 """
 def alignDims(modelA, modelB):
-    xMaxA = modelA.x + len(modelA.voxels[:, 0, 0])
-    yMaxA = modelA.y + len(modelA.voxels[0, :, 0])
-    zMaxA = modelA.z + len(modelA.voxels[0, 0, :])
+    xMaxA = modelA.x + modelA.voxels.shape[0]
+    yMaxA = modelA.y + modelA.voxels.shape[1]
+    zMaxA = modelA.z + modelA.voxels.shape[2]
 
-    xMaxB = modelB.x + len(modelB.voxels[:, 0, 0])
-    yMaxB = modelB.y + len(modelB.voxels[0, :, 0])
-    zMaxB = modelB.z + len(modelB.voxels[0, 0, :])
+    xMaxB = modelB.x + modelB.voxels.shape[0]
+    yMaxB = modelB.y + modelB.voxels.shape[1]
+    zMaxB = modelB.z + modelB.voxels.shape[2]
 
     xNew = min(modelA.x, modelB.x)
     yNew = min(modelA.y, modelB.y)
