@@ -793,7 +793,7 @@ class VoxelModel:
         for x in range(x_len):
             for z in range(z_len):
                 for y in range(y_len):
-                    f.write(str(self.voxels[x,y,z]) + ',')
+                    f.write(str(int(self.voxels[x,y,z])) + ',')
                 f.write(';')
             f.write('\n')
         f.write('</voxels>\n')
@@ -804,7 +804,7 @@ class VoxelModel:
         for x in range(x_len):
             for z in range(z_len):
                 for y in range(y_len):
-                    f.write(str(self.components[x,y,z]) + ',')
+                    f.write(str(int(self.components[x,y,z])) + ',')
                 f.write(';')
             f.write('\n')
         f.write('</labels>\n')
