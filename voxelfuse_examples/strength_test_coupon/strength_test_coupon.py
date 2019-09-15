@@ -7,6 +7,7 @@ Generate coupon for tensile testing
 
 import PyQt5.QtGui as qg
 import sys
+import time
 import numpy as np
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
@@ -56,6 +57,8 @@ if __name__=='__main__':
     else: # use vox file
         coupon = VoxelModel.fromVoxFile('coupon.vox') # Should use materials 1 and 2 (red and green)
 
+    start = time.time()
+
     if blur: # Blur materials
         print('Blurring')
         coupon = coupon.blur(blurRadius)
@@ -84,6 +87,10 @@ if __name__=='__main__':
 
         # Add mold to coupon model
         coupon = coupon.union(mold_model.setMaterial(3))
+
+    end = time.time()
+    processingTime = (end - start)
+    print("Processing time = %s" % processingTime)
 
     # Create mesh data
     print('Meshing')
