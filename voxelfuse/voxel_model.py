@@ -11,6 +11,8 @@ from voxelfuse.materials import material_properties
 from scipy import ndimage
 from numba import njit, prange
 
+FLOATING_ERROR = 0.0000000001
+
 """
 VoxelModel Class
 
@@ -22,14 +24,13 @@ Properties:
          
   x_coord, y_coord, z_coord: position of model origin
 """
-FLOATING_ERROR = 0.0000000001
 class VoxelModel:
     def __init__(self, voxels, materials, x_coord = 0, y_coord = 0, z_coord = 0):
-        self.voxels = voxels
-        self.materials = materials
         self.x = x_coord
         self.y = y_coord
         self.z = z_coord
+        self.materials = materials
+        self.voxels = voxels
         self.numComponents = 0
         self.components = np.zeros_like(voxels)
 
@@ -765,8 +766,122 @@ class VoxelModel:
         model_A = model_A.dilate(r2, 'xy').getBoundingBox().difference(model_A)
         return model_A
 
-# Helper methods ##############################################################
+    """
+    File IO
 
+    - Read/write .vf files
+    """
+    def saveVF(self, filename):
+        f = open(filename+'.vf', 'w+')
+        print("File created: " + f.name)
+
+        f.write('<coords>\n' + str(self.x) + ',' + str(self.y) + ',' + str(self.z) + ',\n</coords>\n')
+
+        f.write('<materials>\n')
+        for r in range(len(self.materials[:,0])):
+            for c in range(len(self.materials[0,:])):
+                f.write(str(self.materials[r,c]) + ',')
+            f.write('\n')
+        f.write('</materials>\n')
+
+        x_len = self.voxels.shape[0]
+        y_len = self.voxels.shape[1]
+        z_len = self.voxels.shape[2]
+
+        f.write('<size>\n' + str(x_len) + ',' + str(y_len) + ',' + str(z_len) + ',\n</size>\n')
+
+        f.write('<voxels>\n')
+        for x in range(x_len):
+            for z in range(z_len):
+                for y in range(y_len):
+                    f.write(str(self.voxels[x,y,z]) + ',')
+                f.write(';')
+            f.write('\n')
+        f.write('</voxels>\n')
+
+        f.write('<components>\n' + str(self.numComponents) + '\n</components>\n')
+
+        f.write('<labels>\n')
+        for x in range(x_len):
+            for z in range(z_len):
+                for y in range(y_len):
+                    f.write(str(self.components[x,y,z]) + ',')
+                f.write(';')
+            f.write('\n')
+        f.write('</labels>\n')
+
+        f.close()
+
+    @classmethod
+    def openVF(cls, filename):
+        f = open(filename + '.vf', 'r')
+        print("File opened: " + f.name)
+        data = f.readlines()
+
+        loc = np.zeros((6,2), dtype=np.int32)
+
+        for i in range(len(data)):
+            if data[i][:-1] == '<coords>':
+                loc[0,0] = i+1
+            if data[i][:-1] == '</coords>':
+                loc[0,1] = i
+            if data[i][:-1] == '<materials>':
+                loc[1,0] = i+1
+            if data[i][:-1] == '</materials>':
+                loc[1,1] = i
+            if data[i][:-1] == '<size>':
+                loc[2,0] = i+1
+            if data[i][:-1] == '</size>':
+                loc[2,1] = i
+            if data[i][:-1] == '<voxels>':
+                loc[3,0] = i+1
+            if data[i][:-1] == '</voxels>':
+                loc[3,1] = i
+            if data[i][:-1] == '<components>':
+                loc[4,0] = i+1
+            if data[i][:-1] == '</components>':
+                loc[4,1] = i
+            if data[i][:-1] == '<labels>':
+                loc[5,0] = i+1
+            if data[i][:-1] == '</labels>':
+                loc[5,1] = i
+
+        coords = np.array(data[loc[0,0]][:-2].split(","), dtype=np.int32)
+        print(coords)
+
+        materials = np.array(data[loc[1,0]][:-2].split(","), dtype=np.float)
+        for i in range(loc[1,0]+1, loc[1,1]):
+            materials = np.vstack((materials, np.array(data[i][:-2].split(","), dtype=np.float)))
+        print(materials)
+
+        size = tuple(np.array(data[loc[2,0]][:-2].split(","), dtype=np.int32))
+        print(size)
+
+        voxels = np.zeros(size, dtype=np.int32)
+        for i in range(loc[3,0], loc[3,1]):
+            x = i - loc[3,0]
+            yz = data[i][:-2].split(";")
+            for z in range(len(yz)):
+                y = np.array(yz[z][:-1].split(","), dtype=np.int32)
+                voxels[x, :, z] = y
+
+        numComponents = int(data[loc[4,0]][:-1])
+        print(numComponents)
+
+        components = np.zeros(size, dtype=np.int32)
+        for i in range(loc[5,0], loc[5,1]):
+            x = i - loc[5, 0]
+            yz = data[i][:-2].split(";")
+            for z in range(len(yz)):
+                y = np.array(yz[z][:-1].split(","), dtype=np.int32)
+                components[x, :, z] = y
+
+        new_model = cls(voxels, materials, coords[0], coords[1], coords[2])
+        new_model.numComponents = numComponents
+        new_model.components = components
+        return new_model
+
+# Helper methods ##############################################################
 """
 Function to import mesh data from file
 """
