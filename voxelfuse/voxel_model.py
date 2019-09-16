@@ -592,13 +592,6 @@ class VoxelModel:
         new_model = new_model.union(self)
         return new_model
 
-    # Add dithering options
-    def dither(self, radius=1):
-        new_model = self.blur(radius)
-        new_model = new_model.scaleValues()
-        new_model.voxels = dither(new_model.voxels)
-        return new_model
-
     """
     Cleanup
     
@@ -927,35 +920,3 @@ def findFilledVoxels(a, b):
         f3[x] = f1 & f2
 
     return f3
-
-@njit()
-def dither(model):
-    x_len = len(model[0, 0, :])
-    y_len = len(model[:, 0, 0])
-    z_len = len(model[0, :, 0])
-
-    for x in range(x_len):
-        for y in range(y_len):
-            for z in range(z_len):
-                voxel = model[y, z, x]
-                if voxel[0] > 0:
-                    max_i = voxel[1:].argmax()+1
-                    for i in range(1, len(voxel)):
-                        old = model[y, z, x, i]
-
-                        if i == max_i:
-                            model[y, z, x, i] = 1
-                        else:
-                            model[y, z, x, i] = 0
-
-                        error = old - model[y, z, x, i]
-                        if y+1 < y_len:
-                            model[y+1, z, x, i] += error * (3/10) * model[y+1, z, x, 0]
-                        if y+1 < y_len and x+1 < x_len:
-                            model[y+1, z, x+1, i] += error * (1/5) * model[y+1, z, x+1, 0]
-                        if y+1 < y_len and x+1 < x_len and z+1 < z_len:
-                            model[y+1, z+1, x+1, i] += error * (1/5) * model[y+1, z+1, x+1, 0]
-                        if x+1 < x_len:
-                            model[y, z, x+1, i] += error * (3/10) * model[y, z, x+1, 0]
-
-    return model
