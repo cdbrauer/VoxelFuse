@@ -9,7 +9,7 @@ import PyQt5.QtGui as qg
 import sys
 import time
 import numpy as np
-from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.voxel_model import VoxelModel, Axes
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 from voxelfuse.materials import material_properties
@@ -76,10 +76,10 @@ if __name__=='__main__':
         printed_components = printed_components.scaleValues()
 
         # Generate mold body
-        mold_model = coupon.difference(printed_components).dilate(moldWallThickness+1, plane='xy')
+        mold_model = coupon.difference(printed_components).dilate(moldWallThickness+1, plane=Axes.XY)
 
         # Find clearance to prevent mold from sticking to model and apply clearance to body
-        mold_model = mold_model.difference(printed_components.dilate(moldGap, plane='xy'))
+        mold_model = mold_model.difference(printed_components.dilate(moldGap, plane=Axes.XY))
 
         if fixture: # Generate a fixture around the full part to support mold
             print('Generating Fixture')

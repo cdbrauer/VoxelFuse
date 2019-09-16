@@ -6,12 +6,34 @@ import os
 import subprocess
 import meshio
 import numpy as np
+from enum import Enum
 from pyvox.parser import VoxParser
 from voxelfuse.materials import material_properties
 from scipy import ndimage
 from numba import njit, prange
 
 FLOATING_ERROR = 0.0000000001
+
+class Axes(Enum):
+    X = (1,0,0)
+    Y = (0,1,0)
+    Z = (0,0,1)
+    XY = (1,1,0)
+    XZ = (1,0,1)
+    YZ = (0,1,1)
+    XYZ = (1,1,1)
+
+class Dir(Enum):
+    UP = 1
+    DOWN = 2
+    BOTH = 3
+
+class Process(Enum):
+    LASER = 1
+    MILL = 2
+    PRINT = 3
+    CAST = 4
+    INSERT = 5
 
 """
 VoxelModel Class
@@ -439,7 +461,7 @@ class VoxelModel:
     
     - Return a model
     """
-    def dilate(self, radius = 1, plane = 'xyz', connectivity = 3): # TODO: Preserve overlapping materials?
+    def dilate(self, radius = 1, plane = Axes.XYZ, connectivity = 3): # TODO: Preserve overlapping materials?
         if radius == 0:
             return VoxelModel.copy(self)
 
@@ -451,37 +473,22 @@ class VoxelModel:
         new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
         struct = ndimage.generate_binary_structure(3, connectivity)
 
-        if plane == 'xy':
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
-        elif plane == 'xz':
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
-        elif plane == 'yz':
+        if plane.value[0] != 1:
             struct[0, :, :].fill(0)
             struct[2, :, :].fill(0)
-        elif plane == 'x':
+        if plane.value[1] != 1:
             struct[:, 0, :].fill(0)
             struct[:, 2, :].fill(0)
+        if plane.value[2] != 1:
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
-        elif plane == 'y':
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
-        elif plane == 'z':
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
 
         for i in range(radius):
             new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
 
         return VoxelModel(new_voxels, self.materials, self.x - radius, self.y - radius, self.z - radius)
 
-    def dilateBounded(self, radius = 1, plane = 'xyz', connectivity = 3): # Dilates a model without increasing the size of its bounding box
+    def dilateBounded(self, radius = 1, plane = Axes.XYZ, connectivity = 3): # Dilates a model without increasing the size of its bounding box
         if radius == 0:
             return VoxelModel.copy(self)
 
@@ -489,30 +496,15 @@ class VoxelModel:
         new_voxels = np.copy(self.voxels)
         struct = ndimage.generate_binary_structure(3, connectivity)
 
-        if plane == 'xy':
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
-        elif plane == 'xz':
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
-        elif plane == 'yz':
+        if plane.value[0] != 1:
             struct[0, :, :].fill(0)
             struct[2, :, :].fill(0)
-        elif plane == 'x':
+        if plane.value[1] != 1:
             struct[:, 0, :].fill(0)
             struct[:, 2, :].fill(0)
+        if plane.value[2] != 1:
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
-        elif plane == 'y':
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
-        elif plane == 'z':
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
 
         #print('Dilate Bounded:')
         for i in range(radius):
@@ -520,7 +512,7 @@ class VoxelModel:
 
         return VoxelModel(new_voxels, self.materials, self.x - radius, self.y - radius, self.z - radius)
 
-    def erode(self, radius = 1, plane = 'xyz', connectivity = 3):
+    def erode(self, radius = 1, plane = Axes.XYZ, connectivity = 3):
         if radius == 0:
             return VoxelModel.copy(self)
 
@@ -532,30 +524,15 @@ class VoxelModel:
         new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
         struct = ndimage.generate_binary_structure(3, connectivity)
 
-        if plane == 'xy':
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
-        elif plane == 'xz':
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
-        elif plane == 'yz':
+        if plane.value[0] != 1:
             struct[0, :, :].fill(0)
             struct[2, :, :].fill(0)
-        elif plane == 'x':
+        if plane.value[1] != 1:
             struct[:, 0, :].fill(0)
             struct[:, 2, :].fill(0)
+        if plane.value[2] != 1:
             struct[:, :, 0].fill(0)
             struct[:, :, 2].fill(0)
-        elif plane == 'y':
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
-        elif plane == 'z':
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
 
         for i in range(radius):
             mask = np.array(new_voxels != 0, dtype=np.bool)
@@ -653,10 +630,10 @@ class VoxelModel:
         new_model = new_model.scaleValues()
         return new_model
 
-    def rotate(self, angle, axis = 'z'): # TODO: Check that coords are handled correctly
-        if axis == 'x':
+    def rotate(self, angle, axis = Axes.Z): # TODO: Check that coords are handled correctly
+        if axis == Axes.X:
             plane = (1, 2)
-        elif axis == 'y':
+        elif axis == Axes.Y:
             plane = (0, 2)
         else: # axis == 'z'
             plane = (0, 1)
@@ -665,10 +642,10 @@ class VoxelModel:
 
         return VoxelModel(new_model, self.materials, self.x, self.y, self.z)
 
-    def rotate90(self, times = 1, axis = 'z'): # TODO: Check that coords are handled correctly
-        if axis == 'x':
+    def rotate90(self, times = 1, axis = Axes.Z): # TODO: Check that coords are handled correctly
+        if axis == Axes.X:
             plane = (1, 2)
-        elif axis == 'y':
+        elif axis == Axes.Y:
             plane = (0, 2)
         else: # axis == 'z'
             plane = (0, 1)
@@ -689,14 +666,14 @@ class VoxelModel:
         y_len = self.voxels.shape[1]
         z_len = self.voxels.shape[2]
 
-        if direction == 'both':
+        if direction == Dir.BOTH:
             # Loop through model data
             for x in range(x_len):
                 for y in range(y_len):
                     if np.sum(self.voxels[x, y, :]) > 0:
                         new_voxels[x, y, :].fill(1)
 
-        elif direction == 'down':
+        elif direction == Dir.DOWN:
             # Loop through model data
             for x in range(x_len):
                 for y in range(y_len):
@@ -706,7 +683,7 @@ class VoxelModel:
                         elif np.sum(self.voxels[x, y, z:]) == 0:
                             break
 
-        elif direction == 'up':
+        elif direction == Dir.UP:
             # Loop through model data
             for x in range(x_len):
                 for y in range(y_len):
@@ -724,36 +701,34 @@ class VoxelModel:
         return VoxelModel(new_voxels, materials, self.x, self.y, self.z)
 
     def keepout(self, method):
-        if method == 'laser':
-            new_model = self.projection('both')
-        elif method == 'mill':
-            new_model = self.projection('down')
-        elif method == 'ins':
-            new_model = self.projection('up')
+        if method == Process.LASER:
+            new_model = self.projection(Dir.BOTH)
+        elif method == Process.MILL:
+            new_model = self.projection(Dir.DOWN)
+        elif method == Process.INSERT:
+            new_model = self.projection(Dir.UP)
         else:
             new_model = self
-
         return new_model
 
     def clearance(self, method):
-        if method == 'laser':
-            new_model = self.projection('both').difference(self)
-        elif method == 'mill':
-            new_model = self.projection('both').difference(self.projection('down'))
-        elif (method == 'ins') or (method == '3dp'):
-            new_model = self.projection('up')
+        if method == Process.LASER:
+            new_model = self.projection(Dir.BOTH).difference(self)
+        elif method == Process.MILL:
+            new_model = self.projection(Dir.BOTH).difference(self.projection(Dir.DOWN))
+        elif (method == Process.INSERT) or (method == Process.PRINT):
+            new_model = self.projection(Dir.UP)
         else:
             new_model = self
-
         return new_model
 
-    def support(self, method, r1=1, r2=1, plane='xy'):
+    def support(self, method, r1=1, r2=1, plane=Axes.XY):
         model_A = self.keepout(method)
         model_A = model_A.dilate(r2, plane).difference(model_A)
         model_A = model_A.difference(self.keepout(method).difference(self).dilate(r1, plane)) # Valid support regions
         return model_A
 
-    def userSupport(self, support_model, method, r1=1, r2=1, plane='xy'):
+    def userSupport(self, support_model, method, r1=1, r2=1, plane=Axes.XY):
         model_A = self.support(method, r1, r2, plane)
         model_A = support_model.intersection(model_A)
         return model_A
@@ -762,8 +737,8 @@ class VoxelModel:
         model_A = self.keepout(method)
         if layer != -1:
             model_A = model_A.isolateLayer(layer)
-        model_A = model_A.dilate(r1, 'xy')
-        model_A = model_A.dilate(r2, 'xy').getBoundingBox().difference(model_A)
+        model_A = model_A.dilate(r1, Axes.XY)
+        model_A = model_A.dilate(r2, Axes.XY).getBoundingBox().difference(model_A)
         return model_A
 
     """

@@ -13,7 +13,7 @@ import sys
 import numpy as np
 import time
 
-from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.voxel_model import VoxelModel, Axes, Process
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 from voxelfuse.materials import material_properties
@@ -34,7 +34,7 @@ if __name__=='__main__':
     start = time.time()
 
     # Rotate to best orientation for printing
-    modelIn = modelIn.rotate90(axis='y')
+    modelIn = modelIn.rotate90(axis=Axes.Y)
 
     # Initialize object to hold result
     modelResult = VoxelModel.copy(modelIn)
@@ -57,7 +57,7 @@ if __name__=='__main__':
                 insertedComponents = insertedComponents.union(modelIn.isolateMaterial(m).dilate())
 
     # Find clearance for inserted components
-    insertedComponentsClearance = insertedComponents.clearance('mill')
+    insertedComponentsClearance = insertedComponents.clearance(Process.INSERT)
 
     # Find pause layers at top of each inserted component
     for z in range(1, len(insertedComponents.voxels[0, 0, :])):
