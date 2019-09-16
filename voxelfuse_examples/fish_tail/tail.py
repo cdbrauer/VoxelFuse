@@ -10,7 +10,7 @@ Program applies blurring to the specified materials
 import PyQt5.QtGui as qg
 import sys
 
-from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.voxel_model import VoxelModel, Axes
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 
@@ -19,14 +19,14 @@ if __name__=='__main__':
 
     # User preferences
     modelName = 'tail-20.vox'
-    blur = [1, 3] # materials to blur
+    blur = [1, 2] # materials to blur
     blurRadius = 5
 
     # Import model
     modelIn = VoxelModel.fromVoxFile(modelName)
 
     # Rotate to best orientation for printing
-    modelIn = modelIn.rotate90(axis='y')
+    modelIn = modelIn.rotate90(axis=Axes.Y)
 
     # Isolate materials with blurring requested
     modelBlur = VoxelModel.emptyLike(modelIn)

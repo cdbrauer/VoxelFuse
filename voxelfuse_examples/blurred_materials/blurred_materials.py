@@ -23,7 +23,7 @@ if __name__=='__main__':
     # User preferences
     modelName = 'boxes.vox'
     #modelName = 'joint2.1.vox'
-    blur = [1, 3] # materials to blur
+    blur = [1, 2] # materials to blur
     blurRadius = 3
 
     # Import model
@@ -35,14 +35,14 @@ if __name__=='__main__':
         modelBlur = modelBlur + modelIn.isolateMaterial(i)
 
     # Blur compatible materials
-    modelBlur = modelBlur.dither(blurRadius)
-    # modelBlur = modelBlur.blur(blurRadius)
+    # modelBlur = modelBlur.dither(blurRadius)
+    modelBlur = modelBlur.blur(blurRadius)
 
     # Add unmodified voxels to result
     modelResult = modelBlur.union(modelIn)
 
     # Clean up result
-    # modelResult = modelResult.scaleValues()
+    modelResult = modelResult.scaleValues()
 
     # TODO: Create list of all materials present in model
 
