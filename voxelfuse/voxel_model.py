@@ -768,14 +768,15 @@ class VoxelModel:
 
         f.write('<components>\n' + str(self.numComponents) + '\n</components>\n')
 
-        f.write('<labels>\n')
-        for x in range(x_len):
-            for z in range(z_len):
-                for y in range(y_len):
-                    f.write(str(int(self.components[x,y,z])) + ',')
-                f.write(';')
-            f.write('\n')
-        f.write('</labels>\n')
+        if self.numComponents > 0:
+            f.write('<labels>\n')
+            for x in range(x_len):
+                for z in range(z_len):
+                    for y in range(y_len):
+                        f.write(str(int(self.components[x,y,z])) + ',')
+                    f.write(';')
+                f.write('\n')
+            f.write('</labels>\n')
 
         print("File created: " + f.name)
         f.close()
@@ -832,12 +833,13 @@ class VoxelModel:
         numComponents = int(data[loc[4,0]][:-1])
 
         components = np.zeros(size, dtype=np.int32)
-        for i in range(loc[5,0], loc[5,1]):
-            x = i - loc[5, 0]
-            yz = data[i][:-2].split(";")
-            for z in range(len(yz)):
-                y = np.array(yz[z][:-1].split(","), dtype=np.int32)
-                components[x, :, z] = y
+        if numComponents > 0:
+            for i in range(loc[5,0], loc[5,1]):
+                x = i - loc[5, 0]
+                yz = data[i][:-2].split(";")
+                for z in range(len(yz)):
+                    y = np.array(yz[z][:-1].split(","), dtype=np.int32)
+                    components[x, :, z] = y
 
         new_model = cls(voxels, materials, coords[0], coords[1], coords[2])
         new_model.numComponents = numComponents
