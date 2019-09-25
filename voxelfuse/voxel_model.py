@@ -455,7 +455,7 @@ class VoxelModel:
         return self.subtract(other)
 
     """
-    Dilate and Erode
+    Morphology Operations
     
     - Return a model
     """
@@ -621,6 +621,11 @@ class VoxelModel:
         new_model = new_model.scaleValues()
         return new_model
 
+    """
+    Transformations
+
+    - Return a model
+    """
     def rotate(self, angle, axis = Axes.Z): # TODO: Check that coords are handled correctly
         if axis == Axes.X:
             plane = (1, 2)
@@ -644,6 +649,26 @@ class VoxelModel:
         new_model = np.rot90(self.voxels, times, axes=plane)
 
         return VoxelModel(new_model, self.materials, self.coords)
+
+    def scale(self, factor, interpolate=False, order=1):
+        if interpolate:
+            new_voxels = ndimage.zoom(self.voxels, factor, order=order)
+        else:
+            x_len = self.voxels.shape[0] * factor
+            y_len = self.voxels.shape[1] * factor
+            z_len = self.voxels.shape[2] * factor
+
+            new_voxels = np.zeros((x_len, y_len, z_len))
+
+            for x in tqdm(range(x_len), desc='Scaling'):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        x_source = int(x / factor)
+                        y_source = int(y / factor)
+                        z_source = int(z / factor)
+                        new_voxels[x,y,z] = self.voxels[x_source, y_source, z_source]
+
+        return VoxelModel(new_voxels, self.materials, self.coords)
 
     """
     Manufacturing Features
