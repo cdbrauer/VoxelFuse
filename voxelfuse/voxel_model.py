@@ -11,6 +11,7 @@ from pyvox.parser import VoxParser
 from voxelfuse.materials import material_properties
 from scipy import ndimage
 from numba import njit, prange
+from tqdm import tqdm
 
 FLOATING_ERROR = 0.0000000001
 
@@ -233,7 +234,7 @@ class VoxelModel:
 
         new_voxels = np.zeros_like(self.voxels, dtype=int)
 
-        for x in range(x_len):
+        for x in tqdm(range(x_len), desc='Removing duplicate materials'):
             for y in range(y_len):
                 for z in range(z_len):
                     i = self.voxels[x, y, z]
@@ -553,13 +554,13 @@ class VoxelModel:
 
         full_model = np.zeros((x_len, y_len, z_len, len(material_properties)+1), dtype=np.float)
 
-        for x in range(x_len):
+        for x in tqdm(range(x_len), desc='Blur - converting to material vectors'):
             for y in range(y_len):
                 for z in range(z_len):
                     i = self.voxels[x,y,z]
                     full_model[x,y,z,:] = self.materials[i]
 
-        for m in range(len(material_properties)):
+        for m in tqdm(range(len(material_properties)), desc='Blur - applying gaussian filter'):
             full_model[:, :, :, m+1] = ndimage.gaussian_filter(full_model[:, :, :, m+1], sigma=radius)
 
         mask = full_model[:, :, :, 0]
@@ -569,7 +570,7 @@ class VoxelModel:
         new_voxels = np.zeros_like(self.voxels, dtype=int)
         new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
 
-        for x in range(x_len):
+        for x in tqdm(range(x_len), desc='Blur - converting to indices'):
             for y in range(y_len):
                 for z in range(z_len):
                     m = full_model[x, y, z, :]
@@ -738,6 +739,7 @@ class VoxelModel:
     """
     def saveVF(self, filename):
         f = open(filename+'.vf', 'w+')
+        print('Saving file: ' + f.name)
 
         x_coord = self.coords[0]
         y_coord = self.coords[1]
@@ -746,7 +748,7 @@ class VoxelModel:
         f.write('<coords>\n' + str(x_coord) + ',' + str(y_coord) + ',' + str(z_coord) + ',\n</coords>\n')
 
         f.write('<materials>\n')
-        for r in range(len(self.materials[:,0])):
+        for r in tqdm(range(len(self.materials[:,0])), desc='Writing materials'):
             for c in range(len(self.materials[0,:])):
                 f.write(str(self.materials[r,c]) + ',')
             f.write('\n')
@@ -759,7 +761,7 @@ class VoxelModel:
         f.write('<size>\n' + str(x_len) + ',' + str(y_len) + ',' + str(z_len) + ',\n</size>\n')
 
         f.write('<voxels>\n')
-        for x in range(x_len):
+        for x in tqdm(range(x_len), desc='Writing voxels'):
             for z in range(z_len):
                 for y in range(y_len):
                     f.write(str(int(self.voxels[x,y,z])) + ',')
@@ -771,7 +773,7 @@ class VoxelModel:
 
         if self.numComponents > 0:
             f.write('<labels>\n')
-            for x in range(x_len):
+            for x in tqdm(range(x_len), desc='Writing components'):
                 for z in range(z_len):
                     for y in range(y_len):
                         f.write(str(int(self.components[x,y,z])) + ',')
@@ -779,17 +781,17 @@ class VoxelModel:
                 f.write('\n')
             f.write('</labels>\n')
 
-        print("File created: " + f.name)
         f.close()
 
     @classmethod
     def openVF(cls, filename):
         f = open(filename + '.vf', 'r')
-        data = f.readlines()
+        print('Opening file' + f.name)
 
+        data = f.readlines()
         loc = np.zeros((6,2), dtype=np.int32)
 
-        for i in range(len(data)):
+        for i in tqdm(range(len(data)), desc='Finding tags'):
             if data[i][:-1] == '<coords>':
                 loc[0,0] = i+1
             if data[i][:-1] == '</coords>':
@@ -818,13 +820,13 @@ class VoxelModel:
         coords = np.array(data[loc[0,0]][:-2].split(","), dtype=np.int32)
 
         materials = np.array(data[loc[1,0]][:-2].split(","), dtype=np.float)
-        for i in range(loc[1,0]+1, loc[1,1]):
+        for i in tqdm(range(loc[1,0]+1, loc[1,1]), desc='Reading materials'):
             materials = np.vstack((materials, np.array(data[i][:-2].split(","), dtype=np.float)))
 
         size = tuple(np.array(data[loc[2,0]][:-2].split(","), dtype=np.int32))
 
         voxels = np.zeros(size, dtype=np.int32)
-        for i in range(loc[3,0], loc[3,1]):
+        for i in tqdm(range(loc[3,0], loc[3,1]), desc='Reading voxels'):
             x = i - loc[3,0]
             yz = data[i][:-2].split(";")
             for z in range(len(yz)):
@@ -835,7 +837,7 @@ class VoxelModel:
 
         components = np.zeros(size, dtype=np.int32)
         if numComponents > 0:
-            for i in range(loc[5,0], loc[5,1]):
+            for i in tqdm(range(loc[5,0], loc[5,1]), desc='Reading components'):
                 x = i - loc[5, 0]
                 yz = data[i][:-2].split(";")
                 for z in range(len(yz)):
@@ -846,7 +848,6 @@ class VoxelModel:
         new_model.numComponents = numComponents
         new_model.components = components
 
-        print("File opened: " + f.name)
         f.close()
 
         return new_model

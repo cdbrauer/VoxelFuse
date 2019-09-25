@@ -6,6 +6,7 @@ Dan Aukes, Cole Brauer
 import numpy as np
 import meshio
 from numba import njit
+from tqdm import tqdm
 
 from voxelfuse.voxel_model import alignDims
 from voxelfuse.materials import material_properties
@@ -44,7 +45,7 @@ class Mesh:
         
         # Create list of exterior voxel coordinates
         exterior_voxels_coords = []
-        for x in range(x_len):
+        for x in tqdm(range(x_len), desc='Finding exterior voxels'):
             for y in range(y_len):
                 for z in range(z_len):
                     if exterior_voxels_array[x, y, z] != 0:
@@ -61,19 +62,11 @@ class Mesh:
         tris = []
         vi = 1  # Tracks current vertex index
 
-        current_iter = 0
-        max_iter = len(exterior_voxels_coords)
-
-        print('Mesh:')
         # Loop through voxel_model_array data
-        for voxel_coords in exterior_voxels_coords:
+        for voxel_coords in tqdm(exterior_voxels_coords, desc='Meshing'):
             x = voxel_coords[0]
             y = voxel_coords[1]
             z = voxel_coords[2]
-
-            if current_iter%1000 == 0:
-                print("%s/%s" % (current_iter, max_iter))
-            current_iter = current_iter + 1
 
             r = 0
             g = 0

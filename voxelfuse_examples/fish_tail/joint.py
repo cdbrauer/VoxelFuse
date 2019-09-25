@@ -59,6 +59,8 @@ if __name__=='__main__':
     # Find clearance for inserted components
     insertedComponentsClearance = insertedComponents.clearance(Process.INSERT)
 
+    pauseLayers = []
+
     # Find pause layers at top of each inserted component
     for z in range(1, len(insertedComponents.voxels[0, 0, :])):
         if np.sum(insertedComponents.voxels[:, :, z]) == 0:
@@ -68,7 +70,9 @@ if __name__=='__main__':
 
             # Identify tops of parts
             if np.sum(insertedComponents.voxels[:, :, z-1]) > 0:
-                print(z-1) # TODO: replace with save to array
+                pauseLayers.append(z-1)
+
+    print('Pause layers: ' + str(pauseLayers))
 
     insertedComponents = insertedComponents.union(insertedComponentsClearance)
 

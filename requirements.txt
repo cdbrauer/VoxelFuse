@@ -6,3 +6,4 @@ pyopengl
 py-vox-io
 meshio
 numba
+tqdm
