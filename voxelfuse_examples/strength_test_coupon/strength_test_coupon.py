@@ -39,13 +39,13 @@ if __name__=='__main__':
     if stl:
         # TODO: Improve dimensional accuracy of stl model import and use these files instead of vox file
         if highRes:
-            end1 = VoxelModel.fromMeshFile('end1x10.stl', 0, 0, 0)
-            center = VoxelModel.fromMeshFile('centerx10.stl', 670, 30, 0)
-            end2 = VoxelModel.fromMeshFile('end2x10.stl', 980, 0, 0)
+            end1 = VoxelModel.fromMeshFile('end1x10.stl', (0, 0, 0))
+            center = VoxelModel.fromMeshFile('centerx10.stl', (670, 30, 0))
+            end2 = VoxelModel.fromMeshFile('end2x10.stl', (980, 0, 0))
         else:
-            end1 = VoxelModel.fromMeshFile('end1.stl', 0, 0, 0)
-            center = VoxelModel.fromMeshFile('center.stl', 67, 3, 0)
-            end2 = VoxelModel.fromMeshFile('end2.stl', 98, 0, 0)
+            end1 = VoxelModel.fromMeshFile('end1.stl', (0, 0, 0))
+            center = VoxelModel.fromMeshFile('center.stl', (67, 3, 0))
+            end2 = VoxelModel.fromMeshFile('end2.stl', (98, 0, 0))
 
         # Set materials
         end1 = end1.setMaterial(1)

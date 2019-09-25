@@ -16,7 +16,7 @@ from voxelfuse.plot import Plot
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
-    model = VoxelModel.fromMeshFile('axes.stl', 0, 0, 0)
+    model = VoxelModel.fromMeshFile('axes.stl', (0, 0, 0))
 
     # Create mesh data
     mesh1 = Mesh.fromVoxelModel(model)

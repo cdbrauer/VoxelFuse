@@ -36,7 +36,7 @@ class Mesh:
 
         # Update array dimensions - these need to match so the array coords will correlate correctly
         # (exterior_voxels will be larger as a result of the erode operation)
-        voxel_model_array, exterior_voxels_array, x_new, y_new, z_new = alignDims(voxel_model, exterior_voxels)
+        voxel_model_array, exterior_voxels_array, new_coords = alignDims(voxel_model, exterior_voxels)
         
         x_len = len(voxel_model_array[:, 0, 0])
         y_len = len(voxel_model_array[0, :, 0])

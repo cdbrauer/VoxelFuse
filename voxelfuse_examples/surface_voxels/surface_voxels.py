@@ -14,7 +14,7 @@ if __name__=='__main__':
     modelName = 'cylinder-blue.vox'
 
     # Import model
-    model1 = VoxelModel.fromVoxFile(modelName, 0, 0, 0)
+    model1 = VoxelModel.fromVoxFile(modelName, (0, 0, 0))
 
     # Find exterior voxels
     interiorVoxels = model1.erode(radius=1, connectivity=1)
