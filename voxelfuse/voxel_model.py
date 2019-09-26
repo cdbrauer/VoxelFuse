@@ -36,6 +36,10 @@ class Process(Enum):
     CAST = 4
     INSERT = 5
 
+class Struct(Enum):
+    STANDARD = 1
+    SPHERE = 2
+
 """
 VoxelModel Class
 
@@ -459,7 +463,7 @@ class VoxelModel:
     
     - Return a model
     """
-    def dilate(self, radius = 1, plane = Axes.XYZ, connectivity = 3): # TODO: Preserve overlapping materials?
+    def dilate(self, radius = 1, plane = Axes.XYZ, structType = Struct.STANDARD, connectivity = 3): # TODO: Preserve overlapping materials?
         if radius == 0:
             return VoxelModel.copy(self)
 
@@ -469,48 +473,35 @@ class VoxelModel:
 
         new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
         new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
-        struct = ndimage.generate_binary_structure(3, connectivity)
 
-        if plane.value[0] != 1:
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-        if plane.value[1] != 1:
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
-        if plane.value[2] != 1:
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
-
-        for i in range(radius):
+        if structType == Struct.SPHERE:
+            struct = structSphere(radius, plane)
             new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
+        else: # Struct.STANDARD
+            struct = structStandard(connectivity, plane)
+            for i in range(radius):
+                new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
 
         return VoxelModel(new_voxels, self.materials, (self.coords[0] - radius, self.coords[1] - radius, self.coords[2] - radius))
 
-    def dilateBounded(self, radius = 1, plane = Axes.XYZ, connectivity = 3): # Dilates a model without increasing the size of its bounding box
+    def dilateBounded(self, radius = 1, plane = Axes.XYZ, structType = Struct.STANDARD, connectivity = 3): # Dilates a model without increasing the size of its bounding box
         if radius == 0:
             return VoxelModel.copy(self)
 
         self.fitWorkspace()
         new_voxels = np.copy(self.voxels)
-        struct = ndimage.generate_binary_structure(3, connectivity)
 
-        if plane.value[0] != 1:
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-        if plane.value[1] != 1:
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
-        if plane.value[2] != 1:
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
-
-        #print('Dilate Bounded:')
-        for i in range(radius):
+        if structType == Struct.SPHERE:
+            struct = structSphere(radius, plane)
             new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
+        else: # Struct.STANDARD
+            struct = structStandard(connectivity, plane)
+            for i in range(radius):
+                new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
 
         return VoxelModel(new_voxels, self.materials, self.coords)
 
-    def erode(self, radius = 1, plane = Axes.XYZ, connectivity = 3):
+    def erode(self, radius = 1, plane = Axes.XYZ, structType = Struct.STANDARD, connectivity = 3):
         if radius == 0:
             return VoxelModel.copy(self)
 
@@ -520,22 +511,45 @@ class VoxelModel:
 
         new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
         new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
-        struct = ndimage.generate_binary_structure(3, connectivity)
+        mask = np.array(new_voxels != 0, dtype=np.bool)
 
-        if plane.value[0] != 1:
-            struct[0, :, :].fill(0)
-            struct[2, :, :].fill(0)
-        if plane.value[1] != 1:
-            struct[:, 0, :].fill(0)
-            struct[:, 2, :].fill(0)
-        if plane.value[2] != 1:
-            struct[:, :, 0].fill(0)
-            struct[:, :, 2].fill(0)
-
-        for i in range(radius):
-            mask = np.array(new_voxels != 0, dtype=np.bool)
+        if structType == Struct.SPHERE:
+            struct = structSphere(radius, plane)
             mask = ndimage.binary_erosion(mask, structure=struct)
-            new_voxels = np.multiply(new_voxels, mask)
+        else: # Struct.STANDARD
+            struct = structStandard(connectivity, plane)
+            mask = ndimage.binary_erosion(mask, structure=struct, iterations=radius)
+
+        new_voxels = np.multiply(new_voxels, mask)
+
+        return VoxelModel(new_voxels, self.materials, (self.coords[0] - radius, self.coords[1] - radius, self.coords[2] - radius))
+
+    def closing(self, radius = 1, plane = Axes.XYZ, structType = Struct.SPHERE, connectivity = 1):
+        if radius == 0:
+            return VoxelModel.copy(self)
+        else:
+            return self.dilate(radius, plane, structType, connectivity).erode(radius, plane, structType, connectivity)
+
+    def opening(self, radius = 1, plane = Axes.XYZ, structType = Struct.SPHERE, connectivity = 1):
+        if radius == 0:
+            return VoxelModel.copy(self)
+
+        x_len = self.voxels.shape[0] + (radius * 2)
+        y_len = self.voxels.shape[1] + (radius * 2)
+        z_len = self.voxels.shape[2] + (radius * 2)
+
+        new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
+        new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
+        mask = np.array(new_voxels != 0, dtype=np.bool)
+
+        if structType == Struct.SPHERE:
+            struct = structSphere(radius, plane)
+            mask = ndimage.binary_opening(mask, structure=struct)
+        else:  # Struct.STANDARD
+            struct = structStandard(connectivity, plane)
+            mask = ndimage.binary_opening(mask, structure=struct, iterations=radius)
+
+        new_voxels = np.multiply(new_voxels, mask)
 
         return VoxelModel(new_voxels, self.materials, (self.coords[0] - radius, self.coords[1] - radius, self.coords[2] - radius))
 
@@ -938,6 +952,50 @@ def alignDims(modelA, modelB):
     modelBNew[(bx - xNew):(xMaxB - xNew), (by - yNew):(yMaxB - yNew), (bz - zNew):(zMaxB - zNew)] = modelB.voxels
 
     return modelANew, modelBNew, (xNew, yNew, zNew)
+
+"""
+Functions to generate structuring elements
+"""
+def structSphere(radius, plane):
+    diameter = (radius * 2) + 1
+    struct = np.zeros((diameter, diameter, diameter), dtype=np.int32)
+    for x in range(diameter):
+        for y in range(diameter):
+            for z in range(diameter):
+                xd = (x - radius)
+                yd = (y - radius)
+                zd = (z - radius)
+                r = np.sqrt(xd ** 2 + yd ** 2 + zd ** 2)
+
+                if r < (radius + .5):
+                    struct[x, y, z] = 1
+
+    if plane.value[0] != 1:
+        struct[:radius, :, :].fill(0)
+        struct[-radius:, :, :].fill(0)
+    if plane.value[1] != 1:
+        struct[:, :radius, :].fill(0)
+        struct[:, -radius:, :].fill(0)
+    if plane.value[2] != 1:
+        struct[:, :, :radius].fill(0)
+        struct[:, :, -radius:].fill(0)
+
+    return struct
+
+def structStandard(connectivity, plane):
+    struct = ndimage.generate_binary_structure(3, connectivity)
+
+    if plane.value[0] != 1:
+        struct[0, :, :].fill(0)
+        struct[2, :, :].fill(0)
+    if plane.value[1] != 1:
+        struct[:, 0, :].fill(0)
+        struct[:, 2, :].fill(0)
+    if plane.value[2] != 1:
+        struct[:, :, 0].fill(0)
+        struct[:, :, 2].fill(0)
+
+    return struct
 
 @njit(parallel=True)
 def findFilledVoxels(a, b):
