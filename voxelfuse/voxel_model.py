@@ -505,12 +505,7 @@ class VoxelModel:
         if radius == 0:
             return VoxelModel.copy(self)
 
-        x_len = self.voxels.shape[0] + (radius * 2)
-        y_len = self.voxels.shape[1] + (radius * 2)
-        z_len = self.voxels.shape[2] + (radius * 2)
-
-        new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
-        new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
+        new_voxels = np.copy(self.voxels)
         mask = np.array(new_voxels != 0, dtype=np.bool)
 
         if structType == Struct.SPHERE:
@@ -528,18 +523,13 @@ class VoxelModel:
         if radius == 0:
             return VoxelModel.copy(self)
         else:
-            return self.dilate(radius, plane, structType, connectivity).erode(radius, plane, structType, connectivity)
+            return self.dilate(radius, plane, structType, connectivity).erode(radius, plane, structType, connectivity).fitWorkspace()
 
     def opening(self, radius = 1, plane = Axes.XYZ, structType = Struct.SPHERE, connectivity = 1):
         if radius == 0:
             return VoxelModel.copy(self)
 
-        x_len = self.voxels.shape[0] + (radius * 2)
-        y_len = self.voxels.shape[1] + (radius * 2)
-        z_len = self.voxels.shape[2] + (radius * 2)
-
-        new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
-        new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
+        new_voxels = np.copy(self.voxels)
         mask = np.array(new_voxels != 0, dtype=np.bool)
 
         if structType == Struct.SPHERE:
@@ -551,7 +541,7 @@ class VoxelModel:
 
         new_voxels = np.multiply(new_voxels, mask)
 
-        return VoxelModel(new_voxels, self.materials, (self.coords[0] - radius, self.coords[1] - radius, self.coords[2] - radius))
+        return VoxelModel(new_voxels, self.materials, self.coords)
 
     """
     Material Interface Modification
