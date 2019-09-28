@@ -31,13 +31,10 @@ class Mesh:
     # Create mesh from voxel data
     @classmethod
     def fromVoxelModel(cls, voxel_model):
-        # Find exterior voxels
-        interior_voxels = voxel_model.erode(radius=1, connectivity=1)
-        exterior_voxels = voxel_model.difference(interior_voxels)
+        voxel_model_array = voxel_model.voxels
 
-        # Update array dimensions - these need to match so the array coords will correlate correctly
-        # (exterior_voxels will be larger as a result of the erode operation)
-        voxel_model_array, exterior_voxels_array, new_coords = alignDims(voxel_model, exterior_voxels)
+        # Find exterior voxels
+        exterior_voxels_array = voxel_model.difference(voxel_model.erode(radius=1, connectivity=1)).voxels
         
         x_len = len(voxel_model_array[:, 0, 0])
         y_len = len(voxel_model_array[0, :, 0])
