@@ -166,8 +166,7 @@ class VoxelModel:
     """
     Property update operations
     
-    - These operations work directly on the model
-    - Nothing is returned 
+    - Return a model
     """
     # Remove excess empty workspace from a model
     def fitWorkspace(self):
@@ -224,9 +223,10 @@ class VoxelModel:
         new_components = np.copy(self.components[x_min:x_max, y_min:y_max, z_min:z_max])
         new_coords = (self.coords[0] + x_min, self.coords[1] + y_min, self.coords[2] + z_min)
 
-        self.voxels = new_voxels
-        self.coords = new_coords
-        self.components = new_components
+        new_model = VoxelModel(new_voxels, self.materials, new_coords)
+        new_model.numComponents = self.numComponents
+        new_model.components = new_components
+        return new_model
 
     # Remove duplicate rows from a model's material array
     def removeDuplicateMaterials(self):
@@ -246,14 +246,15 @@ class VoxelModel:
                     ni = np.where(np.equal(new_materials, m).all(1))[0][0]
                     new_voxels[x, y, z] = ni
 
-        self.voxels = new_voxels
-        self.materials = new_materials
+        return VoxelModel(new_voxels, new_materials, self.coords)
 
     # Update component labels for a model.  This uses a disconnected components algorithm and assumes that adjacent voxels with different materials are connected.
     def getComponents(self, connectivity=1):
         mask = np.array(self.voxels[:, :, :] > 0, dtype=np.bool)
         struct = ndimage.generate_binary_structure(3, connectivity)
-        self.components, self.numComponents = ndimage.label(mask, structure=struct)
+        new_model = VoxelModel.copy(self)
+        new_model.components, new_model.numComponents = ndimage.label(mask, structure=struct)
+        return new_model
 
     """    
     Selection operations
@@ -304,7 +305,7 @@ class VoxelModel:
     # Return the bounding box of the input model
     def getBoundingBox(self):
         new_model = VoxelModel.copy(self)
-        new_model.fitWorkspace()
+        new_model = new_model.fitWorkspace()
         new_model.voxels.fill(1)
         new_model = new_model.getOccupied()
         new_model.materials = self.materials[0:2, :]
@@ -488,8 +489,7 @@ class VoxelModel:
         if radius == 0:
             return VoxelModel.copy(self)
 
-        self.fitWorkspace()
-        new_voxels = np.copy(self.voxels)
+        new_voxels = np.copy(self.fitWorkspace().voxels)
 
         if structType == Struct.SPHERE:
             struct = structSphere(radius, plane)
@@ -517,7 +517,7 @@ class VoxelModel:
 
         new_voxels = np.multiply(new_voxels, mask)
 
-        return VoxelModel(new_voxels, self.materials, (self.coords[0] - radius, self.coords[1] - radius, self.coords[2] - radius))
+        return VoxelModel(new_voxels, self.materials, self.coords)
 
     def closing(self, radius = 1, plane = Axes.XYZ, structType = Struct.SPHERE, connectivity = 1):
         if radius == 0:
@@ -605,7 +605,7 @@ class VoxelModel:
         material_sums = np.sum(new_model.materials[:,1:], 1) # This and following update the a values
         material_sums[material_sums > 0] = 1
         new_model.materials[:, 0] = material_sums
-        new_model.removeDuplicateMaterials()
+        new_model = new_model.removeDuplicateMaterials()
         return new_model
 
     def scaleValues(self): # Scale material values while maintaining the ratio between all materials
