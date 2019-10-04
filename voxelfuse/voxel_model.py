@@ -672,7 +672,7 @@ class VoxelModel:
                         z_source = int(z / factor)
                         new_voxels[x,y,z] = self.voxels[x_source, y_source, z_source]
 
-        return VoxelModel(new_voxels, self.materials, self.coords)
+        return VoxelModel(new_voxels.astype(dtype=np.int32), self.materials, self.coords)
 
     """
     Manufacturing Features
