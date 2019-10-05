@@ -63,18 +63,18 @@ class VoxelModel:
     def fromVoxFile(cls, filename, coords = (0, 0, 0)):
         # Import data and align axes
         v1 = VoxParser(filename).parse()
-        v2 = np.array(v1.to_dense(), dtype=np.int32)
+        v2 = np.array(v1.to_dense(), dtype=np.uint16)
         v2 = np.flip(v2, 1)
         v2 = np.rot90(v2, 1, (2, 0))
         v2 = np.rot90(v2, 1, (1, 2))
 
         # Generate materials table assuming indices match materials in material_properties
         i = 0
-        materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+        materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
         for m in np.unique(v2):
             if m != 0:
                 i = i+1
-                material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
+                material_vector = np.zeros(len(material_properties) + 1, dtype=np.float32)
                 material_vector[0] = 1
                 material_vector[m+1] = 1
                 materials = np.vstack((materials, material_vector))
@@ -153,7 +153,7 @@ class VoxelModel:
 
     @classmethod
     def emptyLike(cls, voxel_model):
-        new_model = cls(np.zeros_like(voxel_model.voxels, dtype=np.int32), voxel_model.materials, voxel_model.coords)
+        new_model = cls(np.zeros_like(voxel_model.voxels, dtype=np.uint16), voxel_model.materials, voxel_model.coords)
         return new_model
 
     @classmethod
@@ -236,7 +236,7 @@ class VoxelModel:
         y_len = self.voxels.shape[1]
         z_len = self.voxels.shape[2]
 
-        new_voxels = np.zeros_like(self.voxels, dtype=int)
+        new_voxels = np.zeros_like(self.voxels, dtype=np.uint16)
 
         for x in tqdm(range(x_len), desc='Removing duplicate materials'):
             for y in range(y_len):
@@ -254,6 +254,7 @@ class VoxelModel:
         struct = ndimage.generate_binary_structure(3, connectivity)
         new_model = VoxelModel.copy(self)
         new_model.components, new_model.numComponents = ndimage.label(mask, structure=struct)
+        new_model.components = new_model.components.astype(dtype=np.uint8)
         return new_model
 
     """    
@@ -266,13 +267,13 @@ class VoxelModel:
     # TODO: isolateMaterialVector
     def isolateMaterial(self, material): # material input is an index corresponding to the materials array for the model
         mask = np.array(self.voxels == material, dtype=np.bool)
-        materials = np.zeros((2, len(material_properties)+1), dtype=np.float)
+        materials = np.zeros((2, len(material_properties)+1), dtype=np.float32)
         materials[1] = self.materials[material]
         return VoxelModel(mask.astype(int), materials, self.coords)
 
     # Get all voxels in a specified layer
     def isolateLayer(self, layer):
-        new_voxels = np.zeros_like(self.voxels, dtype=np.int32)
+        new_voxels = np.zeros_like(self.voxels, dtype=np.uint16)
         new_voxels[:, :, layer - self.coords[2]] = self.voxels[:, :, layer - self.coords[2]]
         return VoxelModel(new_voxels, self.materials, self.coords)
 
@@ -314,10 +315,10 @@ class VoxelModel:
     # Set the material of a model
     def setMaterial(self, material): # material input is an index corresponding to the material properties table
         new_voxels = self.getOccupied().voxels # Converts input model to a mask, no effect if input is already a mask
-        material_vector = np.zeros(len(material_properties)+1, dtype=np.float)
+        material_vector = np.zeros(len(material_properties)+1, dtype=np.float32)
         material_vector[0] = 1
         material_vector[material+1] = 1
-        a = np.zeros(len(material_properties)+1, dtype=np.float)
+        a = np.zeros(len(material_properties)+1, dtype=np.float32)
         b = material_vector
         m = np.vstack((a, b))
         return VoxelModel(new_voxels, m, self.coords)
@@ -325,7 +326,7 @@ class VoxelModel:
     # Set the material of a model
     def setMaterialVector(self, material_vector):  # material input is the desired material vector
         new_voxels = self.getOccupied().voxels  # Converts input model to a mask, no effect if input is already a mask
-        a = np.zeros(len(material_properties)+1, dtype=np.float)
+        a = np.zeros(len(material_properties)+1, dtype=np.float32)
         b = material_vector
         materials = np.vstack((a, b))
         return VoxelModel(new_voxels, materials, self.coords)
@@ -399,8 +400,8 @@ class VoxelModel:
         y_len = a.shape[1]
         z_len = a.shape[2]
 
-        new_voxels = np.zeros_like(a, dtype=int)
-        new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float)
+        new_voxels = np.zeros_like(a, dtype=np.uint16)
+        new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float32)
 
         for x in range(x_len):
             for y in range(y_len):
@@ -433,8 +434,8 @@ class VoxelModel:
         y_len = a.shape[1]
         z_len = a.shape[2]
 
-        new_voxels = np.zeros_like(a, dtype=int)
-        new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+        new_voxels = np.zeros_like(a, dtype=np.uint16)
+        new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
 
         for x in range(x_len):
             for y in range(y_len):
@@ -472,7 +473,7 @@ class VoxelModel:
         y_len = self.voxels.shape[1] + (radius * 2)
         z_len = self.voxels.shape[2] + (radius * 2)
 
-        new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
+        new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.uint16)
         new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
 
         if structType == Struct.SPHERE:
@@ -556,7 +557,7 @@ class VoxelModel:
         y_len = self.voxels.shape[1]
         z_len = self.voxels.shape[2]
 
-        full_model = np.zeros((x_len, y_len, z_len, len(material_properties)+1), dtype=np.float)
+        full_model = np.zeros((x_len, y_len, z_len, len(material_properties)+1), dtype=np.float32)
 
         for x in tqdm(range(x_len), desc='Blur - converting to material vectors'):
             for y in range(y_len):
@@ -571,8 +572,8 @@ class VoxelModel:
         mask = np.repeat(mask[..., None], len(material_properties)+1, axis=3)
         full_model = np.multiply(full_model, mask)
 
-        new_voxels = np.zeros_like(self.voxels, dtype=int)
-        new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+        new_voxels = np.zeros_like(self.voxels, dtype=np.uint16)
+        new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
 
         for x in tqdm(range(x_len), desc='Blur - converting to indices'):
             for y in range(y_len):
@@ -672,7 +673,7 @@ class VoxelModel:
                         z_source = int(z / factor)
                         new_voxels[x,y,z] = self.voxels[x_source, y_source, z_source]
 
-        return VoxelModel(new_voxels.astype(dtype=np.int32), self.materials, self.coords)
+        return VoxelModel(new_voxels.astype(dtype=np.uint16), self.materials, self.coords)
 
     """
     Manufacturing Features
@@ -712,8 +713,8 @@ class VoxelModel:
                             new_voxels[x, y, z] = 1
 
         # Assume material 1
-        materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
-        material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
+        materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
+        material_vector = np.zeros(len(material_properties) + 1, dtype=np.float32)
         material_vector[0] = 1
         material_vector[2] = 1
         materials = np.vstack((materials, material_vector))
@@ -818,7 +819,7 @@ class VoxelModel:
         print('Opening file' + f.name)
 
         data = f.readlines()
-        loc = np.zeros((6,2), dtype=np.int32)
+        loc = np.zeros((6,2), dtype=np.uint16)
 
         for i in tqdm(range(len(data)), desc='Finding tags'):
             if data[i][:-1] == '<coords>':
@@ -846,31 +847,31 @@ class VoxelModel:
             if data[i][:-1] == '</labels>':
                 loc[5,1] = i
 
-        coords = np.array(data[loc[0,0]][:-2].split(","), dtype=np.int32)
+        coords = np.array(data[loc[0,0]][:-2].split(","), dtype=np.int16)
 
-        materials = np.array(data[loc[1,0]][:-2].split(","), dtype=np.float)
+        materials = np.array(data[loc[1,0]][:-2].split(","), dtype=np.float32)
         for i in tqdm(range(loc[1,0]+1, loc[1,1]), desc='Reading materials'):
-            materials = np.vstack((materials, np.array(data[i][:-2].split(","), dtype=np.float)))
+            materials = np.vstack((materials, np.array(data[i][:-2].split(","), dtype=np.float32)))
 
-        size = tuple(np.array(data[loc[2,0]][:-2].split(","), dtype=np.int32))
+        size = tuple(np.array(data[loc[2,0]][:-2].split(","), dtype=np.uint16))
 
-        voxels = np.zeros(size, dtype=np.int32)
+        voxels = np.zeros(size, dtype=np.uint16)
         for i in tqdm(range(loc[3,0], loc[3,1]), desc='Reading voxels'):
             x = i - loc[3,0]
             yz = data[i][:-2].split(";")
             for z in range(len(yz)):
-                y = np.array(yz[z][:-1].split(","), dtype=np.int32)
+                y = np.array(yz[z][:-1].split(","), dtype=np.uint16)
                 voxels[x, :, z] = y
 
         numComponents = int(data[loc[4,0]][:-1])
 
-        components = np.zeros(size, dtype=np.int32)
+        components = np.zeros(size, dtype=np.uint8)
         if numComponents > 0:
             for i in tqdm(range(loc[5,0], loc[5,1]), desc='Reading components'):
                 x = i - loc[5, 0]
                 yz = data[i][:-2].split(";")
                 for z in range(len(yz)):
-                    y = np.array(yz[z][:-1].split(","), dtype=np.int32)
+                    y = np.array(yz[z][:-1].split(","), dtype=np.uint8)
                     components[x, :, z] = y
 
         new_model = cls(voxels, materials, tuple(coords))
@@ -935,20 +936,20 @@ def alignDims(modelA, modelB):
     yMaxNew = max(yMaxA, yMaxB)
     zMaxNew = max(zMaxA, zMaxB)
 
-    modelANew = np.zeros((xMaxNew - xNew, yMaxNew - yNew, zMaxNew - zNew), dtype=np.int32)
-    modelBNew = np.zeros((xMaxNew - xNew, yMaxNew - yNew, zMaxNew - zNew), dtype=np.int32)
+    voxelsANew = np.zeros((xMaxNew - xNew, yMaxNew - yNew, zMaxNew - zNew), dtype=np.uint16)
+    voxelsBNew = np.zeros((xMaxNew - xNew, yMaxNew - yNew, zMaxNew - zNew), dtype=np.uint16)
 
-    modelANew[(ax - xNew):(xMaxA - xNew), (ay - yNew):(yMaxA - yNew), (az - zNew):(zMaxA - zNew)] = modelA.voxels
-    modelBNew[(bx - xNew):(xMaxB - xNew), (by - yNew):(yMaxB - yNew), (bz - zNew):(zMaxB - zNew)] = modelB.voxels
+    voxelsANew[(ax - xNew):(xMaxA - xNew), (ay - yNew):(yMaxA - yNew), (az - zNew):(zMaxA - zNew)] = modelA.voxels
+    voxelsBNew[(bx - xNew):(xMaxB - xNew), (by - yNew):(yMaxB - yNew), (bz - zNew):(zMaxB - zNew)] = modelB.voxels
 
-    return modelANew, modelBNew, (xNew, yNew, zNew)
+    return voxelsANew, voxelsBNew, (xNew, yNew, zNew)
 
 """
 Functions to generate structuring elements
 """
 def structSphere(radius, plane):
     diameter = (radius * 2) + 1
-    struct = np.zeros((diameter, diameter, diameter), dtype=np.int32)
+    struct = np.zeros((diameter, diameter, diameter), dtype=np.bool)
     for x in range(diameter):
         for y in range(diameter):
             for z in range(diameter):
