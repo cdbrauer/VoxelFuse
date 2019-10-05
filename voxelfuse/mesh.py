@@ -8,7 +8,6 @@ import meshio
 from numba import njit
 from tqdm import tqdm
 
-from voxelfuse.voxel_model import alignDims
 from voxelfuse.materials import material_properties
 
 """
