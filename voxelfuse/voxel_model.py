@@ -406,15 +406,15 @@ class VoxelModel:
         for x in range(x_len):
             for y in range(y_len):
                 for z in range(z_len):
-                    i1 = a[x, y, z]
-                    i2 = b[x, y, z]
+                    i1 = int(a[x, y, z])
+                    i2 = int(b[x, y, z])
                     m1 = self.materials[i1]
                     m2 = model_to_add.materials[i2]
 
                     m = m1 + m2
                     m[0] = np.logical_or(m1[0], m2[0])
-                    i = np.where(np.equal(new_materials, m).all(1))[0]
 
+                    i = np.where(np.equal(new_materials, m).all(1))[0]
                     if len(i) > 0:
                         new_voxels[x, y, z] = i[0]
                     else:
@@ -440,15 +440,15 @@ class VoxelModel:
         for x in range(x_len):
             for y in range(y_len):
                 for z in range(z_len):
-                    i1 = a[x, y, z]
-                    i2 = b[x, y, z]
+                    i1 = int(a[x, y, z])
+                    i2 = int(b[x, y, z])
                     m1 = self.materials[i1]
                     m2 = model_to_sub.materials[i2]
 
                     m = m1 - m2
                     m[0] = np.logical_or(m1[0], m2[0])
-                    i = np.where(np.equal(new_materials, m).all(1))[0]
 
+                    i = np.where(np.equal(new_materials, m).all(1))[0]
                     if len(i) > 0:
                         new_voxels[x, y, z] = i[0]
                     else:
@@ -459,6 +459,138 @@ class VoxelModel:
 
     def __sub__(self, other):
         return self.subtract(other)
+
+    def multiply(self, other):
+        if type(other) is VoxelModel:
+            a, b, new_coords = alignDims(self, other)
+
+            x_len = a.shape[0]
+            y_len = a.shape[1]
+            z_len = a.shape[2]
+
+            new_voxels = np.zeros_like(a, dtype=np.uint16)
+            new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float32)
+
+            for x in range(x_len):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        i1 = int(a[x, y, z])
+                        i2 = int(b[x, y, z])
+                        m1 = self.materials[i1]
+                        m2 = other.materials[i2]
+
+                        m = np.multiply(m1, m2)
+                        m[0] = np.logical_and(m1[0], m2[0])
+
+                        i = np.where(np.equal(new_materials, m).all(1))[0]
+                        if len(i) > 0:
+                            new_voxels[x, y, z] = i[0]
+                        else:
+                            new_materials = np.vstack((new_materials, m))
+                            new_voxels[x, y, z] = len(new_materials) - 1
+
+            return VoxelModel(new_voxels, new_materials, new_coords)
+
+        else:
+            a = self.voxels
+
+            x_len = a.shape[0]
+            y_len = a.shape[1]
+            z_len = a.shape[2]
+
+            new_voxels = np.zeros_like(a, dtype=np.uint16)
+            new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
+
+            for x in range(x_len):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        i1 = int(a[x, y, z])
+                        m1 = self.materials[i1]
+
+                        m = m1 * other
+
+                        if other == 0:
+                            m[0] = 0
+                        else:
+                            m[0] = m1[0]
+
+                        i = np.where(np.equal(new_materials, m).all(1))[0]
+                        if len(i) > 0:
+                            new_voxels[x, y, z] = i[0]
+                        else:
+                            new_materials = np.vstack((new_materials, m))
+                            new_voxels[x, y, z] = len(new_materials) - 1
+
+            return VoxelModel(new_voxels, new_materials, self.coords)
+
+    def __mul__(self, other):
+        return self.multiply(other)
+
+    def divide(self, other):
+        if type(other) is VoxelModel:
+            a, b, new_coords = alignDims(self, other)
+
+            x_len = a.shape[0]
+            y_len = a.shape[1]
+            z_len = a.shape[2]
+
+            new_voxels = np.zeros_like(a, dtype=np.uint16)
+            new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float32)
+
+            for x in range(x_len):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        i1 = int(a[x, y, z])
+                        i2 = int(b[x, y, z])
+                        m1 = self.materials[i1]
+                        m2 = other.materials[i2]
+
+                        m2[m2 == 0] = 1
+                        m = np.divide(m1, m2)
+                        m[0] = m1[0]
+
+                        i = np.where(np.equal(new_materials, m).all(1))[0]
+                        if len(i) > 0:
+                            new_voxels[x, y, z] = i[0]
+                        else:
+                            new_materials = np.vstack((new_materials, m))
+                            new_voxels[x, y, z] = len(new_materials) - 1
+
+            return VoxelModel(new_voxels, new_materials, new_coords)
+
+        else:
+            if other == 0:
+                return self
+
+            a = self.voxels
+
+            x_len = a.shape[0]
+            y_len = a.shape[1]
+            z_len = a.shape[2]
+
+            new_voxels = np.zeros_like(a, dtype=np.uint16)
+            new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
+
+            for x in range(x_len):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        i1 = int(a[x, y, z])
+                        m1 = self.materials[i1]
+
+                        m = m1 / other
+                        m[0] = m1[0]
+
+                        i = np.where(np.equal(new_materials, m).all(1))[0]
+                        if len(i) > 0:
+                            new_voxels[x, y, z] = i[0]
+                        else:
+                            new_materials = np.vstack((new_materials, m))
+                            new_voxels[x, y, z] = len(new_materials) - 1
+
+            return VoxelModel(new_voxels, new_materials, self.coords)
+
+    def __truediv__(self, other):
+        return self.divide(other)
 
     """
     Morphology Operations
