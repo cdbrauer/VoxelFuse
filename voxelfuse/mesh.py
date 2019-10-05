@@ -30,7 +30,7 @@ class Mesh:
     # Create mesh from voxel data
     @classmethod
     def fromVoxelModel(cls, voxel_model):
-        voxel_model_array = voxel_model.voxels
+        voxel_model_array = voxel_model.voxels.astype(np.uint16)
 
         # Find exterior voxels
         exterior_voxels_array = voxel_model.difference(voxel_model.erode(radius=1, connectivity=1)).voxels
