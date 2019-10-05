@@ -685,17 +685,7 @@ class VoxelModel:
         if radius == 0:
             return VoxelModel.copy(self)
 
-        x_len = self.voxels.shape[0]
-        y_len = self.voxels.shape[1]
-        z_len = self.voxels.shape[2]
-
-        full_model = np.zeros((x_len, y_len, z_len, len(material_properties)+1), dtype=np.float32)
-
-        for x in tqdm(range(x_len), desc='Blur - converting to material vectors'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    i = self.voxels[x,y,z]
-                    full_model[x,y,z,:] = self.materials[i]
+        full_model = toFullMaterials(self.voxels, self.materials, len(material_properties)+1)
 
         for m in tqdm(range(len(material_properties)), desc='Blur - applying gaussian filter'):
             full_model[:, :, :, m+1] = ndimage.gaussian_filter(full_model[:, :, :, m+1], sigma=radius)
@@ -704,22 +694,7 @@ class VoxelModel:
         mask = np.repeat(mask[..., None], len(material_properties)+1, axis=3)
         full_model = np.multiply(full_model, mask)
 
-        new_voxels = np.zeros_like(self.voxels, dtype=np.uint16)
-        new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
-
-        for x in tqdm(range(x_len), desc='Blur - converting to indices'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    m = full_model[x, y, z, :]
-                    i = np.where(np.equal(new_materials, m).all(1))[0]
-
-                    if len(i) > 0:
-                        new_voxels[x, y, z] = i[0]
-                    else:
-                        new_materials = np.vstack((new_materials, m))
-                        new_voxels[x, y, z] = len(new_materials) - 1
-
-        return VoxelModel(new_voxels, new_materials, self.coords)
+        return toIndexedMaterials(full_model, self)
 
     def blurRegion(self, radius, region):
         new_model = self.blur(radius)
@@ -738,7 +713,6 @@ class VoxelModel:
         material_sums = np.sum(new_model.materials[:,1:], 1) # This and following update the a values
         material_sums[material_sums > 0] = 1
         new_model.materials[:, 0] = material_sums
-        new_model = new_model.removeDuplicateMaterials()
         return new_model
 
     def scaleValues(self): # Scale material values while maintaining the ratio between all materials
@@ -1138,3 +1112,41 @@ def findFilledVoxels(a, b):
         f3[x] = f1 & f2
 
     return f3
+
+@njit()
+def toFullMaterials(voxels, materials, n_materials):
+    x_len = voxels.shape[0]
+    y_len = voxels.shape[1]
+    z_len = voxels.shape[2]
+
+    full_model = np.zeros((x_len, y_len, z_len, n_materials), dtype=np.float32)
+
+    for x in range(x_len):
+        for y in range(y_len):
+            for z in range(z_len):
+                i = voxels[x,y,z]
+                full_model[x,y,z,:] = materials[i]
+
+    return full_model
+
+def toIndexedMaterials(voxels, model):
+    x_len = model.voxels.shape[0]
+    y_len = model.voxels.shape[1]
+    z_len = model.voxels.shape[2]
+
+    new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
+    new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
+
+    for x in tqdm(range(x_len), desc='Converting to indexed materials'):
+        for y in range(y_len):
+            for z in range(z_len):
+                m = voxels[x, y, z, :]
+                i = np.where(np.equal(new_materials, m).all(1))[0]
+
+                if len(i) > 0:
+                    new_voxels[x, y, z] = i[0]
+                else:
+                    new_materials = np.vstack((new_materials, m))
+                    new_voxels[x, y, z] = len(new_materials) - 1
+
+    return VoxelModel(new_voxels, new_materials, model.coords)
