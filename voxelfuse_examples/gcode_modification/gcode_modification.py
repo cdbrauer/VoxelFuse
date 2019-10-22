@@ -18,7 +18,7 @@ if __name__=='__main__':
     # Remove initialization commands
     gcode.remove_to_string(gc1, ';V0')
 
-    # Insert pause before voxel 2
+    # Insert pause before voxel layer 2
     gcode.pause_before_voxel(gc1, 2)
 
     # Insert header template

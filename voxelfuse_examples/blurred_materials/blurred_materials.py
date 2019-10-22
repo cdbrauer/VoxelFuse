@@ -44,15 +44,9 @@ if __name__=='__main__':
     # Clean up result
     modelResult = modelResult.scaleValues()
 
-    # TODO: Create list of all materials present in model
-
-    # TODO: Sort by material percentages (posterize)
-
     # Create mesh data
     mesh1 = Mesh.fromVoxelModel(modelIn)
     mesh2 = Mesh.fromVoxelModel(modelResult)
-
-    # TODO: Export .stl file for each material
 
     # Create plots
     plot1 = Plot(mesh1)

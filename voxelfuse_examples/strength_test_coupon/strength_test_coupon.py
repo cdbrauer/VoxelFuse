@@ -37,7 +37,6 @@ if __name__=='__main__':
     # Import coupon components
     print('Importing Files')
     if stl:
-        # TODO: Improve dimensional accuracy of stl model import and use these files instead of vox file
         if highRes:
             end1 = VoxelModel.fromMeshFile('end1x10.stl', (0, 0, 0))
             center = VoxelModel.fromMeshFile('centerx10.stl', (670, 30, 0))
