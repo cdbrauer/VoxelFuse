@@ -13,11 +13,15 @@ Plot Class
 Initialized from mesh data
 """
 class Plot:
-    def __init__(self, mesh, grids = False, drawEdges=True, edgeColor=(0, 0, 0, 0.5)):
+    def __init__(self, mesh, grids = False, drawEdges=True, edgeColor=(0, 0, 0, 0.5), positionOffset = (0, 0, 0), viewAngle = (40, 30, 300), resolution = (1280, 720), name = 'Plot 1'):
         self.mesh = mesh
         self.grids = grids
         self.drawEdges = drawEdges
         self.edgeColor = edgeColor
+        self.pos = positionOffset
+        self.angle = viewAngle
+        self.res = resolution
+        self.name = name
         self.widget = None
 
     def show(self):
@@ -59,14 +63,14 @@ class Plot:
             widget.addItem(pltz)
 
         # Set plot options
-        widget.opts['center'] = qg.QVector3D((len(self.mesh.model[:, 0, 0])) / 2, (len(self.mesh.model[0, :, 0])) / 2, ((len(self.mesh.model[0, 0, :])) / 2))
-        widget.opts['elevation'] = 40 #40
-        widget.opts['azimuth'] = 30 #30
-        widget.opts['distance'] = 300 #50
-        widget.resize(1440 / 1.5, 1080 / 1.5)
+        widget.opts['center'] = qg.QVector3D(((self.mesh.model.shape[0])/2)+self.pos[0], ((self.mesh.model.shape[1])/2)+self.pos[1], ((self.mesh.model.shape[2])/2)+self.pos[2])
+        widget.opts['elevation'] = self.angle[0]
+        widget.opts['azimuth'] = self.angle[1]
+        widget.opts['distance'] = self.angle[2]
+        widget.resize(self.res[0], self.res[1])
 
         # Show plot
-        #widget.setWindowTitle(str())
+        widget.setWindowTitle(str(self.name))
         widget.show()
 
         self.widget = widget

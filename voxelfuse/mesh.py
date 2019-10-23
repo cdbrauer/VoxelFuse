@@ -8,6 +8,7 @@ import meshio
 from numba import njit
 from tqdm import tqdm
 
+from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.materials import material_properties
 
 """
@@ -30,6 +31,7 @@ class Mesh:
     # Create mesh from voxel data
     @classmethod
     def fromVoxelModel(cls, voxel_model):
+        voxel_model = voxel_model.fitWorkspace()
         voxel_model_array = voxel_model.voxels.astype(np.uint16)
 
         # Find exterior voxels
