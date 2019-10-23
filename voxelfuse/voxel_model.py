@@ -83,8 +83,7 @@ class VoxelModel:
         return cls(v2, materials, coords)
 
     @classmethod
-    def fromMeshFile(cls, filename, coords = (0, 0, 0)):
-        res = 0
+    def fromMeshFile(cls, filename, coords = (0, 0, 0), resolution = 1):
         data = makeMesh(filename, True)
 
         points = data.points
@@ -105,15 +104,16 @@ class VoxelModel:
             T_inv[ii] = np.linalg.inv(t).T
 
         # Find bounding box
+        base = 1 / resolution
         points_min = points.min(0)
         points_max = points.max(0)
-        points_min_r = np.round(points_min, res)
-        points_max_r = np.round(points_max, res)
+        points_min_r = base * np.round(points_min/base)
+        points_max_r = base * np.round(points_max/base)
 
         # Create 3D grid
-        xx = np.r_[points_min_r[0]:points_max_r[0]+1:10 ** (-res)]
-        yy = np.r_[points_min_r[1]:points_max_r[1]+1:10 ** (-res)]
-        zz = np.r_[points_min_r[2]:points_max_r[2]+1:10 ** (-res)]
+        xx = np.r_[points_min_r[0]:points_max_r[0]+1:base]
+        yy = np.r_[points_min_r[1]:points_max_r[1]+1:base]
+        zz = np.r_[points_min_r[2]:points_max_r[2]+1:base]
 
         # Find center of every grid point
         xx_mid = (xx[1:] + xx[:-1]) / 2
@@ -148,8 +148,9 @@ class VoxelModel:
         material_vector[0] = 1
         material_vector[2] = 1
         materials = np.vstack((materials, material_vector))
-        
-        return cls(voxels, materials, coords)
+
+        new_model =  cls(voxels, materials, coords).fitWorkspace()
+        return new_model
 
     @classmethod
     def emptyLike(cls, voxel_model):
