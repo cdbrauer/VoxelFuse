@@ -31,11 +31,14 @@ class Mesh:
     # Create mesh from voxel data
     @classmethod
     def fromVoxelModel(cls, voxel_model):
-        voxel_model = voxel_model.fitWorkspace()
-        voxel_model_array = voxel_model.voxels.astype(np.uint16)
+        model_materials = voxel_model.materials
+        model_offsets = voxel_model.coords
+
+        voxel_model_fit = voxel_model.fitWorkspace()
+        voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
 
         # Find exterior voxels
-        exterior_voxels_array = voxel_model.difference(voxel_model.erode(radius=1, connectivity=1)).voxels
+        exterior_voxels_array = voxel_model_fit.difference(voxel_model_fit.erode(radius=1, connectivity=1)).voxels
         
         x_len = len(voxel_model_array[:, 0, 0])
         y_len = len(voxel_model_array[0, :, 0])
@@ -51,8 +54,6 @@ class Mesh:
 
         # Get voxel array
         voxel_model_array[voxel_model_array < 0] = 0
-
-        model_materials = voxel_model.materials
 
         # Initialize arrays
         verts = []
@@ -84,7 +85,7 @@ class Mesh:
             voxel_color = [r, g, b, a]
 
             # Add cube vertices
-            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, x, y, z, vi)
+            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, model_offsets, x, y, z, vi)
             verts += new_verts
             tris += new_tris
 
@@ -144,7 +145,7 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
         return False
 
 @njit()
-def addVerticesAndTriangles(voxel_model_array, x, y, z, vi):
+def addVerticesAndTriangles(voxel_model_array, model_offsets, x, y, z, vi):
     adjacent = [
         [check_adjacent_x(voxel_model_array, x, y, z, 1), check_adjacent_x(voxel_model_array, x, y, z, -1)],
         [check_adjacent_y(voxel_model_array, x, y, z, 1), check_adjacent_y(voxel_model_array, x, y, z, -1)],
@@ -156,42 +157,42 @@ def addVerticesAndTriangles(voxel_model_array, x, y, z, vi):
     tris = []
 
     if adjacent[0][0] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([x + 0.5, y + 0.5, z + 0.5])
+        verts.append([x + 0.5 + model_offsets[0], y + 0.5 + model_offsets[1], z + 0.5 + model_offsets[2]])
         verts_indices[0] = vi
         vi = vi + 1
 
     if adjacent[0][0] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([x + 0.5, y - 0.5, z + 0.5])
+        verts.append([x + 0.5 + model_offsets[0], y - 0.5 + model_offsets[1], z + 0.5 + model_offsets[2]])
         verts_indices[1] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([x - 0.5, y + 0.5, z + 0.5])
+        verts.append([x - 0.5 + model_offsets[0], y + 0.5 + model_offsets[1], z + 0.5 + model_offsets[2]])
         verts_indices[2] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([x - 0.5, y - 0.5, z + 0.5])
+        verts.append([x - 0.5 + model_offsets[0], y - 0.5 + model_offsets[1], z + 0.5 + model_offsets[2]])
         verts_indices[3] = vi
         vi = vi + 1
 
     if adjacent[0][0] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([x + 0.5, y + 0.5, z - 0.5])
+        verts.append([x + 0.5 + model_offsets[0], y + 0.5 + model_offsets[1], z - 0.5 + model_offsets[2]])
         verts_indices[4] = vi
         vi = vi + 1
 
     if adjacent[0][0] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([x + 0.5, y - 0.5, z - 0.5])
+        verts.append([x + 0.5 + model_offsets[0], y - 0.5 + model_offsets[1], z - 0.5 + model_offsets[2]])
         verts_indices[5] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([x - 0.5, y + 0.5, z - 0.5])
+        verts.append([x - 0.5 + model_offsets[0], y + 0.5 + model_offsets[1], z - 0.5 + model_offsets[2]])
         verts_indices[6] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([x - 0.5, y - 0.5, z - 0.5])
+        verts.append([x - 0.5 + model_offsets[0], y - 0.5 + model_offsets[1], z - 0.5 + model_offsets[2]])
         verts_indices[7] = vi
         vi = vi + 1
 
