@@ -31,11 +31,10 @@ class Mesh:
     # Create mesh from voxel data
     @classmethod
     def fromVoxelModel(cls, voxel_model):
-        model_materials = voxel_model.materials
-        model_offsets = voxel_model.coords
-
         voxel_model_fit = voxel_model.fitWorkspace()
         voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
+        model_materials = voxel_model_fit.materials
+        model_offsets = voxel_model_fit.coords
 
         # Find exterior voxels
         exterior_voxels_array = voxel_model_fit.difference(voxel_model_fit.erode(radius=1, connectivity=1)).voxels
