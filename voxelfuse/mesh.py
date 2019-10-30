@@ -22,15 +22,16 @@ Properties:
   tris - sets of vertices associated with triangular faces
 """
 class Mesh:
-    def __init__(self, input_model, verts, verts_colors, tris):
+    def __init__(self, input_model, verts, verts_colors, tris, resolution):
         self.verts = verts
         self.colors = verts_colors
         self.tris = tris
         self.model = input_model
+        self.res = resolution
 
     # Create mesh from voxel data
     @classmethod
-    def fromVoxelModel(cls, voxel_model):
+    def fromVoxelModel(cls, voxel_model, resolution = 1):
         voxel_model_fit = voxel_model.fitWorkspace()
         voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
         model_materials = voxel_model_fit.materials
@@ -84,7 +85,7 @@ class Mesh:
             voxel_color = [r, g, b, a]
 
             # Add cube vertices
-            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, model_offsets, x, y, z, vi)
+            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi)
             verts += new_verts
             tris += new_tris
 
@@ -96,7 +97,7 @@ class Mesh:
         verts_colors = np.array(verts_colors)
         tris = np.array(tris)
 
-        return cls(voxel_model_array, verts, verts_colors, tris)
+        return cls(voxel_model_array, verts, verts_colors, tris, resolution)
 
     # Export model from mesh data
     def export(self, filename):
@@ -144,7 +145,7 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
         return False
 
 @njit()
-def addVerticesAndTriangles(voxel_model_array, model_offsets, x, y, z, vi):
+def addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi):
     adjacent = [
         [check_adjacent_x(voxel_model_array, x, y, z, 1), check_adjacent_x(voxel_model_array, x, y, z, -1)],
         [check_adjacent_y(voxel_model_array, x, y, z, 1), check_adjacent_y(voxel_model_array, x, y, z, -1)],
@@ -156,42 +157,42 @@ def addVerticesAndTriangles(voxel_model_array, model_offsets, x, y, z, vi):
     tris = []
 
     if adjacent[0][0] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([x + 0.5 + model_offsets[0], y + 0.5 + model_offsets[1], z + 0.5 + model_offsets[2]])
+        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
         verts_indices[0] = vi
         vi = vi + 1
 
     if adjacent[0][0] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([x + 0.5 + model_offsets[0], y - 0.5 + model_offsets[1], z + 0.5 + model_offsets[2]])
+        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
         verts_indices[1] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([x - 0.5 + model_offsets[0], y + 0.5 + model_offsets[1], z + 0.5 + model_offsets[2]])
+        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
         verts_indices[2] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([x - 0.5 + model_offsets[0], y - 0.5 + model_offsets[1], z + 0.5 + model_offsets[2]])
+        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
         verts_indices[3] = vi
         vi = vi + 1
 
     if adjacent[0][0] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([x + 0.5 + model_offsets[0], y + 0.5 + model_offsets[1], z - 0.5 + model_offsets[2]])
+        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
         verts_indices[4] = vi
         vi = vi + 1
 
     if adjacent[0][0] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([x + 0.5 + model_offsets[0], y - 0.5 + model_offsets[1], z - 0.5 + model_offsets[2]])
+        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
         verts_indices[5] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([x - 0.5 + model_offsets[0], y + 0.5 + model_offsets[1], z - 0.5 + model_offsets[2]])
+        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
         verts_indices[6] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([x - 0.5 + model_offsets[0], y - 0.5 + model_offsets[1], z - 0.5 + model_offsets[2]])
+        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
         verts_indices[7] = vi
         vi = vi + 1
 

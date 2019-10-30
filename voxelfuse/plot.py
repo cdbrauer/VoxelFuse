@@ -63,7 +63,7 @@ class Plot:
             widget.addItem(pltz)
 
         # Set plot options
-        widget.opts['center'] = qg.QVector3D(((self.mesh.model.shape[0])/2)+self.pos[0], ((self.mesh.model.shape[1])/2)+self.pos[1], ((self.mesh.model.shape[2])/2)+self.pos[2])
+        widget.opts['center'] = qg.QVector3D(((self.mesh.model.shape[0]/self.mesh.res)/2)+self.pos[0], ((self.mesh.model.shape[1]/self.mesh.res)/2)+self.pos[1], ((self.mesh.model.shape[2]/self.mesh.res)/2)+self.pos[2])
         widget.opts['elevation'] = self.angle[0]
         widget.opts['azimuth'] = self.angle[1]
         widget.opts['distance'] = self.angle[2]
