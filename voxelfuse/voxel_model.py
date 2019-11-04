@@ -689,7 +689,7 @@ class VoxelModel:
         full_model = toFullMaterials(self.voxels, self.materials, len(material_properties)+1)
 
         for m in tqdm(range(len(material_properties)), desc='Blur - applying gaussian filter'):
-            full_model[:, :, :, m+1] = ndimage.gaussian_filter(full_model[:, :, :, m+1], sigma=radius)
+            full_model[:, :, :, m+1] = ndimage.gaussian_filter(full_model[:, :, :, m+1], sigma=radius/2)
 
         mask = full_model[:, :, :, 0]
         mask = np.repeat(mask[..., None], len(material_properties)+1, axis=3)
