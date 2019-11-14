@@ -782,6 +782,26 @@ class VoxelModel:
 
         return VoxelModel(new_voxels.astype(dtype=np.uint16), self.materials, self.coords)
 
+    def getCenter(self):
+        model = self.fitWorkspace()
+
+        x_center = (model.voxels.shape[0] / 2) + model.coords[0]
+        y_center = (model.voxels.shape[1] / 2) + model.coords[1]
+        z_center = (model.voxels.shape[2] / 2) + model.coords[2]
+
+        centerCoords = (x_center, y_center, z_center)
+        return centerCoords
+
+    def setCenter(self, coords):
+        new_model = self.fitWorkspace()
+
+        x_new = round(coords[0] - (new_model.voxels.shape[0] / 2))
+        y_new = round(coords[1] - (new_model.voxels.shape[1] / 2))
+        z_new = round(coords[2] - (new_model.voxels.shape[2] / 2))
+
+        new_model.coords = (x_new, y_new, z_new)
+        return new_model
+
     """
     Manufacturing Features
     
