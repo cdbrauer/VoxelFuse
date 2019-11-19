@@ -763,12 +763,14 @@ class VoxelModel:
         return VoxelModel(new_model, self.materials, self.coords)
 
     def scale(self, factor, interpolate=False, order=1):
+        model = self.fitWorkspace()
+
         if interpolate:
-            new_voxels = ndimage.zoom(self.voxels, factor, order=order)
+            new_voxels = ndimage.zoom(model.voxels, factor, order=order)
         else:
-            x_len = self.voxels.shape[0] * factor
-            y_len = self.voxels.shape[1] * factor
-            z_len = self.voxels.shape[2] * factor
+            x_len = model.voxels.shape[0] * factor
+            y_len = model.voxels.shape[1] * factor
+            z_len = model.voxels.shape[2] * factor
 
             new_voxels = np.zeros((x_len, y_len, z_len))
 
@@ -778,9 +780,12 @@ class VoxelModel:
                         x_source = int(x / factor)
                         y_source = int(y / factor)
                         z_source = int(z / factor)
-                        new_voxels[x,y,z] = self.voxels[x_source, y_source, z_source]
+                        new_voxels[x,y,z] = model.voxels[x_source, y_source, z_source]
 
-        return VoxelModel(new_voxels.astype(dtype=np.uint16), self.materials, self.coords)
+        model.voxels = new_voxels.astype(dtype=np.uint16)
+        new_model = model.setCoords(model.coords)
+
+        return new_model
 
     def getCenter(self):
         model = self.fitWorkspace()
@@ -800,6 +805,11 @@ class VoxelModel:
         z_new = round(coords[2] - (new_model.voxels.shape[2] / 2))
 
         new_model.coords = (x_new, y_new, z_new)
+        return new_model
+
+    def setCoords(self, coords):
+        new_model = self.fitWorkspace()
+        new_model.coords = coords
         return new_model
 
     """
