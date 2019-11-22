@@ -9,6 +9,8 @@ import numpy as np
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.materials import material_properties
 
+# Basic primitives
+
 def cube(size = 1, coords = (0, 0, 0), material = 1):
     model_data = np.ones((size, size, size), dtype=np.int32)
     model = VoxelModel(model_data, generateMaterials(material), coords)
@@ -88,6 +90,9 @@ def pyramid(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1):
 
     model = VoxelModel(model_data, generateMaterials(material), (coords[0]-max_radius, coords[1]-max_radius, coords[2]))
     return model
+
+
+# Helper functions
 
 def generateMaterials(m):
     materials = np.zeros(len(material_properties) + 1, dtype=np.float)
