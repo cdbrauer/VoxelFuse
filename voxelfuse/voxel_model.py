@@ -738,7 +738,7 @@ class VoxelModel:
 
     - Return a model
     """
-    def rotate(self, angle, axis = Axes.Z): # TODO: Check that coords are handled correctly
+    def rotate(self, angle, axis = Axes.Z):
         if axis == Axes.X:
             plane = (1, 2)
         elif axis == Axes.Y:
@@ -746,11 +746,14 @@ class VoxelModel:
         else: # axis == 'z'
             plane = (0, 1)
 
-        new_model = ndimage.rotate(self.voxels, angle, plane, order=0)
+        centerCoords = self.getCenter()
+        new_voxels = ndimage.rotate(self.voxels, angle, plane, order=0)
+        new_model = VoxelModel(new_voxels, self.materials, self.coords)
+        new_model = new_model.setCenter(centerCoords)
 
-        return VoxelModel(new_model, self.materials, self.coords)
+        return new_model
 
-    def rotate90(self, times = 1, axis = Axes.Z): # TODO: Check that coords are handled correctly
+    def rotate90(self, times = 1, axis = Axes.Z):
         if axis == Axes.X:
             plane = (1, 2)
         elif axis == Axes.Y:
@@ -758,9 +761,12 @@ class VoxelModel:
         else: # axis == 'z'
             plane = (0, 1)
 
-        new_model = np.rot90(self.voxels, times, axes=plane)
+        centerCoords = self.getCenter()
+        new_voxels = np.rot90(self.voxels, times, axes=plane)
+        new_model = VoxelModel(new_voxels, self.materials, self.coords)
+        new_model = new_model.setCenter(centerCoords)
 
-        return VoxelModel(new_model, self.materials, self.coords)
+        return new_model
 
     def scale(self, factor):
         model = self.fitWorkspace()
