@@ -762,25 +762,38 @@ class VoxelModel:
 
         return VoxelModel(new_model, self.materials, self.coords)
 
-    def scale(self, factor, interpolate=False, order=1):
+    def scale(self, factor):
         model = self.fitWorkspace()
 
-        if interpolate:
-            new_voxels = ndimage.zoom(model.voxels, factor, order=order)
-        else:
-            x_len = model.voxels.shape[0] * factor
-            y_len = model.voxels.shape[1] * factor
-            z_len = model.voxels.shape[2] * factor
+        x_len = int(model.voxels.shape[0] * factor)
+        y_len = int(model.voxels.shape[1] * factor)
+        z_len = int(model.voxels.shape[2] * factor)
 
-            new_voxels = np.zeros((x_len, y_len, z_len))
+        new_voxels = np.zeros((x_len, y_len, z_len))
+        for x in tqdm(range(x_len), desc='Scaling'):
+            for y in range(y_len):
+                for z in range(z_len):
+                    x_source = int((x / (x_len-1)) * (model.voxels.shape[0]-1))
+                    y_source = int((y / (y_len-1)) * (model.voxels.shape[1]-1))
+                    z_source = int((z / (z_len-1)) * (model.voxels.shape[2]-1))
+                    new_voxels[x,y,z] = model.voxels[x_source, y_source, z_source]
 
-            for x in tqdm(range(x_len), desc='Scaling'):
-                for y in range(y_len):
-                    for z in range(z_len):
-                        x_source = int(x / factor)
-                        y_source = int(y / factor)
-                        z_source = int(z / factor)
-                        new_voxels[x,y,z] = model.voxels[x_source, y_source, z_source]
+        model.voxels = new_voxels.astype(dtype=np.uint16)
+        new_model = model.setCoords(model.coords)
+
+        return new_model
+
+    def scaleToSize(self, x_len, y_len, z_len):
+        model = self.fitWorkspace()
+
+        new_voxels = np.zeros((x_len, y_len, z_len))
+        for x in tqdm(range(x_len), desc='Scaling'):
+            for y in range(y_len):
+                for z in range(z_len):
+                    x_source = int((x / (x_len-1)) * (model.voxels.shape[0]-1))
+                    y_source = int((y / (y_len-1)) * (model.voxels.shape[1]-1))
+                    z_source = int((z / (z_len-1)) * (model.voxels.shape[2]-1))
+                    new_voxels[x,y,z] = model.voxels[x_source, y_source, z_source]
 
         model.voxels = new_voxels.astype(dtype=np.uint16)
         new_model = model.setCoords(model.coords)
