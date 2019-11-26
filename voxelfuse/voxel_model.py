@@ -779,9 +779,9 @@ class VoxelModel:
         for x in tqdm(range(x_len), desc='Scaling'):
             for y in range(y_len):
                 for z in range(z_len):
-                    x_source = int((x / (x_len-1)) * (model.voxels.shape[0]-1))
-                    y_source = int((y / (y_len-1)) * (model.voxels.shape[1]-1))
-                    z_source = int((z / (z_len-1)) * (model.voxels.shape[2]-1))
+                    x_source = int(((x+1) / x_len) * (model.voxels.shape[0]-1))
+                    y_source = int(((y+1) / y_len) * (model.voxels.shape[1]-1))
+                    z_source = int(((z+1) / z_len) * (model.voxels.shape[2]-1))
                     new_voxels[x,y,z] = model.voxels[x_source, y_source, z_source]
 
         model.voxels = new_voxels.astype(dtype=np.uint16)
@@ -796,9 +796,9 @@ class VoxelModel:
         for x in tqdm(range(x_len), desc='Scaling'):
             for y in range(y_len):
                 for z in range(z_len):
-                    x_source = int((x / (x_len-1)) * (model.voxels.shape[0]-1))
-                    y_source = int((y / (y_len-1)) * (model.voxels.shape[1]-1))
-                    z_source = int((z / (z_len-1)) * (model.voxels.shape[2]-1))
+                    x_source = int(((x+1) / x_len) * (model.voxels.shape[0]-1))
+                    y_source = int(((y+1) / y_len) * (model.voxels.shape[1]-1))
+                    z_source = int(((z+1) / z_len) * (model.voxels.shape[2]-1))
                     new_voxels[x,y,z] = model.voxels[x_source, y_source, z_source]
 
         model.voxels = new_voxels.astype(dtype=np.uint16)
