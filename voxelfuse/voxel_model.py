@@ -54,8 +54,8 @@ Properties:
 class VoxelModel:
     def __init__(self, voxels, materials, coords = (0, 0, 0)):
         self.coords = coords
-        self.materials = materials
-        self.voxels = voxels
+        self.materials = np.copy(materials)
+        self.voxels = np.copy(voxels)
         self.numComponents = 0
         self.components = np.zeros_like(voxels)
 
