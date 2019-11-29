@@ -11,15 +11,15 @@ from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.materials import material_properties
 from tqdm import tqdm
 
-def gyroid(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2):
+def gyroid(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2, resolution = 1):
     #a - Scale (voxels/unit)
     #size - Volume
 
     s = (2 * math.pi) / scale  # scaling multipler
 
-    modelData = np.zeros((size[0], size[1], size[2]), dtype=np.int32)
-    surface_model_inner = VoxelModel(modelData, generateMaterials(material1), coords)
-    surface_model_outer = VoxelModel(modelData, generateMaterials(material2), coords)
+    modelData = np.zeros((size[0], size[1], size[2]), dtype=np.uint16)
+    surface_model_inner = VoxelModel(modelData, generateMaterials(material1), coords=coords, resolution=resolution)
+    surface_model_outer = VoxelModel(modelData, generateMaterials(material2), coords=coords, resolution=resolution)
 
     for x in tqdm(range(size[0]), desc='Generating Gyroid'):
         for y in range(size[1]):
@@ -35,15 +35,15 @@ def gyroid(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, m
 
     return surface_model_inner, surface_model_outer
 
-def schwarzP(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2):
+def schwarzP(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2, resolution = 1):
     #a - Scale (voxels/unit)
     #size - Volume
 
     s = (2 * math.pi) / scale  # scaling multipler
 
-    modelData = np.zeros((size[0], size[1], size[2]), dtype=np.int32)
-    surface_model_inner = VoxelModel(modelData, generateMaterials(material1), coords)
-    surface_model_outer = VoxelModel(modelData, generateMaterials(material2), coords)
+    modelData = np.zeros((size[0], size[1], size[2]), dtype=np.uint16)
+    surface_model_inner = VoxelModel(modelData, generateMaterials(material1), coords=coords, resolution=resolution)
+    surface_model_outer = VoxelModel(modelData, generateMaterials(material2), coords=coords, resolution=resolution)
 
     for x in tqdm(range(size[0]), desc='Generating Gyroid'):
         for y in range(size[1]):
@@ -59,15 +59,15 @@ def schwarzP(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1,
 
     return surface_model_inner, surface_model_outer
 
-def schwarzD(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2):
+def schwarzD(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2, resolution = 1):
     #a - Scale (voxels/unit)
     #size - Volume
 
     s = (2 * math.pi) / scale # scaling multipler
 
-    modelData = np.zeros((size[0], size[1], size[2]), dtype=np.int32)
-    surface_model_inner = VoxelModel(modelData, generateMaterials(material1), coords)
-    surface_model_outer = VoxelModel(modelData, generateMaterials(material2), coords)
+    modelData = np.zeros((size[0], size[1], size[2]), dtype=np.uint16)
+    surface_model_inner = VoxelModel(modelData, generateMaterials(material1), coords=coords, resolution=resolution)
+    surface_model_outer = VoxelModel(modelData, generateMaterials(material2), coords=coords, resolution=resolution)
 
     for x in tqdm(range(size[0]), desc='Generating Gyroid'):
         for y in range(size[1]):
@@ -84,15 +84,15 @@ def schwarzD(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1,
 
     return surface_model_inner, surface_model_outer
 
-def FRD(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2):
+def FRD(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2, resolution = 1):
     #a - Scale (voxels/unit)
     #size - Volume
 
     s = (2 * math.pi) / scale # scaling multipler
 
-    modelData = np.zeros((size[0], size[1], size[2]), dtype=np.int32)
-    surface_model_inner = VoxelModel(modelData, generateMaterials(material1), coords)
-    surface_model_outer = VoxelModel(modelData, generateMaterials(material2), coords)
+    modelData = np.zeros((size[0], size[1], size[2]), dtype=np.uint16)
+    surface_model_inner = VoxelModel(modelData, generateMaterials(material1), coords=coords, resolution=resolution)
+    surface_model_outer = VoxelModel(modelData, generateMaterials(material2), coords=coords, resolution=resolution)
 
     for x in tqdm(range(size[0]), desc='Generating Gyroid'):
         for y in range(size[1]):

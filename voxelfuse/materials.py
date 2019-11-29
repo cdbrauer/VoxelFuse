@@ -8,7 +8,7 @@ Material data array
 Properties:
   r, g, b - color used to represent material
   process - method used to create parts made of this material
-  blur - defines whether material and process support blurring
+  density - density in g/mm^3
 
 Processes:
   3dp: 3D Printing
@@ -16,8 +16,8 @@ Processes:
   ins: Inserted component
 """
 
-material_properties = [{'r': 0,  'g': 0,    'b': 0,   'process': 'nul'},  # 0 - Null, used to represent densities
-                       {'r': 1,   'g': 0,   'b': 0,   'process': '3dp'},  # 1 - 3D printing
+material_properties = [{'r': 0,  'g': 0,    'b': 0,   'process': 'nul', 'density':0.00104},  # 0 - Null, used to represent densities
+                       {'r': 1,   'g': 0,   'b': 0,   'process': '3dp', },  # 1 - 3D printing
                        {'r': 0,   'g': 1,   'b': 0,   'process': '3dp'},  # 2 - 3D printing
                        {'r': 0,   'g': 0,   'b': 1,   'process': '3dp'},  # 3 - 3D printing
                        {'r': 0.5, 'g': 0.5, 'b': 0.5, 'process': 'ins'},  # 4 - inserted component

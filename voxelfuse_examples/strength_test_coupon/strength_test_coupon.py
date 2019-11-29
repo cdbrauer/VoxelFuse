@@ -38,21 +38,16 @@ if __name__=='__main__':
     print('Importing Files')
     if stl:
         if highRes:
-            end1 = VoxelModel.fromMeshFile('end1x10.stl', (0, 0, 0))
-            center = VoxelModel.fromMeshFile('centerx10.stl', (670, 30, 0))
-            end2 = VoxelModel.fromMeshFile('end2x10.stl', (980, 0, 0))
+            end1 = VoxelModel.fromMeshFile('end1x10.stl', (0, 0, 0), 1)
+            center = VoxelModel.fromMeshFile('centerx10.stl', (670, 30, 0), 2)
+            end2 = VoxelModel.fromMeshFile('end2x10.stl', (980, 0, 0), 1)
         else:
-            end1 = VoxelModel.fromMeshFile('end1.stl', (0, 0, 0))
-            center = VoxelModel.fromMeshFile('center.stl', (67, 3, 0))
-            end2 = VoxelModel.fromMeshFile('end2.stl', (98, 0, 0))
-
-        # Set materials
-        end1 = end1.setMaterial(1)
-        end2 = end2.setMaterial(1)
-        center = center.setMaterial(2)
+            end1 = VoxelModel.fromMeshFile('end1.stl', (0, 0, 0), 1)
+            center = VoxelModel.fromMeshFile('center.stl', (67, 3, 0), 2)
+            end2 = VoxelModel.fromMeshFile('end2.stl', (98, 0, 0), 1)
 
         # Combine components
-        coupon = VoxelModel.copy(end1.union(center.union(end2)))
+        coupon = end1 | center | end2
     else: # use vox file
         coupon = VoxelModel.fromVoxFile('coupon.vox') # Should use materials 1 and 2 (red and green)
 
@@ -82,10 +77,10 @@ if __name__=='__main__':
 
         if fixture: # Generate a fixture around the full part to support mold
             print('Generating Fixture')
-            coupon = coupon.union(coupon.web('laser', 1, 5).setMaterial(3))
+            coupon = coupon | coupon.web('laser', 1, 5).setMaterial(3)
 
         # Add mold to coupon model
-        coupon = coupon.union(mold_model.setMaterial(3))
+        coupon = coupon | mold_model.setMaterial(3)
 
     end = time.time()
     processingTime = (end - start)

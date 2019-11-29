@@ -31,7 +31,10 @@ class Mesh:
 
     # Create mesh from voxel data
     @classmethod
-    def fromVoxelModel(cls, voxel_model, resolution = 1):
+    def fromVoxelModel(cls, voxel_model, resolution = -1):
+        if resolution == -1:
+            resolution = voxel_model.resolution
+
         voxel_model_fit = voxel_model.fitWorkspace()
         voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
         model_materials = voxel_model_fit.materials

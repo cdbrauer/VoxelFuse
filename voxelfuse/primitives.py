@@ -11,19 +11,19 @@ from voxelfuse.materials import material_properties
 
 # Basic primitives
 
-def cube(size = 1, coords = (0, 0, 0), material = 1):
-    model_data = np.ones((size, size, size), dtype=np.int32)
-    model = VoxelModel(model_data, generateMaterials(material), coords)
+def cube(size = 1, coords = (0, 0, 0), material = 1, resolution = 1):
+    model_data = np.ones((size, size, size), dtype=np.uint16)
+    model = VoxelModel(model_data, generateMaterials(material), coords=coords, resolution=resolution)
     return model
 
-def cuboid(size = (1, 1, 1), coords = (0, 0, 0), material=1):
-    model_data = np.ones((size[0], size[1], size[2]), dtype=np.int32)
-    model = VoxelModel(model_data, generateMaterials(material), coords)
+def cuboid(size = (1, 1, 1), coords = (0, 0, 0), material=1, resolution = 1):
+    model_data = np.ones((size[0], size[1], size[2]), dtype=np.uint16)
+    model = VoxelModel(model_data, generateMaterials(material), coords=coords, resolution=resolution)
     return model
 
-def sphere(radius = 1, coords = (0, 0, 0), material = 1):
+def sphere(radius = 1, coords = (0, 0, 0), material = 1, resolution = 1):
     diameter = (radius*2) + 1
-    model_data = np.zeros((diameter, diameter, diameter), dtype=np.int32)
+    model_data = np.zeros((diameter, diameter, diameter), dtype=np.uint16)
 
     for x in range(diameter):
         for y in range(diameter):
@@ -36,12 +36,12 @@ def sphere(radius = 1, coords = (0, 0, 0), material = 1):
                 if r < (radius + .5):
                     model_data[x, y, z] = 1
 
-    model = VoxelModel(model_data, generateMaterials(material), (coords[0]-radius, coords[1]-radius, coords[2]-radius))
+    model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-radius, coords[1]-radius, coords[2]-radius), resolution=resolution)
     return model
 
-def cylinder(radius=1, height=1, coords=(0, 0, 0), material=1):
+def cylinder(radius=1, height=1, coords=(0, 0, 0), material=1, resolution = 1):
     diameter = (radius * 2) + 1
-    model_data = np.zeros((diameter, diameter, 1), dtype=np.int32)
+    model_data = np.zeros((diameter, diameter, 1), dtype=np.uint16)
 
     for x in range(diameter):
         for y in range(diameter):
@@ -54,12 +54,12 @@ def cylinder(radius=1, height=1, coords=(0, 0, 0), material=1):
 
     model_data = np.repeat(model_data, height, 2)
 
-    model = VoxelModel(model_data, generateMaterials(material), (coords[0]-radius, coords[1]-radius, coords[2]))
+    model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-radius, coords[1]-radius, coords[2]), resolution=resolution)
     return model
 
-def cone(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1):
+def cone(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1, resolution = 1):
     max_diameter = (max_radius*2)+1
-    model_data = np.zeros((max_diameter, max_diameter, height), dtype=np.int32)
+    model_data = np.zeros((max_diameter, max_diameter, height), dtype=np.uint16)
 
     for z in range(height):
         radius = (abs(max_radius - min_radius) * (((height-1) - z)/(height-1))) + min_radius
@@ -73,12 +73,12 @@ def cone(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1):
                 if r < (radius + .5):
                     model_data[x, y, z] = 1
 
-    model = VoxelModel(model_data, generateMaterials(material), (coords[0]-max_radius, coords[1]-max_radius, coords[2]))
+    model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
     return model
 
-def pyramid(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1):
+def pyramid(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1, resolution = 1):
     max_diameter = (max_radius * 2) + 1
-    model_data = np.zeros((max_diameter, max_diameter, height), dtype=np.int32)
+    model_data = np.zeros((max_diameter, max_diameter, height), dtype=np.uint16)
 
     for z in range(height):
         radius = round((abs(max_radius - min_radius) * (z / (height - 1))))
@@ -88,7 +88,7 @@ def pyramid(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1):
         else:
             model_data[radius:-radius, radius:-radius, z].fill(1)
 
-    model = VoxelModel(model_data, generateMaterials(material), (coords[0]-max_radius, coords[1]-max_radius, coords[2]))
+    model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
     return model
 
 
