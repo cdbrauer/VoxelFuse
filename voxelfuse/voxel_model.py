@@ -745,6 +745,20 @@ class VoxelModel:
         new_model = new_model.scaleValues()
         return new_model
 
+    def round(self, toNearest = 0.1):
+        new_materials = np.copy(self.materials)
+        new_model = VoxelModel.copy(self)
+
+        mult = new_materials / toNearest
+        floorDiff = np.round(abs(mult - np.floor(mult)), 10)
+        ceilDiff = np.round(abs(mult - np.ceil(mult)), 10)
+
+        new_materials[floorDiff < ceilDiff] = toNearest * np.floor(mult[floorDiff < ceilDiff])
+        new_materials[floorDiff >= ceilDiff] = toNearest * np.ceil(mult[floorDiff >= ceilDiff])
+
+        new_model.materials = new_materials
+        return new_model
+
     """
     Transformations
 
@@ -986,7 +1000,7 @@ class VoxelModel:
     @classmethod
     def openVF(cls, filename):
         f = open(filename + '.vf', 'r')
-        print('Opening file' + f.name)
+        print('Opening file: ' + f.name)
 
         data = f.readlines()
         loc = np.ones((7,2), dtype=np.uint16)
