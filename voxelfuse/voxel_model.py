@@ -861,6 +861,19 @@ class VoxelModel:
         return new_model
 
     """
+    Model Info
+    """
+    def getVolume(self, component = 0, material = 0):
+        new_model = VoxelModel.copy(self)
+        if component > 0:
+            new_model = new_model.isolateComponent(component)
+        if material > 0:
+            new_model = new_model.isolateMaterial(material)
+        volumeVoxels = np.count_nonzero(new_model.voxels)
+        volumeMM3 = volumeVoxels * ((1/self.resolution)**3)
+        return volumeVoxels, volumeMM3
+
+    """
     Manufacturing Features
     
     - Return a mask

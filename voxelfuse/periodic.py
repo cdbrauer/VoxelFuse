@@ -60,7 +60,7 @@ def schwarzP(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1,
     return surface_model_inner, surface_model_outer
 
 def schwarzD(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2, resolution = 1):
-    #a - Scale (voxels/unit)
+    #scale - voxels/period
     #size - Volume
 
     s = (2 * math.pi) / scale # scaling multipler

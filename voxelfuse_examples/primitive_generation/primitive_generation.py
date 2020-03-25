@@ -5,9 +5,10 @@ Dan Aukes, Cole Brauer
 
 import PyQt5.QtGui as qg
 import sys
-from voxelfuse.primitives import *
+from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
+from voxelfuse.primitives import *
 
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
