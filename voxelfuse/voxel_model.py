@@ -1012,7 +1012,10 @@ class VoxelModel:
 
     @classmethod
     def openVF(cls, filename):
-        f = open(filename + '.vf', 'r')
+        if filename[-3:] == '.vf':
+            f = open(filename, 'r')
+        else:
+            f = open(filename + '.vf', 'r')
         print('Opening file: ' + f.name)
 
         data = f.readlines()
