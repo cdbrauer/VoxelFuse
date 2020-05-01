@@ -93,8 +93,8 @@ class VoxelModel:
         points = data.points
 
         # Get lists of indices of point
-        # ii_tri = data.cells['triangle']
-        ii_tet = data.cells[1].data
+        # ii_tri = data.cells_dict['triangle']
+        ii_tet = data.cells_dict['tetra']
 
         # Convert lists of indices to lists of points
         # tris = points[ii_tri]
