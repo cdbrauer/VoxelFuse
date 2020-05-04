@@ -1,8 +1,8 @@
 """
-Copyright 2018-2019
+Copyright 2020
 Dan Aukes, Cole Brauer
 
-Extends the VoxelModel class with functions for generating linkages
+Functions for generating primitive solids
 """
 
 import numpy as np
