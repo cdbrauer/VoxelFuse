@@ -6,6 +6,8 @@ import os
 import subprocess
 import meshio
 import numpy as np
+import zlib
+import base64
 from enum import Enum
 from pyvox.parser import VoxParser
 from voxelfuse.materials import material_properties
@@ -961,6 +963,8 @@ class VoxelModel:
     File IO
 
     - Read/write .vf files
+    - Read/write .vxc files
+    - Read/write .vxa files
     """
     def saveVF(self, filename):
         f = open(filename+'.vf', 'w+')
@@ -1091,6 +1095,104 @@ class VoxelModel:
         f.close()
 
         return new_model
+
+    def saveVXC(self, filename):
+        f = open(filename + '.vxc', 'w+')
+        print('Saving file: ' + f.name)
+
+        f.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
+        f.write('<VXC Version="' + str(0.94) + '">\n')
+
+        # Lattice settings
+        f.write('  <Lattice>\n')
+        f.write('    <Lattice_Dim>' + str((1/self.resolution) * 0.001) + '</Lattice_Dim>\n')
+        f.write('    <X_Dim_Adj>' + str(1) + '</X_Dim_Adj>\n')
+        f.write('    <Y_Dim_Adj>' + str(1) + '</Y_Dim_Adj>\n')
+        f.write('    <Z_Dim_Adj>' + str(1) + '</Z_Dim_Adj>\n')
+        f.write('    <X_Line_Offset>' + str(0) + '</X_Line_Offset>\n')
+        f.write('    <Y_Line_Offset>' + str(0) + '</Y_Line_Offset>\n')
+        f.write('    <X_Layer_Offset>' + str(0) + '</X_Layer_Offset>\n')
+        f.write('    <Y_Layer_Offset>' + str(0) + '</Y_Layer_Offset>\n')
+        f.write('  </Lattice>\n')
+
+        # Voxel settings
+        f.write('  <Voxel>\n')
+        f.write('    <Vox_Name>BOX</Vox_Name>\n')
+        f.write('    <X_Squeeze>' + str(1) + '</X_Squeeze>\n')
+        f.write('    <Y_Squeeze>' + str(1) + '</Y_Squeeze>\n')
+        f.write('    <Z_Squeeze>' + str(1) + '</Z_Squeeze>\n')
+        f.write('  </Voxel>\n')
+
+        # Materials
+        f.write('  <Palette>\n')
+        for row in tqdm(range(1, len(self.materials[:, 0])), desc='Writing materials'):
+            r = 0
+            g = 0
+            b = 0
+
+            # for c in range(1, len(self.materials[0, :])):
+            for i in range(len(material_properties)):
+                r = r + self.materials[row][i+1] * material_properties[i]['r']
+                g = g + self.materials[row][i+1] * material_properties[i]['g']
+                b = b + self.materials[row][i+1] * material_properties[i]['b']
+
+            r = 1 if r > 1 else r
+            g = 1 if g > 1 else g
+            b = 1 if b > 1 else b
+
+            f.write('    <Material ID="' + str(row) + '">\n')
+            f.write('      <MatType>' + str(0) + '</MatType>\n')
+            f.write('      <Name>Default</Name>\n')
+            f.write('      <Display>\n')
+            f.write('        <Red>' + str(r) + '</Red>\n')
+            f.write('        <Green>' + str(g) + '</Green>\n')
+            f.write('        <Blue>' + str(b) + '</Blue>\n')
+            f.write('        <Alpha>' + str(1) + '</Alpha>\n')
+            f.write('      </Display>\n')
+            f.write('      <Mechanical>\n')
+            f.write('        <MatModel>' + str(0) + '</MatModel>\n')
+            f.write('        <Elastic_Mod>' + str(1e+06) + '</Elastic_Mod>\n')
+            f.write('        <Plastic_Mod>' + str(0) + '</Plastic_Mod>\n')
+            f.write('        <Yield_Stress>' + str(0) + '</Yield_Stress>\n')
+            f.write('        <FailModel>' + str(0) + '</FailModel>\n')
+            f.write('        <Fail_Stress>' + str(0) + '</Fail_Stress>\n')
+            f.write('        <Fail_Strain>' + str(0) + '</Fail_Strain>\n')
+            f.write('        <Density>' + str(1) + '</Density>\n')
+            f.write('        <Poissons_Ratio>' + str(0.35) + '</Poissons_Ratio>\n')
+            f.write('        <CTE>' + str(0) + '</CTE>\n')
+            f.write('        <MaterialTempPhase>' + str(0) + '</MaterialTempPhase>\n')
+            f.write('        <uStatic>' + str(1) + '</uStatic>\n')
+            f.write('        <uDynamic>' + str(0.5) + '</uDynamic>\n')
+            f.write('      </Mechanical>\n')
+            f.write('    </Material>\n')
+        f.write('  </Palette>\n')
+
+        # Structure
+        f.write('  <Structure Compression="ZLIB">\n')
+
+        x_len = self.voxels.shape[0]
+        y_len = self.voxels.shape[1]
+        z_len = self.voxels.shape[2]
+
+        f.write('    <X_Voxels>' + str(x_len) + '</X_Voxels>\n')
+        f.write('    <Y_Voxels>' + str(y_len) + '</Y_Voxels>\n')
+        f.write('    <Z_Voxels>' + str(z_len) + '</Z_Voxels>\n')
+        f.write('    <Data>\n')
+
+        for z in tqdm(range(z_len), desc='Writing voxels'):
+            layer = np.copy(self.voxels[:, :, z])
+            layer = np.rot90(layer, 3)
+            layer = layer.astype('uint8')
+            layerData = zlib.compress(layer.tobytes())
+            layerData = base64.encodebytes(layerData)
+            f.write('      <Layer><![CDATA[' + str(layerData)[2:-3] + ']]></Layer>\n')
+
+        f.write('    </Data>\n')
+        f.write('  </Structure>\n')
+
+        # Close file
+        f.write('</VXC>\n')
+        f.close()
 
 # Helper methods ##############################################################
 """
