@@ -8,7 +8,7 @@ with open('requirements.txt') as f:
 
 setuptools.setup(
     name="voxelfuse",
-    version="1.1.6",
+    version="1.1.7",
     author="Cole Brauer",
     description="A toolkit for processing 3D components made with mixtures of materials and multiple manufacturing processes",
     long_description=long_description,
