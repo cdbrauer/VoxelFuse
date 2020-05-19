@@ -19,7 +19,7 @@
   <Palette>
     <Material ID="1">
       <MatType>0</MatType>
-      <Name>Default</Name>
+      <Name>R PLA</Name>
       <Display>
         <Red>1.0</Red>
         <Green>0.0</Green>
@@ -28,23 +28,73 @@
       </Display>
       <Mechanical>
         <MatModel>0</MatModel>
-        <Elastic_Mod>1000000.0</Elastic_Mod>
-        <Plastic_Mod>0</Plastic_Mod>
-        <Yield_Stress>0</Yield_Stress>
+        <Elastic_Mod>3500000000.0</Elastic_Mod>
+        <Plastic_Mod>0.0</Plastic_Mod>
+        <Yield_Stress>70000000.0</Yield_Stress>
         <FailModel>0</FailModel>
-        <Fail_Stress>0</Fail_Stress>
-        <Fail_Strain>0</Fail_Strain>
-        <Density>1</Density>
-        <Poissons_Ratio>0.35</Poissons_Ratio>
-        <CTE>0</CTE>
-        <MaterialTempPhase>0</MaterialTempPhase>
-        <uStatic>1</uStatic>
-        <uDynamic>0.5</uDynamic>
+        <Fail_Stress>73000000.0</Fail_Stress>
+        <Fail_Strain>0.04</Fail_Strain>
+        <Density>1240.0</Density>
+        <Poissons_Ratio>0.36</Poissons_Ratio>
+        <CTE>4.1e-05</CTE>
+        <MaterialTempPhase>0.0</MaterialTempPhase>
+        <uStatic>0.0</uStatic>
+        <uDynamic>0.0</uDynamic>
       </Mechanical>
     </Material>
     <Material ID="2">
       <MatType>0</MatType>
-      <Name>Default</Name>
+      <Name>R PLA Rubber</Name>
+      <Display>
+        <Red>0.6</Red>
+        <Green>0.1</Green>
+        <Blue>0.1</Blue>
+        <Alpha>1</Alpha>
+      </Display>
+      <Mechanical>
+        <MatModel>0</MatModel>
+        <Elastic_Mod>1800000000.0</Elastic_Mod>
+        <Plastic_Mod>0.0</Plastic_Mod>
+        <Yield_Stress>35000000.0</Yield_Stress>
+        <FailModel>1</FailModel>
+        <Fail_Stress>36500000.0</Fail_Stress>
+        <Fail_Strain>3.52</Fail_Strain>
+        <Density>1085.0</Density>
+        <Poissons_Ratio>0.43</Poissons_Ratio>
+        <CTE>2.055e-05</CTE>
+        <MaterialTempPhase>0.0</MaterialTempPhase>
+        <uStatic>0.45</uStatic>
+        <uDynamic>0.4</uDynamic>
+      </Mechanical>
+    </Material>
+    <Material ID="3">
+      <MatType>0</MatType>
+      <Name>Rubber</Name>
+      <Display>
+        <Red>0.2</Red>
+        <Green>0.2</Green>
+        <Blue>0.2</Blue>
+        <Alpha>1</Alpha>
+      </Display>
+      <Mechanical>
+        <MatModel>0</MatModel>
+        <Elastic_Mod>100000000.0</Elastic_Mod>
+        <Plastic_Mod>0.0</Plastic_Mod>
+        <Yield_Stress>0.0</Yield_Stress>
+        <FailModel>1</FailModel>
+        <Fail_Stress>0.0</Fail_Stress>
+        <Fail_Strain>7.0</Fail_Strain>
+        <Density>930.0</Density>
+        <Poissons_Ratio>0.5</Poissons_Ratio>
+        <CTE>1e-07</CTE>
+        <MaterialTempPhase>0.0</MaterialTempPhase>
+        <uStatic>0.9</uStatic>
+        <uDynamic>0.8</uDynamic>
+      </Mechanical>
+    </Material>
+    <Material ID="4">
+      <MatType>0</MatType>
+      <Name>B PLA</Name>
       <Display>
         <Red>0.0</Red>
         <Green>0.0</Green>
@@ -53,37 +103,37 @@
       </Display>
       <Mechanical>
         <MatModel>0</MatModel>
-        <Elastic_Mod>1000000.0</Elastic_Mod>
-        <Plastic_Mod>0</Plastic_Mod>
-        <Yield_Stress>0</Yield_Stress>
+        <Elastic_Mod>3500000000.0</Elastic_Mod>
+        <Plastic_Mod>0.0</Plastic_Mod>
+        <Yield_Stress>70000000.0</Yield_Stress>
         <FailModel>0</FailModel>
-        <Fail_Stress>0</Fail_Stress>
-        <Fail_Strain>0</Fail_Strain>
-        <Density>1</Density>
-        <Poissons_Ratio>0.35</Poissons_Ratio>
-        <CTE>0</CTE>
-        <MaterialTempPhase>0</MaterialTempPhase>
-        <uStatic>1</uStatic>
-        <uDynamic>0.5</uDynamic>
+        <Fail_Stress>73000000.0</Fail_Stress>
+        <Fail_Strain>0.04</Fail_Strain>
+        <Density>1240.0</Density>
+        <Poissons_Ratio>0.36</Poissons_Ratio>
+        <CTE>4.1e-05</CTE>
+        <MaterialTempPhase>0.0</MaterialTempPhase>
+        <uStatic>0.0</uStatic>
+        <uDynamic>0.0</uDynamic>
       </Mechanical>
     </Material>
   </Palette>
   <Structure Compression="ZLIB">
-    <X_Voxels>14</X_Voxels>
-    <Y_Voxels>11</Y_Voxels>
+    <X_Voxels>13</X_Voxels>
+    <Y_Voxels>5</Y_Voxels>
     <Z_Voxels>11</Z_Voxels>
     <Data>
-      <Layer><![CDATA[eJxjYCAFMDExMTIyonBgXHw8VH1EAgAQKgA0]]></Layer>
-      <Layer><![CDATA[eJxjYMALmJiYGEEAhQPhkstDNRM3AAAbNABY]]></Layer>
-      <Layer><![CDATA[eJxjYEADTExMjCCAwgFzERwQl1weqplo9iEDACY+AHw=]]></Layer>
-      <Layer><![CDATA[eJxjYGBgYGJiYmRkZAADCJsRwkdwQFwUHjKHkREfD58paPahuAUAMAwAnA==]]></Layer>
-      <Layer><![CDATA[eJxjYGBgYmJiBAEGEIBxwFwEB8hF5jAykstDNRPNPhS3AAAyhACk]]></Layer>
-      <Layer><![CDATA[eJxjYGBgYmJiBAEGEIBxwFwEB8hF5jAykstDNRPNPhS3AAAyhACk]]></Layer>
-      <Layer><![CDATA[eJxjYGBgYmJiBAEGEIBxwFwEB8hF5jAykstDNRPNPhS3AAAyhACk]]></Layer>
-      <Layer><![CDATA[eJxjYGBgYGJiYmRkZAADCJsRwkdwQFwUHjKHkREfD58paPahuAUAMAwAnA==]]></Layer>
-      <Layer><![CDATA[eJxjYEADTExMjCCAwgFzERwQl1weqplo9iEDACY+AHw=]]></Layer>
-      <Layer><![CDATA[eJxjYMALmJiYGEEAhQPhkstDNRM3AAAbNABY]]></Layer>
-      <Layer><![CDATA[eJxjYCAFMDExMTIyonBgXHw8VH1EAgAQKgA0]]></Layer>
+      <Layer><![CDATA[eJxjYIAARhBgIIMDAAMWABo=]]></Layer>
+      <Layer><![CDATA[eJxjYIAARhBgIIMDAAMWABo=]]></Layer>
+      <Layer><![CDATA[eJxjYIAARhBgIIMDAAMWABo=]]></Layer>
+      <Layer><![CDATA[eJxjYGBgYAYCJkYgYCCDAwALiwBb]]></Layer>
+      <Layer><![CDATA[eJxjYGBgYAYCJkYgYCCDAwALiwBb]]></Layer>
+      <Layer><![CDATA[eJxjYGBgYAYBBigglQMACewATA==]]></Layer>
+      <Layer><![CDATA[eJxjYWFhYQYBBiBgIYMDABWkAJw=]]></Layer>
+      <Layer><![CDATA[eJxjYWFhYQYBBiBgIYMDABWkAJw=]]></Layer>
+      <Layer><![CDATA[eJxjYQECBihgIYMDAA61AGU=]]></Layer>
+      <Layer><![CDATA[eJxjYQECBihgIYMDAA61AGU=]]></Layer>
+      <Layer><![CDATA[eJxjYQECBihgIYMDAA61AGU=]]></Layer>
     </Data>
   </Structure>
 </VXC>

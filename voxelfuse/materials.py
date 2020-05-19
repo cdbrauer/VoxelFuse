@@ -1,14 +1,30 @@
 """
-Copyright 2018-2019
+Copyright 2020
 Dan Aukes, Cole Brauer
 """
+
 """
 Material data array
 
 Properties:
-  r, g, b - color used to represent material
+  name - display name of the material
   process - method used to create parts made of this material
-  density - density in g/mm^3
+  r, g, b - color used to represent material  
+  p - density, g/cm^3
+  v - poisson's ratio
+  E - elastic modulus, Pa
+  G - shear modulus, Pa
+  Z - plastic modulus, Pa
+  eY - yield stress, Pa
+  eF - fail stress, Pa
+  SY - yield strain, m/m
+  SF - fail strain, m/m
+  CTE - coefficient of thermal expansion, 1/deg C
+  TP - temp phase, rad
+  uS - coefficient of static friction
+  uD - coefficient of dynamic friction
+  MM - material model, 0=linear, 1=linear+failure, 2=bilinear
+  FM - failure model, 0=stress, 1=strain
 
 Processes:
   3dp: 3D Printing
@@ -16,12 +32,13 @@ Processes:
   ins: Inserted component
 """
 
-material_properties = [{'r': 0,  'g': 0,    'b': 0,   'process': 'nul', 'density':0.00104},  # 0 - Null, used to represent densities
-                       {'r': 1,   'g': 0,   'b': 0,   'process': '3dp', },  # 1 - 3D printing
-                       {'r': 0,   'g': 1,   'b': 0,   'process': '3dp'},  # 2 - 3D printing
-                       {'r': 0,   'g': 0,   'b': 1,   'process': '3dp'},  # 3 - 3D printing
-                       {'r': 0.5, 'g': 0.5, 'b': 0.5, 'process': 'ins'},  # 4 - inserted component
-                       {'r': 1,   'g': 1,   'b': 0,   'process': '3dp'},  # 5 - 3D printing
-                       {'r': 0,   'g': 1,   'b': 1,   'process': '3dp'},  # 6 - 3D printing
-                       {'r': 1,   'g': 0,   'b': 1,   'process': '3dp'},  # 7 - 3D printing
-                       {'r': 0.25,'g': 0.25,'b': 0.25,'process': '3dp'}]  # 8 - 3D printing
+material_properties =\
+    [{'name':'Empty',    'process':'nul', 'r':0.00, 'g':0.00, 'b':0.00, 'p':0.000, 'v':0, 'E':0, 'G':0, 'Z':0, 'eY':0, 'eF':0, 'SY':0, 'SF':0, 'CTE':0, 'TP':0, 'uS':0, 'uD':0, 'MM':0, 'FM':0},
+     {'name':'R PLA',    'process':'3dp', 'r':1.00, 'g':0.00, 'b':0.00, 'p':1.240, 'v':0.36, 'E':3.5e9, 'G':1.287e9, 'Z':0, 'eY':70e6, 'eF':73e6, 'SY':0.02, 'SF':0.04, 'CTE':41e-6, 'TP':0, 'uS':0, 'uD':0, 'MM':0, 'FM':0},
+     {'name':'G PLA',    'process':'3dp', 'r':0.00, 'g':1.00, 'b':0.00, 'p':1.240, 'v':0.36, 'E':3.5e9, 'G':1.287e9, 'Z':0, 'eY':70e6, 'eF':73e6, 'SY':0.02, 'SF':0.04, 'CTE':41e-6, 'TP':0, 'uS':0, 'uD':0, 'MM':0, 'FM':0},
+     {'name':'B PLA',    'process':'3dp', 'r':0.00, 'g':0.00, 'b':1.00, 'p':1.240, 'v':0.36, 'E':3.5e9, 'G':1.287e9, 'Z':0, 'eY':70e6, 'eF':73e6, 'SY':0.02, 'SF':0.04, 'CTE':41e-6, 'TP':0, 'uS':0, 'uD':0, 'MM':0, 'FM':0},
+     {'name':'Aluminum', 'process':'ins', 'r':0.60, 'g':0.60, 'b':0.60, 'p':2.710, 'v':0.33, 'E':68.9e9, 'G':26.2e9, 'Z':0, 'eY':241e6, 'eF':262e6, 'SY':0.1, 'SF':0.17, 'CTE':23.4e-6, 'TP':0, 'uS':0.61, 'uD':0.47, 'MM':0, 'FM':0}, # 6061 T6, u is for alu-steel
+     {'name':'C H-Gel',  'process':'ins', 'r':0.00, 'g':1.00, 'b':1.00, 'p':1.000, 'v':0, 'E':0, 'G':0, 'Z':0, 'eY':0, 'eF':0, 'SY':0, 'SF':0, 'CTE':0, 'TP':0, 'uS':0, 'uD':0, 'MM':2, 'FM':0}, # TODO: add hydrogel values
+     {'name':'M H-Gel',  'process':'ins', 'r':1.00, 'g':0.00, 'b':1.00, 'p':1.000, 'v':0, 'E':0, 'G':0, 'Z':0, 'eY':0, 'eF':0, 'SY':0, 'SF':0, 'CTE':0, 'TP':0, 'uS':0, 'uD':0, 'MM':2, 'FM':0},
+     {'name':'Y H-Gel',  'process':'ins', 'r':1.00, 'g':1.00, 'b':0.00, 'p':1.000, 'v':0, 'E':0, 'G':0, 'Z':0, 'eY':0, 'eF':0, 'SY':0, 'SF':0, 'CTE':0, 'TP':0, 'uS':0, 'uD':0, 'MM':2, 'FM':0},
+     {'name':'Rubber',   'process':'3dp', 'r':0.20, 'g':0.20, 'b':0.20, 'p':0.930, 'v':0.5, 'E':0.1e9, 'G':1.0e9, 'Z':0, 'eY':0, 'eF':0, 'SY':0, 'SF':7.0, 'CTE':0.1e-6, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'FM':1}] # u is for rubber-asphalt

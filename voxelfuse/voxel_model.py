@@ -1126,43 +1126,49 @@ class VoxelModel:
         # Materials
         f.write('  <Palette>\n')
         for row in tqdm(range(1, len(self.materials[:, 0])), desc='Writing materials'):
-            r = 0
-            g = 0
-            b = 0
-
-            # for c in range(1, len(self.materials[0, :])):
-            for i in range(len(material_properties)):
-                r = r + self.materials[row][i+1] * material_properties[i]['r']
-                g = g + self.materials[row][i+1] * material_properties[i]['g']
-                b = b + self.materials[row][i+1] * material_properties[i]['b']
-
-            r = 1 if r > 1 else r
-            g = 1 if g > 1 else g
-            b = 1 if b > 1 else b
+            avgProps = {}
+            for key in material_properties[0]:
+                if key == 'name' or key == 'process':
+                    string = ''
+                    for i in range(len(material_properties)):
+                        if self.materials[row][i+1] > 0:
+                            string = string + material_properties[i][key] + ' '
+                    avgProps.update({key: string})
+                elif key == 'MM' or key == 'FM':
+                    var = 0
+                    for i in range(len(material_properties)):
+                        if self.materials[row][i + 1] > 0:
+                            var = max(var, material_properties[i][key])
+                    avgProps.update({key: var})
+                else:
+                    var = 0
+                    for i in range(len(material_properties)):
+                        var = var + self.materials[row][i + 1] * material_properties[i][key]
+                    avgProps.update({key: var})
 
             f.write('    <Material ID="' + str(row) + '">\n')
             f.write('      <MatType>' + str(0) + '</MatType>\n')
-            f.write('      <Name>Default</Name>\n')
+            f.write('      <Name>' + avgProps['name'][0:-1] + '</Name>\n')
             f.write('      <Display>\n')
-            f.write('        <Red>' + str(r) + '</Red>\n')
-            f.write('        <Green>' + str(g) + '</Green>\n')
-            f.write('        <Blue>' + str(b) + '</Blue>\n')
+            f.write('        <Red>' + str(avgProps['r']) + '</Red>\n')
+            f.write('        <Green>' + str(avgProps['g']) + '</Green>\n')
+            f.write('        <Blue>' + str(avgProps['b']) + '</Blue>\n')
             f.write('        <Alpha>' + str(1) + '</Alpha>\n')
             f.write('      </Display>\n')
             f.write('      <Mechanical>\n')
-            f.write('        <MatModel>' + str(0) + '</MatModel>\n')
-            f.write('        <Elastic_Mod>' + str(1e+06) + '</Elastic_Mod>\n')
-            f.write('        <Plastic_Mod>' + str(0) + '</Plastic_Mod>\n')
-            f.write('        <Yield_Stress>' + str(0) + '</Yield_Stress>\n')
-            f.write('        <FailModel>' + str(0) + '</FailModel>\n')
-            f.write('        <Fail_Stress>' + str(0) + '</Fail_Stress>\n')
-            f.write('        <Fail_Strain>' + str(0) + '</Fail_Strain>\n')
-            f.write('        <Density>' + str(1) + '</Density>\n')
-            f.write('        <Poissons_Ratio>' + str(0.35) + '</Poissons_Ratio>\n')
-            f.write('        <CTE>' + str(0) + '</CTE>\n')
-            f.write('        <MaterialTempPhase>' + str(0) + '</MaterialTempPhase>\n')
-            f.write('        <uStatic>' + str(1) + '</uStatic>\n')
-            f.write('        <uDynamic>' + str(0.5) + '</uDynamic>\n')
+            f.write('        <MatModel>' + str(int(avgProps['MM'])) + '</MatModel>\n')
+            f.write('        <Elastic_Mod>' + str(avgProps['E']) + '</Elastic_Mod>\n')
+            f.write('        <Plastic_Mod>' + str(avgProps['Z']) + '</Plastic_Mod>\n')
+            f.write('        <Yield_Stress>' + str(avgProps['eY']) + '</Yield_Stress>\n')
+            f.write('        <FailModel>' + str(int(avgProps['FM'])) + '</FailModel>\n')
+            f.write('        <Fail_Stress>' + str(avgProps['eF']) + '</Fail_Stress>\n')
+            f.write('        <Fail_Strain>' + str(avgProps['SF']) + '</Fail_Strain>\n')
+            f.write('        <Density>' + str(avgProps['p'] * 1e3) + '</Density>\n') # Convert g/cm^3 to kg/m^3
+            f.write('        <Poissons_Ratio>' + str(avgProps['v']) + '</Poissons_Ratio>\n')
+            f.write('        <CTE>' + str(avgProps['CTE']) + '</CTE>\n')
+            f.write('        <MaterialTempPhase>' + str(avgProps['TP']) + '</MaterialTempPhase>\n')
+            f.write('        <uStatic>' + str(avgProps['uS']) + '</uStatic>\n')
+            f.write('        <uDynamic>' + str(avgProps['uD']) + '</uDynamic>\n')
             f.write('      </Mechanical>\n')
             f.write('    </Material>\n')
         f.write('  </Palette>\n')
