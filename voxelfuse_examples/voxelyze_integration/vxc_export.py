@@ -22,7 +22,7 @@ if __name__=='__main__':
     modelResult = (model1 + model2).scaleValues() | model3
 
     # Save VXC file
-    modelResult.saveVXC("test-file")
+    modelResult.saveVXC("test-file", compression=False)
     modelResult.saveVF("test-file")
     # Create mesh data
     # mesh1 = Mesh.fromVoxelModel(modelResult)

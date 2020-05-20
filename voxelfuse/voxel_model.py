@@ -1096,7 +1096,7 @@ class VoxelModel:
 
         return new_model
 
-    def saveVXC(self, filename):
+    def saveVXC(self, filename, compression=True):
         f = open(filename + '.vxc', 'w+')
         print('Saving file: ' + f.name)
 
@@ -1174,7 +1174,10 @@ class VoxelModel:
         f.write('  </Palette>\n')
 
         # Structure
-        f.write('  <Structure Compression="ZLIB">\n')
+        if compression:
+            f.write('  <Structure Compression="ZLIB">\n')
+        else:
+            f.write('  <Structure Compression="ASCII_READABLE">\n')
 
         x_len = self.voxels.shape[0]
         y_len = self.voxels.shape[1]
@@ -1188,10 +1191,17 @@ class VoxelModel:
         for z in tqdm(range(z_len), desc='Writing voxels'):
             layer = np.copy(self.voxels[:, :, z])
             layer = np.rot90(layer, 3)
-            layer = layer.astype('uint8')
-            layerData = zlib.compress(layer.tobytes())
-            layerData = base64.encodebytes(layerData)
-            f.write('      <Layer><![CDATA[' + str(layerData)[2:-3] + ']]></Layer>\n')
+            layerData = layer.flatten()
+            layerData = layerData.astype('uint8')
+
+            if compression:
+                layerData = zlib.compress(layer.tobytes())
+                layerData = base64.encodebytes(layerData)
+                layerDataStr = str(layerData)[2:-3]
+            else:
+                layerDataStr = (str(layerData)[1:-1]).replace(' ', '').replace('\n', '')
+
+            f.write('      <Layer><![CDATA[' + layerDataStr + ']]></Layer>\n')
 
         f.write('    </Data>\n')
         f.write('  </Structure>\n')
