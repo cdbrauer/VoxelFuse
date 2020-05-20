@@ -1195,11 +1195,13 @@ class VoxelModel:
             layerData = layerData.astype('uint8')
 
             if compression:
-                layerData = zlib.compress(layer.tobytes())
+                layerData = zlib.compress(layerData.tobytes())
                 layerData = base64.encodebytes(layerData)
                 layerDataStr = str(layerData)[2:-3]
             else:
-                layerDataStr = (str(layerData)[1:-1]).replace(' ', '').replace('\n', '')
+                layerDataStr = ''
+                for vox in layerData:
+                    layerDataStr = layerDataStr + str(vox)
 
             f.write('      <Layer><![CDATA[' + layerDataStr + ']]></Layer>\n')
 
