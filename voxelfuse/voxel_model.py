@@ -1096,11 +1096,16 @@ class VoxelModel:
 
         return new_model
 
-    def saveVXC(self, filename, compression=True):
+    def saveVXC(self, filename, compression=False):
         f = open(filename + '.vxc', 'w+')
         print('Saving file: ' + f.name)
 
         f.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
+        self.writeVXCData(f, compression)
+
+        f.close()
+
+    def writeVXCData(self, f, compression=False):
         f.write('<VXC Version="' + str(0.94) + '">\n')
 
         # Lattice settings
@@ -1207,10 +1212,7 @@ class VoxelModel:
 
         f.write('    </Data>\n')
         f.write('  </Structure>\n')
-
-        # Close file
         f.write('</VXC>\n')
-        f.close()
 
 # Helper methods ##############################################################
 """

@@ -13,7 +13,7 @@ from voxelfuse.plot import Plot
 from voxelfuse.primitives import *
 
 if __name__=='__main__':
-    app1 = qg.QApplication(sys.argv)
+    # app1 = qg.QApplication(sys.argv)
 
     model1 = cube(5, (0, 0, 0), material=1)
     model2 = cube(5, (4, 0, 3), material=8)
@@ -24,6 +24,7 @@ if __name__=='__main__':
     # Save VXC file
     modelResult.saveVXC("test-file", compression=False)
     modelResult.saveVF("test-file")
+
     # Create mesh data
     # mesh1 = Mesh.fromVoxelModel(modelResult)
 
