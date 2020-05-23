@@ -75,7 +75,7 @@ class Simulation:
         self.__temperatureVaryAmplitude = 0.0
         self.__temperatureVaryPeriod = 0.0
 
-    # Configure settings
+    # Configure settings ##################################
     def setDamping(self, bond = 1.0, environment = 0.0):
         self.__dampingBond = bond
         self.__dampingEnvironment = environment
@@ -108,6 +108,26 @@ class Simulation:
         self.__temperatureVaryAmplitude = amplitude
         self.__temperatureVaryPeriod = period
 
+    # Read settings ##################################
+    def getDamping(self):
+        return self.__dampingBond, self.__dampingEnvironment
+
+    def getCollision(self):
+        return self.__collisionEnable, self.__collisionDamping
+
+    def getStopCondition(self):
+        return self.__stopConditionType, self.__stopConditionValue
+
+    def getEquilibriumMode(self):
+        return self.__equilibriumModeEnable
+
+    def getGravity(self):
+        return self.__gravityEnable, self.__gravityValue, self.__floorEnable
+
+    def getThermal(self):
+        return self.__temperatureEnable, self.__temperatureBaseValue, self.__temperatureVaryEnable, self.__temperatureVaryAmplitude, self.__temperatureVaryPeriod
+
+    # Add forces, constraints, and sensors ##################################
     # Boundary condition sizes and positions are expressed as percentages of the overall model size
     # Fixed DOF bits correspond to: X, Y, Z, Rx, Ry, Rz
     #   0: Free, force will be applied
@@ -131,7 +151,8 @@ class Simulation:
         self.__bcNumber = self.__bcNumber + 1
 
 
-    # Export simulation object to .vxa file for import into simulation engine
+    # Export simulation ##################################
+    # Export simulation object to .vxa file for import into VoxCad or Voxelyze
     def saveVXA(self, filename, compression=False):
         f = open(filename + '.vxa', 'w+')
         print('Saving file: ' + f.name)
@@ -145,6 +166,7 @@ class Simulation:
 
         f.close()
 
+    # Write simulator settings to file
     def writeSimData(self, f):
         # Simulator settings
         f.write('<Simulator>\n')
@@ -180,6 +202,7 @@ class Simulation:
         f.write('  </EquilibriumMode>\n')
         f.write('</Simulator>\n')
 
+    # Write environment settings to file
     def writeEnvironmentData(self, f):
         # Environment settings
         f.write('<Environment>\n')
