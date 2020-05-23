@@ -38,7 +38,8 @@ if __name__=='__main__':
 
     # Create simulation file
     simulation = Simulation(model)
-    simulation.collisionEnable = True
+    simulation.setCollision()
+    simulation.addBoundaryConditionBox(position=(0.99,0,0))
     simulation.saveVXA('collision_sim')
 
     # Create mesh data

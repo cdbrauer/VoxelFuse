@@ -34,8 +34,87 @@
 </Simulator>
 <Environment>
   <Boundary_Conditions>
-    <NumBCs>0</NumBCs>
+    <NumBCs>3</NumBCs>
     <FRegion>
+      <PrimType>0</PrimType>
+      <X>0.99</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <dX>0.01</dX>
+      <dY>1.0</dY>
+      <dZ>1.0</dZ>
+      <Radius>0</Radius>
+      <R>0.6</R>
+      <G>0.4</G>
+      <B>0.4</B>
+      <alpha>0.5</alpha>
+      <DofFixed>63</DofFixed>
+      <ForceX>0</ForceX>
+      <ForceY>0</ForceY>
+      <ForceZ>0</ForceZ>
+      <TorqueX>0</TorqueX>
+      <TorqueY>0</TorqueY>
+      <TorqueZ>0</TorqueZ>
+      <DisplaceX>0</DisplaceX>
+      <DisplaceY>0</DisplaceY>
+      <DisplaceZ>0</DisplaceZ>
+      <AngDisplaceX>0</AngDisplaceX>
+      <AngDisplaceY>0</AngDisplaceY>
+      <AngDisplaceZ>0</AngDisplaceZ>
+    </FRegion>
+    <FRegion>
+      <PrimType>2</PrimType>
+      <X>0.5</X>
+      <Y>0.5</Y>
+      <Z>0.5</Z>
+      <dX>0.0</dX>
+      <dY>0.0</dY>
+      <dZ>0.0</dZ>
+      <Radius>0.05</Radius>
+      <R>0.6</R>
+      <G>0.4</G>
+      <B>0.4</B>
+      <alpha>0.5</alpha>
+      <DofFixed>63</DofFixed>
+      <ForceX>0</ForceX>
+      <ForceY>0</ForceY>
+      <ForceZ>0</ForceZ>
+      <TorqueX>0</TorqueX>
+      <TorqueY>0</TorqueY>
+      <TorqueZ>0</TorqueZ>
+      <DisplaceX>0</DisplaceX>
+      <DisplaceY>0</DisplaceY>
+      <DisplaceZ>0</DisplaceZ>
+      <AngDisplaceX>0</AngDisplaceX>
+      <AngDisplaceY>0</AngDisplaceY>
+      <AngDisplaceZ>0</AngDisplaceZ>
+    </FRegion>
+    <FRegion>
+      <PrimType>1</PrimType>
+      <X>0.45</X>
+      <Y>0.5</Y>
+      <Z>0.5</Z>
+      <dX>0.1</dX>
+      <dY>0.0</dY>
+      <dZ>0.0</dZ>
+      <Radius>0.05</Radius>
+      <R>0.6</R>
+      <G>0.4</G>
+      <B>0.4</B>
+      <alpha>0.5</alpha>
+      <DofFixed>63</DofFixed>
+      <ForceX>0</ForceX>
+      <ForceY>0</ForceY>
+      <ForceZ>0</ForceZ>
+      <TorqueX>0</TorqueX>
+      <TorqueY>0</TorqueY>
+      <TorqueZ>0</TorqueZ>
+      <DisplaceX>0</DisplaceX>
+      <DisplaceY>0</DisplaceY>
+      <DisplaceZ>0</DisplaceZ>
+      <AngDisplaceX>0</AngDisplaceX>
+      <AngDisplaceY>0</AngDisplaceY>
+      <AngDisplaceZ>0</AngDisplaceZ>
     </FRegion>
   </Boundary_Conditions>
   <Gravity>
@@ -44,7 +123,7 @@
     <FloorEnabled>1</FloorEnabled>
   </Gravity>
   <Thermal>
-    <TempEnabled>1</TempEnabled>
+    <TempEnabled>0</TempEnabled>
     <TempAmplitude>0.0</TempAmplitude>
     <TempBase>25.0</TempBase>
     <VaryTempEnabled>0</VaryTempEnabled>
