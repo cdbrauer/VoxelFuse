@@ -24,30 +24,20 @@ if __name__=='__main__':
 
     # Initialize an empty model
     model = VoxelModel.empty((workspaceX, workspaceY, workspaceZ), 1)
-    mat = 0
+    mat = 1
 
-    # Add multiple objects
+    # Add multiple objects, changing the material for each
     for x in range(0,workspaceX, particleSpacing):
         for y in range(0, workspaceY, particleSpacing):
             for z in range(0, workspaceZ, particleSpacing):
-                model = model | cube(particleSize, (x+round(z/particleSpacing), y+round(z/particleSpacing), z), (mat % (len(material_properties) - 1)) + 1, 1)
-                mat = mat+1
+                model = model | cube(particleSize, (x+round(z/particleSpacing), y+round(z/particleSpacing), z), (mat % (len(material_properties) - 1)) + 1, 1) # Slightly offset x and y so stacks will fall over
+                mat = mat+1 # Increment material
 
     # Clean up result
     model = model.removeDuplicateMaterials()
 
     # Create simulation file
-    simulation = Simulation(model)
-    simulation.setCollision()
-    simulation.addBoundaryConditionBox(position=(0.99,0,0))
-    simulation.saveVXA('collision_sim')
-
-    # Create mesh data
-    # mesh1 = Mesh.fromVoxelModel(model)
-
-    # Create plot
-    # plot1 = Plot(mesh1)
-    # plot1.show()
-    # app1.processEvents()
-
-    # app1.exec_()
+    simulation = Simulation(model) # Initialize a simulation
+    simulation.setCollision() # Enable self collisions with default settings
+    simulation.addBoundaryConditionBox(position=(0.99,0,0)) # Add a boundary condition at (x = max, y = 0, z = 0), leave other settings at default (fixed constraint, YZ plane)
+    simulation.launchSim('collision_sim', delete_files=False) # Launch simulation, save simulation file

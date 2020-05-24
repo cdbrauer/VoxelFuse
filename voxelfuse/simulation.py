@@ -2,8 +2,8 @@
 Copyright 2020
 Dan Aukes, Cole Brauer
 """
-
-import numpy as np
+import os
+import subprocess
 from enum import Enum
 from tqdm import tqdm
 from voxelfuse.voxel_model import VoxelModel
@@ -209,7 +209,7 @@ class Simulation:
         f.write('  <Boundary_Conditions>\n')
         f.write('    <NumBCs>' + str(self.__bcNumber) + '</NumBCs>\n')
 
-        for r in range(self.__bcNumber):
+        for r in tqdm(range(self.__bcNumber), desc='Writing boundary conditions'):
             f.write('    <FRegion>\n')
             f.write('      <PrimType>' + str(int(self.__bcRegions[r][0].value)) + '</PrimType>\n')
             f.write('      <X>' + str(self.__bcRegions[r][1][0]) + '</X>\n')
@@ -253,5 +253,14 @@ class Simulation:
         f.write('  </Thermal>\n')
         f.write('</Environment>\n')
 
+    # Launch simulation in VoxCad
+    def launchSim(self, filename = 'temp', delete_files = True):
+        self.saveVXA(filename)
 
+        command_string = 'voxcad ' + filename + '.vxa'
+        p = subprocess.Popen(command_string, shell=True)
+        p.wait()
 
+        if delete_files:
+            print('Removing file: ' + filename + '.vxa')
+            os.remove(filename + '.vxa')
