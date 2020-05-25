@@ -1,7 +1,8 @@
 """
-Copyright 2018-2019
-Dan Aukes, Cole Brauer
+Copyright 2020
+Cole Brauer, Dan Aukes
 """
+
 import os
 import subprocess
 import meshio
@@ -782,11 +783,11 @@ class VoxelModel:
         return new_model
 
     def rotate90(self, times = 1, axis = Axes.Z):
-        if axis == Axes.X:
+        if axis == Axes.X or axis == 0:
             plane = (1, 2)
-        elif axis == Axes.Y:
+        elif axis == Axes.Y or axis == 1:
             plane = (0, 2)
-        else: # axis == 'z'
+        else: # axis == Axes.Z or axis = 2
             plane = (0, 1)
 
         centerCoords = self.getCenter()
@@ -850,9 +851,9 @@ class VoxelModel:
     def setCenter(self, coords):
         new_model = self.fitWorkspace()
 
-        x_new = round(coords[0] - (new_model.voxels.shape[0] / 2))
-        y_new = round(coords[1] - (new_model.voxels.shape[1] / 2))
-        z_new = round(coords[2] - (new_model.voxels.shape[2] / 2))
+        x_new = int(round(coords[0] - (new_model.voxels.shape[0] / 2)))
+        y_new = int(round(coords[1] - (new_model.voxels.shape[1] / 2)))
+        z_new = int(round(coords[2] - (new_model.voxels.shape[2] / 2)))
 
         new_model.coords = (x_new, y_new, z_new)
         return new_model
