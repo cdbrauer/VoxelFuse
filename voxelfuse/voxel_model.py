@@ -1195,7 +1195,7 @@ class VoxelModel:
 
         for z in tqdm(range(z_len), desc='Writing voxels'):
             layer = np.copy(self.voxels[:, :, z])
-            layer = np.rot90(layer, 3)
+            layer = layer.transpose()
             layerData = layer.flatten()
             layerData = layerData.astype('uint8')
 
