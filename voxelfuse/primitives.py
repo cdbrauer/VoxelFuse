@@ -1,6 +1,6 @@
 """
 Copyright 2020
-Dan Aukes, Cole Brauer
+Cole Brauer, Dan Aukes
 
 Functions for generating primitive solids
 """
@@ -10,6 +10,11 @@ from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.materials import material_properties
 
 # Basic primitives
+def empty(coords = (0, 0, 0), resolution = 1):
+    model_data = np.zeros((1, 1, 1), dtype=np.uint16)
+    materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+    model = VoxelModel(model_data, materials, coords=coords, resolution=resolution)
+    return model
 
 def cube(size = 1, coords = (0, 0, 0), material = 1, resolution = 1):
     model_data = np.ones((size, size, size), dtype=np.uint16)
