@@ -60,7 +60,6 @@ class Simulation:
 
         # Environment ################################
         # Boundary conditions
-        self.__bcNumber = 0
         self.__bcRegions = []
 
         # Gravity
@@ -136,19 +135,16 @@ class Simulation:
     # Default box boundary condition is a fixed constraint in the YZ plane
     def addBoundaryConditionBox(self, position = (0.0, 0.0, 0.0), size = (0.01, 1.0, 1.0), fixed_dof = 0b111111, force = (0, 0, 0), displacement = (0, 0, 0), torque = (0, 0, 0), angular_displacement = (0, 0, 0)):
         self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-        self.__bcNumber = self.__bcNumber + 1
 
     # Default sphere boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionSphere(self, position = (0.5, 0.5, 0.5), radius = 0.05, fixed_dof = 0b111111, force = (0, 0, 0), displacement = (0, 0, 0), torque = (0, 0, 0), angular_displacement = (0, 0, 0)):
         self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-        self.__bcNumber = self.__bcNumber + 1
 
     # Default cylinder boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionCylinder(self, position = (0.45, 0.5, 0.5), axis = 0, height = 0.1, radius = 0.05, fixed_dof = 0b111111, force = (0, 0, 0), displacement = (0, 0, 0), torque = (0, 0, 0), angular_displacement = (0, 0, 0)):
         size = [0.0, 0.0, 0.0]
         size[axis] = height
         self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-        self.__bcNumber = self.__bcNumber + 1
 
 
     # Export simulation ##################################
@@ -207,9 +203,9 @@ class Simulation:
         # Environment settings
         f.write('<Environment>\n')
         f.write('  <Boundary_Conditions>\n')
-        f.write('    <NumBCs>' + str(self.__bcNumber) + '</NumBCs>\n')
+        f.write('    <NumBCs>' + str(len(self.__bcRegions)) + '</NumBCs>\n')
 
-        for r in tqdm(range(self.__bcNumber), desc='Writing boundary conditions'):
+        for r in tqdm(range(len(self.__bcRegions)), desc='Writing boundary conditions'):
             f.write('    <FRegion>\n')
             f.write('      <PrimType>' + str(int(self.__bcRegions[r][0].value)) + '</PrimType>\n')
             f.write('      <X>' + str(self.__bcRegions[r][1][0]) + '</X>\n')
