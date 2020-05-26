@@ -49,4 +49,4 @@ if __name__=='__main__':
     simulation.addSensor((3, 9, 16))
     simulation.addSensor((4, 10, 12))
 
-    simulation.launchSim()#'collision_sim', delete_files=False) # Launch simulation, save simulation file
+    simulation.launchSim('collision_sim', delete_files=False) # Launch simulation, save simulation file

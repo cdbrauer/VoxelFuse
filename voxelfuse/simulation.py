@@ -381,6 +381,8 @@ class Simulation:
             f.write('    <X_Component>' + str(int(force[3])) + '</X_Component>\n')
             f.write('    <Y_Component>' + str(int(force[4])) + '</Y_Component>\n')
             f.write('    <Z_Component>' + str(int(force[5])) + '</Z_Component>\n')
+            f.write('    <Location>' + str(force[0:3]).replace('[', '').replace(' ', '').replace(']', '') + '</Location>\n')
+            f.write('    <Vector>' + str(force[3:6]).replace('[', '').replace(' ', '').replace(']', '') + '</Vector>\n')
             f.write('  </Force>\n')
         f.write('</Forces>\n')
 
@@ -391,6 +393,7 @@ class Simulation:
             f.write('    <X_Index>' + str(int(sensor[0])) + '</X_Index>\n')
             f.write('    <Y_Index>' + str(int(sensor[1])) + '</Y_Index>\n')
             f.write('    <Z_Index>' + str(int(sensor[2])) + '</Z_Index>\n')
+            f.write('    <Location>' + str(sensor[0:3]).replace('[', '').replace(' ', '').replace(']', '') + '</Location>\n')
             f.write('  </Sensor>\n')
         f.write('</Sensors>\n')
 

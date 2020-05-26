@@ -26,7 +26,7 @@
   </Features>
   <StopCondition>
     <StopConditionType>0</StopConditionType>
-    <StopConditionValue>0</StopConditionValue>
+    <StopConditionValue>0.0</StopConditionValue>
   </StopCondition>
   <EquilibriumMode>
     <EquilibriumModeEnabled>0</EquilibriumModeEnabled>
@@ -143,6 +143,42 @@
     <TempPeriod>0.0</TempPeriod>
   </Thermal>
 </Environment>
+<Forces>
+  <Force>
+    <X_Index>7</X_Index>
+    <Y_Index>8</Y_Index>
+    <Z_Index>11</Z_Index>
+    <X_Component>-10</X_Component>
+    <Y_Component>0</Y_Component>
+    <Z_Component>0</Z_Component>
+    <Location>7,8,11</Location>
+    <Vector>-10,0,0</Vector>
+  </Force>
+  <Force>
+    <X_Index>8</X_Index>
+    <Y_Index>9</Y_Index>
+    <Z_Index>16</Z_Index>
+    <X_Component>-5</X_Component>
+    <Y_Component>0</Y_Component>
+    <Z_Component>0</Z_Component>
+    <Location>8,9,16</Location>
+    <Vector>-5,0,0</Vector>
+  </Force>
+</Forces>
+<Sensors>
+  <Sensor>
+    <X_Index>3</X_Index>
+    <Y_Index>9</Y_Index>
+    <Z_Index>16</Z_Index>
+    <Location>3,9,16</Location>
+  </Sensor>
+  <Sensor>
+    <X_Index>4</X_Index>
+    <Y_Index>10</Y_Index>
+    <Z_Index>12</Z_Index>
+    <Location>4,10,12</Location>
+  </Sensor>
+</Sensors>
 <VXC Version="0.94">
   <Lattice>
     <Lattice_Dim>0.001</Lattice_Dim>
