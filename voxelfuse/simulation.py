@@ -1,12 +1,15 @@
 """
 Copyright 2020
-Dan Aukes, Cole Brauer
+Cole Brauer, Dan Aukes
 """
+
 import os
 import subprocess
 from enum import Enum
 from tqdm import tqdm
+import numpy as np
 from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.primitives import empty, cuboid, sphere, cylinder
 
 class StopCondition(Enum):
     NONE = 0
@@ -22,12 +25,18 @@ class BCShape(Enum):
     CYLINDER = 1
     SPHERE = 2
 
+"""
+Simulation Class
+
+Initialized from a VoxelModel object. Used to configure VoxCad and Voxelyze simulations.
+"""
 class Simulation:
     # Initialize a simulation object with default settings
     def __init__(self, voxel_model):
-        self.model = VoxelModel.copy(voxel_model)
+        self.__model = VoxelModel.copy(voxel_model) | empty() # Union with an empty object at the origin to clear offsets if object is raised
+        self.__model.coords = (0, 0, 0) # Set coords to zero to move object to origin if it is at negative coordinates
 
-        # Simulator ##################################
+        # Simulator ##############
         # Integration
         self.__integrator = 0
         self.__dtFraction = 1.0
@@ -58,9 +67,10 @@ class Simulation:
         # Equilibrium mode
         self.__equilibriumModeEnable = False
 
-        # Environment ################################
+        # Environment ############
         # Boundary conditions
         self.__bcRegions = []
+        self.__bcVoxels = []
 
         # Gravity
         self.__gravityEnable = True
@@ -128,6 +138,7 @@ class Simulation:
 
     # Add forces, constraints, and sensors ##################################
     # Boundary condition sizes and positions are expressed as percentages of the overall model size
+    #   radius is a percentage of the largest model dimension
     # Fixed DOF bits correspond to: X, Y, Z, Rx, Ry, Rz
     #   0: Free, force will be applied
     #   1: Fixed, displacement will be applied
@@ -136,15 +147,86 @@ class Simulation:
     def addBoundaryConditionBox(self, position = (0.0, 0.0, 0.0), size = (0.01, 1.0, 1.0), fixed_dof = 0b111111, force = (0, 0, 0), displacement = (0, 0, 0), torque = (0, 0, 0), angular_displacement = (0, 0, 0)):
         self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
 
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
+        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        bcRegion = cuboid(regionSize, regionPosition) & self.__model
+
+        x_offset = int(bcRegion.coords[0])
+        y_offset = int(bcRegion.coords[1])
+        z_offset = int(bcRegion.coords[2])
+
+        bcVoxels = []
+        for x in tqdm(range(x_len), desc='Finding constrained voxels'):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if bcRegion.voxels[x, y, z] != 0:
+                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+        self.__bcVoxels.append(bcVoxels)
+
     # Default sphere boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionSphere(self, position = (0.5, 0.5, 0.5), radius = 0.05, fixed_dof = 0b111111, force = (0, 0, 0), displacement = (0, 0, 0), torque = (0, 0, 0), angular_displacement = (0, 0, 0)):
         self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        bcRegion = sphere(regionRadius, regionPosition) & self.__model
+
+        x_offset = int(bcRegion.coords[0])
+        y_offset = int(bcRegion.coords[1])
+        z_offset = int(bcRegion.coords[2])
+
+        bcVoxels = []
+        for x in tqdm(range(x_len), desc='Finding constrained voxels'):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if bcRegion.voxels[x, y, z] != 0:
+                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+        self.__bcVoxels.append(bcVoxels)
 
     # Default cylinder boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionCylinder(self, position = (0.45, 0.5, 0.5), axis = 0, height = 0.1, radius = 0.05, fixed_dof = 0b111111, force = (0, 0, 0), displacement = (0, 0, 0), torque = (0, 0, 0), angular_displacement = (0, 0, 0)):
         size = [0.0, 0.0, 0.0]
         size[axis] = height
         self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+        regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
+        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        bcRegion = cylinder(regionRadius, regionHeight, regionPosition)
+
+        if axis == 0:
+            bcRegion = bcRegion.rotate90(axis=1)
+        elif axis == 1:
+            bcRegion = bcRegion.rotate90(axis=0)
+
+        bcRegion = bcRegion & self.__model
+
+        x_offset = int(bcRegion.coords[0])
+        y_offset = int(bcRegion.coords[1])
+        z_offset = int(bcRegion.coords[2])
+
+        bcVoxels = []
+        for x in tqdm(range(x_len), desc='Finding constrained voxels'):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if bcRegion.voxels[x, y, z] != 0:
+                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+        self.__bcVoxels.append(bcVoxels)
 
 
     # Export simulation ##################################
@@ -157,7 +239,7 @@ class Simulation:
         f.write('<VXA Version="' + str(1.1) + '">\n')
         self.writeSimData(f)
         self.writeEnvironmentData(f)
-        self.model.writeVXCData(f, compression)
+        self.__model.writeVXCData(f, compression)
         f.write('</VXA>\n')
 
         f.close()
@@ -232,6 +314,12 @@ class Simulation:
             f.write('      <AngDisplaceX>' + str(self.__bcRegions[r][9][0]) + '</AngDisplaceX>\n')
             f.write('      <AngDisplaceY>' + str(self.__bcRegions[r][9][1]) + '</AngDisplaceY>\n')
             f.write('      <AngDisplaceZ>' + str(self.__bcRegions[r][9][2]) + '</AngDisplaceZ>\n')
+            f.write('      <IntersectedVoxels>\n')
+
+            for v in self.__bcVoxels[r]:
+                f.write('        <Voxel>' + str(v).replace('[', '').replace(' ', '').replace(']', '') + '</Voxel>\n')
+
+            f.write('      </IntersectedVoxels>\n')
             f.write('    </FRegion>\n')
 
         f.write('  </Boundary_Conditions>\n')
