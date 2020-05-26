@@ -84,6 +84,10 @@ class Simulation:
         self.__temperatureVaryAmplitude = 0.0
         self.__temperatureVaryPeriod = 0.0
 
+        # Forces & Sensors #######
+        self.__forces = []
+        self.__sensors = []
+
     @classmethod
     def copy(cls, simulation):
         # Create new simulation object and copy attribute values
@@ -249,6 +253,13 @@ class Simulation:
 
         self.__bcVoxels.append(bcVoxels)
 
+    def addForce(self, location = (0, 0, 0), vector = (0, 0, 0)):
+        force = [location[0], location[1], location[2], vector[0], vector[1], vector[2]]
+        self.__forces.append(force)
+
+    def addSensor(self, location = (0, 0, 0)):
+        sensor = [location[0], location[1], location[2]]
+        self.__sensors.append(sensor)
 
     # Export simulation ##################################
     # Export simulation object to .vxa file for import into VoxCad or Voxelyze
@@ -260,6 +271,8 @@ class Simulation:
         f.write('<VXA Version="' + str(1.1) + '">\n')
         self.writeSimData(f)
         self.writeEnvironmentData(f)
+        self.writeForces(f)
+        self.writeSensors(f)
         self.__model.writeVXCData(f, compression)
         f.write('</VXA>\n')
 
@@ -357,6 +370,29 @@ class Simulation:
         f.write('    <TempPeriod>' + str(self.__temperatureVaryPeriod) + '</TempPeriod>\n')
         f.write('  </Thermal>\n')
         f.write('</Environment>\n')
+
+    def writeForces(self, f):
+        f.write('<Forces>\n')
+        for force in self.__forces:
+            f.write('  <Force>\n')
+            f.write('    <X_Index>' + str(int(force[0])) + '</X_Index>\n')
+            f.write('    <Y_Index>' + str(int(force[1])) + '</Y_Index>\n')
+            f.write('    <Z_Index>' + str(int(force[2])) + '</Z_Index>\n')
+            f.write('    <X_Component>' + str(int(force[3])) + '</X_Component>\n')
+            f.write('    <Y_Component>' + str(int(force[4])) + '</Y_Component>\n')
+            f.write('    <Z_Component>' + str(int(force[5])) + '</Z_Component>\n')
+            f.write('  </Force>\n')
+        f.write('</Forces>\n')
+
+    def writeSensors(self, f):
+        f.write('<Sensors>\n')
+        for sensor in self.__sensors:
+            f.write('  <Sensor>\n')
+            f.write('    <X_Index>' + str(int(sensor[0])) + '</X_Index>\n')
+            f.write('    <Y_Index>' + str(int(sensor[1])) + '</Y_Index>\n')
+            f.write('    <Z_Index>' + str(int(sensor[2])) + '</Z_Index>\n')
+            f.write('  </Sensor>\n')
+        f.write('</Sensors>\n')
 
     # Launch simulation in VoxCad
     def launchSim(self, filename = 'temp', delete_files = True):

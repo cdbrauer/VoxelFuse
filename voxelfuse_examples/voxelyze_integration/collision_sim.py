@@ -42,4 +42,11 @@ if __name__=='__main__':
     simulation.setCollision() # Enable self collisions with default settings
     simulation.addBoundaryConditionBox() # Add a box boundary with default settings (fixed constraint, YZ plane at X=0)
     simulation.addBoundaryConditionBox(position=(0.99, 0, 0)) # Add a boundary condition at x = max, leave other settings at default (fixed constraint, YZ plane)
-    simulation.launchSim('collision_sim', delete_files=False) # Launch simulation, save simulation file
+
+    # Add some forces and sensors
+    simulation.addForce(location=(7, 8, 11), vector=(-10, 0, 0))
+    simulation.addForce(location=(8, 9, 16), vector=(-5, 0, 0))
+    simulation.addSensor((3, 9, 16))
+    simulation.addSensor((4, 10, 12))
+
+    simulation.launchSim()#'collision_sim', delete_files=False) # Launch simulation, save simulation file
