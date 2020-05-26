@@ -33,7 +33,7 @@ Initialized from a VoxelModel object. Used to configure VoxCad and Voxelyze simu
 class Simulation:
     # Initialize a simulation object with default settings
     def __init__(self, voxel_model):
-        self.__model = VoxelModel.copy(voxel_model) | empty() # Union with an empty object at the origin to clear offsets if object is raised
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
         self.__model.coords = (0, 0, 0) # Set coords to zero to move object to origin if it is at negative coordinates
 
         # Simulator ##############
@@ -62,7 +62,7 @@ class Simulation:
 
         # Stop conditions
         self.__stopConditionType = StopCondition.NONE
-        self.__stopConditionValue = 0
+        self.__stopConditionValue = 0.0
 
         # Equilibrium mode
         self.__equilibriumModeEnable = False
@@ -84,7 +84,25 @@ class Simulation:
         self.__temperatureVaryAmplitude = 0.0
         self.__temperatureVaryPeriod = 0.0
 
+    @classmethod
+    def copy(cls, simulation):
+        # Create new simulation object and copy attribute values
+        new_simulation = cls(simulation.__model)
+        new_simulation.__dict__ = simulation.__dict__.copy()
+
+        # Make lists copies instead of references
+        new_simulation.__bcRegions = simulation.__bcRegions.copy()
+        new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
+        new_simulation.__forces = simulation.__forces.copy()
+        new_simulation.__sensors = simulation.__sensors.copy()
+
+        return new_simulation
+
     # Configure settings ##################################
+    def setModel(self, voxel_model):
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        self.__model.coords = (0, 0, 0)  # Set coords to zero to move object to origin if it is at negative coordinates
+
     def setDamping(self, bond = 1.0, environment = 0.0):
         self.__dampingBond = bond
         self.__dampingEnvironment = environment
@@ -118,6 +136,9 @@ class Simulation:
         self.__temperatureVaryPeriod = period
 
     # Read settings ##################################
+    def getModel(self):
+        return self.__model
+
     def getDamping(self):
         return self.__dampingBond, self.__dampingEnvironment
 
