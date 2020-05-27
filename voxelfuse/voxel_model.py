@@ -762,6 +762,13 @@ class VoxelModel:
         new_model.materials = new_materials
         return new_model
 
+    def setDensity(self, density = 1.0):
+        new_model = self.scaleValues()
+        null_material_values = np.multiply(np.ones(np.shape(new_model.materials[1:,1])), 1-density)
+        new_model.materials[1:, 1] = null_material_values
+        new_model.materials[1:, 2:] = np.multiply(new_model.materials[1:, 2:], density)
+        return new_model
+
     """
     Transformations
 
