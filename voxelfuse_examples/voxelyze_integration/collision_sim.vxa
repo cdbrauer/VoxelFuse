@@ -62,24 +62,24 @@
       <AngDisplaceY>0</AngDisplaceY>
       <AngDisplaceZ>0</AngDisplaceZ>
       <IntersectedVoxels>
-        <Voxel>0,0,5</Voxel>
-        <Voxel>0,0,6</Voxel>
-        <Voxel>0,0,7</Voxel>
-        <Voxel>0,1,5</Voxel>
-        <Voxel>0,1,6</Voxel>
-        <Voxel>0,1,7</Voxel>
-        <Voxel>0,2,5</Voxel>
-        <Voxel>0,2,6</Voxel>
-        <Voxel>0,2,7</Voxel>
-        <Voxel>0,5,5</Voxel>
-        <Voxel>0,5,6</Voxel>
-        <Voxel>0,5,7</Voxel>
-        <Voxel>0,6,5</Voxel>
-        <Voxel>0,6,6</Voxel>
-        <Voxel>0,6,7</Voxel>
-        <Voxel>0,7,5</Voxel>
-        <Voxel>0,7,6</Voxel>
-        <Voxel>0,7,7</Voxel>
+        <Voxel>0 0 5</Voxel>
+        <Voxel>0 0 6</Voxel>
+        <Voxel>0 0 7</Voxel>
+        <Voxel>0 1 5</Voxel>
+        <Voxel>0 1 6</Voxel>
+        <Voxel>0 1 7</Voxel>
+        <Voxel>0 2 5</Voxel>
+        <Voxel>0 2 6</Voxel>
+        <Voxel>0 2 7</Voxel>
+        <Voxel>0 5 5</Voxel>
+        <Voxel>0 5 6</Voxel>
+        <Voxel>0 5 7</Voxel>
+        <Voxel>0 6 5</Voxel>
+        <Voxel>0 6 6</Voxel>
+        <Voxel>0 6 7</Voxel>
+        <Voxel>0 7 5</Voxel>
+        <Voxel>0 7 6</Voxel>
+        <Voxel>0 7 7</Voxel>
       </IntersectedVoxels>
     </FRegion>
     <FRegion>
@@ -109,24 +109,24 @@
       <AngDisplaceY>0</AngDisplaceY>
       <AngDisplaceZ>0</AngDisplaceZ>
       <IntersectedVoxels>
-        <Voxel>11,4,25</Voxel>
-        <Voxel>11,4,26</Voxel>
-        <Voxel>11,4,27</Voxel>
-        <Voxel>11,5,25</Voxel>
-        <Voxel>11,5,26</Voxel>
-        <Voxel>11,5,27</Voxel>
-        <Voxel>11,6,25</Voxel>
-        <Voxel>11,6,26</Voxel>
-        <Voxel>11,6,27</Voxel>
-        <Voxel>11,9,25</Voxel>
-        <Voxel>11,9,26</Voxel>
-        <Voxel>11,9,27</Voxel>
-        <Voxel>11,10,25</Voxel>
-        <Voxel>11,10,26</Voxel>
-        <Voxel>11,10,27</Voxel>
-        <Voxel>11,11,25</Voxel>
-        <Voxel>11,11,26</Voxel>
-        <Voxel>11,11,27</Voxel>
+        <Voxel>11 4 25</Voxel>
+        <Voxel>11 4 26</Voxel>
+        <Voxel>11 4 27</Voxel>
+        <Voxel>11 5 25</Voxel>
+        <Voxel>11 5 26</Voxel>
+        <Voxel>11 5 27</Voxel>
+        <Voxel>11 6 25</Voxel>
+        <Voxel>11 6 26</Voxel>
+        <Voxel>11 6 27</Voxel>
+        <Voxel>11 9 25</Voxel>
+        <Voxel>11 9 26</Voxel>
+        <Voxel>11 9 27</Voxel>
+        <Voxel>11 10 25</Voxel>
+        <Voxel>11 10 26</Voxel>
+        <Voxel>11 10 27</Voxel>
+        <Voxel>11 11 25</Voxel>
+        <Voxel>11 11 26</Voxel>
+        <Voxel>11 11 27</Voxel>
       </IntersectedVoxels>
     </FRegion>
   </Boundary_Conditions>
@@ -151,8 +151,8 @@
     <X_Component>-10</X_Component>
     <Y_Component>0</Y_Component>
     <Z_Component>0</Z_Component>
-    <Location>7,8,11</Location>
-    <Vector>-10,0,0</Vector>
+    <Location>7 8 11</Location>
+    <Vector>-10 0 0</Vector>
   </Force>
   <Force>
     <X_Index>8</X_Index>
@@ -161,8 +161,8 @@
     <X_Component>-5</X_Component>
     <Y_Component>0</Y_Component>
     <Z_Component>0</Z_Component>
-    <Location>8,9,16</Location>
-    <Vector>-5,0,0</Vector>
+    <Location>8 9 16</Location>
+    <Vector>-5 0 0</Vector>
   </Force>
 </Forces>
 <Sensors>
@@ -170,13 +170,13 @@
     <X_Index>3</X_Index>
     <Y_Index>9</Y_Index>
     <Z_Index>16</Z_Index>
-    <Location>3,9,16</Location>
+    <Location>3 9 16</Location>
   </Sensor>
   <Sensor>
     <X_Index>4</X_Index>
     <Y_Index>10</Y_Index>
     <Z_Index>12</Z_Index>
-    <Location>4,10,12</Location>
+    <Location>4 10 12</Location>
   </Sensor>
 </Sensors>
 <VXC Version="0.94">
