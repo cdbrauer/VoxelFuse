@@ -774,6 +774,19 @@ class VoxelModel:
 
     - Return a model
     """
+    def translate(self, vector = (0, 0, 0)):
+        new_model = VoxelModel.copy(self)
+        new_model.coords = (self.coords[0]+vector[0], self.coords[1]+vector[1], self.coords[2]+vector[2])
+        return new_model
+
+    def translateMM(self, vector = (0.0, 0.0, 0.0)):
+        xV = int(round(vector[0] * self.resolution))
+        yV = int(round(vector[1] * self.resolution))
+        zV = int(round(vector[2] * self.resolution))
+        vector_voxels = (xV, yV, zV)
+        new_model = self.translate(vector_voxels)
+        return new_model
+
     def rotate(self, angle, axis = Axes.Z):
         if axis == Axes.X:
             plane = (1, 2)
