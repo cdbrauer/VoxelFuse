@@ -507,36 +507,9 @@ class VoxelModel:
             return VoxelModel(new_voxels, new_materials, new_coords, self.resolution)
 
         else:
-            a = self.voxels
-
-            x_len = a.shape[0]
-            y_len = a.shape[1]
-            z_len = a.shape[2]
-
-            new_voxels = np.zeros_like(a, dtype=np.uint16)
-            new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
-
-            for x in range(x_len):
-                for y in range(y_len):
-                    for z in range(z_len):
-                        i1 = int(a[x, y, z])
-                        m1 = self.materials[i1]
-
-                        m = m1 * other
-
-                        if other == 0:
-                            m[0] = 0
-                        else:
-                            m[0] = m1[0]
-
-                        i = np.where(np.equal(new_materials, m).all(1))[0]
-                        if len(i) > 0:
-                            new_voxels[x, y, z] = i[0]
-                        else:
-                            new_materials = np.vstack((new_materials, m))
-                            new_voxels[x, y, z] = len(new_materials) - 1
-
-            return VoxelModel(new_voxels, new_materials, self.coords, self.resolution)
+            new_model = VoxelModel.copy(self)
+            new_model.materials[1:, 1:] = np.multiply(new_model.materials[1:, 1:], other)
+            return new_model
 
     def __mul__(self, other):
         return self.multiply(other)
@@ -578,32 +551,9 @@ class VoxelModel:
             if other == 0:
                 return self
 
-            a = self.voxels
-
-            x_len = a.shape[0]
-            y_len = a.shape[1]
-            z_len = a.shape[2]
-
-            new_voxels = np.zeros_like(a, dtype=np.uint16)
-            new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
-
-            for x in range(x_len):
-                for y in range(y_len):
-                    for z in range(z_len):
-                        i1 = int(a[x, y, z])
-                        m1 = self.materials[i1]
-
-                        m = m1 / other
-                        m[0] = m1[0]
-
-                        i = np.where(np.equal(new_materials, m).all(1))[0]
-                        if len(i) > 0:
-                            new_voxels[x, y, z] = i[0]
-                        else:
-                            new_materials = np.vstack((new_materials, m))
-                            new_voxels[x, y, z] = len(new_materials) - 1
-
-            return VoxelModel(new_voxels, new_materials, self.coords, self.resolution)
+            new_model = VoxelModel.copy(self)
+            new_model.materials[1:, 1:] = np.divide(new_model.materials[1:, 1:], other)
+            return new_model
 
     def __truediv__(self, other):
         return self.divide(other)
@@ -762,8 +712,14 @@ class VoxelModel:
         new_model.materials = new_materials
         return new_model
 
+    def clearNull(self):
+        new_model = VoxelModel.copy(self)
+        new_model.materials[1:, 1] = np.zeros(np.shape(new_model.materials[1:,1]))
+        return new_model
+
     def setDensity(self, density = 1.0):
-        new_model = self.scaleValues()
+        new_model = self.clearNull()
+        new_model = new_model.scaleValues()
         null_material_values = np.multiply(np.ones(np.shape(new_model.materials[1:,1])), 1-density)
         new_model.materials[1:, 1] = null_material_values
         new_model.materials[1:, 2:] = np.multiply(new_model.materials[1:, 2:], density)
@@ -1401,7 +1357,7 @@ def toIndexedMaterials(voxels, model, resolution):
     new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
     new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
 
-    for x in tqdm(range(x_len), desc='Converting to indexed materials'):
+    for x in range(x_len): # tqdm(range(x_len), desc='Converting to indexed materials'):
         for y in range(y_len):
             for z in range(z_len):
                 m = voxels[x, y, z, :]
