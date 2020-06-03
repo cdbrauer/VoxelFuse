@@ -167,6 +167,7 @@ class Simulation:
     # Fixed DOF bits correspond to: X, Y, Z, Rx, Ry, Rz
     #   0: Free, force will be applied
     #   1: Fixed, displacement will be applied
+    # Displacement is expressed in mm
 
     # Default box boundary condition is a fixed constraint in the YZ plane
     def addBoundaryConditionBox(self, position = (0.0, 0.0, 0.0), size = (0.01, 1.0, 1.0), fixed_dof = 0b111111, force = (0, 0, 0), displacement = (0, 0, 0), torque = (0, 0, 0), angular_displacement = (0, 0, 0)):
@@ -342,9 +343,9 @@ class Simulation:
             f.write('      <TorqueX>' + str(self.__bcRegions[r][7][0]) + '</TorqueX>\n')
             f.write('      <TorqueY>' + str(self.__bcRegions[r][7][1]) + '</TorqueY>\n')
             f.write('      <TorqueZ>' + str(self.__bcRegions[r][7][2]) + '</TorqueZ>\n')
-            f.write('      <DisplaceX>' + str(self.__bcRegions[r][8][0]) + '</DisplaceX>\n')
-            f.write('      <DisplaceY>' + str(self.__bcRegions[r][8][1]) + '</DisplaceY>\n')
-            f.write('      <DisplaceZ>' + str(self.__bcRegions[r][8][2]) + '</DisplaceZ>\n')
+            f.write('      <DisplaceX>' + str(self.__bcRegions[r][8][0] * 1e-3) + '</DisplaceX>\n')
+            f.write('      <DisplaceY>' + str(self.__bcRegions[r][8][1] * 1e-3) + '</DisplaceY>\n')
+            f.write('      <DisplaceZ>' + str(self.__bcRegions[r][8][2] * 1e-3) + '</DisplaceZ>\n')
             f.write('      <AngDisplaceX>' + str(self.__bcRegions[r][9][0]) + '</AngDisplaceX>\n')
             f.write('      <AngDisplaceY>' + str(self.__bcRegions[r][9][1]) + '</AngDisplaceY>\n')
             f.write('      <AngDisplaceZ>' + str(self.__bcRegions[r][9][2]) + '</AngDisplaceZ>\n')
