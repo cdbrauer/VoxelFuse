@@ -164,7 +164,7 @@ class Simulation:
     # Add forces, constraints, and sensors ##################################
     # Boundary condition sizes and positions are expressed as percentages of the overall model size
     #   radius is a percentage of the largest model dimension
-    # Fixed DOF bits correspond to: X, Y, Z, Rx, Ry, Rz
+    # Fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X
     #   0: Free, force will be applied
     #   1: Fixed, displacement will be applied
     # Displacement is expressed in mm
