@@ -2,7 +2,7 @@
 Copyright 2020
 Dan Aukes, Cole Brauer
 
-Export a VoxelFuse model as a .vxc file that can be imported into VoxCad
+Export a simulation that applies forces to two simple objects
 """
 
 from voxelfuse.voxel_model import VoxelModel
