@@ -7,13 +7,29 @@ Functions for generating triply periodic structures
 
 import math
 import numpy as np
+from typing import Tuple
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.materials import material_properties
 from tqdm import tqdm
 
-def gyroid(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2, resolution = 1):
-    #a - Scale (voxels/unit)
-    #size - Volume
+def gyroid(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1):
+    """
+    Generate a Gyroid pattern over a rectangular region.
+
+    This function will generate two models representing the "positive" and
+    "negative" halves of the pattern. If a thin surface is desired,
+    these two models can be dilated and the intersection of the results found.
+    However, due to the voxel-based representation, this "surface" will have
+    a non-zero thickness.
+
+    :param size: Size of rectangular region
+    :param scale: Period of the surface function in voxels
+    :param coords: Model origin coordinates
+    :param material1: Material index for negative model, corresponds to materials.py
+    :param material2: Material index for positive model, corresponds to materials.py
+    :param resolution: Number of voxels per mm
+    :return: Negative model, Positive model
+    """
 
     s = (2 * math.pi) / scale  # scaling multipler
 
@@ -35,9 +51,24 @@ def gyroid(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, m
 
     return surface_model_inner, surface_model_outer
 
-def schwarzP(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2, resolution = 1):
-    #a - Scale (voxels/unit)
-    #size - Volume
+def schwarzP(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1):
+    """
+    Generate a Schwarz P-surface over a rectangular region.
+
+    This function will generate two models representing the "positive" and
+    "negative" halves of the pattern. If a thin surface is desired,
+    these two models can be dilated and the intersection of the results found.
+    However, due to the voxel-based representation, this "surface" will have
+    a non-zero thickness.
+
+    :param size: Size of rectangular region
+    :param scale: Period of the surface function in voxels
+    :param coords: Model origin coordinates
+    :param material1: Material index for negative model, corresponds to materials.py
+    :param material2: Material index for positive model, corresponds to materials.py
+    :param resolution: Number of voxels per mm
+    :return: Negative model, Positive model
+    """
 
     s = (2 * math.pi) / scale  # scaling multipler
 
@@ -59,9 +90,24 @@ def schwarzP(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1,
 
     return surface_model_inner, surface_model_outer
 
-def schwarzD(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2, resolution = 1):
-    #scale - voxels/period
-    #size - Volume
+def schwarzD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1):
+    """
+    Generate a Schwarz D-surface over a rectangular region.
+
+    This function will generate two models representing the "positive" and
+    "negative" halves of the pattern. If a thin surface is desired,
+    these two models can be dilated and the intersection of the results found.
+    However, due to the voxel-based representation, this "surface" will have
+    a non-zero thickness.
+
+    :param size: Size of rectangular region
+    :param scale: Period of the surface function in voxels
+    :param coords: Model origin coordinates
+    :param material1: Material index for negative model, corresponds to materials.py
+    :param material2: Material index for positive model, corresponds to materials.py
+    :param resolution: Number of voxels per mm
+    :return: Negative model, Positive model
+    """
 
     s = (2 * math.pi) / scale # scaling multipler
 
@@ -84,9 +130,24 @@ def schwarzD(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1,
 
     return surface_model_inner, surface_model_outer
 
-def FRD(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, material2 = 2, resolution = 1):
-    #a - Scale (voxels/unit)
-    #size - Volume
+def FRD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1):
+    """
+    Generate a FRD surface over a rectangular region.
+
+    This function will generate two models representing the "positive" and
+    "negative" halves of the pattern. If a thin surface is desired,
+    these two models can be dilated and the intersection of the results found.
+    However, due to the voxel-based representation, this "surface" will have
+    a non-zero thickness.
+
+    :param size: Size of rectangular region
+    :param scale: Period of the surface function in voxels
+    :param coords: Model origin coordinates
+    :param material1: Material index for negative model, corresponds to materials.py
+    :param material2: Material index for positive model, corresponds to materials.py
+    :param resolution: Number of voxels per mm
+    :return: Negative model, Positive model
+    """
 
     s = (2 * math.pi) / scale # scaling multipler
 
@@ -109,10 +170,14 @@ def FRD(size = (15, 15, 15), scale = 15, coords = (0, 0, 0), material1 = 1, mate
 
     return surface_model_inner, surface_model_outer
 
-
 # Helper functions
+def generateMaterials(m: int):
+    """
+    Generate the materials table for a single-material VoxelModel.
 
-def generateMaterials(m):
+    :param m: Material index corresponding to materials.py
+    :return: Array containing the specified material and the empty material
+    """
     materials = np.zeros(len(material_properties) + 1, dtype=np.float)
     material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
     material_vector[0] = 1

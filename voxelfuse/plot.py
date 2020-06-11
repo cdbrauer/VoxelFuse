@@ -1,19 +1,35 @@
 """
 Copyright 2018-2019
 Dan Aukes, Cole Brauer
+
+Plot Class
+Initialized from mesh data
 """
 
 import numpy as np
 import PyQt5.QtGui as qg
 import pyqtgraph.opengl as pgo
+from typing import Tuple
 
-"""
-Plot Class
-
-Initialized from mesh data
-"""
 class Plot:
-    def __init__(self, mesh, grids = False, drawEdges=True, edgeColor=(0, 0, 0, 0.5), positionOffset = (0, 0, 0), viewAngle = (40, 30, 300), resolution = (1280, 720), name = 'Plot 1'):
+    """
+    Create a Plot object that can be displayed or exported.
+    """
+
+    def __init__(self, mesh, grids: bool = False, drawEdges: bool = True, edgeColor: Tuple[float, float, float, float] = (0, 0, 0, 0.5), positionOffset: Tuple[int, int, int] = (0, 0, 0), viewAngle: Tuple[int, int, int] = (40, 30, 300), resolution: Tuple[int, int] = (1280, 720), name: str = 'Plot 1'):
+        """
+        Initialize a Plot object from a Mesh object.
+
+        :param mesh: Mesh object to be plotted
+        :param grids: Enable/disable display of XYZ axes and grids
+        :param drawEdges: Enable/disable display of voxel edges
+        :param edgeColor: Set display color of voxel edges
+        :param positionOffset: Offset of the camera target from the center of the model in voxels
+        :param viewAngle: Elevation, Azimuth, and Distance of the camera
+        :param resolution: Number of voxels per mm
+        :param name: Plot window name
+        """
+
         self.mesh = mesh
         self.grids = grids
         self.drawEdges = drawEdges
@@ -25,6 +41,12 @@ class Plot:
         self.widget = None
 
     def show(self):
+        """
+        Display a Plot object.
+
+        :return: None
+        """
+
         mesh_data = pgo.MeshData(vertexes=self.mesh.verts, faces=self.mesh.tris, vertexColors=self.mesh.colors, faceColors=None)
         mesh_item = pgo.GLMeshItem(meshdata=mesh_data, shader='balloon', drawEdges=self.drawEdges, edgeColor=self.edgeColor,
                                    smooth=False, computeNormals=False, glOptions='translucent')
@@ -76,6 +98,13 @@ class Plot:
         self.widget = widget
 
     def export(self, filename):
+        """
+        Export an image file with the specified file name.
+
+        :param filename: File name with extension
+        :return: None
+        """
+
         if self.widget is not None:
             self.widget.paintGL()
             self.widget.grabFrameBuffer().save(filename)

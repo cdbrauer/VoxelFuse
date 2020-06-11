@@ -2,31 +2,66 @@
 Copyright 2020
 Cole Brauer, Dan Aukes
 
-Functions for generating primitive solids
+Functions for generating primitive solids.
 """
 
 import numpy as np
+from typing import Tuple
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.materials import material_properties
 
 # Basic primitives
-def empty(coords = (0, 0, 0), resolution = 1):
+def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
+    """
+    Create a VoxelModel containing a single empty voxel at the specified coordinates.
+
+    :param coords: Model origin coordinates
+    :param resolution: Number of voxels per mm
+    :return: VoxelModel
+    """
     model_data = np.zeros((1, 1, 1), dtype=np.uint16)
     materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
     model = VoxelModel(model_data, materials, coords=coords, resolution=resolution)
     return model
 
-def cube(size = 1, coords = (0, 0, 0), material = 1, resolution = 1):
+def cube(size: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    """
+    Create a VoxelModel containing a cube.
+
+    :param size: Length of cube side in voxels
+    :param coords: Model origin coordinates
+    :param material: Material index corresponding to materials.py
+    :param resolution: Number of voxels per mm
+    :return: VoxelModel
+    """
     model_data = np.ones((size, size, size), dtype=np.uint16)
     model = VoxelModel(model_data, generateMaterials(material), coords=coords, resolution=resolution)
     return model
 
-def cuboid(size = (1, 1, 1), coords = (0, 0, 0), material=1, resolution = 1):
+def cuboid(size: Tuple[int, int, int] = (1, 1, 1), coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    """
+    Create a VoxelModel containing a cuboid.
+
+    :param size: Lengths of cuboid sides in voxels
+    :param coords: Model origin coordinates
+    :param material: Material index corresponding to materials.py
+    :param resolution: Number of voxels per mm
+    :return: VoxelModel
+    """
     model_data = np.ones((size[0], size[1], size[2]), dtype=np.uint16)
     model = VoxelModel(model_data, generateMaterials(material), coords=coords, resolution=resolution)
     return model
 
-def sphere(radius = 1, coords = (0, 0, 0), material = 1, resolution = 1):
+def sphere(radius: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    """
+    Create a VoxelModel containing a sphere.
+
+    :param radius: Radius of sphere in voxels
+    :param coords: Model origin coordinates
+    :param material: Material index corresponding to materials.py
+    :param resolution: Number of voxels per mm
+    :return: VoxelModel
+    """
     diameter = (radius*2) + 1
     model_data = np.zeros((diameter, diameter, diameter), dtype=np.uint16)
 
@@ -44,7 +79,17 @@ def sphere(radius = 1, coords = (0, 0, 0), material = 1, resolution = 1):
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-radius, coords[1]-radius, coords[2]-radius), resolution=resolution)
     return model
 
-def cylinder(radius=1, height=1, coords=(0, 0, 0), material=1, resolution = 1):
+def cylinder(radius: int = 1, height: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    """
+    Create a VoxelModel containing a cylinder.
+
+    :param radius: Radius of cylinder in voxels
+    :param height: Height of cylinder in voxels
+    :param coords: Model origin coordinates
+    :param material: Material index corresponding to materials.py
+    :param resolution: Number of voxels per mm
+    :return: VoxelModel
+    """
     diameter = (radius * 2) + 1
     model_data = np.zeros((diameter, diameter, 1), dtype=np.uint16)
 
@@ -62,7 +107,18 @@ def cylinder(radius=1, height=1, coords=(0, 0, 0), material=1, resolution = 1):
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-radius, coords[1]-radius, coords[2]), resolution=resolution)
     return model
 
-def cone(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1, resolution = 1):
+def cone(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    """
+    Create a VoxelModel containing a cylinder.
+
+    :param min_radius: Point radius of cone in voxels
+    :param max_radius: Base radius of cone in voxels
+    :param height: Height of cone in voxels
+    :param coords: Model origin coordinates
+    :param material: Material index corresponding to materials.py
+    :param resolution: Number of voxels per mm
+    :return: VoxelModel
+    """
     max_diameter = (max_radius*2)+1
     model_data = np.zeros((max_diameter, max_diameter, height), dtype=np.uint16)
 
@@ -81,7 +137,18 @@ def cone(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1, res
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
     return model
 
-def pyramid(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1, resolution = 1):
+def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    """
+    Create a VoxelModel containing a cylinder.
+
+    :param min_radius: Point radius of pyramid in voxels
+    :param max_radius: Base radius of pyramid in voxels
+    :param height: Height of pyramid in voxels
+    :param coords: Model origin coordinates
+    :param material: Material index corresponding to materials.py
+    :param resolution: Number of voxels per mm
+    :return: VoxelModel
+    """
     max_diameter = (max_radius * 2) + 1
     model_data = np.zeros((max_diameter, max_diameter, height), dtype=np.uint16)
 
@@ -96,10 +163,14 @@ def pyramid(min_radius=0, max_radius=4, height=5, coords=(0, 0, 0), material=1, 
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
     return model
 
-
 # Helper functions
+def generateMaterials(m: int):
+    """
+    Generate the materials table for a single-material VoxelModel.
 
-def generateMaterials(m):
+    :param m: Material index corresponding to materials.py
+    :return: Array containing the specified material and the empty material
+    """
     materials = np.zeros(len(material_properties) + 1, dtype=np.float)
     material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
     material_vector[0] = 1
