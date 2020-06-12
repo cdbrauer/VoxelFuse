@@ -1,6 +1,6 @@
 """
 Copyright 2020
-Dan Aukes, Cole Brauer
+Cole Brauer, Dan Aukes
 
 Export a simulation that applies forces to two simple objects
 """

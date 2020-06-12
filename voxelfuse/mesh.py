@@ -16,7 +16,7 @@ from voxelfuse.materials import material_properties
 
 class Mesh:
     """
-    Create a Mesh object that can be exported or passed to a Plot object
+    Mesh object that can be exported or passed to a Plot object.
     """
 
     def __init__(self, input_model, verts, verts_colors, tris, resolution):

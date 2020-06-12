@@ -13,7 +13,7 @@ from typing import Tuple
 
 class Plot:
     """
-    Create a Plot object that can be displayed or exported.
+    Plot object that can be displayed or exported.
     """
 
     def __init__(self, mesh, grids: bool = False, drawEdges: bool = True, edgeColor: Tuple[float, float, float, float] = (0, 0, 0, 0.5), positionOffset: Tuple[int, int, int] = (0, 0, 0), viewAngle: Tuple[int, int, int] = (40, 30, 300), resolution: Tuple[int, int] = (1280, 720), name: str = 'Plot 1'):
