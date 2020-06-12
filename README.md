@@ -11,14 +11,16 @@ VoxelFuse provides a set of Python commands for importing, modifying, displaying
 Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at ASU.
 
 ## Features
-- .vox and .stl file import
-- Isolation of specific materials and layers
 - Boolean operations for both volumes and materials
-- Dilate and Erode Operations
-- Gaussian Blurring
+- Morphology operations
+- Gaussian blurring
+- Primitive solid generation
+- Triply periodic structure generation
 - Conversion of voxel data to mesh surfaces
 - Model rendering with grids and axes
-- .stl file export
+- VoxCad simulation configuration
+- .vf, .vox, and .stl file import
+- .vf, .vxc, .vxa, and .stl file export
 - .gcode file modification
 
 ## Installation
@@ -27,12 +29,14 @@ The voxelfuse library can be installed using pip.
 
     pip3 install voxelfuse
 
-To use the .stl file import commands/examples, [Gmsh](http://gmsh.info/) must also be installed.
+To use the .stl file import commands/examples, [Gmsh](http://gmsh.info/) must also be installed and on the system path.
+
+To use the simulation commands/examples, [VoxCad](https://sites.google.com/site/voxcadproject/) must also be installed and on the system path.
 
 ## .vox File Generation
 If desired, input models can be created in a .vox file format to allow different materials to be specified in a single model.  This also speeds up import times. My process using [MagicaVoxel](https://ephtracy.github.io) is as follows:
 
-1. Use the "Open" button under the "Palette" section to open the [color-palette-8mat.png](../master/images/color-palette-8mat.png) file. This will give you 8 colors that correspond to the materials defined in materials.py
+1. Use the "Open" button under the "Palette" section to open the [color-palette-11mat.png](../master/images/color-palette-11mat.png) file. This will give you 11 colors that correspond to the materials defined in materials.py
 2. Create your model. By default the library will use a scale of 1mm per voxel when importing/exporting.
 3. Save the model as a .vox file using the "export" function  (NOT the "save" function).
 
@@ -40,7 +44,7 @@ Using MagicaVoxel and the .vox format will limit you to using distinct voxel mat
 
 ## Documentation
 
-Please see the [wiki](https://github.com/cdbrauer/VoxelFuse/wiki) for code documentation.
+See [cdbrauer.github.io/VoxelFuse](https://cdbrauer.github.io/VoxelFuse/) for code documentation.
 
 <br/><br/>
 
