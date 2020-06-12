@@ -3,6 +3,8 @@ Mesh Class
 
 Initialized from a voxel model
 
+----
+
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 

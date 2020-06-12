@@ -1,8 +1,7 @@
 """
 Material data array
 
-Properties:
----
+### Properties
 
 - name - display name of the material
 - process - method used to create parts made of this material
@@ -23,12 +22,13 @@ Properties:
 - MM - material model, 0=linear, 1=linear+failure, 2=bilinear
 - FM - failure model, 0=stress, 1=strain
 
-Processes:
----
+### Processes
 
 - 3dp: 3D Printing
 - laser: Laser Cutting
 - ins: Inserted component
+
+----
 
 Copyright 2020 - Dan Aukes, Cole Brauer
 """

@@ -1,6 +1,8 @@
 """
 Functions for manipulating gcode files
 
+----
+
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 

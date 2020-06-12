@@ -1,6 +1,8 @@
 """
 Functions for generating triply periodic structures.
 
+----
+
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 

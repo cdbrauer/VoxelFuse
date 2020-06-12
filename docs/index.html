@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
 <title>voxelfuse API documentation</title>
-<meta name="description" content="VoxelFuse: The multi-material manufacturing toolkit …" />
+<meta name="description" content="…" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -20,7 +20,81 @@
 <h1 class="title">Package <code>voxelfuse</code></h1>
 </header>
 <section id="section-intro">
-<p>VoxelFuse: The multi-material manufacturing toolkit</p>
+<hr>
+<h1 id="voxelfuse">VoxelFuse</h1>
+<p>The multi-material manufacturing toolkit</p>
+<p>VoxelFuse provides a set of Python commands for importing, modifying, displaying, and exporting multi-material 3D model data.
+This library allows scripts to be quickly created for processing different classes of models and generating the files needed to produce them.</p>
+<p>Created as part of a research project with <a href="http://idealab.asu.edu">IDEAlab</a> at ASU.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li>Boolean operations for both volumes and materials</li>
+<li>Morphology operations</li>
+<li>Gaussian blurring</li>
+<li>Primitive solid generation</li>
+<li>Triply periodic structure generation</li>
+<li>Conversion of voxel data to mesh surfaces</li>
+<li>Model rendering with grids and axes</li>
+<li>VoxCad simulation configuration</li>
+<li>.vf, .vox, and .stl file import</li>
+<li>.vf, .vxc, .vxa, and .stl file export</li>
+<li>.gcode file modification</li>
+</ul>
+<h2 id="installation">Installation</h2>
+<p>The voxelfuse library can be installed using pip.</p>
+<pre><code>pip3 install voxelfuse
+</code></pre>
+<p>To use the .stl file import commands/examples, <a href="http://gmsh.info/">Gmsh</a> must also be installed and on the system path.</p>
+<p>To use the simulation commands/examples, <a href="https://sites.google.com/site/voxcadproject/">VoxCad</a> must also be installed and on the system path.</p>
+<h2 id="templates">Templates</h2>
+<p>Template for creating scripts using the built-in viewer:</p>
+<pre><code># Import Libraries
+import PyQt5.QtGui as qg
+import sys
+from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.mesh import Mesh
+from voxelfuse.plot import Plot
+
+# Start Application
+if __name__=='__main__':
+    app1 = qg.QApplication(sys.argv)
+
+    # Import Models
+    modelIn = VoxelModel.fromVoxFile('model1.vox')
+
+    # Process Models
+    modelResult = modelIn
+
+    # Create and Export Mesh
+    mesh1 = Mesh.fromVoxelModel(modelResult)
+    mesh1.export('modelResult.stl')
+
+    # Create and Export Plot
+    plot1 = Plot(mesh1)
+    plot1.show()
+    app1.processEvents()
+    plot1.export('result.png')
+
+    app1.exec_()
+</code></pre>
+<p>Template for creating scripts using VoxCad simulation:</p>
+<pre><code># Import Libraries
+from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.simulation import Simulation
+
+# Start Application
+if __name__=='__main__':
+    # Import Models
+    modelIn = VoxelModel.fromVoxFile('model1.vox')
+
+    # Process Models
+    modelResult = modelIn
+
+    # Create simulation and launch
+    simulation = Simulation(modelIn)
+    simulation.launchSim()
+</code></pre>
+<hr>
 <p>Copyright 2020 - Cole Brauer, Dan Aukes</p>
 <details class="source">
 <summary>
@@ -28,7 +102,91 @@
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 &#34;&#34;&#34;
-VoxelFuse: The multi-material manufacturing toolkit
+----
+
+# VoxelFuse
+
+The multi-material manufacturing toolkit
+
+VoxelFuse provides a set of Python commands for importing, modifying, displaying, and exporting multi-material 3D model data.  This library allows scripts to be quickly created for processing different classes of models and generating the files needed to produce them.
+
+Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at ASU.
+
+## Features
+- Boolean operations for both volumes and materials
+- Morphology operations
+- Gaussian blurring
+- Primitive solid generation
+- Triply periodic structure generation
+- Conversion of voxel data to mesh surfaces
+- Model rendering with grids and axes
+- VoxCad simulation configuration
+- .vf, .vox, and .stl file import
+- .vf, .vxc, .vxa, and .stl file export
+- .gcode file modification
+
+## Installation
+
+The voxelfuse library can be installed using pip.
+
+    pip3 install voxelfuse
+
+To use the .stl file import commands/examples, [Gmsh](http://gmsh.info/) must also be installed and on the system path.
+
+To use the simulation commands/examples, [VoxCad](https://sites.google.com/site/voxcadproject/) must also be installed and on the system path.
+
+## Templates
+
+Template for creating scripts using the built-in viewer:
+
+    # Import Libraries
+    import PyQt5.QtGui as qg
+    import sys
+    from voxelfuse.voxel_model import VoxelModel
+    from voxelfuse.mesh import Mesh
+    from voxelfuse.plot import Plot
+
+    # Start Application
+    if __name__==&#39;__main__&#39;:
+        app1 = qg.QApplication(sys.argv)
+
+        # Import Models
+        modelIn = VoxelModel.fromVoxFile(&#39;model1.vox&#39;)
+
+        # Process Models
+        modelResult = modelIn
+
+        # Create and Export Mesh
+        mesh1 = Mesh.fromVoxelModel(modelResult)
+        mesh1.export(&#39;modelResult.stl&#39;)
+
+        # Create and Export Plot
+        plot1 = Plot(mesh1)
+        plot1.show()
+        app1.processEvents()
+        plot1.export(&#39;result.png&#39;)
+
+        app1.exec_()
+
+Template for creating scripts using VoxCad simulation:
+
+    # Import Libraries
+    from voxelfuse.voxel_model import VoxelModel
+    from voxelfuse.simulation import Simulation
+
+    # Start Application
+    if __name__==&#39;__main__&#39;:
+        # Import Models
+        modelIn = VoxelModel.fromVoxFile(&#39;model1.vox&#39;)
+
+        # Process Models
+        modelResult = modelIn
+
+        # Create simulation and launch
+        simulation = Simulation(modelIn)
+        simulation.launchSim()
+
+----
 
 Copyright 2020 - Cole Brauer, Dan Aukes
 &#34;&#34;&#34;
@@ -84,7 +242,14 @@ __version__ = &#34;1.1.7&#34;</code></pre>
 <nav id="sidebar">
 <h1>Index</h1>
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#voxelfuse">VoxelFuse</a><ul>
+<li><a href="#features">Features</a></li>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#templates">Templates</a></li>
+</ul>
+</li>
+</ul>
 </div>
 <ul id="index">
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>

@@ -1,6 +1,8 @@
 """
 Functions for generating primitive solids.
 
+----
+
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 

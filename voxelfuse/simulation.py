@@ -3,6 +3,8 @@ Simulation Class
 
 Initialized from a VoxelModel object. Used to configure VoxCad and Voxelyze simulations.
 
+----
+
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 

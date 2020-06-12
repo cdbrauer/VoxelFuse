@@ -1,6 +1,8 @@
 """
 VoxelModel Class
 
+----
+
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 

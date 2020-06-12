@@ -3,6 +3,8 @@ Plot Class
 
 Initialized from mesh data
 
+----
+
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
