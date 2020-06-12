@@ -163,7 +163,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
     return model
 
-# Helper functions
+# Helper functions ##############################################################
 def generateMaterials(m: int):
     """
     Generate the materials table for a single-material VoxelModel.

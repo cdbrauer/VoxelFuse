@@ -1,6 +1,6 @@
 """
-Copyright 2018-2019
-Dan Aukes, Cole Brauer
+Copyright 2020
+Cole Brauer, Dan Aukes
 
 Plot Class
 Initialized from mesh data
@@ -29,7 +29,6 @@ class Plot:
         :param resolution: Number of voxels per mm
         :param name: Plot window name
         """
-
         self.mesh = mesh
         self.grids = grids
         self.drawEdges = drawEdges
@@ -42,11 +41,22 @@ class Plot:
 
     def show(self):
         """
-        Display a Plot object.
+        Generate an display widget based on the plot settings and display it.
+
+        ----
+
+        Example:
+
+        app1 = qg.QApplication(sys.argv)\n
+        plot1 = Plot(mesh1)\n
+        plot1.show()\n
+        app1.processEvents()\n
+        app1.exec_()
+
+        ----
 
         :return: None
         """
-
         mesh_data = pgo.MeshData(vertexes=self.mesh.verts, faces=self.mesh.tris, vertexColors=self.mesh.colors, faceColors=None)
         mesh_item = pgo.GLMeshItem(meshdata=mesh_data, shader='balloon', drawEdges=self.drawEdges, edgeColor=self.edgeColor,
                                    smooth=False, computeNormals=False, glOptions='translucent')
@@ -97,14 +107,26 @@ class Plot:
 
         self.widget = widget
 
-    def export(self, filename):
+    def export(self, filename: str):
         """
-        Export an image file with the specified file name.
+        Save a screenshot of the last generated plot widget with the specified name and file format.
+
+        ----
+
+        Example:
+
+        app1 = qg.QApplication(sys.argv)\n
+        plot1 = Plot(mesh1)\n
+        plot1.show()\n
+        app1.processEvents()\n
+        plot1.export('result.png')\n
+        app1.exec_()
+
+        ----
 
         :param filename: File name with extension
         :return: None
         """
-
         if self.widget is not None:
             self.widget.paintGL()
             self.widget.grabFrameBuffer().save(filename)

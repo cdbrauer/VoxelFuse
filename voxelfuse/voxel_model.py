@@ -1,6 +1,8 @@
 """
 Copyright 2020
 Cole Brauer, Dan Aukes
+
+VoxelModel Class
 """
 
 import os
@@ -10,15 +12,29 @@ import numpy as np
 import zlib
 import base64
 from enum import Enum
+from typing import Tuple, TextIO
 from pyvox.parser import VoxParser
 from voxelfuse.materials import material_properties
 from scipy import ndimage
 from numba import njit, prange
 from tqdm import tqdm
 
+# Floating point error threshold for rounding to zero
 FLOATING_ERROR = 0.0000000001
 
 class Axes(Enum):
+    """
+    Options for axes and planes.
+
+    Possible Values:\n
+    - X\n
+    - Y\n
+    - Z\n
+    - XY\n
+    - XZ\n
+    - YZ\n
+    - XYZ\n
+    """
     X = (1,0,0)
     Y = (0,1,0)
     Z = (0,0,1)
@@ -28,11 +44,29 @@ class Axes(Enum):
     XYZ = (1,1,1)
 
 class Dir(Enum):
+    """
+    Options for projection directions.
+
+    Possible Values:\n
+    - UP\n
+    - DOWN\n
+    - BOTH\n
+    """
     UP = 1
     DOWN = 2
     BOTH = 3
 
 class Process(Enum):
+    """
+    Options for manufacturing process types.
+
+    Possible Values:\n
+    - LASER\n
+    - MILL\n
+    - PRINT\n
+    - CAST\n
+    - INSERT\n
+    """
     LASER = 1
     MILL = 2
     PRINT = 3
@@ -40,26 +74,31 @@ class Process(Enum):
     INSERT = 5
 
 class Struct(Enum):
+    """
+    Options for structuring element shapes.
+
+    Possible Values:\n
+    - STANDARD\n
+    - SPHERE\n
+    """
     STANDARD = 1
     SPHERE = 2
 
-"""
-VoxelModel Class
-
-Initialized from a model array or file and position coordinates
-
-Properties:
-  model: array storing the index of the material present at each voxel
-         
-  materials: array of all material mixtures present in model, material format: <a, n, m0, m1, ... mn>
-         
-  coords: (x, y, z), position of model origin
-  
-  resolution: number of voxels per mm (higher number = finer resolution)
-"""
 class VoxelModel:
-    def __init__(self, voxels, materials, coords = (0, 0, 0), resolution = 1):
-        self.voxels = np.copy(voxels)
+    """
+    Create a VoxelModel object that stores geometry, position, and material information.
+    """
+
+    def __init__(self, voxels, materials, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
+        """
+        Initialize a VoxelModel object.
+
+        :param voxels: Array storing the index of the material present at each voxel
+        :param materials: Array of all material mixtures present in model, material format: (a, m0, m1, ... mn)
+        :param coords: Model origin coordinates
+        :param resolution: Number of voxels per mm (higher number = finer resolution)
+        """
+        self.voxels = np.copy(voxels) # Use np.copy to break references
         self.materials = np.copy(materials)
         self.coords = coords
         self.resolution = resolution
@@ -67,7 +106,23 @@ class VoxelModel:
         self.numComponents = 0
 
     @classmethod
-    def fromVoxFile(cls, filename, coords = (0, 0, 0), resolution = 1):
+    def fromVoxFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
+        """
+        Create a VoxelModel from an imported .vox file.
+
+        ----
+
+        Example:
+
+        model1 = VoxelModel.fromVoxFile('cylinder-red.vox', (0, 5, 0), 1)
+
+        ----
+
+        :param filename: File name with extension
+        :param coords: Model origin coordinates
+        :param resolution: Number of voxels per mm
+        :return: VoxelModel
+        """
         # Import data and align axes
         v1 = VoxParser(filename).parse()
         v2 = np.array(v1.to_dense(), dtype=np.uint16)
@@ -90,7 +145,24 @@ class VoxelModel:
         return cls(v2, materials, coords=coords, resolution=resolution)
 
     @classmethod
-    def fromMeshFile(cls, filename, coords = (0, 0, 0), material = 1, resolution = 1):
+    def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+        """
+        Create a VoxelModel from an imported mesh file.
+
+        ----
+
+        Example:
+
+        model1 = VoxelModel.fromMeshFile('center.stl', (67, 3, 0), 2, 1)
+
+        ____
+
+        :param filename: File name with extension
+        :param coords: Model origin coordinates
+        :param material: Material index corresponding to materials.py
+        :param resolution: Number of voxels per mm
+        :return: VoxelModel
+        """
         data = makeMesh(filename, True)
 
         points = data.points
@@ -153,31 +225,54 @@ class VoxelModel:
         return new_model
 
     @classmethod
-    def empty(cls, size, resolution):
-        modelData = np.zeros((size[0], size[1], size[2]), dtype=np.uint16)
-        materials = np.zeros(len(material_properties) + 1, dtype=np.float)
+    def empty(cls, size: Tuple[int, int, int], resolution: float = 1):
+        """
+        Initialize an empty VoxelModel.
+
+        :param size: Size of the empty model in voxels
+        :param resolution: Number of voxels per mm
+        :return: VoxelModel
+        """
+        modelData = np.zeros(size, dtype=np.uint16)
+        materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
         new_model = cls(modelData, materials, resolution=resolution)
         return new_model
 
     @classmethod
     def emptyLike(cls, voxel_model):
+        """
+        Initialize an empty VoxelModel with the same size, coords, and resolution as another model.
+
+        :param voxel_model: Reference VoxelModel object
+        :return: VoxelModel
+        """
         new_model = cls(np.zeros_like(voxel_model.voxels, dtype=np.uint16), voxel_model.materials, coords=voxel_model.coords, resolution=voxel_model.resolution)
         return new_model
 
     @classmethod
     def copy(cls, voxel_model):
+        """
+        Initialize an VoxelModel that is a copy of another model.
+
+        :param voxel_model: Reference VoxelModel object
+        :return: VoxelModel
+        """
         new_model = cls(voxel_model.voxels, voxel_model.materials, coords=voxel_model.coords, resolution=voxel_model.resolution)
         new_model.numComponents = voxel_model.numComponents
         new_model.components = voxel_model.components
         return new_model
 
-    """
-    Property update operations
-    
-    - Return a model
-    """
-    # Remove excess empty workspace from a model
+    # Property update operations ##############################
+
     def fitWorkspace(self):
+        """
+        Remove excess empty space from a model.
+
+        Resize the workspace around a model to remove excess empty space.
+        Model coordinates are updated to reflect the change.
+
+        :return: VoxelModel
+        """
         x_len = self.voxels.shape[0]
         y_len = self.voxels.shape[1]
         z_len = self.voxels.shape[2]
@@ -236,8 +331,12 @@ class VoxelModel:
         new_model.components = new_components
         return new_model
 
-    # Remove duplicate rows from a model's material array
     def removeDuplicateMaterials(self):
+        """
+        Remove duplicate rows from a model's material array.
+
+        :return: VoxelModel
+        """
         new_materials = np.unique(self.materials, axis=0)
 
         x_len = self.voxels.shape[0]
@@ -256,8 +355,17 @@ class VoxelModel:
 
         return VoxelModel(new_voxels, new_materials, self.coords, self.resolution)
 
-    # Update component labels for a model.  This uses a disconnected components algorithm and assumes that adjacent voxels with different materials are connected.
-    def getComponents(self, connectivity=1):
+    def getComponents(self, connectivity: int = 1):
+        """
+        Update component labels for a model.
+
+        This function uses a disconnected components algorithm and assumes that adjacent
+        voxels with different materials are connected. Connectivity can be set to 1-3
+        and defines the shape of the structuring element.
+
+        :param connectivity: Connectivity of structuring element (1-3)
+        :return: VoxelModel
+        """
         mask = np.array(self.voxels[:, :, :] > 0, dtype=np.bool)
         struct = ndimage.generate_binary_structure(3, connectivity)
         new_model = VoxelModel.copy(self)
@@ -265,54 +373,112 @@ class VoxelModel:
         new_model.components = new_model.components.astype(dtype=np.uint8)
         return new_model
 
-    """    
-    Selection operations
-    
-    - Return a model
-    """
-    # Get all voxels with a specified material
+    # Selection operations ##############################
+
     # TODO: Should this reference the material properties table?
     # TODO: isolateMaterialVector
-    def isolateMaterial(self, material): # material input is an index corresponding to the materials array for the model
+    def isolateMaterial(self, material: int):
+        """
+        Get all voxels with a specified material.
+
+        ----
+
+        Example:
+
+        model2 = model1.isolateMaterial(4)
+
+        ----
+
+        :param material: Material index corresponding to the materials array for the model
+        :return: VoxelModel
+        """
         mask = np.array(self.voxels == material, dtype=np.bool)
         materials = np.zeros((2, len(material_properties)+1), dtype=np.float32)
         materials[1] = self.materials[material]
         return VoxelModel(mask.astype(int), materials, self.coords, self.resolution)
 
-    # Get all voxels in a specified layer
-    def isolateLayer(self, layer):
+    def isolateLayer(self, layer: int):
+        """
+        Get all voxels in a specified layer.
+
+        ----
+
+        Example:
+
+        model2 = model1.isolateLayer(8)
+
+        ----
+
+        :param layer: Voxel layer to isolate
+        :return: VoxelModel
+        """
         new_voxels = np.zeros_like(self.voxels, dtype=np.uint16)
         new_voxels[:, :, layer - self.coords[2]] = self.voxels[:, :, layer - self.coords[2]]
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
-    # Isolate component by component label
-    # Component labels must first be updated with getComponents
-    # Unrecognized component labels will return an empty object
-    def isolateComponent(self, component):
+    def isolateComponent(self, component: int):
+        """
+        Isolate a component by its component label.
+
+        Component labels must first be updated with getComponents.
+        Unrecognized component labels will return an empty object.
+
+        :param component: Component label to isolate
+        :return: VoxelModel
+        """
         mask = np.array(self.components == component, dtype=np.bool)
         new_voxels = np.multiply(self.voxels, mask)
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
-    """
-    Mask operations
-    
-    - Material defaults to the first material in the input model
-    """
-    # Return all voxels not occupied by the input model
+    # Mask operations ##############################
+    # Material defaults to the first material in the input model
+
     def getUnoccupied(self):
+        """
+        Get all voxels not occupied by the input model.
+
+        This operation can also be applied using the invert operator (~).
+
+        ----
+
+        Examples:
+
+        model2 = model1.getUnoccupied()
+
+        model2 = ~model1
+
+        ----
+
+        :return: VoxelModel
+        """
         mask = np.array(self.voxels == 0, dtype=np.bool)
         return VoxelModel(mask, self.materials[0:2, :], self.coords, self.resolution)
 
     def __invert__(self):
+        """
+        Get all voxels not occupied by the input model.
+
+        Overload invert operator (~) for VoxelModel objects with self.getUnoccupied().
+
+        :return: VoxelModel
+        """
         return self.getUnoccupied()
 
-    # Return all voxels occupied by the input model
     def getOccupied(self):
+        """
+        Get all voxels occupied by the input model.
+
+        :return: VoxelModel
+        """
         mask = np.array(self.voxels != 0, dtype=np.bool)
         return VoxelModel(mask, self.materials[0:2, :], self.coords, self.resolution)
 
-    # Return the bounding box of the input model
     def getBoundingBox(self):
+        """
+        Get all voxels contained in the bounding box of the input model.
+
+        :return: VoxelModel
+        """
         new_model = VoxelModel.copy(self)
         new_model = new_model.fitWorkspace()
         new_model.voxels.fill(1)
@@ -320,8 +486,22 @@ class VoxelModel:
         new_model.materials = self.materials[0:2, :]
         return new_model
 
-    # Set the material of a model
-    def setMaterial(self, material): # material input is an index corresponding to the material properties table
+    def setMaterial(self, material: int):
+        """
+        Set the material of all voxels in a model.
+
+        ----
+
+        Example:
+
+        model2 = model1.getBoundingBox()\n
+        model3 = model2.setMaterial(2)
+
+        ----
+
+        :param material: Material index corresponding to materials.py
+        :return: VoxelModel
+        """
         new_voxels = self.getOccupied().voxels # Converts input model to a mask, no effect if input is already a mask
         material_vector = np.zeros(len(material_properties)+1, dtype=np.float32)
         material_vector[0] = 1
@@ -331,41 +511,55 @@ class VoxelModel:
         m = np.vstack((a, b))
         return VoxelModel(new_voxels, m, self.coords, self.resolution)
 
-    # Set the material of a model
     def setMaterialVector(self, material_vector):  # material input is the desired material vector
+        """
+        Set the material of all voxels in a model.
+
+        ----
+
+        Example:
+
+        material_vector = np.zeros(len(materials) + 1)	# Length of materials table +1\n
+        material_vector[0] = 1		# Set a to 1\n
+        material_vector[3] = 0.3	# Set material 3 to 30%\n
+        material_vector[4] = 0.7	# Set material 4 to 70%\n
+        model2 = model1.setMaterialVector(material_vector)
+
+        ----
+
+        :param material_vector: Material mixture vector, format: (a, m0, m1, ... mn)
+        :return: VoxelMode
+        """
         new_voxels = self.getOccupied().voxels  # Converts input model to a mask, no effect if input is already a mask
         a = np.zeros(len(material_properties)+1, dtype=np.float32)
         b = material_vector
         materials = np.vstack((a, b))
         return VoxelModel(new_voxels, materials, self.coords, self.resolution)
 
-    """
-    Boolean operations
-    
-    - Return a model    
-    - Material from base model takes priority by default
-    """
-    def difference(self, model_to_sub):
-        checkResolution(self, model_to_sub)
-        a, b, new_coords = alignDims(self, model_to_sub)
-        mask = np.array(b == 0, dtype=np.bool)
-        new_voxels = np.multiply(a, mask)
-        return VoxelModel(new_voxels, self.materials, new_coords, self.resolution)
-
-    def intersection(self, model_2):
-        checkResolution(self, model_2)
-        a, b, new_coords = alignDims(self, model_2)
-        mask = np.logical_and(np.array(a != 0, dtype=np.bool), np.array(b != 0, dtype=np.bool))
-
-        new_voxels = np.multiply(a, mask) # material from left model takes priority
-        materials = self.materials
-
-        return VoxelModel(new_voxels, materials, new_coords, self.resolution)
-
-    def __and__(self, other):
-        return self.intersection(other)
+    # Boolean operations ##############################
+    # Material from base model takes priority
 
     def union(self, model_to_add):
+        """
+        Find the geometric union of two models.
+
+        The materials from self will take priority in overlapping areas
+        of the resulting model. This operation can also be applied using
+        the OR operator (|)
+
+        ----
+
+        Examples:
+
+        model3 = model1.union(model2)
+
+        model3 = model1 | model2
+
+        ----
+
+        :param model_to_add: VoxelModel to union with self
+        :return: VoxelModel
+        """
         checkResolution(self, model_to_add)
         materials = np.vstack((self.materials, model_to_add.materials[1:]))
         a, b, new_coords = alignDims(self, model_to_add)
@@ -383,9 +577,98 @@ class VoxelModel:
         return VoxelModel(new_voxels, materials, new_coords, self.resolution)
 
     def __or__(self, other):
+        """
+        Find the geometric union of two models.
+
+        Overload OR operator (|) for VoxelModel objects with self.union().
+
+        :param other: VoxelModel to union with self
+        :return: VoxelModel
+        """
         return self.union(other)
 
+    def difference(self, model_to_sub):
+        """
+        Find the geometric difference of two models.
+
+        ----
+
+        Example:
+
+        model3 = model1.difference(model2)
+
+        ----
+
+        :param model_to_sub: VoxelModel to subtract from self
+        :return: VoxelModel
+        """
+        checkResolution(self, model_to_sub)
+        a, b, new_coords = alignDims(self, model_to_sub)
+        mask = np.array(b == 0, dtype=np.bool)
+        new_voxels = np.multiply(a, mask)
+        return VoxelModel(new_voxels, self.materials, new_coords, self.resolution)
+
+    def intersection(self, model_2):
+        """
+        Find the geometric intersection of two models.
+
+        The materials from self will be used in the resulting model.
+        This operation can also be applied using the AND operator (&)
+
+        ----
+
+        Examples:
+
+        model3 = model1.intersection(model2)
+
+        model3 = model1 & model2
+
+        ----
+
+        :param model_2: VoxelModel to intersect with self
+        :return: VoxelModel
+        """
+        checkResolution(self, model_2)
+        a, b, new_coords = alignDims(self, model_2)
+        mask = np.logical_and(np.array(a != 0, dtype=np.bool), np.array(b != 0, dtype=np.bool))
+
+        # Paper provides for left/right intersection
+        # For code simplicity, only a left intersection is provided here
+        new_voxels = np.multiply(a, mask) # material from left model takes priority
+        materials = self.materials
+
+        return VoxelModel(new_voxels, materials, new_coords, self.resolution)
+
+    def __and__(self, other):
+        """
+        Find the geometric intersection of two models.
+
+        Overload AND operator (&) for VoxelModel objects with self.intersection().
+
+        :param other: VoxelModel to intersect with self
+        :return: VoxelModel
+        """
+        return self.intersection(other)
+
     def xor(self, model_2):
+        """
+        Find the geometric exclusive or of two models.
+
+        This operation can also be applied using the XOR operator (^)
+
+        ----
+
+        Examples:
+
+        model3 = model1.xor(model2)
+
+        model3 = model1 ^ model2
+
+        ----
+
+        :param model_2: VoxelModel to xor with self
+        :return: VoxelModel
+        """
         checkResolution(self, model_2)
         materials = np.vstack((self.materials, model_2.materials[1:]))
         a, b, new_coords = alignDims(self, model_2)
@@ -402,10 +685,45 @@ class VoxelModel:
         return VoxelModel(new_voxels, materials, new_coords, self.resolution)
 
     def __xor__(self, other):
+        """
+        Find the geometric exclusive or of two models.
+
+        Overload XOR operator (^) for VoxelModel objects with self.xor().
+
+        :param other: VoxelModel to xor with self
+        :return: VoxelModel
+        """
         return self.xor(other)
 
     # Material is computed
     def add(self, model_to_add):
+        """
+        Find the material-wise addition of two models.
+
+        The materials of the result are calculated by adding the material vectors for each voxel together.
+
+        Example -- Adding a voxel containing material 1 and a voxel containing material 3:
+
+        >> Voxel A = [1, 0, 1, 0, 0]\n
+        >> Voxel B = [1, 0, 0, 0, 1]\n
+        >> A + B = [1, 0, 1, 0, 1]\n
+        >> Scale Result (see Cleanup Operations) → [1, 0, 0.5, 0, 0.5]\n
+
+        This operation can also be applied using the addition operator (+).
+
+        ----
+
+        Examples:
+
+        model3 = model1.add(model2)
+
+        model3 = model1 + model2
+
+        ----
+
+        :param model_to_add: VoxelModel to add to self
+        :return: VoxelModel
+        """
         checkResolution(self, model_to_add)
         a, b, new_coords = alignDims(self, model_to_add)
 
@@ -437,10 +755,47 @@ class VoxelModel:
         return VoxelModel(new_voxels, new_materials, new_coords, self.resolution)
 
     def __add__(self, other):
+        """
+        Find the material-wise addition of two models.
+
+        Overload addition operator (+) for VoxelModel objects with self.add().
+
+        :param other: VoxelModel to add to self
+        :return: VoxelModel
+        """
         return self.add(other)
 
     # Material is computed
     def subtract(self, model_to_sub):
+        """
+        Find the material-wise difference of two models.
+
+        The materials of the result are calculated for each voxel by subtracting the
+        second material vector from the first.
+
+        Example -- Subtracting a voxel containing material 3 from the result of the
+        addition example:
+
+        >> Voxel A = [1, 0, 0.5, 0, 0.5]\n
+        >> Voxel B = [1, 0, 0, 0, 1]\n
+        >> A - B = [1, 0, 0.5, 0, -0.5]\n
+        >> Remove negatives (see Cleanup Operations) → [1, 0, 0.5, 0, 0]\n
+
+        This operation can also be applied using the subtraction operator (-).
+
+        ----
+
+        Examples:
+
+        model3 = model1.subtract(model2)
+
+        model3 = model1 - model2
+
+        ----
+
+        :param model_to_sub: VoxelModel to subtract from self
+        :return: VoxelModel
+        """
         checkResolution(self, model_to_sub)
         a, b, new_coords = alignDims(self, model_to_sub)
 
@@ -472,9 +827,40 @@ class VoxelModel:
         return VoxelModel(new_voxels, new_materials, new_coords, self.resolution)
 
     def __sub__(self, other):
+        """
+        Find the material-wise difference of two models.
+
+        Overload subtraction operator (-) for VoxelModel objects with self.subtract().
+
+        :param other: VoxelModel to subtract from self
+        :return: VoxelModel
+        """
         return self.subtract(other)
 
     def multiply(self, other):
+        """
+        Find the material-wise multiplication of two models.
+
+        The materials of the result are calculated by multiplying the material vectors
+        for each voxel. This function also supports multiplication by a scalar.
+
+        This operation can also be applied using the multiplication operator (*).
+
+        ----
+
+        Examples:
+
+        model3 = model1.multiply(model2)
+
+        model3 = model1 * model2
+
+        model5 = model4 * 3
+
+        ----
+
+        :param other: VoxelModel to multiply with self
+        :return: VoxelModel
+        """
         if type(other) is VoxelModel:
             checkResolution(self, other)
             a, b, new_coords = alignDims(self, other)
@@ -512,9 +898,41 @@ class VoxelModel:
             return new_model
 
     def __mul__(self, other):
+        """
+        Find the material-wise multiplication of two models.
+
+        Overload multiplication operator (*) for VoxelModel objects with self.multiply().
+
+        :param other: VoxelModel to multiply with self
+        :return: VoxelModel
+        """
         return self.multiply(other)
 
     def divide(self, other):
+        """
+        Find the material-wise division of two models.
+
+        The materials of the result are calculated for each voxel by dividing
+        the first material vector by the second. This function also supports
+        division by a scalar.
+
+        This operation can also be applied using the division operator (/).
+
+        ----
+
+        Examples:
+
+        model3 = model1.divide(model2)
+
+        model3 = model1 / model2
+
+        model5 = model4 / 3
+
+        ----
+
+        :param other: VoxelModel to divide self by
+        :return: VoxelModel
+        """
         if type(other) is VoxelModel:
             checkResolution(self, other)
             a, b, new_coords = alignDims(self, other)
@@ -556,14 +974,38 @@ class VoxelModel:
             return new_model
 
     def __truediv__(self, other):
+        """
+        Find the material-wise division of two models.
+
+        Overload division operator (/) for VoxelModel objects with self.divide().
+
+        :param other: VoxelModel to divide self by
+        :return: VoxelModel
+        """
         return self.divide(other)
 
-    """
-    Morphology Operations
-    
-    - Return a model
-    """
-    def dilate(self, radius = 1, plane = Axes.XYZ, structType = Struct.STANDARD, connectivity = 3): # TODO: Preserve overlapping materials?
+    # Morphology Operations ##############################
+
+    def dilate(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3): # TODO: Preserve overlapping materials?
+        """
+        Dilate a model along the specified axes.
+
+        ----
+
+        Examples:
+
+        model2 = model1.dilate(3)
+
+        model4 = model3.dilate(1, Axes.XY, Struct.SPHERE, 2)
+
+        ----
+
+        :param radius: Dilation radius in voxels
+        :param plane: Dilation directions, set using Axes class
+        :param structType: Shape of structuring element, set using Struct class
+        :param connectivity: Connectivity of structuring element (1-3)
+        :return: VoxelModel
+        """
         if radius == 0:
             return VoxelModel.copy(self)
 
@@ -584,7 +1026,16 @@ class VoxelModel:
 
         return VoxelModel(new_voxels, self.materials, (self.coords[0] - radius, self.coords[1] - radius, self.coords[2] - radius), self.resolution)
 
-    def dilateBounded(self, radius = 1, plane = Axes.XYZ, structType = Struct.STANDARD, connectivity = 3): # Dilates a model without increasing the size of its bounding box
+    def dilateBounded(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
+        """
+        Dilate a model along the specified axes without increasing the size of its bounding box.
+
+        :param radius: Dilation radius in voxels
+        :param plane: Dilation directions, set using Axes class
+        :param structType: Shape of structuring element, set using Struct class
+        :param connectivity: Connectivity of structuring element (1-3)
+        :return: VoxelModel
+        """
         if radius == 0:
             return VoxelModel.copy(self)
 
@@ -600,7 +1051,26 @@ class VoxelModel:
 
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
-    def erode(self, radius = 1, plane = Axes.XYZ, structType = Struct.STANDARD, connectivity = 3):
+    def erode(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
+        """
+        Erode a model along the specified axes.
+
+        ----
+
+        Examples:
+
+        model2 = model1.erode(5, connectivity=2)
+
+        model4 = model3.erode(2, Axes.X, Struct.SPHERE, 1)
+
+        ----
+
+        :param radius: Erosion radius in voxels
+        :param plane: Erosion directions, set using Axes class
+        :param structType: Shape of structuring element, set using Struct class
+        :param connectivity: Connectivity of structuring element (1-3)
+        :return: VoxelModel
+        """
         if radius == 0:
             return VoxelModel.copy(self)
 
@@ -618,13 +1088,39 @@ class VoxelModel:
 
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
-    def closing(self, radius = 1, plane = Axes.XYZ, structType = Struct.SPHERE, connectivity = 1):
+    def closing(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
+        """
+        Apply a closing algorithm along the specified axes.
+
+        This algorithm consists of dilation followed by erosion and will remove small holes.
+        Depending on the structuring element used, this will apply a chamfer or fillet effect
+        to inside corners.
+
+        :param radius: Radius for dilation/erosion in voxels
+        :param plane:  Dilation/erosion directions, set using Axes class
+        :param structType: Shape of structuring element, set using Struct class
+        :param connectivity: onnectivity of structuring element (1-3)
+        :return: VoxelModel
+        """
         if radius == 0:
             return VoxelModel.copy(self)
         else:
             return self.dilate(radius, plane, structType, connectivity).erode(radius, plane, structType, connectivity).fitWorkspace()
 
-    def opening(self, radius = 1, plane = Axes.XYZ, structType = Struct.SPHERE, connectivity = 1):
+    def opening(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
+        """
+        Apply an opening algorithm along the specified axes.
+
+        This algorithm consists of erosion followed by dilation and will remove small features.
+        Depending on the structuring element used, this will apply a chamfer or fillet effect
+        to outside corners.
+
+        :param radius: Radius for dilation/erosion in voxels
+        :param plane:  Dilation/erosion directions, set using Axes class
+        :param structType: Shape of structuring element, set using Struct class
+        :param connectivity: Connectivity of structuring element (1-3)
+        :return: VoxelModel
+        """
         if radius == 0:
             return VoxelModel.copy(self)
 
@@ -642,12 +1138,27 @@ class VoxelModel:
 
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
-    """
-    Material Interface Modification
-    
-    - Return a model
-    """
-    def blur(self, radius=1):
+    # Material Interface Modification ##############################
+
+    def blur(self, radius: float = 1):
+        """
+        Apply a Gaussian blur with the defined radius to the entire model.
+
+        The blur radius corresponds to two times the standard deviation
+        (2 * sigma) of the Gaussian distribution. The blurred effect is limited
+        to voxels that were occupied by material in the input model.
+
+        ----
+
+        Example:
+
+        model2 = model1.blur(2)
+
+        ___
+
+        :param radius: Blur radius in voxels
+        :return: VoxelModel
+        """
         if radius == 0:
             return VoxelModel.copy(self)
 
@@ -662,18 +1173,48 @@ class VoxelModel:
 
         return toIndexedMaterials(full_model, self, self.resolution)
 
-    def blurRegion(self, radius, region):
+    def blurRegion(self, radius: float, region):
+        """
+        Apply a Gaussian blur with the defined radius to voxels that intersect with the region model.
+
+        The blur radius corresponds to two times the standard deviation
+        (2 * sigma) of the Gaussian distribution. The blurred effect is limited
+        to voxels that were occupied by material in the intersection result
+        and the material of the region model is ignored.
+
+        ----
+
+        Example:
+
+        model2 = model1.blurRegion(3, regionModel)
+
+        ___
+
+        :param radius: Blur radius in voxels
+        :param region: VoxelModel defining the target blur region
+        :return: VoxelModel
+        """
         new_model = self.blur(radius)
         new_model = new_model.intersection(region)
         new_model = new_model.union(self)
         return new_model
 
-    """
-    Cleanup
-    
-    - Return a model
-    """
-    def removeNegatives(self): # Remove negative material values (which have no physical meaning)
+    # Cleanup ##############################
+
+    def removeNegatives(self):
+        """
+        Remove negative material values from a model (these have no physical meaning).
+
+        ----
+
+        Example:
+
+        model2 = model1.removeNegatives()
+
+        ___
+
+        :return: VoxelModel
+        """
         new_model = VoxelModel.copy(self)
         new_model.materials[new_model.materials < 1e-10] = 0
         material_sums = np.sum(new_model.materials[:,1:], 1) # This and following update the a values
@@ -681,7 +1222,21 @@ class VoxelModel:
         new_model.materials[:, 0] = material_sums
         return new_model
 
-    def scaleValues(self): # Scale material values while maintaining the ratio between all materials
+    def scaleValues(self):
+        """
+        Scale nonzero material values to make all voxels contain 100% material while
+        maintaining the ratio between materials.
+
+        ----
+
+        Example:
+
+        model2 = model1.scaleValues()
+
+        ___
+
+        :return: VoxelModel
+        """
         new_model = self.removeNegatives()
         material_sums = np.sum(new_model.materials[:, 1:], 1)
         material_sums[material_sums == 0] = 1
@@ -689,7 +1244,24 @@ class VoxelModel:
         new_model.materials[:,1:] = np.divide(new_model.materials[:,1:], material_sums)
         return new_model
 
-    def scaleNull(self): # Scale null values to make all voxels contain 100% material
+    def scaleNull(self):
+        """
+        Scale null material values to make all voxels contain 100% material.
+
+        Voxels that contained less than 100% material will contain the same material percentages as
+        before, but will have varying density. Voxels that contained greater than 100% material
+        will be scaled using self.scaleValues().
+
+        ----
+
+        Example:
+
+        model2 = model1.scaleNull()
+
+        ___
+
+        :return: VoxelModel
+        """
         new_model = self.removeNegatives()
         material_sums = np.sum(new_model.materials[:, 1:], 1)
         material_sums = np.ones(np.shape(material_sums)) - material_sums
@@ -698,7 +1270,13 @@ class VoxelModel:
         new_model = new_model.scaleValues()
         return new_model
 
-    def round(self, toNearest = 0.1):
+    def round(self, toNearest: float = 0.1):
+        """
+        Round material percentages to nearest multiple of an input value.
+
+        :param toNearest: Value to round to
+        :return: VoxelModel
+        """
         new_materials = np.copy(self.materials)
         new_model = VoxelModel.copy(self)
 
@@ -713,11 +1291,22 @@ class VoxelModel:
         return new_model
 
     def clearNull(self):
+        """
+        Set all null material percentages to zero.
+
+        :return: VoxelModel
+        """
         new_model = VoxelModel.copy(self)
         new_model.materials[1:, 1] = np.zeros(np.shape(new_model.materials[1:,1]))
         return new_model
 
-    def setDensity(self, density = 1.0):
+    def setDensity(self, density: float = 1.0):
+        """
+        Set the density of all voxels.
+
+        :param density: Target density value
+        :return: VoxelModel
+        """
         new_model = self.clearNull()
         new_model = new_model.scaleValues()
         null_material_values = np.multiply(np.ones(np.shape(new_model.materials[1:,1])), 1-density)
@@ -725,17 +1314,28 @@ class VoxelModel:
         new_model.materials[1:, 2:] = np.multiply(new_model.materials[1:, 2:], density)
         return new_model
 
-    """
-    Transformations
+    # Transformations ##############################
 
-    - Return a model
-    """
-    def translate(self, vector = (0, 0, 0)):
+    def translate(self, vector: Tuple[int, int, int]):
+        """
+        Translate a model by the specified vector.
+
+        :param vector: Translation vector in voxels
+        :return: VoxelModel
+        """
+
         new_model = VoxelModel.copy(self)
         new_model.coords = (self.coords[0]+vector[0], self.coords[1]+vector[1], self.coords[2]+vector[2])
         return new_model
 
-    def translateMM(self, vector = (0.0, 0.0, 0.0)):
+    def translateMM(self, vector: Tuple[float, float, float]):
+        """
+        Translate a model by the specified vector.
+
+        :param vector: Translation vector in mm
+        :return: VoxelModel
+        """
+
         xV = int(round(vector[0] * self.resolution))
         yV = int(round(vector[1] * self.resolution))
         zV = int(round(vector[2] * self.resolution))
@@ -743,12 +1343,22 @@ class VoxelModel:
         new_model = self.translate(vector_voxels)
         return new_model
 
-    def rotate(self, angle, axis = Axes.Z):
+    def rotate(self, angle: float, axis: Axes = Axes.Z):
+        """
+        Rotate a model about its center.
+
+        Floating point errors may slightly affect the angle of the resulting model.
+        To rotate a model in precise 90 degree increments, use self.rotate90().
+
+        :param angle: Angle of rotation in degrees
+        :param axis: Axis of rotation, set using Axes class
+        :return: VoxelModel
+        """
         if axis == Axes.X:
             plane = (1, 2)
         elif axis == Axes.Y:
             plane = (0, 2)
-        else: # axis == 'z'
+        else: # axis == Axes.Z
             plane = (0, 1)
 
         centerCoords = self.getCenter()
@@ -758,7 +1368,14 @@ class VoxelModel:
 
         return new_model
 
-    def rotate90(self, times = 1, axis = Axes.Z):
+    def rotate90(self, times: int = 1, axis: Axes = Axes.Z):
+        """
+        Rotate a model about its center in increments of 90 degrees.
+
+        :param times: Number of 90 degree increments to rotate model
+        :param axis: Axis of rotation, set using Axes class
+        :return: VoxelModel
+        """
         if axis == Axes.X or axis == 0:
             plane = (1, 2)
         elif axis == Axes.Y or axis == 1:
@@ -773,7 +1390,19 @@ class VoxelModel:
 
         return new_model
 
-    def scale(self, factor, adjustResolution = True):
+    def scale(self, factor: float, adjustResolution: bool = True):
+        """
+        Scale a model.
+
+        If adjustResolution is enabled, the resolution attribute of the model will
+        also be multiplied by the scaling factor.
+        Enable adjustResolution if using this operation to change the resolution of a model.
+        Disable adjustResolution if using this operation to change the size of a model.
+
+        :param factor: Scale factor
+        :param adjustResolution: Enable/disable automatic resolution adjustment
+        :return: VoxelModel
+        """
         model = self.fitWorkspace()
 
         x_len = int(model.voxels.shape[0] * factor)
@@ -797,16 +1426,22 @@ class VoxelModel:
 
         return model
 
-    def scaleToSize(self, x_len, y_len, z_len):
+    def scaleToSize(self, size: Tuple[int, int, int]):
+        """
+        Scale a model to fit the given dimensions.
+
+        :param size: Target dimensions in voxels
+        :return: VoxelModel
+        """
         model = self.fitWorkspace()
 
-        new_voxels = np.zeros((x_len, y_len, z_len))
-        for x in tqdm(range(x_len), desc='Scaling'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    x_source = int(((x+1) / x_len) * (model.voxels.shape[0]-1))
-                    y_source = int(((y+1) / y_len) * (model.voxels.shape[1]-1))
-                    z_source = int(((z+1) / z_len) * (model.voxels.shape[2]-1))
+        new_voxels = np.zeros(size)
+        for x in tqdm(range(size[0]), desc='Scaling'):
+            for y in range(size[1]):
+                for z in range(size[2]):
+                    x_source = int(((x+1) / size[0]) * (model.voxels.shape[0]-1))
+                    y_source = int(((y+1) / size[1]) * (model.voxels.shape[1]-1))
+                    z_source = int(((z+1) / size[2]) * (model.voxels.shape[2]-1))
                     new_voxels[x,y,z] = model.voxels[x_source, y_source, z_source]
 
         model.voxels = new_voxels.astype(dtype=np.uint16)
@@ -815,6 +1450,11 @@ class VoxelModel:
         return new_model
 
     def getCenter(self):
+        """
+        Find the coordinates of the center of a model.
+
+        :return: Center coordinates in voxels
+        """
         model = self.fitWorkspace()
 
         x_center = (model.voxels.shape[0] / 2) + model.coords[0]
@@ -824,7 +1464,13 @@ class VoxelModel:
         centerCoords = (x_center, y_center, z_center)
         return centerCoords
 
-    def setCenter(self, coords):
+    def setCenter(self, coords: Tuple[float, float, float]):
+        """
+        Set the center of a model to the specified coordinates.
+
+        :param coords: Target coordinates in voxels
+        :return: VoxelModel
+        """
         new_model = self.fitWorkspace()
 
         x_new = int(round(coords[0] - (new_model.voxels.shape[0] / 2)))
@@ -834,15 +1480,27 @@ class VoxelModel:
         new_model.coords = (x_new, y_new, z_new)
         return new_model
 
-    def setCoords(self, coords):
+    def setCoords(self, coords: Tuple[int, int, int]):
+        """
+        Set the origin of a model to the specified coordinates.
+
+        :param coords: Target coordinates in voxels
+        :return: VoxelModel
+        """
         new_model = self.fitWorkspace()
         new_model.coords = coords
         return new_model
 
-    """
-    Model Info
-    """
-    def getVolume(self, component = 0, material = 0):
+    # Model Info ##############################
+
+    def getVolume(self, component: int = 0, material: int = 0):
+        """
+        Get the volume of a model or model component.
+
+        :param component: Component label to measure, set to 0 for all components
+        :param material: Material index to measure, set to 0 for all materials
+        :return: Volume in voxels, volume in mm^3
+        """
         new_model = VoxelModel.copy(self)
         if component > 0:
             new_model = new_model.isolateComponent(component)
@@ -852,12 +1510,26 @@ class VoxelModel:
         volumeMM3 = volumeVoxels * ((1/self.resolution)**3)
         return volumeVoxels, volumeMM3
 
-    """
-    Manufacturing Features
-    
-    - Return a mask
-    """
-    def projection(self, direction, material = 1):
+    # Manufacturing Features ##############################
+
+    def projection(self, direction: Dir, material: int = 1):
+        """
+        Generate a model representing all voxels within the workspace that contain
+        material or that lie in the specified direction with respect to a voxel
+        that contains material.
+
+        ---
+
+        Example:
+
+        modelResult = model1.projection(Dir.DOWN)
+
+        ---
+
+        :param direction: Projection direction, set using Dir class
+        :param material: Material index corresponding to materials.py
+        :return: VoxelModel
+        """
         new_voxels = np.zeros_like(self.voxels)
 
         x_len = self.voxels.shape[0]
@@ -891,7 +1563,29 @@ class VoxelModel:
 
         return VoxelModel(new_voxels, generateMaterials(material), self.coords, self.resolution)
 
-    def keepout(self, method, material = 1):
+    def keepout(self, method: Process, material: int = 1):
+        """
+        Generate a model representing the keep-out region of a model.
+
+        The keep-out region for a given process and part represents material which
+        the process may not modify while creating the part. This feature primarily
+        applies to subtractive processes. It includes material that will be present
+        in the final part and regions of the workspace that cannot be accessed
+        without affecting this material. In general, additive processes will have
+        no keep-out region because they deposit material from the bottom up.
+
+        ----
+
+        Example:
+
+        modelResult = model1.keepout(Process.MILL)
+
+        ----
+
+        :param method: Target manufacturing method, set using Process class
+        :param material: Material index corresponding to materials.py
+        :return: VoxelModel
+        """
         if method == Process.LASER:
             new_model = self.projection(Dir.BOTH, material)
         elif method == Process.MILL:
@@ -902,7 +1596,27 @@ class VoxelModel:
             new_model = self
         return new_model
 
-    def clearance(self, method, material = 1):
+    def clearance(self, method: Process, material: int = 1):
+        """
+        Generate a model representing the clearance region of a model.
+
+        The clearance region for a given process and part represents regions that
+        will be affected by the process acting on the part. Clearance can be
+        used to identify regions of a model that conflict with the manufacturing
+        of another model.
+
+        ----
+
+        Example:
+
+        modelResult = model1.clearance(Process.PRINT)
+
+        ----
+
+        :param method: Target manufacturing method, set using Process class
+        :param material: Material index corresponding to materials.py
+        :return: VoxelModel
+        """
         if method == Process.LASER:
             new_model = self.projection(Dir.BOTH, material).difference(self)
         elif method == Process.MILL:
@@ -913,13 +1627,53 @@ class VoxelModel:
             new_model = self
         return new_model
 
-    def support(self, method, r1=1, r2=1, plane=Axes.XY, material = 1):
+    def support(self, method: Process, r1: int = 1, r2: int = 1, plane: Axes = Axes.XY, material: int = 1):
+        """
+        Generate a model representing where support material may be added to an
+        object as characterized by the process that is used to remove the supports.
+
+        ----
+
+        Example:
+
+        modelResult = model1.support(Process.LASER)
+
+        ----
+
+        :param method: Target support removal method, set using Process class
+        :param r1: Parameter used to determine areas where support is ineffective
+                   based on proximity to empty regions that are inaccessible to the removal process
+        :param r2: Desired thickness of the support material
+        :param plane: Directions in which to add support material, set using Axes class
+        :param material: Material index corresponding to materials.py
+        :return: VoxelModel
+        """
         model_A = self.keepout(method, material)
         model_A = model_A.dilate(r2, plane).difference(model_A)
         model_A = model_A.difference(self.keepout(method, material).difference(self).dilate(r1, plane)) # Valid support regions
         return model_A
 
-    def userSupport(self, support_model, method, r1=1, r2=1, plane=Axes.XY, material = -1): # Material = -1 -> use support model material
+    def userSupport(self, support_model, method: Process, r1: int = 1, r2: int = 1, plane: Axes = Axes.XY, material: int = -1):
+        """
+        Generate a model representing the intersection of the supportable region and a user support model.
+
+        ----
+
+        Example:
+
+        modelResult = model1.userSupport(model2, Process.LASER)
+
+        ----
+
+        :param support_model: User provided support model
+        :param method: Target support removal method, set using Process class
+        :param r1: Parameter used to determine areas where support is ineffective
+                   based on proximity to empty regions that are inaccessible to the removal process
+        :param r2: Desired thickness of the support material
+        :param plane: Directions in which to add support material, set using Axes class
+        :param material: Material index corresponding to materials.py, set to -1 to use support model material
+        :return: VoxelModel
+        """
         if material > -1:
             model_A = self.support(method, r1, r2, plane)
             model_A = support_model.intersection(model_A)
@@ -928,7 +1682,27 @@ class VoxelModel:
             model_A = model_A.intersection(support_model)
         return model_A
 
-    def web(self, method, r1=1, r2=1, layer=-1, material = 1): # Layer = -1 -> use all layers
+    def web(self, method: Process, r1: int = 1, r2: int = 1, layer: int = -1, material = 1):
+        """
+        Generate a model representing the scrap material surrounding a model.
+
+        Web can be used in the creation of supports or layer alignment fixtures.
+
+        ----
+
+        Example:
+
+        modelResult = model1.web(Process.LASER, 1, 5)
+
+        ----
+
+        :param method: Target web removal method, set using Process class
+        :param r1: Distance from surface of part to inside of web in voxels
+        :param r2: Width of web in voxels
+        :param layer: Voxel layer at which to generate web, set to -1 to generate for all layers
+        :param material: Material index corresponding to materials.py
+        :return: VoxelModel
+        """
         model_A = self.keepout(method, material)
         if layer != -1:
             model_A = model_A.isolateLayer(layer)
@@ -936,14 +1710,29 @@ class VoxelModel:
         model_A = model_A.dilate(r2, Axes.XY).getBoundingBox().difference(model_A)
         return model_A
 
-    """
-    File IO
+    # File IO ##############################
 
-    - Read/write .vf files
-    - Read/write .vxc files
-    - Read/write .vxa files
-    """
-    def saveVF(self, filename):
+    def saveVF(self, filename: str):
+        """
+        Save model data to a .vf file
+
+        The native VoxelFuse file format stores the same information as the attributes of
+        a VoxelModel object. This includes geometry and material mixture data. Material
+        attributes remain stored in the materials.py file, so the same version of
+        this file must be used when saving and opening models. The .vf file type can be reopened
+        by a VoxelFuse script.
+
+        ----
+
+        Example:
+
+        modelResult.saveVF("test-file")
+
+        ----
+
+        :param filename: File name
+        :return: None
+        """
         f = open(filename+'.vf', 'w+')
         print('Saving file: ' + f.name)
 
@@ -992,7 +1781,25 @@ class VoxelModel:
         f.close()
 
     @classmethod
-    def openVF(cls, filename):
+    def openVF(cls, filename: str):
+        """
+        Load model data from a .vf file
+
+        This method will create a new VoxelModel object using the data from the .vf file.
+        Material attributes are stored in the materials.py file, so the same version of
+        this file must be used when saving and opening models.
+
+        ----
+
+        Example:
+
+        model1.openVF("test-file")
+
+        ----
+
+        :param filename: File name
+        :return: VoxelModel
+        """
         if filename[-3:] == '.vf':
             f = open(filename, 'r')
         else:
@@ -1073,7 +1880,33 @@ class VoxelModel:
 
         return new_model
 
-    def saveVXC(self, filename, compression=False):
+    def saveVXC(self, filename: str, compression: bool = False):
+        """
+        Save model data to a .vxc file
+
+        The VoxCad file format stores geometry and full material palette data. The material
+        palette includes the properties for each material and material mixtures are
+        converted into distinct palette entries.
+
+        This format supports compression for the voxel data. Enabling compression allows
+        for larger models, but it may introduce geometry errors that particularly affect
+        small models.
+
+        The .vxc file type can be opened using VoxCad simulation software. However, it
+        cannot currently be reopened by a VoxelFuse script.
+
+        ----
+
+        Example:
+
+        modelResult.saveVXC("test-file", compression=False)
+
+        ----
+
+        :param filename: File name
+        :param compression: Enable/disable voxel data compression
+        :return: None
+        """
         f = open(filename + '.vxc', 'w+')
         print('Saving file: ' + f.name)
 
@@ -1082,7 +1915,14 @@ class VoxelModel:
 
         f.close()
 
-    def writeVXCData(self, f, compression=False):
+    def writeVXCData(self, f: TextIO, compression: bool = False):
+        """
+        Write geometry and material data to a text file using the .vxc format.
+
+        :param f: File to write to
+        :param compression:  Enable/disable voxel data compression
+        :return: None
+        """
         f.write('<VXC Version="' + str(0.94) + '">\n')
 
         # Lattice settings
@@ -1191,11 +2031,15 @@ class VoxelModel:
         f.write('  </Structure>\n')
         f.write('</VXC>\n')
 
-# Helper methods ##############################################################
-"""
-Function to import mesh data from file
-"""
-def makeMesh(filename, delete_files=True):
+# Helper functions ##############################################################
+def makeMesh(filename: str, delete_files: bool = True):
+    """
+    Import mesh data from file
+
+    :param filename: File name with extension
+    :param delete_files: Enable/disable deleting temporary files when finished
+    :return: Mesh data (points, tris, and tets)
+    """
     template = '''
     Merge "{0}";
     Surface Loop(1) = {{1}};
@@ -1217,10 +2061,16 @@ def makeMesh(filename, delete_files=True):
         os.remove('output.geo')
     return data
 
-"""
-Function to make object dimensions compatible for solid body operations. Takes location coordinates into account.
-"""
 def alignDims(modelA, modelB):
+    """
+    Make object dimensions compatible for solid body operations.
+
+    This function accounts for location coordinates.
+
+    :param modelA: Input model A
+    :param modelB: Input model B
+    :return: Resized model A, resized model B, new model coordinates
+    """
     ax = modelA.coords[0]
     ay = modelA.coords[1]
     az = modelA.coords[2]
@@ -1254,18 +2104,36 @@ def alignDims(modelA, modelB):
     return voxelsANew, voxelsBNew, (xNew, yNew, zNew)
 
 def checkResolution(modelA, modelB):
+    """
+    Check if model resolutions are compatible for solid geometry operations.
+
+    Incompatible resolutions will print an error. This will not prevent the
+    operation from running, but it may indicate that the models are at
+    different scales or that a resolution value has been incorrectly set.
+
+    :param modelA: Input model A
+    :param modelB: Input model B
+    :return: Check successful T/F
+    """
     a = modelA.resolution
     b = modelB.resolution
     if a != b:
         print('WARNING: inconsistent resolutions: ' + str(a) + ', ' + str(b))
-        return 0
+        return False
     else:
-        return 1
+        return True
 
 """
 Functions to generate structuring elements
 """
-def structSphere(radius, plane):
+def structSphere(radius: int, plane: Axes):
+    """
+    Generate a spherical structuring element.
+
+    :param radius: Radius of structuring element in voxels
+    :param plane: Structuring element directions, set using Axes class
+    :return: Structuring element array
+    """
     diameter = (radius * 2) + 1
     struct = np.zeros((diameter, diameter, diameter), dtype=np.bool)
     for x in range(diameter):
@@ -1291,7 +2159,20 @@ def structSphere(radius, plane):
 
     return struct
 
-def structStandard(connectivity, plane):
+def structStandard(connectivity: int, plane: Axes):
+    """
+    Generate a 3x3x3 structuring element with the specified connectivity.
+
+    Outer face of structuring element illustrated for connectivity values 1-3:
+
+    0,0,0 | 0,1,0 | 1,1,1\n
+    0,1,0 | 1,1,1 | 1,1,1\n
+    0,0,0 | 0,1,0 | 1,1,1
+
+    :param connectivity: Connectivity of structuring element (1-3)
+    :param plane: Structuring element directions, set using Axes class
+    :return: Structuring element array
+    """
     struct = ndimage.generate_binary_structure(3, connectivity)
 
     if plane.value[0] != 1:
@@ -1307,6 +2188,12 @@ def structStandard(connectivity, plane):
     return struct
 
 def generateMaterials(m):
+    """
+    Generate the materials table for a single-material VoxelModel.
+
+    :param m: Material index corresponding to materials.py
+    :return: Array containing the specified material and the empty material
+    """
     materials = np.zeros(len(material_properties) + 1, dtype=np.float)
     material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
     material_vector[0] = 1

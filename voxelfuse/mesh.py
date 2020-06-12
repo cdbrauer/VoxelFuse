@@ -1,6 +1,9 @@
 """
-Copyright 2018-2019
-Dan Aukes, Cole Brauer
+Copyright 2020
+Cole Brauer, Dan Aukes
+
+Mesh Class
+Initialized from a voxel model
 """
 
 import numpy as np
@@ -11,18 +14,22 @@ from tqdm import tqdm
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.materials import material_properties
 
-"""
-Mesh Class
-
-Initialized from a voxel model
-
-Properties:
-  verts - coordinates of surface vertices
-  colors - color associated with each vertex
-  tris - sets of vertices associated with triangular faces
-"""
 class Mesh:
+    """
+    Create a Mesh object that can be exported or passed to a Plot object
+    """
+
     def __init__(self, input_model, verts, verts_colors, tris, resolution):
+        """
+        Initialize a Mesh object.
+
+        :param input_model: Voxel data array
+        :param verts: List of coordinates of surface vertices
+        :param verts_colors: List of colors associated with each vertex
+        :param tris: List of the sets of vertices associated with triangular faces
+        :param resolution: Number of voxels per mm
+        """
+
         self.verts = verts
         self.colors = verts_colors
         self.tris = tris
@@ -31,8 +38,23 @@ class Mesh:
 
     # Create mesh from voxel data
     @classmethod
-    def fromVoxelModel(cls, voxel_model, resolution = -1):
-        if resolution == -1:
+    def fromVoxelModel(cls, voxel_model, resolution: float = -1):
+        """
+        Generate a mesh object from a VoxelModel object.
+
+        ----
+
+        Example:
+
+        mesh1 = Mesh.fromVoxelModel(model1)
+
+        ----
+
+        :param voxel_model: VoxelModel object to be converted to a mesh
+        :param resolution: Number of voxels per mm, -1 to use model resolution
+        :return: Mesh
+        """
+        if resolution < 0:
             resolution = voxel_model.resolution
 
         voxel_model_fit = voxel_model.fitWorkspace()
@@ -103,7 +125,19 @@ class Mesh:
         return cls(voxel_model_array, verts, verts_colors, tris, resolution)
 
     # Export model from mesh data
-    def export(self, filename):
+    def export(self, filename: str):
+        """
+        Save a copy of the mesh with the specified name and file format.
+
+        ----
+
+        Example:
+
+        mesh1.export('result.stl')
+
+        :param filename: File name with extension
+        :return: None
+        """
         cells = {
             "triangle": self.tris
         }
@@ -111,6 +145,7 @@ class Mesh:
         output_mesh = meshio.Mesh(self.verts, cells)
         meshio.write(filename, output_mesh)
 
+# Helper functions ##############################################################
 @njit()
 def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
     x_len = len(input_model[:, 0, 0])

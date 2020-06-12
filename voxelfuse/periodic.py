@@ -1,8 +1,8 @@
 """
-Copyright 2018-2019
-Dan Aukes, Cole Brauer
+Copyright 2020
+Cole Brauer, Dan Aukes
 
-Functions for generating triply periodic structures
+Functions for generating triply periodic structures.
 """
 
 import math
@@ -30,7 +30,6 @@ def gyroid(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: T
     :param resolution: Number of voxels per mm
     :return: Negative model, Positive model
     """
-
     s = (2 * math.pi) / scale  # scaling multipler
 
     modelData = np.zeros((size[0], size[1], size[2]), dtype=np.uint16)
@@ -69,7 +68,6 @@ def schwarzP(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords:
     :param resolution: Number of voxels per mm
     :return: Negative model, Positive model
     """
-
     s = (2 * math.pi) / scale  # scaling multipler
 
     modelData = np.zeros((size[0], size[1], size[2]), dtype=np.uint16)
@@ -108,7 +106,6 @@ def schwarzD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords:
     :param resolution: Number of voxels per mm
     :return: Negative model, Positive model
     """
-
     s = (2 * math.pi) / scale # scaling multipler
 
     modelData = np.zeros((size[0], size[1], size[2]), dtype=np.uint16)
@@ -148,7 +145,6 @@ def FRD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tupl
     :param resolution: Number of voxels per mm
     :return: Negative model, Positive model
     """
-
     s = (2 * math.pi) / scale # scaling multipler
 
     modelData = np.zeros((size[0], size[1], size[2]), dtype=np.uint16)
@@ -170,7 +166,7 @@ def FRD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tupl
 
     return surface_model_inner, surface_model_outer
 
-# Helper functions
+# Helper functions ##############################################################
 def generateMaterials(m: int):
     """
     Generate the materials table for a single-material VoxelModel.
