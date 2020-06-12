@@ -86,7 +86,7 @@ class Struct(Enum):
 
 class VoxelModel:
     """
-    Create a VoxelModel object that stores geometry, position, and material information.
+    VoxelModel object that stores geometry, position, and material information.
     """
 
     def __init__(self, voxels, materials, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
@@ -1910,8 +1910,12 @@ class VoxelModel:
         f = open(filename + '.vxc', 'w+')
         print('Saving file: ' + f.name)
 
+        empty_model = VoxelModel.empty((1,1,1), self.resolution)
+        export_model = (VoxelModel.copy(self).fitWorkspace()) | empty_model  # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        export_model.coords = (0, 0, 0)  # Set coords to zero to move object to origin if it is at negative coordinates
+
         f.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
-        self.writeVXCData(f, compression)
+        export_model.writeVXCData(f, compression)
 
         f.close()
 
