@@ -25,8 +25,8 @@
     <VolumeEffectsEnabled>0</VolumeEffectsEnabled>
   </Features>
   <StopCondition>
-    <StopConditionType>0</StopConditionType>
-    <StopConditionValue>0.0</StopConditionValue>
+    <StopConditionType>2</StopConditionType>
+    <StopConditionValue>0.01</StopConditionValue>
   </StopCondition>
   <EquilibriumMode>
     <EquilibriumModeEnabled>0</EquilibriumModeEnabled>
@@ -73,27 +73,27 @@
   <Palette>
     <Material ID="1">
       <MatType>0</MatType>
-      <Name>Rubber</Name>
+      <Name>Aluminum</Name>
       <Display>
-        <Red>0.2</Red>
-        <Green>0.2</Green>
-        <Blue>0.2</Blue>
+        <Red>0.6</Red>
+        <Green>0.6</Green>
+        <Blue>0.6</Blue>
         <Alpha>1</Alpha>
       </Display>
       <Mechanical>
         <MatModel>0</MatModel>
-        <Elastic_Mod>518000.0</Elastic_Mod>
+        <Elastic_Mod>68900000000.0</Elastic_Mod>
         <Plastic_Mod>0.0</Plastic_Mod>
-        <Yield_Stress>3223000.0</Yield_Stress>
-        <FailModel>1</FailModel>
-        <Fail_Stress>3164000.0</Fail_Stress>
-        <Fail_Strain>1.028</Fail_Strain>
-        <Density>930.0</Density>
-        <Poissons_Ratio>0.5</Poissons_Ratio>
-        <CTE>1e-07</CTE>
+        <Yield_Stress>241000000.0</Yield_Stress>
+        <FailModel>0</FailModel>
+        <Fail_Stress>262000000.0</Fail_Stress>
+        <Fail_Strain>0.17</Fail_Strain>
+        <Density>2710.0</Density>
+        <Poissons_Ratio>0.33</Poissons_Ratio>
+        <CTE>2.34e-05</CTE>
         <MaterialTempPhase>0.0</MaterialTempPhase>
-        <uStatic>0.9</uStatic>
-        <uDynamic>0.8</uDynamic>
+        <uStatic>0.61</uStatic>
+        <uDynamic>0.47</uDynamic>
       </Mechanical>
     </Material>
   </Palette>
