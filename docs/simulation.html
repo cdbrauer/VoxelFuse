@@ -1,0 +1,2611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
+<title>voxelfuse.simulation API documentation</title>
+<meta name="description" content="Simulation Class …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>voxelfuse.simulation</code></h1>
+</header>
+<section id="section-intro">
+<p>Simulation Class</p>
+<p>Initialized from a VoxelModel object. Used to configure VoxCad and Voxelyze simulations.</p>
+<p>Copyright 2020 - Cole Brauer, Dan Aukes</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Simulation Class
+
+Initialized from a VoxelModel object. Used to configure VoxCad and Voxelyze simulations.
+
+Copyright 2020 - Cole Brauer, Dan Aukes
+&#34;&#34;&#34;
+
+import os
+import subprocess
+from enum import Enum
+from typing import Tuple, TextIO
+from tqdm import tqdm
+import numpy as np
+from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.primitives import empty, cuboid, sphere, cylinder
+
+class StopCondition(Enum):
+    &#34;&#34;&#34;
+    Options for simulation stop conditions.
+    &#34;&#34;&#34;
+    NONE = 0
+    TIME_STEP = 1
+    TIME_VALUE = 2
+    TEMP_CYCLES = 3
+    ENERGY_CONST = 4
+    ENERGY_KFLOOR = 5
+    MOTION_FLOOR = 6
+
+class BCShape(Enum):
+    &#34;&#34;&#34;
+    Options for simulation boundary condition shapes.
+    &#34;&#34;&#34;
+    BOX = 0
+    CYLINDER = 1
+    SPHERE = 2
+
+class Simulation:
+    &#34;&#34;&#34;
+    Simulation object that stores a VoxelModel and its associated simulation settings.
+    &#34;&#34;&#34;
+
+    def __init__(self, voxel_model):
+        &#34;&#34;&#34;
+        Initialize a Simulation object with default settings.
+
+        Models located at positive coordinate values will have their workspace
+        size adjusted to maintain their position in the exported simulation.
+        Models located at negative coordinate values will be shifted to the origin.
+
+        :param voxel_model: VoxelModel
+        &#34;&#34;&#34;
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        self.__model.coords = (0, 0, 0) # Set coords to zero to move object to origin if it is at negative coordinates
+
+        # Simulator ##############
+        # Integration
+        self.__integrator = 0
+        self.__dtFraction = 1.0
+
+        # Damping
+        self.__dampingBond = 1.0 # (0-1) Bulk material damping
+        self.__dampingEnvironment = 0.0001 # (0-0.1) Damping caused by fluid environment
+
+        # Collisions
+        self.__collisionEnable = False
+        self.__collisionDamping = 1.0 # (0-2) Elastic vs inelastic conditions
+        self.__collisionSystem = 3
+        self.__collisionHorizon = 3
+
+        # Features
+        self.__blendingEnable = False
+        self.__xMixRadius = 0
+        self.__yMixRadius = 0
+        self.__zMixRadius = 0
+        self.__blendingModel = 0
+        self.__polyExp = 1
+        self.__volumeEffectsEnable = False
+
+        # Stop conditions
+        self.__stopConditionType = StopCondition.NONE
+        self.__stopConditionValue = 0.0
+
+        # Equilibrium mode
+        self.__equilibriumModeEnable = False
+
+        # Environment ############
+        # Boundary conditions
+        self.__bcRegions = []
+        self.__bcVoxels = []
+
+        # Gravity
+        self.__gravityEnable = True
+        self.__gravityValue = -9.81
+        self.__floorEnable = True
+
+        # Thermal
+        self.__temperatureEnable = False
+        self.__temperatureBaseValue = 25.0
+        self.__temperatureVaryEnable = False
+        self.__temperatureVaryAmplitude = 0.0
+        self.__temperatureVaryPeriod = 0.0
+
+        # Forces &amp; Sensors #######
+        self.__forces = []
+        self.__sensors = []
+
+    @classmethod
+    def copy(cls, simulation):
+        &#34;&#34;&#34;
+        Create new Simulation object with the same settings as an existing Simulation object.
+
+        :param simulation: Simulation to copy
+        :return: Simulation
+        &#34;&#34;&#34;
+        # Create new simulation object and copy attribute values
+        new_simulation = cls(simulation.__model)
+        new_simulation.__dict__ = simulation.__dict__.copy()
+
+        # Make lists copies instead of references
+        new_simulation.__bcRegions = simulation.__bcRegions.copy()
+        new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
+        new_simulation.__forces = simulation.__forces.copy()
+        new_simulation.__sensors = simulation.__sensors.copy()
+
+        return new_simulation
+
+    # Configure settings ##################################
+    def setModel(self, voxel_model):
+        &#34;&#34;&#34;
+        Set the model for a simulation.
+
+        Models located at positive coordinate values will have their workspace
+        size adjusted to maintain their position in the exported simulation.
+        Models located at negative coordinate values will be shifted to the origin.
+
+        :param voxel_model: VoxelModel
+        :return: None
+        &#34;&#34;&#34;
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        self.__model.coords = (0, 0, 0)  # Set coords to zero to move object to origin if it is at negative coordinates
+
+    def setDamping(self, bond: float = 1.0, environment: float = 0.0001):
+        &#34;&#34;&#34;
+        Set simulation damping parameters.
+
+        Environment damping can be used to simulate fluid environments. 0 represents
+        a vacuum and larger values represent a viscous fluid.
+
+        :param bond: Voxel bond damping (0-1)
+        :param environment: Environment damping (0-0.1)
+        :return: None
+        &#34;&#34;&#34;
+        self.__dampingBond = bond
+        self.__dampingEnvironment = environment
+
+    def setCollision(self, enable: bool = True, damping: float = 1.0):
+        &#34;&#34;&#34;
+        Set simulation collision parameters.
+
+        A damping value of 0 represents elastic collisions and higher values
+        represent inelastic collisions.
+
+        :param enable: Enable/disable collisions
+        :param damping: Collision damping (0-2)
+        :return: None
+        &#34;&#34;&#34;
+        self.__collisionEnable = enable
+        self.__collisionDamping = damping
+
+    def setStopCondition(self, condition: StopCondition = StopCondition.NONE, value: float = 0):
+        &#34;&#34;&#34;
+        Set simulation stop condition.
+
+        :param condition: Stop condition type, set using StopCondition class
+        :param value: Stop condition value
+        :return: None
+        &#34;&#34;&#34;
+        self.__stopConditionType = condition
+        self.__stopConditionValue = value
+
+    def setEquilibriumMode(self, enable: bool = True):
+        &#34;&#34;&#34;
+        Set simulation equilibrium mode.
+
+        :param enable: Enable/disable equilibrium mode
+        :return: None
+        &#34;&#34;&#34;
+        self.__equilibriumModeEnable = enable
+
+    def setGravity(self, enable: bool = True, value: float = -9.81, enable_floor: bool = True):
+        &#34;&#34;&#34;
+        Set simulation gravity parameters.
+
+        :param enable: Enable/disable gravity
+        :param value: Acceleration due to gravity in m/sec^2
+        :param enable_floor: Enable/disable ground plane
+        :return: None
+        &#34;&#34;&#34;
+        self.__gravityEnable = enable
+        self.__gravityValue = value
+        self.__floorEnable = enable_floor
+
+    def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0):
+        &#34;&#34;&#34;
+        Set a fixed environment temperature.
+
+        :param enable: Enable/disable temperature
+        :param base_temp: Temperature in degrees C
+        :return: None
+        &#34;&#34;&#34;
+        self.__temperatureEnable = enable
+        self.__temperatureBaseValue = base_temp
+        self.__temperatureVaryEnable = False
+
+    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0):
+        &#34;&#34;&#34;
+        Set a varying environment temperature.
+
+        :param enable: Enable/disable temperature
+        :param base_temp: Base temperature in degrees C
+        :param amplitude: Temperature fluctuation amplitude
+        :param period: Temperature fluctuation period
+        :return: None
+        &#34;&#34;&#34;
+        self.__temperatureEnable = enable
+        self.__temperatureBaseValue = base_temp
+        self.__temperatureVaryEnable = enable
+        self.__temperatureVaryAmplitude = amplitude
+        self.__temperatureVaryPeriod = period
+
+    # Read settings ##################################
+    def getModel(self):
+        &#34;&#34;&#34;
+        Get the simulation model.
+
+        :return: VoxelModel
+        &#34;&#34;&#34;
+        return self.__model
+
+    def getDamping(self):
+        &#34;&#34;&#34;
+        Get simulation damping parameters.
+
+        :return: Voxel bond damping, Environment damping
+        &#34;&#34;&#34;
+        return self.__dampingBond, self.__dampingEnvironment
+
+    def getCollision(self):
+        &#34;&#34;&#34;
+        Get simulation collision parameters.
+
+        :return: Enable/disable collisions, Collision damping
+        &#34;&#34;&#34;
+        return self.__collisionEnable, self.__collisionDamping
+
+    def getStopCondition(self):
+        &#34;&#34;&#34;
+        Get simulation stop condition.
+
+        :return: Stop condition type, Stop condition value
+        &#34;&#34;&#34;
+        return self.__stopConditionType, self.__stopConditionValue
+
+    def getEquilibriumMode(self):
+        &#34;&#34;&#34;
+        Get simulation equilibrium mode.
+
+        :return: Enable/disable equilibrium mode
+        &#34;&#34;&#34;
+        return self.__equilibriumModeEnable
+
+    def getGravity(self):
+        &#34;&#34;&#34;
+        Get simulation gravity parameters.
+
+        :return: Enable/disable gravity, Acceleration due to gravity in m/sec^2, Enable/disable ground plane
+        &#34;&#34;&#34;
+        return self.__gravityEnable, self.__gravityValue, self.__floorEnable
+
+    def getThermal(self):
+        &#34;&#34;&#34;
+        Get simulation temperature parameters.
+
+        :return: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period
+        &#34;&#34;&#34;
+        return self.__temperatureEnable, self.__temperatureBaseValue, self.__temperatureVaryEnable, self.__temperatureVaryAmplitude, self.__temperatureVaryPeriod
+
+    # Add forces, constraints, and sensors ##################################
+    # Boundary condition sizes and positions are expressed as percentages of the overall model size
+    #   radius is a percentage of the largest model dimension
+    # Fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X
+    #   0: Free, force will be applied
+    #   1: Fixed, displacement will be applied
+    # Displacement is expressed in mm
+
+    # Default box boundary condition is a fixed constraint in the YZ plane
+    def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0), size: Tuple[float, float, float] = (0.01, 1.0, 1.0), fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+        &#34;&#34;&#34;
+        Add a box-shaped boundary condition.
+
+        Boundary condition position and size are expressed as percentages of the
+        overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+        If a bit is set to 0, the corresponding force/torque will be applied. If
+        a bit is set to 1, the DOF will be fixed and the displacement will be
+        applied.
+
+        :param position: Box corner position (0-1)
+        :param size: Box size (0-1)
+        :param fixed_dof: Fixed degrees of freedom
+        :param force: Force vector in N
+        :param displacement: Displacement vector in mm
+        :param torque: Torque values in Nm
+        :param angular_displacement: Angular displacement values in deg
+        :return: None
+        &#34;&#34;&#34;
+        self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
+        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        bcRegion = cuboid(regionSize, regionPosition) &amp; self.__model
+
+        x_offset = int(bcRegion.coords[0])
+        y_offset = int(bcRegion.coords[1])
+        z_offset = int(bcRegion.coords[2])
+
+        bcVoxels = []
+        for x in tqdm(range(x_len), desc=&#39;Finding constrained voxels&#39;):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if bcRegion.voxels[x, y, z] != 0:
+                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+        self.__bcVoxels.append(bcVoxels)
+
+    # Default sphere boundary condition is a fixed constraint centered in the model
+    def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5), radius: float = 0.05, fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+        &#34;&#34;&#34;
+        Add a spherical boundary condition.
+
+        Boundary condition position and radius are expressed as percentages of the
+        overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+        If a bit is set to 0, the corresponding force/torque will be applied. If
+        a bit is set to 1, the DOF will be fixed and the displacement will be
+        applied.
+
+        :param position: Sphere center position (0-1)
+        :param radius: Sphere radius (0-1)
+        :param fixed_dof: Fixed degrees of freedom
+        :param force: Force vector in N
+        :param displacement: Displacement vector in mm
+        :param torque: Torque values in Nm
+        :param angular_displacement: Angular displacement values in deg
+        :return: None
+        &#34;&#34;&#34;
+        self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        bcRegion = sphere(regionRadius, regionPosition) &amp; self.__model
+
+        x_offset = int(bcRegion.coords[0])
+        y_offset = int(bcRegion.coords[1])
+        z_offset = int(bcRegion.coords[2])
+
+        bcVoxels = []
+        for x in tqdm(range(x_len), desc=&#39;Finding constrained voxels&#39;):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if bcRegion.voxels[x, y, z] != 0:
+                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+        self.__bcVoxels.append(bcVoxels)
+
+    # Default cylinder boundary condition is a fixed constraint centered in the model
+    def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0, height: float = 0.1, radius: float = 0.05, fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+        &#34;&#34;&#34;
+        Add a cylindrical boundary condition.
+
+        Boundary condition position and size are expressed as percentages of the
+        overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+        If a bit is set to 0, the corresponding force/torque will be applied. If
+        a bit is set to 1, the DOF will be fixed and the displacement will be
+        applied.
+
+        :param position: Boundary condition origin position (0-1)
+        :param axis: Cylinder axis (0-2)
+        :param height: Cylinder height (0-1)
+        :param radius: Cylinder radius (0-1)
+        :param fixed_dof: Fixed degrees of freedom
+        :param force: Force vector in N
+        :param displacement: Displacement vector in mm
+        :param torque: Torque values in Nm
+        :param angular_displacement: Angular displacement values in deg
+        :return: None
+        &#34;&#34;&#34;
+        size = [0.0, 0.0, 0.0]
+        size[axis] = height
+        self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+        regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
+        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        bcRegion = cylinder(regionRadius, regionHeight, regionPosition)
+
+        if axis == 0:
+            bcRegion = bcRegion.rotate90(axis=1)
+        elif axis == 1:
+            bcRegion = bcRegion.rotate90(axis=0)
+
+        bcRegion = bcRegion &amp; self.__model
+
+        x_offset = int(bcRegion.coords[0])
+        y_offset = int(bcRegion.coords[1])
+        z_offset = int(bcRegion.coords[2])
+
+        bcVoxels = []
+        for x in tqdm(range(x_len), desc=&#39;Finding constrained voxels&#39;):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if bcRegion.voxels[x, y, z] != 0:
+                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+        self.__bcVoxels.append(bcVoxels)
+
+    def addForce(self, location: Tuple[int, int, int] = (0, 0, 0), vector: Tuple[float, float, float] = (0, 0, 0)):
+        &#34;&#34;&#34;
+        Add a force to a voxel.
+
+        This feature is not currently supported by VoxCad
+
+        :param location: Force location in voxels
+        :param vector: Force vector in N
+        :return: None
+        &#34;&#34;&#34;
+        force = [location[0], location[1], location[2], vector[0], vector[1], vector[2]]
+        self.__forces.append(force)
+
+    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0)):
+        &#34;&#34;&#34;
+        Add a sensor to a voxel.
+
+        This feature is not currently supported by VoxCad
+
+        :param location: Force location in voxels
+        :return: None
+        &#34;&#34;&#34;
+        sensor = [location[0], location[1], location[2]]
+        self.__sensors.append(sensor)
+
+    # Export simulation ##################################
+    # Export simulation object to .vxa file for import into VoxCad or Voxelyze
+    def saveVXA(self, filename: str, compression: bool = False):
+        &#34;&#34;&#34;
+        Save model data to a .vxa file
+
+        The VoxCad simulation file format stores all the data contained in
+        a .vxc file with plus the simulation setup.
+
+        This format supports compression for the voxel data. Enabling compression allows
+        for larger models, but it may introduce geometry errors that particularly affect
+        small models.
+
+        The .vxa file type can be opened using VoxCad simulation software. However, it
+        cannot currently be reopened by a VoxelFuse script.
+
+        :param filename: File name
+        :param compression: Enable/disable voxel data compression
+        :return: None
+        &#34;&#34;&#34;
+        f = open(filename + &#39;.vxa&#39;, &#39;w+&#39;)
+        print(&#39;Saving file: &#39; + f.name)
+
+        f.write(&#39;&lt;?xml version=&#34;1.0&#34; encoding=&#34;ISO-8859-1&#34;?&gt;\n&#39;)
+        f.write(&#39;&lt;VXA Version=&#34;&#39; + str(1.1) + &#39;&#34;&gt;\n&#39;)
+        self.writeSimData(f)
+        self.writeEnvironmentData(f)
+        self.writeForces(f)
+        self.writeSensors(f)
+        self.__model.writeVXCData(f, compression)
+        f.write(&#39;&lt;/VXA&gt;\n&#39;)
+
+        f.close()
+
+    # Write simulator settings to file
+    def writeSimData(self, f: TextIO):
+        &#34;&#34;&#34;
+        Write simulation parameters to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        &#34;&#34;&#34;
+        # Simulator settings
+        f.write(&#39;&lt;Simulator&gt;\n&#39;)
+        f.write(&#39;  &lt;Integration&gt;\n&#39;)
+        f.write(&#39;    &lt;Integrator&gt;&#39; + str(self.__integrator) + &#39;&lt;/Integrator&gt;\n&#39;)
+        f.write(&#39;    &lt;DtFrac&gt;&#39; + str(self.__dtFraction) + &#39;&lt;/DtFrac&gt;\n&#39;)
+        f.write(&#39;  &lt;/Integration&gt;\n&#39;)
+        f.write(&#39;  &lt;Damping&gt;\n&#39;)
+        f.write(&#39;    &lt;BondDampingZ&gt;&#39; + str(self.__dampingBond) + &#39;&lt;/BondDampingZ&gt;\n&#39;)
+        f.write(&#39;    &lt;ColDampingZ&gt;&#39; + str(self.__collisionDamping) + &#39;&lt;/ColDampingZ&gt;\n&#39;)
+        f.write(&#39;    &lt;SlowDampingZ&gt;&#39; + str(self.__dampingEnvironment) + &#39;&lt;/SlowDampingZ&gt;\n&#39;)
+        f.write(&#39;  &lt;/Damping&gt;\n&#39;)
+        f.write(&#39;  &lt;Collisions&gt;\n&#39;)
+        f.write(&#39;    &lt;SelfColEnabled&gt;&#39; + str(int(self.__collisionEnable)) + &#39;&lt;/SelfColEnabled&gt;\n&#39;)
+        f.write(&#39;    &lt;ColSystem&gt;&#39; + str(self.__collisionSystem) + &#39;&lt;/ColSystem&gt;\n&#39;)
+        f.write(&#39;    &lt;CollisionHorizon&gt;&#39; + str(self.__collisionHorizon) + &#39;&lt;/CollisionHorizon&gt;\n&#39;)
+        f.write(&#39;  &lt;/Collisions&gt;\n&#39;)
+        f.write(&#39;  &lt;Features&gt;\n&#39;)
+        f.write(&#39;    &lt;BlendingEnabled&gt;&#39; + str(int(self.__blendingEnable)) + &#39;&lt;/BlendingEnabled&gt;\n&#39;)
+        f.write(&#39;    &lt;XMixRadius&gt;&#39; + str(self.__xMixRadius) + &#39;&lt;/XMixRadius&gt;\n&#39;)
+        f.write(&#39;    &lt;YMixRadius&gt;&#39; + str(self.__yMixRadius) + &#39;&lt;/YMixRadius&gt;\n&#39;)
+        f.write(&#39;    &lt;ZMixRadius&gt;&#39; + str(self.__zMixRadius) + &#39;&lt;/ZMixRadius&gt;\n&#39;)
+        f.write(&#39;    &lt;BlendModel&gt;&#39; + str(self.__blendingModel) + &#39;&lt;/BlendModel&gt;\n&#39;)
+        f.write(&#39;    &lt;PolyExp&gt;&#39; + str(self.__polyExp) + &#39;&lt;/PolyExp&gt;\n&#39;)
+        f.write(&#39;    &lt;VolumeEffectsEnabled&gt;&#39; + str(int(self.__volumeEffectsEnable)) + &#39;&lt;/VolumeEffectsEnabled&gt;\n&#39;)
+        f.write(&#39;  &lt;/Features&gt;\n&#39;)
+        f.write(&#39;  &lt;StopCondition&gt;\n&#39;)
+        f.write(&#39;    &lt;StopConditionType&gt;&#39; + str(self.__stopConditionType.value) + &#39;&lt;/StopConditionType&gt;\n&#39;)
+        f.write(&#39;    &lt;StopConditionValue&gt;&#39; + str(self.__stopConditionValue) + &#39;&lt;/StopConditionValue&gt;\n&#39;)
+        f.write(&#39;  &lt;/StopCondition&gt;\n&#39;)
+        f.write(&#39;  &lt;EquilibriumMode&gt;\n&#39;)
+        f.write(&#39;    &lt;EquilibriumModeEnabled&gt;&#39; + str(int(self.__equilibriumModeEnable)) + &#39;&lt;/EquilibriumModeEnabled&gt;\n&#39;)
+        f.write(&#39;  &lt;/EquilibriumMode&gt;\n&#39;)
+        f.write(&#39;&lt;/Simulator&gt;\n&#39;)
+
+    # Write environment settings to file
+    def writeEnvironmentData(self, f: TextIO):
+        &#34;&#34;&#34;
+        Write simulation environment parameters to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        &#34;&#34;&#34;
+        # Environment settings
+        f.write(&#39;&lt;Environment&gt;\n&#39;)
+        f.write(&#39;  &lt;Boundary_Conditions&gt;\n&#39;)
+        f.write(&#39;    &lt;NumBCs&gt;&#39; + str(len(self.__bcRegions)) + &#39;&lt;/NumBCs&gt;\n&#39;)
+
+        for r in tqdm(range(len(self.__bcRegions)), desc=&#39;Writing boundary conditions&#39;):
+            f.write(&#39;    &lt;FRegion&gt;\n&#39;)
+            f.write(&#39;      &lt;PrimType&gt;&#39; + str(int(self.__bcRegions[r][0].value)) + &#39;&lt;/PrimType&gt;\n&#39;)
+            f.write(&#39;      &lt;X&gt;&#39; + str(self.__bcRegions[r][1][0]) + &#39;&lt;/X&gt;\n&#39;)
+            f.write(&#39;      &lt;Y&gt;&#39; + str(self.__bcRegions[r][1][1]) + &#39;&lt;/Y&gt;\n&#39;)
+            f.write(&#39;      &lt;Z&gt;&#39; + str(self.__bcRegions[r][1][2]) + &#39;&lt;/Z&gt;\n&#39;)
+            f.write(&#39;      &lt;dX&gt;&#39; + str(self.__bcRegions[r][2][0]) + &#39;&lt;/dX&gt;\n&#39;)
+            f.write(&#39;      &lt;dY&gt;&#39; + str(self.__bcRegions[r][2][1]) + &#39;&lt;/dY&gt;\n&#39;)
+            f.write(&#39;      &lt;dZ&gt;&#39; + str(self.__bcRegions[r][2][2]) + &#39;&lt;/dZ&gt;\n&#39;)
+            f.write(&#39;      &lt;Radius&gt;&#39; + str(self.__bcRegions[r][3]) + &#39;&lt;/Radius&gt;\n&#39;)
+            f.write(&#39;      &lt;R&gt;&#39; + str(self.__bcRegions[r][4][0]) + &#39;&lt;/R&gt;\n&#39;)
+            f.write(&#39;      &lt;G&gt;&#39; + str(self.__bcRegions[r][4][1]) + &#39;&lt;/G&gt;\n&#39;)
+            f.write(&#39;      &lt;B&gt;&#39; + str(self.__bcRegions[r][4][2]) + &#39;&lt;/B&gt;\n&#39;)
+            f.write(&#39;      &lt;alpha&gt;&#39; + str(self.__bcRegions[r][4][3]) + &#39;&lt;/alpha&gt;\n&#39;)
+            f.write(&#39;      &lt;DofFixed&gt;&#39; + str(self.__bcRegions[r][5]) + &#39;&lt;/DofFixed&gt;\n&#39;)
+            f.write(&#39;      &lt;ForceX&gt;&#39; + str(self.__bcRegions[r][6][0]) + &#39;&lt;/ForceX&gt;\n&#39;)
+            f.write(&#39;      &lt;ForceY&gt;&#39; + str(self.__bcRegions[r][6][1]) + &#39;&lt;/ForceY&gt;\n&#39;)
+            f.write(&#39;      &lt;ForceZ&gt;&#39; + str(self.__bcRegions[r][6][2]) + &#39;&lt;/ForceZ&gt;\n&#39;)
+            f.write(&#39;      &lt;TorqueX&gt;&#39; + str(self.__bcRegions[r][7][0]) + &#39;&lt;/TorqueX&gt;\n&#39;)
+            f.write(&#39;      &lt;TorqueY&gt;&#39; + str(self.__bcRegions[r][7][1]) + &#39;&lt;/TorqueY&gt;\n&#39;)
+            f.write(&#39;      &lt;TorqueZ&gt;&#39; + str(self.__bcRegions[r][7][2]) + &#39;&lt;/TorqueZ&gt;\n&#39;)
+            f.write(&#39;      &lt;DisplaceX&gt;&#39; + str(self.__bcRegions[r][8][0] * 1e-3) + &#39;&lt;/DisplaceX&gt;\n&#39;)
+            f.write(&#39;      &lt;DisplaceY&gt;&#39; + str(self.__bcRegions[r][8][1] * 1e-3) + &#39;&lt;/DisplaceY&gt;\n&#39;)
+            f.write(&#39;      &lt;DisplaceZ&gt;&#39; + str(self.__bcRegions[r][8][2] * 1e-3) + &#39;&lt;/DisplaceZ&gt;\n&#39;)
+            f.write(&#39;      &lt;AngDisplaceX&gt;&#39; + str(self.__bcRegions[r][9][0]) + &#39;&lt;/AngDisplaceX&gt;\n&#39;)
+            f.write(&#39;      &lt;AngDisplaceY&gt;&#39; + str(self.__bcRegions[r][9][1]) + &#39;&lt;/AngDisplaceY&gt;\n&#39;)
+            f.write(&#39;      &lt;AngDisplaceZ&gt;&#39; + str(self.__bcRegions[r][9][2]) + &#39;&lt;/AngDisplaceZ&gt;\n&#39;)
+            f.write(&#39;      &lt;IntersectedVoxels&gt;\n&#39;)
+
+            for v in self.__bcVoxels[r]:
+                f.write(&#39;        &lt;Voxel&gt;&#39; + str(v).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Voxel&gt;\n&#39;)
+
+            f.write(&#39;      &lt;/IntersectedVoxels&gt;\n&#39;)
+            f.write(&#39;    &lt;/FRegion&gt;\n&#39;)
+
+        f.write(&#39;  &lt;/Boundary_Conditions&gt;\n&#39;)
+        f.write(&#39;  &lt;Gravity&gt;\n&#39;)
+        f.write(&#39;    &lt;GravEnabled&gt;&#39; + str(int(self.__gravityEnable)) + &#39;&lt;/GravEnabled&gt;\n&#39;)
+        f.write(&#39;    &lt;GravAcc&gt;&#39; + str(self.__gravityValue) + &#39;&lt;/GravAcc&gt;\n&#39;)
+        f.write(&#39;    &lt;FloorEnabled&gt;&#39; + str(int(self.__floorEnable)) + &#39;&lt;/FloorEnabled&gt;\n&#39;)
+        f.write(&#39;  &lt;/Gravity&gt;\n&#39;)
+        f.write(&#39;  &lt;Thermal&gt;\n&#39;)
+        f.write(&#39;    &lt;TempEnabled&gt;&#39; + str(int(self.__temperatureEnable)) + &#39;&lt;/TempEnabled&gt;\n&#39;)
+        f.write(&#39;    &lt;TempAmplitude&gt;&#39; + str(self.__temperatureVaryAmplitude) + &#39;&lt;/TempAmplitude&gt;\n&#39;)
+        f.write(&#39;    &lt;TempBase&gt;&#39; + str(self.__temperatureBaseValue) + &#39;&lt;/TempBase&gt;\n&#39;)
+        f.write(&#39;    &lt;VaryTempEnabled&gt;&#39; + str(int(self.__temperatureVaryEnable)) + &#39;&lt;/VaryTempEnabled&gt;\n&#39;)
+        f.write(&#39;    &lt;TempPeriod&gt;&#39; + str(self.__temperatureVaryPeriod) + &#39;&lt;/TempPeriod&gt;\n&#39;)
+        f.write(&#39;  &lt;/Thermal&gt;\n&#39;)
+        f.write(&#39;&lt;/Environment&gt;\n&#39;)
+
+    def writeForces(self, f: TextIO):
+        &#34;&#34;&#34;
+        Write voxel forces to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        &#34;&#34;&#34;
+        f.write(&#39;&lt;Forces&gt;\n&#39;)
+        for force in self.__forces:
+            f.write(&#39;  &lt;Force&gt;\n&#39;)
+            f.write(&#39;    &lt;X_Index&gt;&#39; + str(int(force[0])) + &#39;&lt;/X_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;Y_Index&gt;&#39; + str(int(force[1])) + &#39;&lt;/Y_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;Z_Index&gt;&#39; + str(int(force[2])) + &#39;&lt;/Z_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;X_Component&gt;&#39; + str(int(force[3])) + &#39;&lt;/X_Component&gt;\n&#39;)
+            f.write(&#39;    &lt;Y_Component&gt;&#39; + str(int(force[4])) + &#39;&lt;/Y_Component&gt;\n&#39;)
+            f.write(&#39;    &lt;Z_Component&gt;&#39; + str(int(force[5])) + &#39;&lt;/Z_Component&gt;\n&#39;)
+            f.write(&#39;    &lt;Location&gt;&#39; + str(force[0:3]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Location&gt;\n&#39;)
+            f.write(&#39;    &lt;Vector&gt;&#39; + str(force[3:6]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Vector&gt;\n&#39;)
+            f.write(&#39;  &lt;/Force&gt;\n&#39;)
+        f.write(&#39;&lt;/Forces&gt;\n&#39;)
+
+    def writeSensors(self, f: TextIO):
+        &#34;&#34;&#34;
+        Write voxel sensors to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        &#34;&#34;&#34;
+        f.write(&#39;&lt;Sensors&gt;\n&#39;)
+        for sensor in self.__sensors:
+            f.write(&#39;  &lt;Sensor&gt;\n&#39;)
+            f.write(&#39;    &lt;X_Index&gt;&#39; + str(int(sensor[0])) + &#39;&lt;/X_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;Y_Index&gt;&#39; + str(int(sensor[1])) + &#39;&lt;/Y_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;Z_Index&gt;&#39; + str(int(sensor[2])) + &#39;&lt;/Z_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;Location&gt;&#39; + str(sensor[0:3]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Location&gt;\n&#39;)
+            f.write(&#39;  &lt;/Sensor&gt;\n&#39;)
+        f.write(&#39;&lt;/Sensors&gt;\n&#39;)
+
+    def launchSim(self, filename: str = &#39;temp&#39;, delete_files: bool = True):
+        &#34;&#34;&#34;
+        Launch a Simulation object in VoxCad.
+
+        ----
+
+        Example:
+
+        ``simulation = Simulation(modelResult)``
+
+        ``simulation.setCollision()``
+
+        ``simulation.setStopCondition(StopCondition.TIME_VALUE, 0.01)``
+
+        ``simulation.launchSim(&#39;collision_sim_1&#39;, delete_files=False)``
+
+        ----
+
+        :param filename: File name
+        :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
+        :return:
+        &#34;&#34;&#34;
+        self.saveVXA(filename)
+
+        command_string = &#39;voxcad &#39; + filename + &#39;.vxa&#39;
+        p = subprocess.Popen(command_string, shell=True)
+        p.wait()
+
+        if delete_files:
+            print(&#39;Removing file: &#39; + filename + &#39;.vxa&#39;)
+            os.remove(filename + &#39;.vxa&#39;)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="voxelfuse.simulation.BCShape"><code class="flex name class">
+<span>class <span class="ident">BCShape</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Options for simulation boundary condition shapes.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BCShape(Enum):
+    &#34;&#34;&#34;
+    Options for simulation boundary condition shapes.
+    &#34;&#34;&#34;
+    BOX = 0
+    CYLINDER = 1
+    SPHERE = 2</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="voxelfuse.simulation.BCShape.BOX"><code class="name">var <span class="ident">BOX</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="voxelfuse.simulation.BCShape.CYLINDER"><code class="name">var <span class="ident">CYLINDER</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="voxelfuse.simulation.BCShape.SPHERE"><code class="name">var <span class="ident">SPHERE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="voxelfuse.simulation.Simulation"><code class="flex name class">
+<span>class <span class="ident">Simulation</span></span>
+<span>(</span><span>voxel_model)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Simulation object that stores a VoxelModel and its associated simulation settings.</p>
+<p>Initialize a Simulation object with default settings.</p>
+<p>Models located at positive coordinate values will have their workspace
+size adjusted to maintain their position in the exported simulation.
+Models located at negative coordinate values will be shifted to the origin.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>voxel_model</code></strong></dt>
+<dd>VoxelModel</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Simulation:
+    &#34;&#34;&#34;
+    Simulation object that stores a VoxelModel and its associated simulation settings.
+    &#34;&#34;&#34;
+
+    def __init__(self, voxel_model):
+        &#34;&#34;&#34;
+        Initialize a Simulation object with default settings.
+
+        Models located at positive coordinate values will have their workspace
+        size adjusted to maintain their position in the exported simulation.
+        Models located at negative coordinate values will be shifted to the origin.
+
+        :param voxel_model: VoxelModel
+        &#34;&#34;&#34;
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        self.__model.coords = (0, 0, 0) # Set coords to zero to move object to origin if it is at negative coordinates
+
+        # Simulator ##############
+        # Integration
+        self.__integrator = 0
+        self.__dtFraction = 1.0
+
+        # Damping
+        self.__dampingBond = 1.0 # (0-1) Bulk material damping
+        self.__dampingEnvironment = 0.0001 # (0-0.1) Damping caused by fluid environment
+
+        # Collisions
+        self.__collisionEnable = False
+        self.__collisionDamping = 1.0 # (0-2) Elastic vs inelastic conditions
+        self.__collisionSystem = 3
+        self.__collisionHorizon = 3
+
+        # Features
+        self.__blendingEnable = False
+        self.__xMixRadius = 0
+        self.__yMixRadius = 0
+        self.__zMixRadius = 0
+        self.__blendingModel = 0
+        self.__polyExp = 1
+        self.__volumeEffectsEnable = False
+
+        # Stop conditions
+        self.__stopConditionType = StopCondition.NONE
+        self.__stopConditionValue = 0.0
+
+        # Equilibrium mode
+        self.__equilibriumModeEnable = False
+
+        # Environment ############
+        # Boundary conditions
+        self.__bcRegions = []
+        self.__bcVoxels = []
+
+        # Gravity
+        self.__gravityEnable = True
+        self.__gravityValue = -9.81
+        self.__floorEnable = True
+
+        # Thermal
+        self.__temperatureEnable = False
+        self.__temperatureBaseValue = 25.0
+        self.__temperatureVaryEnable = False
+        self.__temperatureVaryAmplitude = 0.0
+        self.__temperatureVaryPeriod = 0.0
+
+        # Forces &amp; Sensors #######
+        self.__forces = []
+        self.__sensors = []
+
+    @classmethod
+    def copy(cls, simulation):
+        &#34;&#34;&#34;
+        Create new Simulation object with the same settings as an existing Simulation object.
+
+        :param simulation: Simulation to copy
+        :return: Simulation
+        &#34;&#34;&#34;
+        # Create new simulation object and copy attribute values
+        new_simulation = cls(simulation.__model)
+        new_simulation.__dict__ = simulation.__dict__.copy()
+
+        # Make lists copies instead of references
+        new_simulation.__bcRegions = simulation.__bcRegions.copy()
+        new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
+        new_simulation.__forces = simulation.__forces.copy()
+        new_simulation.__sensors = simulation.__sensors.copy()
+
+        return new_simulation
+
+    # Configure settings ##################################
+    def setModel(self, voxel_model):
+        &#34;&#34;&#34;
+        Set the model for a simulation.
+
+        Models located at positive coordinate values will have their workspace
+        size adjusted to maintain their position in the exported simulation.
+        Models located at negative coordinate values will be shifted to the origin.
+
+        :param voxel_model: VoxelModel
+        :return: None
+        &#34;&#34;&#34;
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        self.__model.coords = (0, 0, 0)  # Set coords to zero to move object to origin if it is at negative coordinates
+
+    def setDamping(self, bond: float = 1.0, environment: float = 0.0001):
+        &#34;&#34;&#34;
+        Set simulation damping parameters.
+
+        Environment damping can be used to simulate fluid environments. 0 represents
+        a vacuum and larger values represent a viscous fluid.
+
+        :param bond: Voxel bond damping (0-1)
+        :param environment: Environment damping (0-0.1)
+        :return: None
+        &#34;&#34;&#34;
+        self.__dampingBond = bond
+        self.__dampingEnvironment = environment
+
+    def setCollision(self, enable: bool = True, damping: float = 1.0):
+        &#34;&#34;&#34;
+        Set simulation collision parameters.
+
+        A damping value of 0 represents elastic collisions and higher values
+        represent inelastic collisions.
+
+        :param enable: Enable/disable collisions
+        :param damping: Collision damping (0-2)
+        :return: None
+        &#34;&#34;&#34;
+        self.__collisionEnable = enable
+        self.__collisionDamping = damping
+
+    def setStopCondition(self, condition: StopCondition = StopCondition.NONE, value: float = 0):
+        &#34;&#34;&#34;
+        Set simulation stop condition.
+
+        :param condition: Stop condition type, set using StopCondition class
+        :param value: Stop condition value
+        :return: None
+        &#34;&#34;&#34;
+        self.__stopConditionType = condition
+        self.__stopConditionValue = value
+
+    def setEquilibriumMode(self, enable: bool = True):
+        &#34;&#34;&#34;
+        Set simulation equilibrium mode.
+
+        :param enable: Enable/disable equilibrium mode
+        :return: None
+        &#34;&#34;&#34;
+        self.__equilibriumModeEnable = enable
+
+    def setGravity(self, enable: bool = True, value: float = -9.81, enable_floor: bool = True):
+        &#34;&#34;&#34;
+        Set simulation gravity parameters.
+
+        :param enable: Enable/disable gravity
+        :param value: Acceleration due to gravity in m/sec^2
+        :param enable_floor: Enable/disable ground plane
+        :return: None
+        &#34;&#34;&#34;
+        self.__gravityEnable = enable
+        self.__gravityValue = value
+        self.__floorEnable = enable_floor
+
+    def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0):
+        &#34;&#34;&#34;
+        Set a fixed environment temperature.
+
+        :param enable: Enable/disable temperature
+        :param base_temp: Temperature in degrees C
+        :return: None
+        &#34;&#34;&#34;
+        self.__temperatureEnable = enable
+        self.__temperatureBaseValue = base_temp
+        self.__temperatureVaryEnable = False
+
+    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0):
+        &#34;&#34;&#34;
+        Set a varying environment temperature.
+
+        :param enable: Enable/disable temperature
+        :param base_temp: Base temperature in degrees C
+        :param amplitude: Temperature fluctuation amplitude
+        :param period: Temperature fluctuation period
+        :return: None
+        &#34;&#34;&#34;
+        self.__temperatureEnable = enable
+        self.__temperatureBaseValue = base_temp
+        self.__temperatureVaryEnable = enable
+        self.__temperatureVaryAmplitude = amplitude
+        self.__temperatureVaryPeriod = period
+
+    # Read settings ##################################
+    def getModel(self):
+        &#34;&#34;&#34;
+        Get the simulation model.
+
+        :return: VoxelModel
+        &#34;&#34;&#34;
+        return self.__model
+
+    def getDamping(self):
+        &#34;&#34;&#34;
+        Get simulation damping parameters.
+
+        :return: Voxel bond damping, Environment damping
+        &#34;&#34;&#34;
+        return self.__dampingBond, self.__dampingEnvironment
+
+    def getCollision(self):
+        &#34;&#34;&#34;
+        Get simulation collision parameters.
+
+        :return: Enable/disable collisions, Collision damping
+        &#34;&#34;&#34;
+        return self.__collisionEnable, self.__collisionDamping
+
+    def getStopCondition(self):
+        &#34;&#34;&#34;
+        Get simulation stop condition.
+
+        :return: Stop condition type, Stop condition value
+        &#34;&#34;&#34;
+        return self.__stopConditionType, self.__stopConditionValue
+
+    def getEquilibriumMode(self):
+        &#34;&#34;&#34;
+        Get simulation equilibrium mode.
+
+        :return: Enable/disable equilibrium mode
+        &#34;&#34;&#34;
+        return self.__equilibriumModeEnable
+
+    def getGravity(self):
+        &#34;&#34;&#34;
+        Get simulation gravity parameters.
+
+        :return: Enable/disable gravity, Acceleration due to gravity in m/sec^2, Enable/disable ground plane
+        &#34;&#34;&#34;
+        return self.__gravityEnable, self.__gravityValue, self.__floorEnable
+
+    def getThermal(self):
+        &#34;&#34;&#34;
+        Get simulation temperature parameters.
+
+        :return: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period
+        &#34;&#34;&#34;
+        return self.__temperatureEnable, self.__temperatureBaseValue, self.__temperatureVaryEnable, self.__temperatureVaryAmplitude, self.__temperatureVaryPeriod
+
+    # Add forces, constraints, and sensors ##################################
+    # Boundary condition sizes and positions are expressed as percentages of the overall model size
+    #   radius is a percentage of the largest model dimension
+    # Fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X
+    #   0: Free, force will be applied
+    #   1: Fixed, displacement will be applied
+    # Displacement is expressed in mm
+
+    # Default box boundary condition is a fixed constraint in the YZ plane
+    def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0), size: Tuple[float, float, float] = (0.01, 1.0, 1.0), fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+        &#34;&#34;&#34;
+        Add a box-shaped boundary condition.
+
+        Boundary condition position and size are expressed as percentages of the
+        overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+        If a bit is set to 0, the corresponding force/torque will be applied. If
+        a bit is set to 1, the DOF will be fixed and the displacement will be
+        applied.
+
+        :param position: Box corner position (0-1)
+        :param size: Box size (0-1)
+        :param fixed_dof: Fixed degrees of freedom
+        :param force: Force vector in N
+        :param displacement: Displacement vector in mm
+        :param torque: Torque values in Nm
+        :param angular_displacement: Angular displacement values in deg
+        :return: None
+        &#34;&#34;&#34;
+        self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
+        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        bcRegion = cuboid(regionSize, regionPosition) &amp; self.__model
+
+        x_offset = int(bcRegion.coords[0])
+        y_offset = int(bcRegion.coords[1])
+        z_offset = int(bcRegion.coords[2])
+
+        bcVoxels = []
+        for x in tqdm(range(x_len), desc=&#39;Finding constrained voxels&#39;):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if bcRegion.voxels[x, y, z] != 0:
+                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+        self.__bcVoxels.append(bcVoxels)
+
+    # Default sphere boundary condition is a fixed constraint centered in the model
+    def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5), radius: float = 0.05, fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+        &#34;&#34;&#34;
+        Add a spherical boundary condition.
+
+        Boundary condition position and radius are expressed as percentages of the
+        overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+        If a bit is set to 0, the corresponding force/torque will be applied. If
+        a bit is set to 1, the DOF will be fixed and the displacement will be
+        applied.
+
+        :param position: Sphere center position (0-1)
+        :param radius: Sphere radius (0-1)
+        :param fixed_dof: Fixed degrees of freedom
+        :param force: Force vector in N
+        :param displacement: Displacement vector in mm
+        :param torque: Torque values in Nm
+        :param angular_displacement: Angular displacement values in deg
+        :return: None
+        &#34;&#34;&#34;
+        self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        bcRegion = sphere(regionRadius, regionPosition) &amp; self.__model
+
+        x_offset = int(bcRegion.coords[0])
+        y_offset = int(bcRegion.coords[1])
+        z_offset = int(bcRegion.coords[2])
+
+        bcVoxels = []
+        for x in tqdm(range(x_len), desc=&#39;Finding constrained voxels&#39;):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if bcRegion.voxels[x, y, z] != 0:
+                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+        self.__bcVoxels.append(bcVoxels)
+
+    # Default cylinder boundary condition is a fixed constraint centered in the model
+    def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0, height: float = 0.1, radius: float = 0.05, fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+        &#34;&#34;&#34;
+        Add a cylindrical boundary condition.
+
+        Boundary condition position and size are expressed as percentages of the
+        overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+        If a bit is set to 0, the corresponding force/torque will be applied. If
+        a bit is set to 1, the DOF will be fixed and the displacement will be
+        applied.
+
+        :param position: Boundary condition origin position (0-1)
+        :param axis: Cylinder axis (0-2)
+        :param height: Cylinder height (0-1)
+        :param radius: Cylinder radius (0-1)
+        :param fixed_dof: Fixed degrees of freedom
+        :param force: Force vector in N
+        :param displacement: Displacement vector in mm
+        :param torque: Torque values in Nm
+        :param angular_displacement: Angular displacement values in deg
+        :return: None
+        &#34;&#34;&#34;
+        size = [0.0, 0.0, 0.0]
+        size[axis] = height
+        self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+        regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
+        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        bcRegion = cylinder(regionRadius, regionHeight, regionPosition)
+
+        if axis == 0:
+            bcRegion = bcRegion.rotate90(axis=1)
+        elif axis == 1:
+            bcRegion = bcRegion.rotate90(axis=0)
+
+        bcRegion = bcRegion &amp; self.__model
+
+        x_offset = int(bcRegion.coords[0])
+        y_offset = int(bcRegion.coords[1])
+        z_offset = int(bcRegion.coords[2])
+
+        bcVoxels = []
+        for x in tqdm(range(x_len), desc=&#39;Finding constrained voxels&#39;):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if bcRegion.voxels[x, y, z] != 0:
+                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+        self.__bcVoxels.append(bcVoxels)
+
+    def addForce(self, location: Tuple[int, int, int] = (0, 0, 0), vector: Tuple[float, float, float] = (0, 0, 0)):
+        &#34;&#34;&#34;
+        Add a force to a voxel.
+
+        This feature is not currently supported by VoxCad
+
+        :param location: Force location in voxels
+        :param vector: Force vector in N
+        :return: None
+        &#34;&#34;&#34;
+        force = [location[0], location[1], location[2], vector[0], vector[1], vector[2]]
+        self.__forces.append(force)
+
+    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0)):
+        &#34;&#34;&#34;
+        Add a sensor to a voxel.
+
+        This feature is not currently supported by VoxCad
+
+        :param location: Force location in voxels
+        :return: None
+        &#34;&#34;&#34;
+        sensor = [location[0], location[1], location[2]]
+        self.__sensors.append(sensor)
+
+    # Export simulation ##################################
+    # Export simulation object to .vxa file for import into VoxCad or Voxelyze
+    def saveVXA(self, filename: str, compression: bool = False):
+        &#34;&#34;&#34;
+        Save model data to a .vxa file
+
+        The VoxCad simulation file format stores all the data contained in
+        a .vxc file with plus the simulation setup.
+
+        This format supports compression for the voxel data. Enabling compression allows
+        for larger models, but it may introduce geometry errors that particularly affect
+        small models.
+
+        The .vxa file type can be opened using VoxCad simulation software. However, it
+        cannot currently be reopened by a VoxelFuse script.
+
+        :param filename: File name
+        :param compression: Enable/disable voxel data compression
+        :return: None
+        &#34;&#34;&#34;
+        f = open(filename + &#39;.vxa&#39;, &#39;w+&#39;)
+        print(&#39;Saving file: &#39; + f.name)
+
+        f.write(&#39;&lt;?xml version=&#34;1.0&#34; encoding=&#34;ISO-8859-1&#34;?&gt;\n&#39;)
+        f.write(&#39;&lt;VXA Version=&#34;&#39; + str(1.1) + &#39;&#34;&gt;\n&#39;)
+        self.writeSimData(f)
+        self.writeEnvironmentData(f)
+        self.writeForces(f)
+        self.writeSensors(f)
+        self.__model.writeVXCData(f, compression)
+        f.write(&#39;&lt;/VXA&gt;\n&#39;)
+
+        f.close()
+
+    # Write simulator settings to file
+    def writeSimData(self, f: TextIO):
+        &#34;&#34;&#34;
+        Write simulation parameters to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        &#34;&#34;&#34;
+        # Simulator settings
+        f.write(&#39;&lt;Simulator&gt;\n&#39;)
+        f.write(&#39;  &lt;Integration&gt;\n&#39;)
+        f.write(&#39;    &lt;Integrator&gt;&#39; + str(self.__integrator) + &#39;&lt;/Integrator&gt;\n&#39;)
+        f.write(&#39;    &lt;DtFrac&gt;&#39; + str(self.__dtFraction) + &#39;&lt;/DtFrac&gt;\n&#39;)
+        f.write(&#39;  &lt;/Integration&gt;\n&#39;)
+        f.write(&#39;  &lt;Damping&gt;\n&#39;)
+        f.write(&#39;    &lt;BondDampingZ&gt;&#39; + str(self.__dampingBond) + &#39;&lt;/BondDampingZ&gt;\n&#39;)
+        f.write(&#39;    &lt;ColDampingZ&gt;&#39; + str(self.__collisionDamping) + &#39;&lt;/ColDampingZ&gt;\n&#39;)
+        f.write(&#39;    &lt;SlowDampingZ&gt;&#39; + str(self.__dampingEnvironment) + &#39;&lt;/SlowDampingZ&gt;\n&#39;)
+        f.write(&#39;  &lt;/Damping&gt;\n&#39;)
+        f.write(&#39;  &lt;Collisions&gt;\n&#39;)
+        f.write(&#39;    &lt;SelfColEnabled&gt;&#39; + str(int(self.__collisionEnable)) + &#39;&lt;/SelfColEnabled&gt;\n&#39;)
+        f.write(&#39;    &lt;ColSystem&gt;&#39; + str(self.__collisionSystem) + &#39;&lt;/ColSystem&gt;\n&#39;)
+        f.write(&#39;    &lt;CollisionHorizon&gt;&#39; + str(self.__collisionHorizon) + &#39;&lt;/CollisionHorizon&gt;\n&#39;)
+        f.write(&#39;  &lt;/Collisions&gt;\n&#39;)
+        f.write(&#39;  &lt;Features&gt;\n&#39;)
+        f.write(&#39;    &lt;BlendingEnabled&gt;&#39; + str(int(self.__blendingEnable)) + &#39;&lt;/BlendingEnabled&gt;\n&#39;)
+        f.write(&#39;    &lt;XMixRadius&gt;&#39; + str(self.__xMixRadius) + &#39;&lt;/XMixRadius&gt;\n&#39;)
+        f.write(&#39;    &lt;YMixRadius&gt;&#39; + str(self.__yMixRadius) + &#39;&lt;/YMixRadius&gt;\n&#39;)
+        f.write(&#39;    &lt;ZMixRadius&gt;&#39; + str(self.__zMixRadius) + &#39;&lt;/ZMixRadius&gt;\n&#39;)
+        f.write(&#39;    &lt;BlendModel&gt;&#39; + str(self.__blendingModel) + &#39;&lt;/BlendModel&gt;\n&#39;)
+        f.write(&#39;    &lt;PolyExp&gt;&#39; + str(self.__polyExp) + &#39;&lt;/PolyExp&gt;\n&#39;)
+        f.write(&#39;    &lt;VolumeEffectsEnabled&gt;&#39; + str(int(self.__volumeEffectsEnable)) + &#39;&lt;/VolumeEffectsEnabled&gt;\n&#39;)
+        f.write(&#39;  &lt;/Features&gt;\n&#39;)
+        f.write(&#39;  &lt;StopCondition&gt;\n&#39;)
+        f.write(&#39;    &lt;StopConditionType&gt;&#39; + str(self.__stopConditionType.value) + &#39;&lt;/StopConditionType&gt;\n&#39;)
+        f.write(&#39;    &lt;StopConditionValue&gt;&#39; + str(self.__stopConditionValue) + &#39;&lt;/StopConditionValue&gt;\n&#39;)
+        f.write(&#39;  &lt;/StopCondition&gt;\n&#39;)
+        f.write(&#39;  &lt;EquilibriumMode&gt;\n&#39;)
+        f.write(&#39;    &lt;EquilibriumModeEnabled&gt;&#39; + str(int(self.__equilibriumModeEnable)) + &#39;&lt;/EquilibriumModeEnabled&gt;\n&#39;)
+        f.write(&#39;  &lt;/EquilibriumMode&gt;\n&#39;)
+        f.write(&#39;&lt;/Simulator&gt;\n&#39;)
+
+    # Write environment settings to file
+    def writeEnvironmentData(self, f: TextIO):
+        &#34;&#34;&#34;
+        Write simulation environment parameters to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        &#34;&#34;&#34;
+        # Environment settings
+        f.write(&#39;&lt;Environment&gt;\n&#39;)
+        f.write(&#39;  &lt;Boundary_Conditions&gt;\n&#39;)
+        f.write(&#39;    &lt;NumBCs&gt;&#39; + str(len(self.__bcRegions)) + &#39;&lt;/NumBCs&gt;\n&#39;)
+
+        for r in tqdm(range(len(self.__bcRegions)), desc=&#39;Writing boundary conditions&#39;):
+            f.write(&#39;    &lt;FRegion&gt;\n&#39;)
+            f.write(&#39;      &lt;PrimType&gt;&#39; + str(int(self.__bcRegions[r][0].value)) + &#39;&lt;/PrimType&gt;\n&#39;)
+            f.write(&#39;      &lt;X&gt;&#39; + str(self.__bcRegions[r][1][0]) + &#39;&lt;/X&gt;\n&#39;)
+            f.write(&#39;      &lt;Y&gt;&#39; + str(self.__bcRegions[r][1][1]) + &#39;&lt;/Y&gt;\n&#39;)
+            f.write(&#39;      &lt;Z&gt;&#39; + str(self.__bcRegions[r][1][2]) + &#39;&lt;/Z&gt;\n&#39;)
+            f.write(&#39;      &lt;dX&gt;&#39; + str(self.__bcRegions[r][2][0]) + &#39;&lt;/dX&gt;\n&#39;)
+            f.write(&#39;      &lt;dY&gt;&#39; + str(self.__bcRegions[r][2][1]) + &#39;&lt;/dY&gt;\n&#39;)
+            f.write(&#39;      &lt;dZ&gt;&#39; + str(self.__bcRegions[r][2][2]) + &#39;&lt;/dZ&gt;\n&#39;)
+            f.write(&#39;      &lt;Radius&gt;&#39; + str(self.__bcRegions[r][3]) + &#39;&lt;/Radius&gt;\n&#39;)
+            f.write(&#39;      &lt;R&gt;&#39; + str(self.__bcRegions[r][4][0]) + &#39;&lt;/R&gt;\n&#39;)
+            f.write(&#39;      &lt;G&gt;&#39; + str(self.__bcRegions[r][4][1]) + &#39;&lt;/G&gt;\n&#39;)
+            f.write(&#39;      &lt;B&gt;&#39; + str(self.__bcRegions[r][4][2]) + &#39;&lt;/B&gt;\n&#39;)
+            f.write(&#39;      &lt;alpha&gt;&#39; + str(self.__bcRegions[r][4][3]) + &#39;&lt;/alpha&gt;\n&#39;)
+            f.write(&#39;      &lt;DofFixed&gt;&#39; + str(self.__bcRegions[r][5]) + &#39;&lt;/DofFixed&gt;\n&#39;)
+            f.write(&#39;      &lt;ForceX&gt;&#39; + str(self.__bcRegions[r][6][0]) + &#39;&lt;/ForceX&gt;\n&#39;)
+            f.write(&#39;      &lt;ForceY&gt;&#39; + str(self.__bcRegions[r][6][1]) + &#39;&lt;/ForceY&gt;\n&#39;)
+            f.write(&#39;      &lt;ForceZ&gt;&#39; + str(self.__bcRegions[r][6][2]) + &#39;&lt;/ForceZ&gt;\n&#39;)
+            f.write(&#39;      &lt;TorqueX&gt;&#39; + str(self.__bcRegions[r][7][0]) + &#39;&lt;/TorqueX&gt;\n&#39;)
+            f.write(&#39;      &lt;TorqueY&gt;&#39; + str(self.__bcRegions[r][7][1]) + &#39;&lt;/TorqueY&gt;\n&#39;)
+            f.write(&#39;      &lt;TorqueZ&gt;&#39; + str(self.__bcRegions[r][7][2]) + &#39;&lt;/TorqueZ&gt;\n&#39;)
+            f.write(&#39;      &lt;DisplaceX&gt;&#39; + str(self.__bcRegions[r][8][0] * 1e-3) + &#39;&lt;/DisplaceX&gt;\n&#39;)
+            f.write(&#39;      &lt;DisplaceY&gt;&#39; + str(self.__bcRegions[r][8][1] * 1e-3) + &#39;&lt;/DisplaceY&gt;\n&#39;)
+            f.write(&#39;      &lt;DisplaceZ&gt;&#39; + str(self.__bcRegions[r][8][2] * 1e-3) + &#39;&lt;/DisplaceZ&gt;\n&#39;)
+            f.write(&#39;      &lt;AngDisplaceX&gt;&#39; + str(self.__bcRegions[r][9][0]) + &#39;&lt;/AngDisplaceX&gt;\n&#39;)
+            f.write(&#39;      &lt;AngDisplaceY&gt;&#39; + str(self.__bcRegions[r][9][1]) + &#39;&lt;/AngDisplaceY&gt;\n&#39;)
+            f.write(&#39;      &lt;AngDisplaceZ&gt;&#39; + str(self.__bcRegions[r][9][2]) + &#39;&lt;/AngDisplaceZ&gt;\n&#39;)
+            f.write(&#39;      &lt;IntersectedVoxels&gt;\n&#39;)
+
+            for v in self.__bcVoxels[r]:
+                f.write(&#39;        &lt;Voxel&gt;&#39; + str(v).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Voxel&gt;\n&#39;)
+
+            f.write(&#39;      &lt;/IntersectedVoxels&gt;\n&#39;)
+            f.write(&#39;    &lt;/FRegion&gt;\n&#39;)
+
+        f.write(&#39;  &lt;/Boundary_Conditions&gt;\n&#39;)
+        f.write(&#39;  &lt;Gravity&gt;\n&#39;)
+        f.write(&#39;    &lt;GravEnabled&gt;&#39; + str(int(self.__gravityEnable)) + &#39;&lt;/GravEnabled&gt;\n&#39;)
+        f.write(&#39;    &lt;GravAcc&gt;&#39; + str(self.__gravityValue) + &#39;&lt;/GravAcc&gt;\n&#39;)
+        f.write(&#39;    &lt;FloorEnabled&gt;&#39; + str(int(self.__floorEnable)) + &#39;&lt;/FloorEnabled&gt;\n&#39;)
+        f.write(&#39;  &lt;/Gravity&gt;\n&#39;)
+        f.write(&#39;  &lt;Thermal&gt;\n&#39;)
+        f.write(&#39;    &lt;TempEnabled&gt;&#39; + str(int(self.__temperatureEnable)) + &#39;&lt;/TempEnabled&gt;\n&#39;)
+        f.write(&#39;    &lt;TempAmplitude&gt;&#39; + str(self.__temperatureVaryAmplitude) + &#39;&lt;/TempAmplitude&gt;\n&#39;)
+        f.write(&#39;    &lt;TempBase&gt;&#39; + str(self.__temperatureBaseValue) + &#39;&lt;/TempBase&gt;\n&#39;)
+        f.write(&#39;    &lt;VaryTempEnabled&gt;&#39; + str(int(self.__temperatureVaryEnable)) + &#39;&lt;/VaryTempEnabled&gt;\n&#39;)
+        f.write(&#39;    &lt;TempPeriod&gt;&#39; + str(self.__temperatureVaryPeriod) + &#39;&lt;/TempPeriod&gt;\n&#39;)
+        f.write(&#39;  &lt;/Thermal&gt;\n&#39;)
+        f.write(&#39;&lt;/Environment&gt;\n&#39;)
+
+    def writeForces(self, f: TextIO):
+        &#34;&#34;&#34;
+        Write voxel forces to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        &#34;&#34;&#34;
+        f.write(&#39;&lt;Forces&gt;\n&#39;)
+        for force in self.__forces:
+            f.write(&#39;  &lt;Force&gt;\n&#39;)
+            f.write(&#39;    &lt;X_Index&gt;&#39; + str(int(force[0])) + &#39;&lt;/X_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;Y_Index&gt;&#39; + str(int(force[1])) + &#39;&lt;/Y_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;Z_Index&gt;&#39; + str(int(force[2])) + &#39;&lt;/Z_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;X_Component&gt;&#39; + str(int(force[3])) + &#39;&lt;/X_Component&gt;\n&#39;)
+            f.write(&#39;    &lt;Y_Component&gt;&#39; + str(int(force[4])) + &#39;&lt;/Y_Component&gt;\n&#39;)
+            f.write(&#39;    &lt;Z_Component&gt;&#39; + str(int(force[5])) + &#39;&lt;/Z_Component&gt;\n&#39;)
+            f.write(&#39;    &lt;Location&gt;&#39; + str(force[0:3]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Location&gt;\n&#39;)
+            f.write(&#39;    &lt;Vector&gt;&#39; + str(force[3:6]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Vector&gt;\n&#39;)
+            f.write(&#39;  &lt;/Force&gt;\n&#39;)
+        f.write(&#39;&lt;/Forces&gt;\n&#39;)
+
+    def writeSensors(self, f: TextIO):
+        &#34;&#34;&#34;
+        Write voxel sensors to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        &#34;&#34;&#34;
+        f.write(&#39;&lt;Sensors&gt;\n&#39;)
+        for sensor in self.__sensors:
+            f.write(&#39;  &lt;Sensor&gt;\n&#39;)
+            f.write(&#39;    &lt;X_Index&gt;&#39; + str(int(sensor[0])) + &#39;&lt;/X_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;Y_Index&gt;&#39; + str(int(sensor[1])) + &#39;&lt;/Y_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;Z_Index&gt;&#39; + str(int(sensor[2])) + &#39;&lt;/Z_Index&gt;\n&#39;)
+            f.write(&#39;    &lt;Location&gt;&#39; + str(sensor[0:3]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Location&gt;\n&#39;)
+            f.write(&#39;  &lt;/Sensor&gt;\n&#39;)
+        f.write(&#39;&lt;/Sensors&gt;\n&#39;)
+
+    def launchSim(self, filename: str = &#39;temp&#39;, delete_files: bool = True):
+        &#34;&#34;&#34;
+        Launch a Simulation object in VoxCad.
+
+        ----
+
+        Example:
+
+        ``simulation = Simulation(modelResult)``
+
+        ``simulation.setCollision()``
+
+        ``simulation.setStopCondition(StopCondition.TIME_VALUE, 0.01)``
+
+        ``simulation.launchSim(&#39;collision_sim_1&#39;, delete_files=False)``
+
+        ----
+
+        :param filename: File name
+        :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
+        :return:
+        &#34;&#34;&#34;
+        self.saveVXA(filename)
+
+        command_string = &#39;voxcad &#39; + filename + &#39;.vxa&#39;
+        p = subprocess.Popen(command_string, shell=True)
+        p.wait()
+
+        if delete_files:
+            print(&#39;Removing file: &#39; + filename + &#39;.vxa&#39;)
+            os.remove(filename + &#39;.vxa&#39;)</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="voxelfuse.simulation.Simulation.copy"><code class="name flex">
+<span>def <span class="ident">copy</span></span>(<span>simulation)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create new Simulation object with the same settings as an existing Simulation object.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>simulation</code></strong></dt>
+<dd>Simulation to copy</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.simulation.Simulation" href="#voxelfuse.simulation.Simulation">Simulation</a></code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def copy(cls, simulation):
+    &#34;&#34;&#34;
+    Create new Simulation object with the same settings as an existing Simulation object.
+
+    :param simulation: Simulation to copy
+    :return: Simulation
+    &#34;&#34;&#34;
+    # Create new simulation object and copy attribute values
+    new_simulation = cls(simulation.__model)
+    new_simulation.__dict__ = simulation.__dict__.copy()
+
+    # Make lists copies instead of references
+    new_simulation.__bcRegions = simulation.__bcRegions.copy()
+    new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
+    new_simulation.__forces = simulation.__forces.copy()
+    new_simulation.__sensors = simulation.__sensors.copy()
+
+    return new_simulation</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="voxelfuse.simulation.Simulation.addBoundaryConditionBox"><code class="name flex">
+<span>def <span class="ident">addBoundaryConditionBox</span></span>(<span>self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0), size: Tuple[float, float, float] = (0.01, 1.0, 1.0), fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add a box-shaped boundary condition.</p>
+<p>Boundary condition position and size are expressed as percentages of the
+overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+If a bit is set to 0, the corresponding force/torque will be applied. If
+a bit is set to 1, the DOF will be fixed and the displacement will be
+applied.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>position</code></strong></dt>
+<dd>Box corner position (0-1)</dd>
+<dt><strong><code>size</code></strong></dt>
+<dd>Box size (0-1)</dd>
+<dt><strong><code>fixed_dof</code></strong></dt>
+<dd>Fixed degrees of freedom</dd>
+<dt><strong><code>force</code></strong></dt>
+<dd>Force vector in N</dd>
+<dt><strong><code>displacement</code></strong></dt>
+<dd>Displacement vector in mm</dd>
+<dt><strong><code>torque</code></strong></dt>
+<dd>Torque values in Nm</dd>
+<dt><strong><code>angular_displacement</code></strong></dt>
+<dd>Angular displacement values in deg</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0), size: Tuple[float, float, float] = (0.01, 1.0, 1.0), fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+    &#34;&#34;&#34;
+    Add a box-shaped boundary condition.
+
+    Boundary condition position and size are expressed as percentages of the
+    overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+    If a bit is set to 0, the corresponding force/torque will be applied. If
+    a bit is set to 1, the DOF will be fixed and the displacement will be
+    applied.
+
+    :param position: Box corner position (0-1)
+    :param size: Box size (0-1)
+    :param fixed_dof: Fixed degrees of freedom
+    :param force: Force vector in N
+    :param displacement: Displacement vector in mm
+    :param torque: Torque values in Nm
+    :param angular_displacement: Angular displacement values in deg
+    :return: None
+    &#34;&#34;&#34;
+    self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+    x_len = int(self.__model.voxels.shape[0])
+    y_len = int(self.__model.voxels.shape[1])
+    z_len = int(self.__model.voxels.shape[2])
+
+    regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
+    regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+    bcRegion = cuboid(regionSize, regionPosition) &amp; self.__model
+
+    x_offset = int(bcRegion.coords[0])
+    y_offset = int(bcRegion.coords[1])
+    z_offset = int(bcRegion.coords[2])
+
+    bcVoxels = []
+    for x in tqdm(range(x_len), desc=&#39;Finding constrained voxels&#39;):
+        for y in range(y_len):
+            for z in range(z_len):
+                if bcRegion.voxels[x, y, z] != 0:
+                    bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+    self.__bcVoxels.append(bcVoxels)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.addBoundaryConditionCylinder"><code class="name flex">
+<span>def <span class="ident">addBoundaryConditionCylinder</span></span>(<span>self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0, height: float = 0.1, radius: float = 0.05, fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add a cylindrical boundary condition.</p>
+<p>Boundary condition position and size are expressed as percentages of the
+overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+If a bit is set to 0, the corresponding force/torque will be applied. If
+a bit is set to 1, the DOF will be fixed and the displacement will be
+applied.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>position</code></strong></dt>
+<dd>Boundary condition origin position (0-1)</dd>
+<dt><strong><code>axis</code></strong></dt>
+<dd>Cylinder axis (0-2)</dd>
+<dt><strong><code>height</code></strong></dt>
+<dd>Cylinder height (0-1)</dd>
+<dt><strong><code>radius</code></strong></dt>
+<dd>Cylinder radius (0-1)</dd>
+<dt><strong><code>fixed_dof</code></strong></dt>
+<dd>Fixed degrees of freedom</dd>
+<dt><strong><code>force</code></strong></dt>
+<dd>Force vector in N</dd>
+<dt><strong><code>displacement</code></strong></dt>
+<dd>Displacement vector in mm</dd>
+<dt><strong><code>torque</code></strong></dt>
+<dd>Torque values in Nm</dd>
+<dt><strong><code>angular_displacement</code></strong></dt>
+<dd>Angular displacement values in deg</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0, height: float = 0.1, radius: float = 0.05, fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+    &#34;&#34;&#34;
+    Add a cylindrical boundary condition.
+
+    Boundary condition position and size are expressed as percentages of the
+    overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+    If a bit is set to 0, the corresponding force/torque will be applied. If
+    a bit is set to 1, the DOF will be fixed and the displacement will be
+    applied.
+
+    :param position: Boundary condition origin position (0-1)
+    :param axis: Cylinder axis (0-2)
+    :param height: Cylinder height (0-1)
+    :param radius: Cylinder radius (0-1)
+    :param fixed_dof: Fixed degrees of freedom
+    :param force: Force vector in N
+    :param displacement: Displacement vector in mm
+    :param torque: Torque values in Nm
+    :param angular_displacement: Angular displacement values in deg
+    :return: None
+    &#34;&#34;&#34;
+    size = [0.0, 0.0, 0.0]
+    size[axis] = height
+    self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+    x_len = int(self.__model.voxels.shape[0])
+    y_len = int(self.__model.voxels.shape[1])
+    z_len = int(self.__model.voxels.shape[2])
+
+    regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+    regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
+    regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+    bcRegion = cylinder(regionRadius, regionHeight, regionPosition)
+
+    if axis == 0:
+        bcRegion = bcRegion.rotate90(axis=1)
+    elif axis == 1:
+        bcRegion = bcRegion.rotate90(axis=0)
+
+    bcRegion = bcRegion &amp; self.__model
+
+    x_offset = int(bcRegion.coords[0])
+    y_offset = int(bcRegion.coords[1])
+    z_offset = int(bcRegion.coords[2])
+
+    bcVoxels = []
+    for x in tqdm(range(x_len), desc=&#39;Finding constrained voxels&#39;):
+        for y in range(y_len):
+            for z in range(z_len):
+                if bcRegion.voxels[x, y, z] != 0:
+                    bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+    self.__bcVoxels.append(bcVoxels)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.addBoundaryConditionSphere"><code class="name flex">
+<span>def <span class="ident">addBoundaryConditionSphere</span></span>(<span>self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5), radius: float = 0.05, fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add a spherical boundary condition.</p>
+<p>Boundary condition position and radius are expressed as percentages of the
+overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+If a bit is set to 0, the corresponding force/torque will be applied. If
+a bit is set to 1, the DOF will be fixed and the displacement will be
+applied.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>position</code></strong></dt>
+<dd>Sphere center position (0-1)</dd>
+<dt><strong><code>radius</code></strong></dt>
+<dd>Sphere radius (0-1)</dd>
+<dt><strong><code>fixed_dof</code></strong></dt>
+<dd>Fixed degrees of freedom</dd>
+<dt><strong><code>force</code></strong></dt>
+<dd>Force vector in N</dd>
+<dt><strong><code>displacement</code></strong></dt>
+<dd>Displacement vector in mm</dd>
+<dt><strong><code>torque</code></strong></dt>
+<dd>Torque values in Nm</dd>
+<dt><strong><code>angular_displacement</code></strong></dt>
+<dd>Angular displacement values in deg</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5), radius: float = 0.05, fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+    &#34;&#34;&#34;
+    Add a spherical boundary condition.
+
+    Boundary condition position and radius are expressed as percentages of the
+    overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+    If a bit is set to 0, the corresponding force/torque will be applied. If
+    a bit is set to 1, the DOF will be fixed and the displacement will be
+    applied.
+
+    :param position: Sphere center position (0-1)
+    :param radius: Sphere radius (0-1)
+    :param fixed_dof: Fixed degrees of freedom
+    :param force: Force vector in N
+    :param displacement: Displacement vector in mm
+    :param torque: Torque values in Nm
+    :param angular_displacement: Angular displacement values in deg
+    :return: None
+    &#34;&#34;&#34;
+    self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+
+    x_len = int(self.__model.voxels.shape[0])
+    y_len = int(self.__model.voxels.shape[1])
+    z_len = int(self.__model.voxels.shape[2])
+
+    regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+    regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+    bcRegion = sphere(regionRadius, regionPosition) &amp; self.__model
+
+    x_offset = int(bcRegion.coords[0])
+    y_offset = int(bcRegion.coords[1])
+    z_offset = int(bcRegion.coords[2])
+
+    bcVoxels = []
+    for x in tqdm(range(x_len), desc=&#39;Finding constrained voxels&#39;):
+        for y in range(y_len):
+            for z in range(z_len):
+                if bcRegion.voxels[x, y, z] != 0:
+                    bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+
+    self.__bcVoxels.append(bcVoxels)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.addForce"><code class="name flex">
+<span>def <span class="ident">addForce</span></span>(<span>self, location: Tuple[int, int, int] = (0, 0, 0), vector: Tuple[float, float, float] = (0, 0, 0))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add a force to a voxel.</p>
+<p>This feature is not currently supported by VoxCad</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>location</code></strong></dt>
+<dd>Force location in voxels</dd>
+<dt><strong><code>vector</code></strong></dt>
+<dd>Force vector in N</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def addForce(self, location: Tuple[int, int, int] = (0, 0, 0), vector: Tuple[float, float, float] = (0, 0, 0)):
+    &#34;&#34;&#34;
+    Add a force to a voxel.
+
+    This feature is not currently supported by VoxCad
+
+    :param location: Force location in voxels
+    :param vector: Force vector in N
+    :return: None
+    &#34;&#34;&#34;
+    force = [location[0], location[1], location[2], vector[0], vector[1], vector[2]]
+    self.__forces.append(force)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.addSensor"><code class="name flex">
+<span>def <span class="ident">addSensor</span></span>(<span>self, location: Tuple[int, int, int] = (0, 0, 0))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add a sensor to a voxel.</p>
+<p>This feature is not currently supported by VoxCad</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>location</code></strong></dt>
+<dd>Force location in voxels</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0)):
+    &#34;&#34;&#34;
+    Add a sensor to a voxel.
+
+    This feature is not currently supported by VoxCad
+
+    :param location: Force location in voxels
+    :return: None
+    &#34;&#34;&#34;
+    sensor = [location[0], location[1], location[2]]
+    self.__sensors.append(sensor)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.getCollision"><code class="name flex">
+<span>def <span class="ident">getCollision</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get simulation collision parameters.</p>
+<p>Returns: Enable/disable collisions, Collision damping</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getCollision(self):
+    &#34;&#34;&#34;
+    Get simulation collision parameters.
+
+    :return: Enable/disable collisions, Collision damping
+    &#34;&#34;&#34;
+    return self.__collisionEnable, self.__collisionDamping</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.getDamping"><code class="name flex">
+<span>def <span class="ident">getDamping</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get simulation damping parameters.</p>
+<p>Returns: Voxel bond damping, Environment damping</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getDamping(self):
+    &#34;&#34;&#34;
+    Get simulation damping parameters.
+
+    :return: Voxel bond damping, Environment damping
+    &#34;&#34;&#34;
+    return self.__dampingBond, self.__dampingEnvironment</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.getEquilibriumMode"><code class="name flex">
+<span>def <span class="ident">getEquilibriumMode</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get simulation equilibrium mode.</p>
+<p>Returns: Enable/disable equilibrium mode</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getEquilibriumMode(self):
+    &#34;&#34;&#34;
+    Get simulation equilibrium mode.
+
+    :return: Enable/disable equilibrium mode
+    &#34;&#34;&#34;
+    return self.__equilibriumModeEnable</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.getGravity"><code class="name flex">
+<span>def <span class="ident">getGravity</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get simulation gravity parameters.</p>
+<p>Returns: Enable/disable gravity, Acceleration due to gravity in m/sec^2, Enable/disable ground plane</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getGravity(self):
+    &#34;&#34;&#34;
+    Get simulation gravity parameters.
+
+    :return: Enable/disable gravity, Acceleration due to gravity in m/sec^2, Enable/disable ground plane
+    &#34;&#34;&#34;
+    return self.__gravityEnable, self.__gravityValue, self.__floorEnable</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.getModel"><code class="name flex">
+<span>def <span class="ident">getModel</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the simulation model.</p>
+<p>Returns: VoxelModel</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getModel(self):
+    &#34;&#34;&#34;
+    Get the simulation model.
+
+    :return: VoxelModel
+    &#34;&#34;&#34;
+    return self.__model</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.getStopCondition"><code class="name flex">
+<span>def <span class="ident">getStopCondition</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get simulation stop condition.</p>
+<p>Returns: Stop condition type, Stop condition value</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getStopCondition(self):
+    &#34;&#34;&#34;
+    Get simulation stop condition.
+
+    :return: Stop condition type, Stop condition value
+    &#34;&#34;&#34;
+    return self.__stopConditionType, self.__stopConditionValue</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.getThermal"><code class="name flex">
+<span>def <span class="ident">getThermal</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get simulation temperature parameters.</p>
+<p>Returns: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getThermal(self):
+    &#34;&#34;&#34;
+    Get simulation temperature parameters.
+
+    :return: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period
+    &#34;&#34;&#34;
+    return self.__temperatureEnable, self.__temperatureBaseValue, self.__temperatureVaryEnable, self.__temperatureVaryAmplitude, self.__temperatureVaryPeriod</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.launchSim"><code class="name flex">
+<span>def <span class="ident">launchSim</span></span>(<span>self, filename: str = 'temp', delete_files: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Launch a Simulation object in VoxCad.</p>
+<hr>
+<p>Example:</p>
+<p><code>simulation = Simulation(modelResult)</code></p>
+<p><code>simulation.setCollision()</code></p>
+<p><code>simulation.setStopCondition(<a title="voxelfuse.simulation.StopCondition.TIME_VALUE" href="#voxelfuse.simulation.StopCondition.TIME_VALUE">StopCondition.TIME_VALUE</a>, 0.01)</code></p>
+<p><code>simulation.launchSim('collision_sim_1', delete_files=False)</code></p>
+<hr>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>filename</code></strong></dt>
+<dd>File name</dd>
+<dt><strong><code>delete_files</code></strong></dt>
+<dd>Enable/disable deleting simulation file when VoxCad is closed</dd>
+</dl>
+<p>Returns:</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def launchSim(self, filename: str = &#39;temp&#39;, delete_files: bool = True):
+    &#34;&#34;&#34;
+    Launch a Simulation object in VoxCad.
+
+    ----
+
+    Example:
+
+    ``simulation = Simulation(modelResult)``
+
+    ``simulation.setCollision()``
+
+    ``simulation.setStopCondition(StopCondition.TIME_VALUE, 0.01)``
+
+    ``simulation.launchSim(&#39;collision_sim_1&#39;, delete_files=False)``
+
+    ----
+
+    :param filename: File name
+    :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
+    :return:
+    &#34;&#34;&#34;
+    self.saveVXA(filename)
+
+    command_string = &#39;voxcad &#39; + filename + &#39;.vxa&#39;
+    p = subprocess.Popen(command_string, shell=True)
+    p.wait()
+
+    if delete_files:
+        print(&#39;Removing file: &#39; + filename + &#39;.vxa&#39;)
+        os.remove(filename + &#39;.vxa&#39;)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.saveVXA"><code class="name flex">
+<span>def <span class="ident">saveVXA</span></span>(<span>self, filename: str, compression: bool = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Save model data to a .vxa file</p>
+<p>The VoxCad simulation file format stores all the data contained in
+a .vxc file with plus the simulation setup.</p>
+<p>This format supports compression for the voxel data. Enabling compression allows
+for larger models, but it may introduce geometry errors that particularly affect
+small models.</p>
+<p>The .vxa file type can be opened using VoxCad simulation software. However, it
+cannot currently be reopened by a VoxelFuse script.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>filename</code></strong></dt>
+<dd>File name</dd>
+<dt><strong><code>compression</code></strong></dt>
+<dd>Enable/disable voxel data compression</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def saveVXA(self, filename: str, compression: bool = False):
+    &#34;&#34;&#34;
+    Save model data to a .vxa file
+
+    The VoxCad simulation file format stores all the data contained in
+    a .vxc file with plus the simulation setup.
+
+    This format supports compression for the voxel data. Enabling compression allows
+    for larger models, but it may introduce geometry errors that particularly affect
+    small models.
+
+    The .vxa file type can be opened using VoxCad simulation software. However, it
+    cannot currently be reopened by a VoxelFuse script.
+
+    :param filename: File name
+    :param compression: Enable/disable voxel data compression
+    :return: None
+    &#34;&#34;&#34;
+    f = open(filename + &#39;.vxa&#39;, &#39;w+&#39;)
+    print(&#39;Saving file: &#39; + f.name)
+
+    f.write(&#39;&lt;?xml version=&#34;1.0&#34; encoding=&#34;ISO-8859-1&#34;?&gt;\n&#39;)
+    f.write(&#39;&lt;VXA Version=&#34;&#39; + str(1.1) + &#39;&#34;&gt;\n&#39;)
+    self.writeSimData(f)
+    self.writeEnvironmentData(f)
+    self.writeForces(f)
+    self.writeSensors(f)
+    self.__model.writeVXCData(f, compression)
+    f.write(&#39;&lt;/VXA&gt;\n&#39;)
+
+    f.close()</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.setCollision"><code class="name flex">
+<span>def <span class="ident">setCollision</span></span>(<span>self, enable: bool = True, damping: float = 1.0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set simulation collision parameters.</p>
+<p>A damping value of 0 represents elastic collisions and higher values
+represent inelastic collisions.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>enable</code></strong></dt>
+<dd>Enable/disable collisions</dd>
+<dt><strong><code>damping</code></strong></dt>
+<dd>Collision damping (0-2)</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setCollision(self, enable: bool = True, damping: float = 1.0):
+    &#34;&#34;&#34;
+    Set simulation collision parameters.
+
+    A damping value of 0 represents elastic collisions and higher values
+    represent inelastic collisions.
+
+    :param enable: Enable/disable collisions
+    :param damping: Collision damping (0-2)
+    :return: None
+    &#34;&#34;&#34;
+    self.__collisionEnable = enable
+    self.__collisionDamping = damping</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.setDamping"><code class="name flex">
+<span>def <span class="ident">setDamping</span></span>(<span>self, bond: float = 1.0, environment: float = 0.0001)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set simulation damping parameters.</p>
+<p>Environment damping can be used to simulate fluid environments. 0 represents
+a vacuum and larger values represent a viscous fluid.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>bond</code></strong></dt>
+<dd>Voxel bond damping (0-1)</dd>
+<dt><strong><code>environment</code></strong></dt>
+<dd>Environment damping (0-0.1)</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setDamping(self, bond: float = 1.0, environment: float = 0.0001):
+    &#34;&#34;&#34;
+    Set simulation damping parameters.
+
+    Environment damping can be used to simulate fluid environments. 0 represents
+    a vacuum and larger values represent a viscous fluid.
+
+    :param bond: Voxel bond damping (0-1)
+    :param environment: Environment damping (0-0.1)
+    :return: None
+    &#34;&#34;&#34;
+    self.__dampingBond = bond
+    self.__dampingEnvironment = environment</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.setEquilibriumMode"><code class="name flex">
+<span>def <span class="ident">setEquilibriumMode</span></span>(<span>self, enable: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set simulation equilibrium mode.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>enable</code></strong></dt>
+<dd>Enable/disable equilibrium mode</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setEquilibriumMode(self, enable: bool = True):
+    &#34;&#34;&#34;
+    Set simulation equilibrium mode.
+
+    :param enable: Enable/disable equilibrium mode
+    :return: None
+    &#34;&#34;&#34;
+    self.__equilibriumModeEnable = enable</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.setFixedThermal"><code class="name flex">
+<span>def <span class="ident">setFixedThermal</span></span>(<span>self, enable: bool = True, base_temp: float = 25.0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set a fixed environment temperature.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>enable</code></strong></dt>
+<dd>Enable/disable temperature</dd>
+<dt><strong><code>base_temp</code></strong></dt>
+<dd>Temperature in degrees C</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0):
+    &#34;&#34;&#34;
+    Set a fixed environment temperature.
+
+    :param enable: Enable/disable temperature
+    :param base_temp: Temperature in degrees C
+    :return: None
+    &#34;&#34;&#34;
+    self.__temperatureEnable = enable
+    self.__temperatureBaseValue = base_temp
+    self.__temperatureVaryEnable = False</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.setGravity"><code class="name flex">
+<span>def <span class="ident">setGravity</span></span>(<span>self, enable: bool = True, value: float = -9.81, enable_floor: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set simulation gravity parameters.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>enable</code></strong></dt>
+<dd>Enable/disable gravity</dd>
+<dt><strong><code>value</code></strong></dt>
+<dd>Acceleration due to gravity in m/sec^2</dd>
+<dt><strong><code>enable_floor</code></strong></dt>
+<dd>Enable/disable ground plane</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setGravity(self, enable: bool = True, value: float = -9.81, enable_floor: bool = True):
+    &#34;&#34;&#34;
+    Set simulation gravity parameters.
+
+    :param enable: Enable/disable gravity
+    :param value: Acceleration due to gravity in m/sec^2
+    :param enable_floor: Enable/disable ground plane
+    :return: None
+    &#34;&#34;&#34;
+    self.__gravityEnable = enable
+    self.__gravityValue = value
+    self.__floorEnable = enable_floor</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.setModel"><code class="name flex">
+<span>def <span class="ident">setModel</span></span>(<span>self, voxel_model)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set the model for a simulation.</p>
+<p>Models located at positive coordinate values will have their workspace
+size adjusted to maintain their position in the exported simulation.
+Models located at negative coordinate values will be shifted to the origin.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>voxel_model</code></strong></dt>
+<dd>VoxelModel</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setModel(self, voxel_model):
+    &#34;&#34;&#34;
+    Set the model for a simulation.
+
+    Models located at positive coordinate values will have their workspace
+    size adjusted to maintain their position in the exported simulation.
+    Models located at negative coordinate values will be shifted to the origin.
+
+    :param voxel_model: VoxelModel
+    :return: None
+    &#34;&#34;&#34;
+    self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+    self.__model.coords = (0, 0, 0)  # Set coords to zero to move object to origin if it is at negative coordinates</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.setStopCondition"><code class="name flex">
+<span>def <span class="ident">setStopCondition</span></span>(<span>self, condition: <a title="voxelfuse.simulation.StopCondition" href="#voxelfuse.simulation.StopCondition">StopCondition</a> = StopCondition.NONE, value: float = 0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set simulation stop condition.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>condition</code></strong></dt>
+<dd>Stop condition type, set using StopCondition class</dd>
+<dt><strong><code>value</code></strong></dt>
+<dd>Stop condition value</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setStopCondition(self, condition: StopCondition = StopCondition.NONE, value: float = 0):
+    &#34;&#34;&#34;
+    Set simulation stop condition.
+
+    :param condition: Stop condition type, set using StopCondition class
+    :param value: Stop condition value
+    :return: None
+    &#34;&#34;&#34;
+    self.__stopConditionType = condition
+    self.__stopConditionValue = value</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.setVaryingThermal"><code class="name flex">
+<span>def <span class="ident">setVaryingThermal</span></span>(<span>self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set a varying environment temperature.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>enable</code></strong></dt>
+<dd>Enable/disable temperature</dd>
+<dt><strong><code>base_temp</code></strong></dt>
+<dd>Base temperature in degrees C</dd>
+<dt><strong><code>amplitude</code></strong></dt>
+<dd>Temperature fluctuation amplitude</dd>
+<dt><strong><code>period</code></strong></dt>
+<dd>Temperature fluctuation period</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0):
+    &#34;&#34;&#34;
+    Set a varying environment temperature.
+
+    :param enable: Enable/disable temperature
+    :param base_temp: Base temperature in degrees C
+    :param amplitude: Temperature fluctuation amplitude
+    :param period: Temperature fluctuation period
+    :return: None
+    &#34;&#34;&#34;
+    self.__temperatureEnable = enable
+    self.__temperatureBaseValue = base_temp
+    self.__temperatureVaryEnable = enable
+    self.__temperatureVaryAmplitude = amplitude
+    self.__temperatureVaryPeriod = period</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.writeEnvironmentData"><code class="name flex">
+<span>def <span class="ident">writeEnvironmentData</span></span>(<span>self, f: <class 'TextIO'>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Write simulation environment parameters to a text file using the .vxa format.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>f</code></strong></dt>
+<dd>File to write to</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def writeEnvironmentData(self, f: TextIO):
+    &#34;&#34;&#34;
+    Write simulation environment parameters to a text file using the .vxa format.
+
+    :param f: File to write to
+    :return: None
+    &#34;&#34;&#34;
+    # Environment settings
+    f.write(&#39;&lt;Environment&gt;\n&#39;)
+    f.write(&#39;  &lt;Boundary_Conditions&gt;\n&#39;)
+    f.write(&#39;    &lt;NumBCs&gt;&#39; + str(len(self.__bcRegions)) + &#39;&lt;/NumBCs&gt;\n&#39;)
+
+    for r in tqdm(range(len(self.__bcRegions)), desc=&#39;Writing boundary conditions&#39;):
+        f.write(&#39;    &lt;FRegion&gt;\n&#39;)
+        f.write(&#39;      &lt;PrimType&gt;&#39; + str(int(self.__bcRegions[r][0].value)) + &#39;&lt;/PrimType&gt;\n&#39;)
+        f.write(&#39;      &lt;X&gt;&#39; + str(self.__bcRegions[r][1][0]) + &#39;&lt;/X&gt;\n&#39;)
+        f.write(&#39;      &lt;Y&gt;&#39; + str(self.__bcRegions[r][1][1]) + &#39;&lt;/Y&gt;\n&#39;)
+        f.write(&#39;      &lt;Z&gt;&#39; + str(self.__bcRegions[r][1][2]) + &#39;&lt;/Z&gt;\n&#39;)
+        f.write(&#39;      &lt;dX&gt;&#39; + str(self.__bcRegions[r][2][0]) + &#39;&lt;/dX&gt;\n&#39;)
+        f.write(&#39;      &lt;dY&gt;&#39; + str(self.__bcRegions[r][2][1]) + &#39;&lt;/dY&gt;\n&#39;)
+        f.write(&#39;      &lt;dZ&gt;&#39; + str(self.__bcRegions[r][2][2]) + &#39;&lt;/dZ&gt;\n&#39;)
+        f.write(&#39;      &lt;Radius&gt;&#39; + str(self.__bcRegions[r][3]) + &#39;&lt;/Radius&gt;\n&#39;)
+        f.write(&#39;      &lt;R&gt;&#39; + str(self.__bcRegions[r][4][0]) + &#39;&lt;/R&gt;\n&#39;)
+        f.write(&#39;      &lt;G&gt;&#39; + str(self.__bcRegions[r][4][1]) + &#39;&lt;/G&gt;\n&#39;)
+        f.write(&#39;      &lt;B&gt;&#39; + str(self.__bcRegions[r][4][2]) + &#39;&lt;/B&gt;\n&#39;)
+        f.write(&#39;      &lt;alpha&gt;&#39; + str(self.__bcRegions[r][4][3]) + &#39;&lt;/alpha&gt;\n&#39;)
+        f.write(&#39;      &lt;DofFixed&gt;&#39; + str(self.__bcRegions[r][5]) + &#39;&lt;/DofFixed&gt;\n&#39;)
+        f.write(&#39;      &lt;ForceX&gt;&#39; + str(self.__bcRegions[r][6][0]) + &#39;&lt;/ForceX&gt;\n&#39;)
+        f.write(&#39;      &lt;ForceY&gt;&#39; + str(self.__bcRegions[r][6][1]) + &#39;&lt;/ForceY&gt;\n&#39;)
+        f.write(&#39;      &lt;ForceZ&gt;&#39; + str(self.__bcRegions[r][6][2]) + &#39;&lt;/ForceZ&gt;\n&#39;)
+        f.write(&#39;      &lt;TorqueX&gt;&#39; + str(self.__bcRegions[r][7][0]) + &#39;&lt;/TorqueX&gt;\n&#39;)
+        f.write(&#39;      &lt;TorqueY&gt;&#39; + str(self.__bcRegions[r][7][1]) + &#39;&lt;/TorqueY&gt;\n&#39;)
+        f.write(&#39;      &lt;TorqueZ&gt;&#39; + str(self.__bcRegions[r][7][2]) + &#39;&lt;/TorqueZ&gt;\n&#39;)
+        f.write(&#39;      &lt;DisplaceX&gt;&#39; + str(self.__bcRegions[r][8][0] * 1e-3) + &#39;&lt;/DisplaceX&gt;\n&#39;)
+        f.write(&#39;      &lt;DisplaceY&gt;&#39; + str(self.__bcRegions[r][8][1] * 1e-3) + &#39;&lt;/DisplaceY&gt;\n&#39;)
+        f.write(&#39;      &lt;DisplaceZ&gt;&#39; + str(self.__bcRegions[r][8][2] * 1e-3) + &#39;&lt;/DisplaceZ&gt;\n&#39;)
+        f.write(&#39;      &lt;AngDisplaceX&gt;&#39; + str(self.__bcRegions[r][9][0]) + &#39;&lt;/AngDisplaceX&gt;\n&#39;)
+        f.write(&#39;      &lt;AngDisplaceY&gt;&#39; + str(self.__bcRegions[r][9][1]) + &#39;&lt;/AngDisplaceY&gt;\n&#39;)
+        f.write(&#39;      &lt;AngDisplaceZ&gt;&#39; + str(self.__bcRegions[r][9][2]) + &#39;&lt;/AngDisplaceZ&gt;\n&#39;)
+        f.write(&#39;      &lt;IntersectedVoxels&gt;\n&#39;)
+
+        for v in self.__bcVoxels[r]:
+            f.write(&#39;        &lt;Voxel&gt;&#39; + str(v).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Voxel&gt;\n&#39;)
+
+        f.write(&#39;      &lt;/IntersectedVoxels&gt;\n&#39;)
+        f.write(&#39;    &lt;/FRegion&gt;\n&#39;)
+
+    f.write(&#39;  &lt;/Boundary_Conditions&gt;\n&#39;)
+    f.write(&#39;  &lt;Gravity&gt;\n&#39;)
+    f.write(&#39;    &lt;GravEnabled&gt;&#39; + str(int(self.__gravityEnable)) + &#39;&lt;/GravEnabled&gt;\n&#39;)
+    f.write(&#39;    &lt;GravAcc&gt;&#39; + str(self.__gravityValue) + &#39;&lt;/GravAcc&gt;\n&#39;)
+    f.write(&#39;    &lt;FloorEnabled&gt;&#39; + str(int(self.__floorEnable)) + &#39;&lt;/FloorEnabled&gt;\n&#39;)
+    f.write(&#39;  &lt;/Gravity&gt;\n&#39;)
+    f.write(&#39;  &lt;Thermal&gt;\n&#39;)
+    f.write(&#39;    &lt;TempEnabled&gt;&#39; + str(int(self.__temperatureEnable)) + &#39;&lt;/TempEnabled&gt;\n&#39;)
+    f.write(&#39;    &lt;TempAmplitude&gt;&#39; + str(self.__temperatureVaryAmplitude) + &#39;&lt;/TempAmplitude&gt;\n&#39;)
+    f.write(&#39;    &lt;TempBase&gt;&#39; + str(self.__temperatureBaseValue) + &#39;&lt;/TempBase&gt;\n&#39;)
+    f.write(&#39;    &lt;VaryTempEnabled&gt;&#39; + str(int(self.__temperatureVaryEnable)) + &#39;&lt;/VaryTempEnabled&gt;\n&#39;)
+    f.write(&#39;    &lt;TempPeriod&gt;&#39; + str(self.__temperatureVaryPeriod) + &#39;&lt;/TempPeriod&gt;\n&#39;)
+    f.write(&#39;  &lt;/Thermal&gt;\n&#39;)
+    f.write(&#39;&lt;/Environment&gt;\n&#39;)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.writeForces"><code class="name flex">
+<span>def <span class="ident">writeForces</span></span>(<span>self, f: <class 'TextIO'>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Write voxel forces to a text file using the .vxa format.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>f</code></strong></dt>
+<dd>File to write to</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def writeForces(self, f: TextIO):
+    &#34;&#34;&#34;
+    Write voxel forces to a text file using the .vxa format.
+
+    :param f: File to write to
+    :return: None
+    &#34;&#34;&#34;
+    f.write(&#39;&lt;Forces&gt;\n&#39;)
+    for force in self.__forces:
+        f.write(&#39;  &lt;Force&gt;\n&#39;)
+        f.write(&#39;    &lt;X_Index&gt;&#39; + str(int(force[0])) + &#39;&lt;/X_Index&gt;\n&#39;)
+        f.write(&#39;    &lt;Y_Index&gt;&#39; + str(int(force[1])) + &#39;&lt;/Y_Index&gt;\n&#39;)
+        f.write(&#39;    &lt;Z_Index&gt;&#39; + str(int(force[2])) + &#39;&lt;/Z_Index&gt;\n&#39;)
+        f.write(&#39;    &lt;X_Component&gt;&#39; + str(int(force[3])) + &#39;&lt;/X_Component&gt;\n&#39;)
+        f.write(&#39;    &lt;Y_Component&gt;&#39; + str(int(force[4])) + &#39;&lt;/Y_Component&gt;\n&#39;)
+        f.write(&#39;    &lt;Z_Component&gt;&#39; + str(int(force[5])) + &#39;&lt;/Z_Component&gt;\n&#39;)
+        f.write(&#39;    &lt;Location&gt;&#39; + str(force[0:3]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Location&gt;\n&#39;)
+        f.write(&#39;    &lt;Vector&gt;&#39; + str(force[3:6]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Vector&gt;\n&#39;)
+        f.write(&#39;  &lt;/Force&gt;\n&#39;)
+    f.write(&#39;&lt;/Forces&gt;\n&#39;)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.writeSensors"><code class="name flex">
+<span>def <span class="ident">writeSensors</span></span>(<span>self, f: <class 'TextIO'>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Write voxel sensors to a text file using the .vxa format.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>f</code></strong></dt>
+<dd>File to write to</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def writeSensors(self, f: TextIO):
+    &#34;&#34;&#34;
+    Write voxel sensors to a text file using the .vxa format.
+
+    :param f: File to write to
+    :return: None
+    &#34;&#34;&#34;
+    f.write(&#39;&lt;Sensors&gt;\n&#39;)
+    for sensor in self.__sensors:
+        f.write(&#39;  &lt;Sensor&gt;\n&#39;)
+        f.write(&#39;    &lt;X_Index&gt;&#39; + str(int(sensor[0])) + &#39;&lt;/X_Index&gt;\n&#39;)
+        f.write(&#39;    &lt;Y_Index&gt;&#39; + str(int(sensor[1])) + &#39;&lt;/Y_Index&gt;\n&#39;)
+        f.write(&#39;    &lt;Z_Index&gt;&#39; + str(int(sensor[2])) + &#39;&lt;/Z_Index&gt;\n&#39;)
+        f.write(&#39;    &lt;Location&gt;&#39; + str(sensor[0:3]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;,&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;) + &#39;&lt;/Location&gt;\n&#39;)
+        f.write(&#39;  &lt;/Sensor&gt;\n&#39;)
+    f.write(&#39;&lt;/Sensors&gt;\n&#39;)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.writeSimData"><code class="name flex">
+<span>def <span class="ident">writeSimData</span></span>(<span>self, f: <class 'TextIO'>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Write simulation parameters to a text file using the .vxa format.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>f</code></strong></dt>
+<dd>File to write to</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def writeSimData(self, f: TextIO):
+    &#34;&#34;&#34;
+    Write simulation parameters to a text file using the .vxa format.
+
+    :param f: File to write to
+    :return: None
+    &#34;&#34;&#34;
+    # Simulator settings
+    f.write(&#39;&lt;Simulator&gt;\n&#39;)
+    f.write(&#39;  &lt;Integration&gt;\n&#39;)
+    f.write(&#39;    &lt;Integrator&gt;&#39; + str(self.__integrator) + &#39;&lt;/Integrator&gt;\n&#39;)
+    f.write(&#39;    &lt;DtFrac&gt;&#39; + str(self.__dtFraction) + &#39;&lt;/DtFrac&gt;\n&#39;)
+    f.write(&#39;  &lt;/Integration&gt;\n&#39;)
+    f.write(&#39;  &lt;Damping&gt;\n&#39;)
+    f.write(&#39;    &lt;BondDampingZ&gt;&#39; + str(self.__dampingBond) + &#39;&lt;/BondDampingZ&gt;\n&#39;)
+    f.write(&#39;    &lt;ColDampingZ&gt;&#39; + str(self.__collisionDamping) + &#39;&lt;/ColDampingZ&gt;\n&#39;)
+    f.write(&#39;    &lt;SlowDampingZ&gt;&#39; + str(self.__dampingEnvironment) + &#39;&lt;/SlowDampingZ&gt;\n&#39;)
+    f.write(&#39;  &lt;/Damping&gt;\n&#39;)
+    f.write(&#39;  &lt;Collisions&gt;\n&#39;)
+    f.write(&#39;    &lt;SelfColEnabled&gt;&#39; + str(int(self.__collisionEnable)) + &#39;&lt;/SelfColEnabled&gt;\n&#39;)
+    f.write(&#39;    &lt;ColSystem&gt;&#39; + str(self.__collisionSystem) + &#39;&lt;/ColSystem&gt;\n&#39;)
+    f.write(&#39;    &lt;CollisionHorizon&gt;&#39; + str(self.__collisionHorizon) + &#39;&lt;/CollisionHorizon&gt;\n&#39;)
+    f.write(&#39;  &lt;/Collisions&gt;\n&#39;)
+    f.write(&#39;  &lt;Features&gt;\n&#39;)
+    f.write(&#39;    &lt;BlendingEnabled&gt;&#39; + str(int(self.__blendingEnable)) + &#39;&lt;/BlendingEnabled&gt;\n&#39;)
+    f.write(&#39;    &lt;XMixRadius&gt;&#39; + str(self.__xMixRadius) + &#39;&lt;/XMixRadius&gt;\n&#39;)
+    f.write(&#39;    &lt;YMixRadius&gt;&#39; + str(self.__yMixRadius) + &#39;&lt;/YMixRadius&gt;\n&#39;)
+    f.write(&#39;    &lt;ZMixRadius&gt;&#39; + str(self.__zMixRadius) + &#39;&lt;/ZMixRadius&gt;\n&#39;)
+    f.write(&#39;    &lt;BlendModel&gt;&#39; + str(self.__blendingModel) + &#39;&lt;/BlendModel&gt;\n&#39;)
+    f.write(&#39;    &lt;PolyExp&gt;&#39; + str(self.__polyExp) + &#39;&lt;/PolyExp&gt;\n&#39;)
+    f.write(&#39;    &lt;VolumeEffectsEnabled&gt;&#39; + str(int(self.__volumeEffectsEnable)) + &#39;&lt;/VolumeEffectsEnabled&gt;\n&#39;)
+    f.write(&#39;  &lt;/Features&gt;\n&#39;)
+    f.write(&#39;  &lt;StopCondition&gt;\n&#39;)
+    f.write(&#39;    &lt;StopConditionType&gt;&#39; + str(self.__stopConditionType.value) + &#39;&lt;/StopConditionType&gt;\n&#39;)
+    f.write(&#39;    &lt;StopConditionValue&gt;&#39; + str(self.__stopConditionValue) + &#39;&lt;/StopConditionValue&gt;\n&#39;)
+    f.write(&#39;  &lt;/StopCondition&gt;\n&#39;)
+    f.write(&#39;  &lt;EquilibriumMode&gt;\n&#39;)
+    f.write(&#39;    &lt;EquilibriumModeEnabled&gt;&#39; + str(int(self.__equilibriumModeEnable)) + &#39;&lt;/EquilibriumModeEnabled&gt;\n&#39;)
+    f.write(&#39;  &lt;/EquilibriumMode&gt;\n&#39;)
+    f.write(&#39;&lt;/Simulator&gt;\n&#39;)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="voxelfuse.simulation.StopCondition"><code class="flex name class">
+<span>class <span class="ident">StopCondition</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Options for simulation stop conditions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class StopCondition(Enum):
+    &#34;&#34;&#34;
+    Options for simulation stop conditions.
+    &#34;&#34;&#34;
+    NONE = 0
+    TIME_STEP = 1
+    TIME_VALUE = 2
+    TEMP_CYCLES = 3
+    ENERGY_CONST = 4
+    ENERGY_KFLOOR = 5
+    MOTION_FLOOR = 6</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="voxelfuse.simulation.StopCondition.ENERGY_CONST"><code class="name">var <span class="ident">ENERGY_CONST</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="voxelfuse.simulation.StopCondition.ENERGY_KFLOOR"><code class="name">var <span class="ident">ENERGY_KFLOOR</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="voxelfuse.simulation.StopCondition.MOTION_FLOOR"><code class="name">var <span class="ident">MOTION_FLOOR</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="voxelfuse.simulation.StopCondition.NONE"><code class="name">var <span class="ident">NONE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="voxelfuse.simulation.StopCondition.TEMP_CYCLES"><code class="name">var <span class="ident">TEMP_CYCLES</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="voxelfuse.simulation.StopCondition.TIME_STEP"><code class="name">var <span class="ident">TIME_STEP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="voxelfuse.simulation.StopCondition.TIME_VALUE"><code class="name">var <span class="ident">TIME_VALUE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="voxelfuse" href="index.html">voxelfuse</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="voxelfuse.simulation.BCShape" href="#voxelfuse.simulation.BCShape">BCShape</a></code></h4>
+<ul class="">
+<li><code><a title="voxelfuse.simulation.BCShape.BOX" href="#voxelfuse.simulation.BCShape.BOX">BOX</a></code></li>
+<li><code><a title="voxelfuse.simulation.BCShape.CYLINDER" href="#voxelfuse.simulation.BCShape.CYLINDER">CYLINDER</a></code></li>
+<li><code><a title="voxelfuse.simulation.BCShape.SPHERE" href="#voxelfuse.simulation.BCShape.SPHERE">SPHERE</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="voxelfuse.simulation.Simulation" href="#voxelfuse.simulation.Simulation">Simulation</a></code></h4>
+<ul class="">
+<li><code><a title="voxelfuse.simulation.Simulation.addBoundaryConditionBox" href="#voxelfuse.simulation.Simulation.addBoundaryConditionBox">addBoundaryConditionBox</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.addBoundaryConditionCylinder" href="#voxelfuse.simulation.Simulation.addBoundaryConditionCylinder">addBoundaryConditionCylinder</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.addBoundaryConditionSphere" href="#voxelfuse.simulation.Simulation.addBoundaryConditionSphere">addBoundaryConditionSphere</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.addForce" href="#voxelfuse.simulation.Simulation.addForce">addForce</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.addSensor" href="#voxelfuse.simulation.Simulation.addSensor">addSensor</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.copy" href="#voxelfuse.simulation.Simulation.copy">copy</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.getCollision" href="#voxelfuse.simulation.Simulation.getCollision">getCollision</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.getDamping" href="#voxelfuse.simulation.Simulation.getDamping">getDamping</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.getEquilibriumMode" href="#voxelfuse.simulation.Simulation.getEquilibriumMode">getEquilibriumMode</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.getGravity" href="#voxelfuse.simulation.Simulation.getGravity">getGravity</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.getModel" href="#voxelfuse.simulation.Simulation.getModel">getModel</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.getStopCondition" href="#voxelfuse.simulation.Simulation.getStopCondition">getStopCondition</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.getThermal" href="#voxelfuse.simulation.Simulation.getThermal">getThermal</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.launchSim" href="#voxelfuse.simulation.Simulation.launchSim">launchSim</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.saveVXA" href="#voxelfuse.simulation.Simulation.saveVXA">saveVXA</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.setCollision" href="#voxelfuse.simulation.Simulation.setCollision">setCollision</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.setDamping" href="#voxelfuse.simulation.Simulation.setDamping">setDamping</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.setEquilibriumMode" href="#voxelfuse.simulation.Simulation.setEquilibriumMode">setEquilibriumMode</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.setFixedThermal" href="#voxelfuse.simulation.Simulation.setFixedThermal">setFixedThermal</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.setGravity" href="#voxelfuse.simulation.Simulation.setGravity">setGravity</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.setModel" href="#voxelfuse.simulation.Simulation.setModel">setModel</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.setStopCondition" href="#voxelfuse.simulation.Simulation.setStopCondition">setStopCondition</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.setVaryingThermal" href="#voxelfuse.simulation.Simulation.setVaryingThermal">setVaryingThermal</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.writeEnvironmentData" href="#voxelfuse.simulation.Simulation.writeEnvironmentData">writeEnvironmentData</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.writeForces" href="#voxelfuse.simulation.Simulation.writeForces">writeForces</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.writeSensors" href="#voxelfuse.simulation.Simulation.writeSensors">writeSensors</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.writeSimData" href="#voxelfuse.simulation.Simulation.writeSimData">writeSimData</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="voxelfuse.simulation.StopCondition" href="#voxelfuse.simulation.StopCondition">StopCondition</a></code></h4>
+<ul class="two-column">
+<li><code><a title="voxelfuse.simulation.StopCondition.ENERGY_CONST" href="#voxelfuse.simulation.StopCondition.ENERGY_CONST">ENERGY_CONST</a></code></li>
+<li><code><a title="voxelfuse.simulation.StopCondition.ENERGY_KFLOOR" href="#voxelfuse.simulation.StopCondition.ENERGY_KFLOOR">ENERGY_KFLOOR</a></code></li>
+<li><code><a title="voxelfuse.simulation.StopCondition.MOTION_FLOOR" href="#voxelfuse.simulation.StopCondition.MOTION_FLOOR">MOTION_FLOOR</a></code></li>
+<li><code><a title="voxelfuse.simulation.StopCondition.NONE" href="#voxelfuse.simulation.StopCondition.NONE">NONE</a></code></li>
+<li><code><a title="voxelfuse.simulation.StopCondition.TEMP_CYCLES" href="#voxelfuse.simulation.StopCondition.TEMP_CYCLES">TEMP_CYCLES</a></code></li>
+<li><code><a title="voxelfuse.simulation.StopCondition.TIME_STEP" href="#voxelfuse.simulation.StopCondition.TIME_STEP">TIME_STEP</a></code></li>
+<li><code><a title="voxelfuse.simulation.StopCondition.TIME_VALUE" href="#voxelfuse.simulation.StopCondition.TIME_VALUE">TIME_VALUE</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.2.dev6+g840cf93</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Copyright 2020
-Dan Aukes, Cole Brauer
-
 VoxelFuse: The multi-material manufacturing toolkit
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 name = "voxelfuse"

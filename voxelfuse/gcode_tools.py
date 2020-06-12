@@ -1,8 +1,7 @@
 """
-Copyright 2020
-Cole Brauer, Dan Aukes
+Functions for manipulating gcode files
 
-Functions for manipulating gcode files.
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import numpy as np
@@ -74,12 +73,11 @@ def find_voxels(gcode: List[str], voxel_size: float = 1):
     Voxels are determined based on the position of the Z-axis and the specified
     voxel dimension. Comments are formatted as follows:
 
-    |\n
-    |  ;V0\n
-    |  ;Start of voxel 0\n
-    |\n
+    ``;V0``
 
-    pause_before_voxel references the ";V0" line of the comment. This line can
+    ``;Start of voxel 0``
+
+    pause_before_voxel references the ``;V0`` line of the comment. This line can
     also be used with remove_to_string to remove initialization code before the
     first voxel layer.
 

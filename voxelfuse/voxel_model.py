@@ -1,8 +1,7 @@
 """
-Copyright 2020
-Cole Brauer, Dan Aukes
-
 VoxelModel Class
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import os
@@ -25,15 +24,6 @@ FLOATING_ERROR = 0.0000000001
 class Axes(Enum):
     """
     Options for axes and planes.
-
-    Possible Values:\n
-    - X\n
-    - Y\n
-    - Z\n
-    - XY\n
-    - XZ\n
-    - YZ\n
-    - XYZ\n
     """
     X = (1,0,0)
     Y = (0,1,0)
@@ -46,11 +36,6 @@ class Axes(Enum):
 class Dir(Enum):
     """
     Options for projection directions.
-
-    Possible Values:\n
-    - UP\n
-    - DOWN\n
-    - BOTH\n
     """
     UP = 1
     DOWN = 2
@@ -59,13 +44,6 @@ class Dir(Enum):
 class Process(Enum):
     """
     Options for manufacturing process types.
-
-    Possible Values:\n
-    - LASER\n
-    - MILL\n
-    - PRINT\n
-    - CAST\n
-    - INSERT\n
     """
     LASER = 1
     MILL = 2
@@ -76,10 +54,6 @@ class Process(Enum):
 class Struct(Enum):
     """
     Options for structuring element shapes.
-
-    Possible Values:\n
-    - STANDARD\n
-    - SPHERE\n
     """
     STANDARD = 1
     SPHERE = 2
@@ -114,7 +88,7 @@ class VoxelModel:
 
         Example:
 
-        model1 = VoxelModel.fromVoxFile('cylinder-red.vox', (0, 5, 0), 1)
+        ``model1 = VoxelModel.fromVoxFile('cylinder-red.vox', (0, 5, 0), 1)``
 
         ----
 
@@ -153,7 +127,7 @@ class VoxelModel:
 
         Example:
 
-        model1 = VoxelModel.fromMeshFile('center.stl', (67, 3, 0), 2, 1)
+        ``model1 = VoxelModel.fromMeshFile('center.stl', (67, 3, 0), 2, 1)``
 
         ____
 
@@ -385,7 +359,7 @@ class VoxelModel:
 
         Example:
 
-        model2 = model1.isolateMaterial(4)
+        ``model2 = model1.isolateMaterial(4)``
 
         ----
 
@@ -405,7 +379,7 @@ class VoxelModel:
 
         Example:
 
-        model2 = model1.isolateLayer(8)
+        ``model2 = model1.isolateLayer(8)``
 
         ----
 
@@ -443,9 +417,9 @@ class VoxelModel:
 
         Examples:
 
-        model2 = model1.getUnoccupied()
+        ``model2 = model1.getUnoccupied()``
 
-        model2 = ~model1
+        ``model2 = ~model1``
 
         ----
 
@@ -494,8 +468,9 @@ class VoxelModel:
 
         Example:
 
-        model2 = model1.getBoundingBox()\n
-        model3 = model2.setMaterial(2)
+        ``model2 = model1.getBoundingBox()``
+
+        ``model3 = model2.setMaterial(2)``
 
         ----
 
@@ -519,11 +494,15 @@ class VoxelModel:
 
         Example:
 
-        material_vector = np.zeros(len(materials) + 1)	# Length of materials table +1\n
-        material_vector[0] = 1		# Set a to 1\n
-        material_vector[3] = 0.3	# Set material 3 to 30%\n
-        material_vector[4] = 0.7	# Set material 4 to 70%\n
-        model2 = model1.setMaterialVector(material_vector)
+        ``material_vector = np.zeros(len(materials) + 1)``
+
+        ``material_vector[0] = 1 # Set a to 1``
+
+        ``material_vector[3] = 0.3 # Set material 3 to 30%``
+
+        ``material_vector[4] = 0.7 # Set material 4 to 70%``
+
+        ``model2 = model1.setMaterialVector(material_vector)``
 
         ----
 
@@ -551,9 +530,9 @@ class VoxelModel:
 
         Examples:
 
-        model3 = model1.union(model2)
+        ``model3 = model1.union(model2)``
 
-        model3 = model1 | model2
+        ``model3 = model1 | model2``
 
         ----
 
@@ -595,7 +574,7 @@ class VoxelModel:
 
         Example:
 
-        model3 = model1.difference(model2)
+        ``model3 = model1.difference(model2)``
 
         ----
 
@@ -619,9 +598,9 @@ class VoxelModel:
 
         Examples:
 
-        model3 = model1.intersection(model2)
+        ``model3 = model1.intersection(model2)``
 
-        model3 = model1 & model2
+        ``model3 = model1 & model2``
 
         ----
 
@@ -660,9 +639,9 @@ class VoxelModel:
 
         Examples:
 
-        model3 = model1.xor(model2)
+        ``model3 = model1.xor(model2)``
 
-        model3 = model1 ^ model2
+        ``model3 = model1 ^ model2``
 
         ----
 
@@ -715,9 +694,9 @@ class VoxelModel:
 
         Examples:
 
-        model3 = model1.add(model2)
+        ``model3 = model1.add(model2)``
 
-        model3 = model1 + model2
+        ``model3 = model1 + model2``
 
         ----
 
@@ -787,9 +766,9 @@ class VoxelModel:
 
         Examples:
 
-        model3 = model1.subtract(model2)
+        ``model3 = model1.subtract(model2)``
 
-        model3 = model1 - model2
+        ``model3 = model1 - model2``
 
         ----
 
@@ -850,11 +829,11 @@ class VoxelModel:
 
         Examples:
 
-        model3 = model1.multiply(model2)
+        ``model3 = model1.multiply(model2)``
 
-        model3 = model1 * model2
+        ``model3 = model1 * model2``
 
-        model5 = model4 * 3
+        ``model5 = model4 * 3``
 
         ----
 
@@ -922,11 +901,11 @@ class VoxelModel:
 
         Examples:
 
-        model3 = model1.divide(model2)
+        ``model3 = model1.divide(model2)``
 
-        model3 = model1 / model2
+        ``model3 = model1 / model2``
 
-        model5 = model4 / 3
+        ``model5 = model4 / 3``
 
         ----
 
@@ -994,9 +973,9 @@ class VoxelModel:
 
         Examples:
 
-        model2 = model1.dilate(3)
+        ``model2 = model1.dilate(3)``
 
-        model4 = model3.dilate(1, Axes.XY, Struct.SPHERE, 2)
+        ``model4 = model3.dilate(1, Axes.XY, Struct.SPHERE, 2)``
 
         ----
 
@@ -1059,9 +1038,9 @@ class VoxelModel:
 
         Examples:
 
-        model2 = model1.erode(5, connectivity=2)
+        ``model2 = model1.erode(5, connectivity=2)``
 
-        model4 = model3.erode(2, Axes.X, Struct.SPHERE, 1)
+        ``model4 = model3.erode(2, Axes.X, Struct.SPHERE, 1)``
 
         ----
 
@@ -1152,7 +1131,7 @@ class VoxelModel:
 
         Example:
 
-        model2 = model1.blur(2)
+        ``model2 = model1.blur(2)``
 
         ___
 
@@ -1186,7 +1165,7 @@ class VoxelModel:
 
         Example:
 
-        model2 = model1.blurRegion(3, regionModel)
+        ``model2 = model1.blurRegion(3, regionModel)``
 
         ___
 
@@ -1209,7 +1188,7 @@ class VoxelModel:
 
         Example:
 
-        model2 = model1.removeNegatives()
+        ``model2 = model1.removeNegatives()``
 
         ___
 
@@ -1231,7 +1210,7 @@ class VoxelModel:
 
         Example:
 
-        model2 = model1.scaleValues()
+        ``model2 = model1.scaleValues()``
 
         ___
 
@@ -1256,7 +1235,7 @@ class VoxelModel:
 
         Example:
 
-        model2 = model1.scaleNull()
+        ``model2 = model1.scaleNull()``
 
         ___
 
@@ -1522,7 +1501,7 @@ class VoxelModel:
 
         Example:
 
-        modelResult = model1.projection(Dir.DOWN)
+        ``modelResult = model1.projection(Dir.DOWN)``
 
         ---
 
@@ -1578,7 +1557,7 @@ class VoxelModel:
 
         Example:
 
-        modelResult = model1.keepout(Process.MILL)
+        ``modelResult = model1.keepout(Process.MILL)``
 
         ----
 
@@ -1609,7 +1588,7 @@ class VoxelModel:
 
         Example:
 
-        modelResult = model1.clearance(Process.PRINT)
+        ``modelResult = model1.clearance(Process.PRINT)``
 
         ----
 
@@ -1636,7 +1615,7 @@ class VoxelModel:
 
         Example:
 
-        modelResult = model1.support(Process.LASER)
+        ``modelResult = model1.support(Process.LASER)``
 
         ----
 
@@ -1661,7 +1640,7 @@ class VoxelModel:
 
         Example:
 
-        modelResult = model1.userSupport(model2, Process.LASER)
+        ``modelResult = model1.userSupport(model2, Process.LASER)``
 
         ----
 
@@ -1692,7 +1671,7 @@ class VoxelModel:
 
         Example:
 
-        modelResult = model1.web(Process.LASER, 1, 5)
+        ``modelResult = model1.web(Process.LASER, 1, 5)``
 
         ----
 
@@ -1726,7 +1705,7 @@ class VoxelModel:
 
         Example:
 
-        modelResult.saveVF("test-file")
+        ``modelResult.saveVF("test-file")``
 
         ----
 
@@ -1793,7 +1772,7 @@ class VoxelModel:
 
         Example:
 
-        model1.openVF("test-file")
+        ``model1.openVF("test-file")``
 
         ----
 
@@ -1899,7 +1878,7 @@ class VoxelModel:
 
         Example:
 
-        modelResult.saveVXC("test-file", compression=False)
+        ``modelResult.saveVXC("test-file", compression=False)``
 
         ----
 

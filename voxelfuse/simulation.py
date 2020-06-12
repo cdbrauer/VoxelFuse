@@ -1,9 +1,9 @@
 """
-Copyright 2020
-Cole Brauer, Dan Aukes
-
 Simulation Class
+
 Initialized from a VoxelModel object. Used to configure VoxCad and Voxelyze simulations.
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import os
@@ -18,15 +18,6 @@ from voxelfuse.primitives import empty, cuboid, sphere, cylinder
 class StopCondition(Enum):
     """
     Options for simulation stop conditions.
-
-    Possible Values:\n
-    - NONE\n
-    - TIME_STEP\n
-    - TIME_VALUE\n
-    - TEMP_CYCLES\n
-    - ENERGY_CONST\n
-    - ENERGY_KFLOOR\n
-    - MOTION_FLOOR\n
     """
     NONE = 0
     TIME_STEP = 1
@@ -39,11 +30,6 @@ class StopCondition(Enum):
 class BCShape(Enum):
     """
     Options for simulation boundary condition shapes.
-
-    Possible Values:\n
-    - BOX\n
-    - CYLINDER\n
-    - SPHERE\n
     """
     BOX = 0
     CYLINDER = 1
@@ -659,10 +645,13 @@ class Simulation:
 
         Example:
 
-        simulation = Simulation(modelResult)\n
-        simulation.setCollision()\n
-        simulation.setStopCondition(StopCondition.TIME_VALUE, 0.01)\n
-        simulation.launchSim('collision_sim_1', delete_files=False)
+        ``simulation = Simulation(modelResult)``
+
+        ``simulation.setCollision()``
+
+        ``simulation.setStopCondition(StopCondition.TIME_VALUE, 0.01)``
+
+        ``simulation.launchSim('collision_sim_1', delete_files=False)``
 
         ----
 

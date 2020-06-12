@@ -1,9 +1,9 @@
 """
-Copyright 2020
-Cole Brauer, Dan Aukes
-
 Plot Class
+
 Initialized from mesh data
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import numpy as np
@@ -47,11 +47,15 @@ class Plot:
 
         Example:
 
-        app1 = qg.QApplication(sys.argv)\n
-        plot1 = Plot(mesh1)\n
-        plot1.show()\n
-        app1.processEvents()\n
-        app1.exec_()
+        ``app1 = qg.QApplication(sys.argv)``
+
+        ``plot1 = Plot(mesh1)``
+
+        ``plot1.show()``
+
+        ``app1.processEvents()``
+
+        ``app1.exec_()``
 
         ----
 
@@ -115,12 +119,17 @@ class Plot:
 
         Example:
 
-        app1 = qg.QApplication(sys.argv)\n
-        plot1 = Plot(mesh1)\n
-        plot1.show()\n
-        app1.processEvents()\n
-        plot1.export('result.png')\n
-        app1.exec_()
+        ``app1 = qg.QApplication(sys.argv)``
+
+        ``plot1 = Plot(mesh1)``
+
+        ``plot1.show()``
+
+        ``app1.processEvents()``
+
+        ``plot1.export('result.png')``
+
+        ``app1.exec_()``
 
         ----
 

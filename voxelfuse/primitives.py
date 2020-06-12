@@ -1,8 +1,7 @@
 """
-Copyright 2020
-Cole Brauer, Dan Aukes
-
 Functions for generating primitive solids.
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import numpy as np

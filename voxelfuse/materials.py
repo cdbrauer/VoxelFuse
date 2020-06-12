@@ -1,35 +1,36 @@
 """
-Copyright 2020
-Dan Aukes, Cole Brauer
-"""
-
-"""
 Material data array
 
 Properties:
-  name - display name of the material
-  process - method used to create parts made of this material
-  r, g, b - color used to represent material  
-  p - density, g/cm^3
-  v - poisson's ratio
-  E - elastic modulus, Pa
-  G - shear modulus, Pa
-  Z - plastic modulus, Pa
-  eY - yield stress, Pa
-  eF - fail stress, Pa
-  SY - yield strain, m/m
-  SF - fail strain, m/m
-  CTE - coefficient of thermal expansion, 1/deg C
-  TP - temp phase, rad
-  uS - coefficient of static friction
-  uD - coefficient of dynamic friction
-  MM - material model, 0=linear, 1=linear+failure, 2=bilinear
-  FM - failure model, 0=stress, 1=strain
+---
+
+- name - display name of the material
+- process - method used to create parts made of this material
+- r, g, b - color used to represent material
+- p - density, g/cm^3
+- v - poisson's ratio
+- E - elastic modulus, Pa
+- G - shear modulus, Pa
+- Z - plastic modulus, Pa
+- eY - yield stress, Pa
+- eF - fail stress, Pa
+- SY - yield strain, m/m
+- SF - fail strain, m/m
+- CTE - coefficient of thermal expansion, 1/deg C
+- TP - temp phase, rad
+- uS - coefficient of static friction
+- uD - coefficient of dynamic friction
+- MM - material model, 0=linear, 1=linear+failure, 2=bilinear
+- FM - failure model, 0=stress, 1=strain
 
 Processes:
-  3dp: 3D Printing
-  laser: Laser Cutting
-  ins: Inserted component
+---
+
+- 3dp: 3D Printing
+- laser: Laser Cutting
+- ins: Inserted component
+
+Copyright 2020 - Dan Aukes, Cole Brauer
 """
 
 material_properties =\

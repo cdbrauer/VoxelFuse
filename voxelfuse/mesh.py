@@ -1,9 +1,9 @@
 """
-Copyright 2020
-Cole Brauer, Dan Aukes
-
 Mesh Class
+
 Initialized from a voxel model
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import numpy as np
@@ -46,7 +46,7 @@ class Mesh:
 
         Example:
 
-        mesh1 = Mesh.fromVoxelModel(model1)
+        ``mesh1 = Mesh.fromVoxelModel(model1)``
 
         ----
 
@@ -133,7 +133,9 @@ class Mesh:
 
         Example:
 
-        mesh1.export('result.stl')
+        ``mesh1.export('result.stl')``
+
+        ----
 
         :param filename: File name with extension
         :return: None
