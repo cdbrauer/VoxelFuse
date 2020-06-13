@@ -160,8 +160,8 @@ class Simulation:
         """
         Set simulation collision parameters.
 
-        A damping value of 0 represents elastic collisions and higher values
-        represent inelastic collisions.
+        A damping value of 0 represents completely elastic collisions and
+        higher values represent inelastic collisions.
 
         :param enable: Enable/disable collisions
         :param damping: Collision damping (0-2)
@@ -302,7 +302,8 @@ class Simulation:
         Add a box-shaped boundary condition.
 
         Boundary condition position and size are expressed as percentages of the
-        overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+        overall model size. The fixed DOF value should be set as a 6-bit binary
+        value (e.g. 0b111111) and the bits correspond to: Rz, Ry, Rx, Z, Y, X.
         If a bit is set to 0, the corresponding force/torque will be applied. If
         a bit is set to 1, the DOF will be fixed and the displacement will be
         applied.
@@ -345,7 +346,8 @@ class Simulation:
         Add a spherical boundary condition.
 
         Boundary condition position and radius are expressed as percentages of the
-        overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+        overall model size. The fixed DOF value should be set as a 6-bit binary
+        value (e.g. 0b111111) and the bits correspond to: Rz, Ry, Rx, Z, Y, X.
         If a bit is set to 0, the corresponding force/torque will be applied. If
         a bit is set to 1, the DOF will be fixed and the displacement will be
         applied.
@@ -388,7 +390,8 @@ class Simulation:
         Add a cylindrical boundary condition.
 
         Boundary condition position and size are expressed as percentages of the
-        overall model size. The fixed DOF bits correspond to: Rz, Ry, Rx, Z, Y, X.
+        overall model size. The fixed DOF value should be set as a 6-bit binary
+        value (e.g. 0b111111) and the bits correspond to: Rz, Ry, Rx, Z, Y, X.
         If a bit is set to 0, the corresponding force/torque will be applied. If
         a bit is set to 1, the DOF will be fixed and the displacement will be
         applied.
@@ -469,7 +472,8 @@ class Simulation:
         Save model data to a .vxa file
 
         The VoxCad simulation file format stores all the data contained in
-        a .vxc file with plus the simulation setup.
+        a .vxc file (geometry, material palette) plus the simulation setup (simulation
+        parameters, environment settings, boundary conditions).
 
         This format supports compression for the voxel data. Enabling compression allows
         for larger models, but it may introduce geometry errors that particularly affect
@@ -642,6 +646,8 @@ class Simulation:
     def launchSim(self, filename: str = 'temp', delete_files: bool = True):
         """
         Launch a Simulation object in VoxCad.
+
+        This function requires VoxCad to be located on the system PATH.
 
         ----
 

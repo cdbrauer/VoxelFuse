@@ -182,6 +182,17 @@ class Mesh:
 # Helper functions ##############################################################
 @njit()
 def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
+    &#34;&#34;&#34;
+    Check if a target voxel has another voxel of the same material
+    adjacent to it in the X direction.
+
+    :param input_model: VoxelModel
+    :param x_coord: Target voxel X location
+    :param y_coord: Target voxel Y location
+    :param z_coord: Target voxel Z location
+    :param x_dir: Specify X direction and distance (usually 1 or -1)
+    :return: Adjacent voxel present/not present
+    &#34;&#34;&#34;
     x_len = len(input_model[:, 0, 0])
     x_coord_new = x_coord+x_dir
 
@@ -194,6 +205,17 @@ def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
 
 @njit()
 def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
+    &#34;&#34;&#34;
+    Check if a target voxel has another voxel of the same material
+    adjacent to it in the Y direction.
+
+    :param input_model: VoxelModel
+    :param x_coord: Target voxel X location
+    :param y_coord: Target voxel Y location
+    :param z_coord: Target voxel Z location
+    :param y_dir: Specify Y direction and distance (usually 1 or -1)
+    :return: Adjacent voxel present/not present
+    &#34;&#34;&#34;
     y_len = len(input_model[0, :, 0])
     y_coord_new = y_coord+y_dir
 
@@ -206,6 +228,17 @@ def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
 
 @njit()
 def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
+    &#34;&#34;&#34;
+    Check if a target voxel has another voxel of the same material
+    adjacent to it in the Z direction.
+
+    :param input_model: VoxelModel
+    :param x_coord: Target voxel X location
+    :param y_coord: Target voxel Y location
+    :param z_coord: Target voxel Z location
+    :param z_dir: Specify Z direction and distance (usually 1 or -1)
+    :return: Adjacent voxel present/not present
+    &#34;&#34;&#34;
     z_len = len(input_model[0, 0, :])
     z_coord_new = z_coord+z_dir
 
@@ -218,6 +251,18 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
 
 @njit()
 def addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi):
+    &#34;&#34;&#34;
+    Find the applicable mesh vertices and triangles for a target voxel.
+
+    :param voxel_model_array: VoxelModel.voxels
+    :param model_offsets: VoxelModel.coords
+    :param resolution: Number of voxels per mm
+    :param x: Target voxel X location
+    :param y: Target voxel Y location
+    :param z: Target voxel Z location
+    :param vi: Current vertex index
+    :return: New verts, Indices for new verts, New tris, New current vert index
+    &#34;&#34;&#34;
     adjacent = [
         [check_adjacent_x(voxel_model_array, x, y, z, 1), check_adjacent_x(voxel_model_array, x, y, z, -1)],
         [check_adjacent_y(voxel_model_array, x, y, z, 1), check_adjacent_y(voxel_model_array, x, y, z, -1)],
@@ -312,13 +357,44 @@ def addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, 
 <span>def <span class="ident">addVerticesAndTriangles</span></span>(<span>voxel_model_array, model_offsets, resolution, x, y, z, vi)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Find the applicable mesh vertices and triangles for a target voxel.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>voxel_model_array</code></strong></dt>
+<dd>VoxelModel.voxels</dd>
+<dt><strong><code>model_offsets</code></strong></dt>
+<dd>VoxelModel.coords</dd>
+<dt><strong><code>resolution</code></strong></dt>
+<dd>Number of voxels per mm</dd>
+<dt><strong><code>x</code></strong></dt>
+<dd>Target voxel X location</dd>
+<dt><strong><code>y</code></strong></dt>
+<dd>Target voxel Y location</dd>
+<dt><strong><code>z</code></strong></dt>
+<dd>Target voxel Z location</dd>
+<dt><strong><code>vi</code></strong></dt>
+<dd>Current vertex index</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>New verts, Indices for new verts, New tris, New current vert index</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@njit()
 def addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi):
+    &#34;&#34;&#34;
+    Find the applicable mesh vertices and triangles for a target voxel.
+
+    :param voxel_model_array: VoxelModel.voxels
+    :param model_offsets: VoxelModel.coords
+    :param resolution: Number of voxels per mm
+    :param x: Target voxel X location
+    :param y: Target voxel Y location
+    :param z: Target voxel Z location
+    :param vi: Current vertex index
+    :return: New verts, Indices for new verts, New tris, New current vert index
+    &#34;&#34;&#34;
     adjacent = [
         [check_adjacent_x(voxel_model_array, x, y, z, 1), check_adjacent_x(voxel_model_array, x, y, z, -1)],
         [check_adjacent_y(voxel_model_array, x, y, z, 1), check_adjacent_y(voxel_model_array, x, y, z, -1)],
@@ -406,13 +482,40 @@ def addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, 
 <span>def <span class="ident">check_adjacent_x</span></span>(<span>input_model, x_coord, y_coord, z_coord, x_dir)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Check if a target voxel has another voxel of the same material
+adjacent to it in the X direction.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>input_model</code></strong></dt>
+<dd>VoxelModel</dd>
+<dt><strong><code>x_coord</code></strong></dt>
+<dd>Target voxel X location</dd>
+<dt><strong><code>y_coord</code></strong></dt>
+<dd>Target voxel Y location</dd>
+<dt><strong><code>z_coord</code></strong></dt>
+<dd>Target voxel Z location</dd>
+<dt><strong><code>x_dir</code></strong></dt>
+<dd>Specify X direction and distance (usually 1 or -1)</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>Adjacent voxel present/not present</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@njit()
 def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
+    &#34;&#34;&#34;
+    Check if a target voxel has another voxel of the same material
+    adjacent to it in the X direction.
+
+    :param input_model: VoxelModel
+    :param x_coord: Target voxel X location
+    :param y_coord: Target voxel Y location
+    :param z_coord: Target voxel Z location
+    :param x_dir: Specify X direction and distance (usually 1 or -1)
+    :return: Adjacent voxel present/not present
+    &#34;&#34;&#34;
     x_len = len(input_model[:, 0, 0])
     x_coord_new = x_coord+x_dir
 
@@ -428,13 +531,40 @@ def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
 <span>def <span class="ident">check_adjacent_y</span></span>(<span>input_model, x_coord, y_coord, z_coord, y_dir)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Check if a target voxel has another voxel of the same material
+adjacent to it in the Y direction.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>input_model</code></strong></dt>
+<dd>VoxelModel</dd>
+<dt><strong><code>x_coord</code></strong></dt>
+<dd>Target voxel X location</dd>
+<dt><strong><code>y_coord</code></strong></dt>
+<dd>Target voxel Y location</dd>
+<dt><strong><code>z_coord</code></strong></dt>
+<dd>Target voxel Z location</dd>
+<dt><strong><code>y_dir</code></strong></dt>
+<dd>Specify Y direction and distance (usually 1 or -1)</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>Adjacent voxel present/not present</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@njit()
 def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
+    &#34;&#34;&#34;
+    Check if a target voxel has another voxel of the same material
+    adjacent to it in the Y direction.
+
+    :param input_model: VoxelModel
+    :param x_coord: Target voxel X location
+    :param y_coord: Target voxel Y location
+    :param z_coord: Target voxel Z location
+    :param y_dir: Specify Y direction and distance (usually 1 or -1)
+    :return: Adjacent voxel present/not present
+    &#34;&#34;&#34;
     y_len = len(input_model[0, :, 0])
     y_coord_new = y_coord+y_dir
 
@@ -450,13 +580,40 @@ def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
 <span>def <span class="ident">check_adjacent_z</span></span>(<span>input_model, x_coord, y_coord, z_coord, z_dir)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Check if a target voxel has another voxel of the same material
+adjacent to it in the Z direction.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>input_model</code></strong></dt>
+<dd>VoxelModel</dd>
+<dt><strong><code>x_coord</code></strong></dt>
+<dd>Target voxel X location</dd>
+<dt><strong><code>y_coord</code></strong></dt>
+<dd>Target voxel Y location</dd>
+<dt><strong><code>z_coord</code></strong></dt>
+<dd>Target voxel Z location</dd>
+<dt><strong><code>z_dir</code></strong></dt>
+<dd>Specify Z direction and distance (usually 1 or -1)</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>Adjacent voxel present/not present</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@njit()
 def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
+    &#34;&#34;&#34;
+    Check if a target voxel has another voxel of the same material
+    adjacent to it in the Z direction.
+
+    :param input_model: VoxelModel
+    :param x_coord: Target voxel X location
+    :param y_coord: Target voxel Y location
+    :param z_coord: Target voxel Z location
+    :param z_dir: Specify Z direction and distance (usually 1 or -1)
+    :return: Adjacent voxel present/not present
+    &#34;&#34;&#34;
     z_len = len(input_model[0, 0, :])
     z_coord_new = z_coord+z_dir
 

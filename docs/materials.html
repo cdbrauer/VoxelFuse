@@ -21,7 +21,9 @@
 </header>
 <section id="section-intro">
 <p>Material data array</p>
-<h3 id="properties">Properties</h3>
+<p>Each material should be formatted as a dictionary item with
+the following keys.</p>
+<h3 id="keys">Keys</h3>
 <ul>
 <li>name - display name of the material</li>
 <li>process - method used to create parts made of this material</li>
@@ -42,14 +44,14 @@
 <li>MM - material model, 0=linear, 1=linear+failure, 2=bilinear</li>
 <li>FM - failure model, 0=stress, 1=strain</li>
 </ul>
-<h3 id="processes">Processes</h3>
+<h3 id="supported-process-values">Supported Process Values</h3>
 <ul>
-<li>3dp: 3D Printing</li>
-<li>laser: Laser Cutting</li>
-<li>ins: Inserted component</li>
+<li>'3dp' &ndash; 3D Printing</li>
+<li>'laser' &ndash; Laser Cutting</li>
+<li>'ins' &ndash; Inserted component</li>
 </ul>
 <hr>
-<p>Copyright 2020 - Dan Aukes, Cole Brauer</p>
+<p>Copyright 2020 - Cole Brauer, Dan Aukes</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -57,7 +59,10 @@
 <pre><code class="python">&#34;&#34;&#34;
 Material data array
 
-### Properties
+Each material should be formatted as a dictionary item with
+the following keys.
+
+### Keys
 
 - name - display name of the material
 - process - method used to create parts made of this material
@@ -78,15 +83,15 @@ Material data array
 - MM - material model, 0=linear, 1=linear+failure, 2=bilinear
 - FM - failure model, 0=stress, 1=strain
 
-### Processes
+### Supported Process Values
 
-- 3dp: 3D Printing
-- laser: Laser Cutting
-- ins: Inserted component
+- &#39;3dp&#39; -- 3D Printing
+- &#39;laser&#39; -- Laser Cutting
+- &#39;ins&#39; -- Inserted component
 
 ----
 
-Copyright 2020 - Dan Aukes, Cole Brauer
+Copyright 2020 - Cole Brauer, Dan Aukes
 &#34;&#34;&#34;
 
 material_properties =\
@@ -117,8 +122,8 @@ material_properties =\
 <h1>Index</h1>
 <div class="toc">
 <ul>
-<li><a href="#properties">Properties</a></li>
-<li><a href="#processes">Processes</a></li>
+<li><a href="#keys">Keys</a></li>
+<li><a href="#supported-process-values">Supported Process Values</a></li>
 </ul>
 </div>
 <ul id="index">

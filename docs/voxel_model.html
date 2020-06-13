@@ -463,7 +463,7 @@ class VoxelModel:
         &#34;&#34;&#34;
         Get all voxels not occupied by the input model.
 
-        Overload invert operator (~) for VoxelModel objects with self.getUnoccupied().
+        Overload invert operator (~) for VoxelModel objects with getUnoccupied().
 
         :return: VoxelModel
         &#34;&#34;&#34;
@@ -590,7 +590,7 @@ class VoxelModel:
         &#34;&#34;&#34;
         Find the geometric union of two models.
 
-        Overload OR operator (|) for VoxelModel objects with self.union().
+        Overload OR operator (|) for VoxelModel objects with union().
 
         :param other: VoxelModel to union with self
         :return: VoxelModel
@@ -653,7 +653,7 @@ class VoxelModel:
         &#34;&#34;&#34;
         Find the geometric intersection of two models.
 
-        Overload AND operator (&amp;) for VoxelModel objects with self.intersection().
+        Overload AND operator (&amp;) for VoxelModel objects with intersection().
 
         :param other: VoxelModel to intersect with self
         :return: VoxelModel
@@ -698,7 +698,7 @@ class VoxelModel:
         &#34;&#34;&#34;
         Find the geometric exclusive or of two models.
 
-        Overload XOR operator (^) for VoxelModel objects with self.xor().
+        Overload XOR operator (^) for VoxelModel objects with xor().
 
         :param other: VoxelModel to xor with self
         :return: VoxelModel
@@ -768,7 +768,7 @@ class VoxelModel:
         &#34;&#34;&#34;
         Find the material-wise addition of two models.
 
-        Overload addition operator (+) for VoxelModel objects with self.add().
+        Overload addition operator (+) for VoxelModel objects with add().
 
         :param other: VoxelModel to add to self
         :return: VoxelModel
@@ -840,7 +840,7 @@ class VoxelModel:
         &#34;&#34;&#34;
         Find the material-wise difference of two models.
 
-        Overload subtraction operator (-) for VoxelModel objects with self.subtract().
+        Overload subtraction operator (-) for VoxelModel objects with subtract().
 
         :param other: VoxelModel to subtract from self
         :return: VoxelModel
@@ -911,7 +911,7 @@ class VoxelModel:
         &#34;&#34;&#34;
         Find the material-wise multiplication of two models.
 
-        Overload multiplication operator (*) for VoxelModel objects with self.multiply().
+        Overload multiplication operator (*) for VoxelModel objects with multiply().
 
         :param other: VoxelModel to multiply with self
         :return: VoxelModel
@@ -987,7 +987,7 @@ class VoxelModel:
         &#34;&#34;&#34;
         Find the material-wise division of two models.
 
-        Overload division operator (/) for VoxelModel objects with self.divide().
+        Overload division operator (/) for VoxelModel objects with divide().
 
         :param other: VoxelModel to divide self by
         :return: VoxelModel
@@ -1260,7 +1260,7 @@ class VoxelModel:
 
         Voxels that contained less than 100% material will contain the same material percentages as
         before, but will have varying density. Voxels that contained greater than 100% material
-        will be scaled using self.scaleValues().
+        will be scaled using scaleValues().
 
         ----
 
@@ -1358,7 +1358,7 @@ class VoxelModel:
         Rotate a model about its center.
 
         Floating point errors may slightly affect the angle of the resulting model.
-        To rotate a model in precise 90 degree increments, use self.rotate90().
+        To rotate a model in precise 90 degree increments, use rotate90().
 
         :param angle: Angle of rotation in degrees
         :param axis: Axis of rotation, set using Axes class
@@ -2083,7 +2083,7 @@ def alignDims(modelA, modelB):
 
     :param modelA: Input model A
     :param modelB: Input model B
-    :return: Resized model A, resized model B, new model coordinates
+    :return: Resized model A, resized model B, New model coordinates
     &#34;&#34;&#34;
     ax = modelA.coords[0]
     ay = modelA.coords[1]
@@ -2236,6 +2236,18 @@ def findFilledVoxels(a, b):
 
 @njit()
 def toFullMaterials(voxels, materials, n_materials):
+    &#34;&#34;&#34;
+    Convert from index-based material mixture storage to storing
+    full material mixtures at every voxel.
+
+    This representation requires much more memory, but is
+    needed for some operations. Also see toIndexedMaterials().
+
+    :param voxels: VoxelModel.voxels
+    :param materials: VoxelModel.materials
+    :param n_materials: Number of materials in the material properties table
+    :return: Model data array
+    &#34;&#34;&#34;
     x_len = voxels.shape[0]
     y_len = voxels.shape[1]
     z_len = voxels.shape[2]
@@ -2251,6 +2263,17 @@ def toFullMaterials(voxels, materials, n_materials):
     return full_model
 
 def toIndexedMaterials(voxels, model, resolution):
+    &#34;&#34;&#34;
+    Convert from storing full material mixtures at every voxel
+    to index-based material mixture storage.
+
+    Also see toFullMaterials().
+
+    :param voxels: Model data array
+    :param model: Reference VoxelModel for size and coords
+    :param resolution:
+    :return:
+    &#34;&#34;&#34;
     x_len = model.voxels.shape[0]
     y_len = model.voxels.shape[1]
     z_len = model.voxels.shape[2]
@@ -2292,7 +2315,7 @@ def toIndexedMaterials(voxels, model, resolution):
 <dd>Input model A</dd>
 <dt><strong><code>modelB</code></strong></dt>
 <dd>Input model B</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Resized model A, resized model B, new model coordinates</code></dt>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>Resized model A, resized model B, New model coordinates</code></dt>
 <dd>&nbsp;</dd>
 </dl></div>
 <details class="source">
@@ -2307,7 +2330,7 @@ def toIndexedMaterials(voxels, model, resolution):
 
     :param modelA: Input model A
     :param modelB: Input model B
-    :return: Resized model A, resized model B, new model coordinates
+    :return: Resized model A, resized model B, New model coordinates
     &#34;&#34;&#34;
     ax = modelA.coords[0]
     ay = modelA.coords[1]
@@ -2599,13 +2622,39 @@ def findFilledVoxels(a, b):
 <span>def <span class="ident">toFullMaterials</span></span>(<span>voxels, materials, n_materials)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Convert from index-based material mixture storage to storing
+full material mixtures at every voxel.</p>
+<p>This representation requires much more memory, but is
+needed for some operations. Also see toIndexedMaterials().</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>voxels</code></strong></dt>
+<dd>VoxelModel.voxels</dd>
+<dt><strong><code>materials</code></strong></dt>
+<dd>VoxelModel.materials</dd>
+<dt><strong><code>n_materials</code></strong></dt>
+<dd>Number of materials in the material properties table</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>Model data array</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@njit()
 def toFullMaterials(voxels, materials, n_materials):
+    &#34;&#34;&#34;
+    Convert from index-based material mixture storage to storing
+    full material mixtures at every voxel.
+
+    This representation requires much more memory, but is
+    needed for some operations. Also see toIndexedMaterials().
+
+    :param voxels: VoxelModel.voxels
+    :param materials: VoxelModel.materials
+    :param n_materials: Number of materials in the material properties table
+    :return: Model data array
+    &#34;&#34;&#34;
     x_len = voxels.shape[0]
     y_len = voxels.shape[1]
     z_len = voxels.shape[2]
@@ -2625,12 +2674,34 @@ def toFullMaterials(voxels, materials, n_materials):
 <span>def <span class="ident">toIndexedMaterials</span></span>(<span>voxels, model, resolution)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Convert from storing full material mixtures at every voxel
+to index-based material mixture storage.</p>
+<p>Also see toFullMaterials().</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>voxels</code></strong></dt>
+<dd>Model data array</dd>
+<dt><strong><code>model</code></strong></dt>
+<dd>Reference VoxelModel for size and coords</dd>
+</dl>
+<p>resolution:
+Returns:</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def toIndexedMaterials(voxels, model, resolution):
+    &#34;&#34;&#34;
+    Convert from storing full material mixtures at every voxel
+    to index-based material mixture storage.
+
+    Also see toFullMaterials().
+
+    :param voxels: Model data array
+    :param model: Reference VoxelModel for size and coords
+    :param resolution:
+    :return:
+    &#34;&#34;&#34;
     x_len = model.voxels.shape[0]
     y_len = model.voxels.shape[1]
     z_len = model.voxels.shape[2]
@@ -3231,7 +3302,7 @@ def toFullMaterials(voxels, materials, n_materials):
         &#34;&#34;&#34;
         Get all voxels not occupied by the input model.
 
-        Overload invert operator (~) for VoxelModel objects with self.getUnoccupied().
+        Overload invert operator (~) for VoxelModel objects with getUnoccupied().
 
         :return: VoxelModel
         &#34;&#34;&#34;
@@ -3358,7 +3429,7 @@ def toFullMaterials(voxels, materials, n_materials):
         &#34;&#34;&#34;
         Find the geometric union of two models.
 
-        Overload OR operator (|) for VoxelModel objects with self.union().
+        Overload OR operator (|) for VoxelModel objects with union().
 
         :param other: VoxelModel to union with self
         :return: VoxelModel
@@ -3421,7 +3492,7 @@ def toFullMaterials(voxels, materials, n_materials):
         &#34;&#34;&#34;
         Find the geometric intersection of two models.
 
-        Overload AND operator (&amp;) for VoxelModel objects with self.intersection().
+        Overload AND operator (&amp;) for VoxelModel objects with intersection().
 
         :param other: VoxelModel to intersect with self
         :return: VoxelModel
@@ -3466,7 +3537,7 @@ def toFullMaterials(voxels, materials, n_materials):
         &#34;&#34;&#34;
         Find the geometric exclusive or of two models.
 
-        Overload XOR operator (^) for VoxelModel objects with self.xor().
+        Overload XOR operator (^) for VoxelModel objects with xor().
 
         :param other: VoxelModel to xor with self
         :return: VoxelModel
@@ -3536,7 +3607,7 @@ def toFullMaterials(voxels, materials, n_materials):
         &#34;&#34;&#34;
         Find the material-wise addition of two models.
 
-        Overload addition operator (+) for VoxelModel objects with self.add().
+        Overload addition operator (+) for VoxelModel objects with add().
 
         :param other: VoxelModel to add to self
         :return: VoxelModel
@@ -3608,7 +3679,7 @@ def toFullMaterials(voxels, materials, n_materials):
         &#34;&#34;&#34;
         Find the material-wise difference of two models.
 
-        Overload subtraction operator (-) for VoxelModel objects with self.subtract().
+        Overload subtraction operator (-) for VoxelModel objects with subtract().
 
         :param other: VoxelModel to subtract from self
         :return: VoxelModel
@@ -3679,7 +3750,7 @@ def toFullMaterials(voxels, materials, n_materials):
         &#34;&#34;&#34;
         Find the material-wise multiplication of two models.
 
-        Overload multiplication operator (*) for VoxelModel objects with self.multiply().
+        Overload multiplication operator (*) for VoxelModel objects with multiply().
 
         :param other: VoxelModel to multiply with self
         :return: VoxelModel
@@ -3755,7 +3826,7 @@ def toFullMaterials(voxels, materials, n_materials):
         &#34;&#34;&#34;
         Find the material-wise division of two models.
 
-        Overload division operator (/) for VoxelModel objects with self.divide().
+        Overload division operator (/) for VoxelModel objects with divide().
 
         :param other: VoxelModel to divide self by
         :return: VoxelModel
@@ -4028,7 +4099,7 @@ def toFullMaterials(voxels, materials, n_materials):
 
         Voxels that contained less than 100% material will contain the same material percentages as
         before, but will have varying density. Voxels that contained greater than 100% material
-        will be scaled using self.scaleValues().
+        will be scaled using scaleValues().
 
         ----
 
@@ -4126,7 +4197,7 @@ def toFullMaterials(voxels, materials, n_materials):
         Rotate a model about its center.
 
         Floating point errors may slightly affect the angle of the resulting model.
-        To rotate a model in precise 90 degree increments, use self.rotate90().
+        To rotate a model in precise 90 degree increments, use rotate90().
 
         :param angle: Angle of rotation in degrees
         :param axis: Axis of rotation, set using Axes class
@@ -6633,7 +6704,7 @@ that contains material.</p>
 <dd>
 <div class="desc"><p>Rotate a model about its center.</p>
 <p>Floating point errors may slightly affect the angle of the resulting model.
-To rotate a model in precise 90 degree increments, use self.rotate90().</p>
+To rotate a model in precise 90 degree increments, use rotate90().</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>angle</code></strong></dt>
@@ -6652,7 +6723,7 @@ To rotate a model in precise 90 degree increments, use self.rotate90().</p>
     Rotate a model about its center.
 
     Floating point errors may slightly affect the angle of the resulting model.
-    To rotate a model in precise 90 degree increments, use self.rotate90().
+    To rotate a model in precise 90 degree increments, use rotate90().
 
     :param angle: Angle of rotation in degrees
     :param axis: Axis of rotation, set using Axes class
@@ -6981,7 +7052,7 @@ Disable adjustResolution if using this operation to change the size of a model.<
 <div class="desc"><p>Scale null material values to make all voxels contain 100% material.</p>
 <p>Voxels that contained less than 100% material will contain the same material percentages as
 before, but will have varying density. Voxels that contained greater than 100% material
-will be scaled using self.scaleValues().</p>
+will be scaled using scaleValues().</p>
 <hr>
 <p>Example:</p>
 <p><code>model2 = model1.scaleNull()</code></p>
@@ -6997,7 +7068,7 @@ will be scaled using self.scaleValues().</p>
 
     Voxels that contained less than 100% material will contain the same material percentages as
     before, but will have varying density. Voxels that contained greater than 100% material
-    will be scaled using self.scaleValues().
+    will be scaled using scaleValues().
 
     ----
 
