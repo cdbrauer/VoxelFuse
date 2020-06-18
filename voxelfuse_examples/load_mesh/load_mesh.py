@@ -1,10 +1,11 @@
 """
-Copyright 2018
-Dan Aukes, Cole Brauer
+Import mesh data.
 
-Mesh data import
+Import a mesh file and convert it to voxels.
 
-Program imports a mesh file and converts it to voxels
+----
+
+Copyright 2019 - Cole Brauer, Dan Aukes
 """
 
 import PyQt5.QtGui as qg

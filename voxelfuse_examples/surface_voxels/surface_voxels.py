@@ -1,10 +1,11 @@
 """
-Copyright 2019
-Dan Aukes, Cole Brauer
+Find the surface voxels of a model and output a list of their coordinates.
 
-Finds the surface voxels of a model and outputs a list of their coordinates
+Used by the Mesh class to improve meshing speed.
 
-Used by the Mesh class to improve meshing speed
+----
+
+Copyright 2019 - Cole Brauer, Dan Aukes
 """
 
 from voxelfuse.voxel_model import VoxelModel

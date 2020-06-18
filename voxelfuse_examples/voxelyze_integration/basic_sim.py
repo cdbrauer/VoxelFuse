@@ -1,8 +1,9 @@
 """
-Copyright 2020
-Cole Brauer, Dan Aukes
+Export a simulation that applies forces to two simple objects.
 
-Export a simulation that applies forces to two simple objects
+----
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 from voxelfuse.voxel_model import VoxelModel

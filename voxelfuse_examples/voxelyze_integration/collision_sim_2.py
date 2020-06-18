@@ -1,8 +1,9 @@
 """
-Copyright 2020
-Cole Brauer, Dan Aukes
+Export a simulation of multiple falling objects.
 
-Export a simulation of multiple falling objects
+----
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import PyQt5.QtGui as qg

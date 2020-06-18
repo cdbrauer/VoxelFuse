@@ -11,6 +11,7 @@ VoxelFuse provides a set of Python commands for importing, modifying, displaying
 Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at ASU.
 
 ## Features
+
 - Boolean operations for both volumes and materials
 - Morphology operations
 - Gaussian blurring
@@ -84,10 +85,15 @@ Template for creating scripts using VoxCad simulation:
         simulation = Simulation(modelIn)
         simulation.launchSim()
 
+## Examples
+
+See [cdbrauer.github.io/VoxelFuse/voxelfuse_examples](https://cdbrauer.github.io/VoxelFuse/voxelfuse_examples/)
+for a list of the example scripts.
+
 ----
 
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 name = "voxelfuse"
-__version__ = "1.1.7"
+__version__ = "1.2.1"

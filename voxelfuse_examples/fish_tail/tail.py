@@ -1,10 +1,11 @@
 """
-Copyright 2019
-Dan Aukes, Cole Brauer
+Multimaterial fish tail.
 
-Multimaterial fish tail
+Apply blurring to the specified materials.
 
-Program applies blurring to the specified materials
+----
+
+Copyright 2019 - Cole Brauer, Dan Aukes
 """
 
 import PyQt5.QtGui as qg

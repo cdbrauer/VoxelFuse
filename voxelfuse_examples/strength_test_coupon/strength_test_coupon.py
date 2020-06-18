@@ -1,8 +1,11 @@
 """
-Copyright 2018
-Dan Aukes, Cole Brauer
+Generate a coupon for tensile testing.
 
-Generate coupon for tensile testing
+Includes options for generating molds and fixtures for casting the center coupon region.
+
+----
+
+Copyright 2019 - Cole Brauer, Dan Aukes
 """
 
 import PyQt5.QtGui as qg

@@ -1,8 +1,9 @@
 """
-Copyright 2020
-Cole Brauer, Dan Aukes
+Export a simulation of a single falling object.
 
-Export a simulation of a single falling object
+----
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 from voxelfuse.voxel_model import VoxelModel

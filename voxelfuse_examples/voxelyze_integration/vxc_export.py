@@ -1,8 +1,9 @@
 """
-Copyright 2020
-Dan Aukes, Cole Brauer
+Export a VoxelFuse model as a .vxc file that can be imported into VoxCad.
 
-Export a VoxelFuse model as a .vxc file that can be imported into VoxCad
+----
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import PyQt5.QtGui as qg

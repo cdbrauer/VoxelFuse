@@ -1,13 +1,14 @@
 """
-Copyright 2019
-Dan Aukes, Cole Brauer
+Multimaterial 3D printing with blurring/dithering.
 
-Multimaterial 3D printing with blurring/dithering
+User inputs a model and the program will apply blurring to requested materials.
 
-User inputs a model and the program will apply blurring to requested materials
+- boxes.vox demonstrates two blurred materials and one non-blurred material.
+- joint2.1.vox demonstrates a dog bone joint with blurring.
 
-boxes.vox demonstrates two blurred materials and one non-blurred material
-joint2.1.vox demonstrates a dog bone joint with blurring
+----
+
+Copyright 2019 - Cole Brauer, Dan Aukes
 """
 
 import PyQt5.QtGui as qg

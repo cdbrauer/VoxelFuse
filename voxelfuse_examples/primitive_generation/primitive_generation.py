@@ -1,6 +1,9 @@
 """
-Copyright 2018
-Dan Aukes, Cole Brauer
+Generate a series of primitive solids.
+
+----
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import PyQt5.QtGui as qg

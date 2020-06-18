@@ -1,11 +1,12 @@
 """
-Copyright 2019
-Dan Aukes, Cole Brauer
+Joint with Embedded Servo.
 
-Joint with Embedded Servo
+Adds clearances for inserted components, determine where pauses must be inserted in the gcode,
+and export an stl file of the modified part.
 
-Program adds clearances for inserted components, determines where pauses must be inserted in the gcode,
-and exports an stl file of the modified part
+----
+
+Copyright 2019 - Cole Brauer, Dan Aukes
 """
 
 import PyQt5.QtGui as qg
