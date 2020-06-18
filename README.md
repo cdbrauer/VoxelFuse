@@ -95,7 +95,9 @@ Using MagicaVoxel and the .vox format will limit you to using distinct voxel mat
 
 ## Documentation
 
-See [cdbrauer.github.io/VoxelFuse](https://cdbrauer.github.io/VoxelFuse/) for code documentation.
+See [cdbrauer.github.io/VoxelFuse](https://cdbrauer.github.io/VoxelFuse/) for library documentation.
+
+See [cdbrauer.github.io/VoxelFuse/voxelfuse_examples](https://cdbrauer.github.io/VoxelFuse/voxelfuse_examples/) for a list of the example scripts.
 
 <br/><br/>
 
