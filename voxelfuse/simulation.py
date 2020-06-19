@@ -107,6 +107,9 @@ class Simulation:
         self.__forces = []
         self.__sensors = []
 
+        # Results ################
+        self.results = []
+
     @classmethod
     def copy(cls, simulation):
         """
@@ -681,18 +684,73 @@ class Simulation:
         """
         Run a Simulation object using Voxelyze.
 
-        This function requires Voxelyze to be located on the system PATH.
+        This function will create a .vxa file, run the file with Voxelyze, and then load the .xml results file into
+        the results attribute of the Simulation object. Enabling delete_files will delete both the .vxa and .xml files
+        once the results have been loaded. This function requires Voxelyze to be located on the system PATH.
 
         :param filename: File name
         :param delete_files: Enable/disable deleting simulation file when process is complete
         :return: None
         """
+        # Create simulation file
         self.saveVXA(filename)
 
+        # Run simulation file
         command_string = 'voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 
+        # Open simulation results
+        f = open(filename + '.xml', 'r')
+        print('Opening file: ' + f.name)
+        data = f.readlines()
+        f.close()
+
+        # Find start and end locations for individual sensors
+        startLoc = []
+        endLoc = []
+        for row in tqdm(range(len(data)), desc='Finding sensor tags'):
+            data[row] = data[row].replace('\t', '')
+            if data[row][:-1] == '<Sensor>':
+                startLoc.append(row)
+            elif data[row][:-1] == '</Sensor>':
+                endLoc.append(row)
+
+        # Read the data from each sensor
+        for sensor in tqdm(range(len(startLoc)), desc='Reading sensor results'):
+            # Create a dictionary to hold the current sensor results
+            sensorResults = {}
+
+            # Read the data from each sensor tag
+            for row in range(startLoc[sensor]+1, endLoc[sensor]):
+                # Determine the current tag
+                tag = ''
+                for col in range(1, len(data[row])):
+                    if data[row][col] == '>':
+                        tag = data[row][1:col]
+                        break
+
+                # Remove the tags and newline to determine the current value
+                data[row] = data[row].replace('<'+tag+'>', '').replace('</'+tag+'>', '')
+                value = data[row][:-1]
+
+                # Combine the current tag and value
+                if tag == 'Location':
+                    currentResult = {tag: tuple(map(int, value.split(' ')))}
+                elif ' ' in value:
+                    currentResult = {tag:tuple(map(float, value.split(' ')))}
+                else:
+                    currentResult = {tag:float(value)}
+
+                # Add the current tag and value to the sensor results dictionary
+                sensorResults.update(currentResult)
+
+            # Append the results dictionary for the current sensor to the simulation results list
+            self.results.append(sensorResults)
+
+        # Remove temporary files
         if delete_files:
             print('Removing file: ' + filename + '.vxa')
             os.remove(filename + '.vxa')
+            print('Removing file: ' + filename + '.xml')
+            os.remove(filename + '.xml')
