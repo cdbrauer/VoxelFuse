@@ -52,8 +52,8 @@ class Simulation:
 
         :param voxel_model: VoxelModel
         """
-        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
-        self.__model.coords = (0, 0, 0) # Set coords to zero to move object to origin if it is at negative coordinates
+        # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty()
 
         # Simulator ##############
         # Integration
@@ -139,8 +139,8 @@ class Simulation:
         :param voxel_model: VoxelModel
         :return: None
         """
-        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
-        self.__model.coords = (0, 0, 0)  # Set coords to zero to move object to origin if it is at negative coordinates
+        # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty()
 
     def setDamping(self, bond: float = 1.0, environment: float = 0.0001):
         """
@@ -297,7 +297,50 @@ class Simulation:
     # Displacement is expressed in mm
 
     # Default box boundary condition is a fixed constraint in the YZ plane
-    def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0), size: Tuple[float, float, float] = (0.01, 1.0, 1.0), fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+    def addBoundaryConditionVoxel(self, position: Tuple[int, int, int] = (0, 0, 0),
+                                  fixed_dof: int = 0b111111,
+                                  force: Tuple[float, float, float] = (0, 0, 0),
+                                  displacement: Tuple[float, float, float] = (0, 0, 0),
+                                  torque: Tuple[float, float, float] = (0, 0, 0),
+                                  angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+        """
+        Add a boundary condition at a specific voxel.
+
+        The fixed DOF value should be set as a 6-bit binary value (e.g. 0b111111) and the bits
+        correspond to: Rz, Ry, Rx, Z, Y, X. If a bit is set to 0, the corresponding force/torque
+        will be applied. If a bit is set to 1, the DOF will be fixed and the displacement will be
+        applied.
+
+        :param position: Position in voxels
+        :param fixed_dof: Fixed degrees of freedom
+        :param force: Force vector in N
+        :param displacement: Displacement vector in mm
+        :param torque: Torque values in Nm
+        :param angular_displacement: Angular displacement values in deg
+        :return: None
+        """
+        x = position[0] - self.__model.coords[0]
+        y = position[1] - self.__model.coords[1]
+        z = position[2] - self.__model.coords[2]
+
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        pos = ((x+0.5)/x_len, (y+0.5)/y_len, (z+0.5)/z_len)
+        radius = 0.49/x_len
+
+        self.__bcRegions.append([BCShape.SPHERE, pos, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+        self.__bcVoxels.append([x, y, z])
+
+    # Default box boundary condition is a fixed constraint in the XY plane (bottom layer)
+    def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+                                size: Tuple[float, float, float] = (1.0, 1.0, 0.01),
+                                fixed_dof: int = 0b111111,
+                                force: Tuple[float, float, float] = (0, 0, 0),
+                                displacement: Tuple[float, float, float] = (0, 0, 0),
+                                torque: Tuple[float, float, float] = (0, 0, 0),
+                                angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
         """
         Add a box-shaped boundary condition.
 
@@ -341,7 +384,13 @@ class Simulation:
         self.__bcVoxels.append(bcVoxels)
 
     # Default sphere boundary condition is a fixed constraint centered in the model
-    def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5), radius: float = 0.05, fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+    def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5),
+                                   radius: float = 0.05,
+                                   fixed_dof: int = 0b111111,
+                                   force: Tuple[float, float, float] = (0, 0, 0),
+                                   displacement: Tuple[float, float, float] = (0, 0, 0),
+                                   torque: Tuple[float, float, float] = (0, 0, 0),
+                                   angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
         """
         Add a spherical boundary condition.
 
@@ -385,7 +434,14 @@ class Simulation:
         self.__bcVoxels.append(bcVoxels)
 
     # Default cylinder boundary condition is a fixed constraint centered in the model
-    def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0, height: float = 0.1, radius: float = 0.05, fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+    def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0,
+                                     height: float = 0.1,
+                                     radius: float = 0.05,
+                                     fixed_dof: int = 0b111111,
+                                     force: Tuple[float, float, float] = (0, 0, 0),
+                                     displacement: Tuple[float, float, float] = (0, 0, 0),
+                                     torque: Tuple[float, float, float] = (0, 0, 0),
+                                     angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
         """
         Add a cylindrical boundary condition.
 
@@ -450,7 +506,11 @@ class Simulation:
         :param vector: Force vector in N
         :return: None
         """
-        force = [location[0], location[1], location[2], vector[0], vector[1], vector[2]]
+        x = location[0] - self.__model.coords[0]
+        y = location[1] - self.__model.coords[1]
+        z = location[2] - self.__model.coords[2]
+
+        force = [x, y, z, vector[0], vector[1], vector[2]]
         self.__forces.append(force)
 
     def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0)):
@@ -462,7 +522,11 @@ class Simulation:
         :param location: Force location in voxels
         :return: None
         """
-        sensor = [location[0], location[1], location[2]]
+        x = location[0] - self.__model.coords[0]
+        y = location[1] - self.__model.coords[1]
+        z = location[2] - self.__model.coords[2]
+
+        sensor = [x, y, z]
         self.__sensors.append(sensor)
 
     # Export simulation ##################################
