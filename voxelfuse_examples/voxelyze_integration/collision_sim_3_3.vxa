@@ -191,8 +191,6 @@
     <TempPeriod>0.0</TempPeriod>
   </Thermal>
 </Environment>
-<Forces>
-</Forces>
 <Sensors>
 </Sensors>
 <VXC Version="0.94">

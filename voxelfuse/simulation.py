@@ -103,8 +103,7 @@ class Simulation:
         self.__temperatureVaryAmplitude = 0.0
         self.__temperatureVaryPeriod = 0.0
 
-        # Forces & Sensors #######
-        self.__forces = []
+        # Sensors #######
         self.__sensors = []
 
     @classmethod
@@ -122,7 +121,6 @@ class Simulation:
         # Make lists copies instead of references
         new_simulation.__bcRegions = simulation.__bcRegions.copy()
         new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
-        new_simulation.__forces = simulation.__forces.copy()
         new_simulation.__sensors = simulation.__sensors.copy()
 
         return new_simulation
@@ -505,31 +503,6 @@ class Simulation:
 
         self.__bcVoxels.append(bcVoxels)
 
-    def clearForces(self):
-        """
-        Remove all forces from a Simulation object.
-
-        :return: None
-        """
-        self.__forces = []
-
-    def addForce(self, location: Tuple[int, int, int] = (0, 0, 0), vector: Tuple[float, float, float] = (0, 0, 0)):
-        """
-        Add a force to a voxel.
-
-        This feature is not currently supported by VoxCad
-
-        :param location: Force location in voxels
-        :param vector: Force vector in N
-        :return: None
-        """
-        x = location[0] - self.__model.coords[0]
-        y = location[1] - self.__model.coords[1]
-        z = location[2] - self.__model.coords[2]
-
-        force = [x, y, z, vector[0], vector[1], vector[2]]
-        self.__forces.append(force)
-
     def clearSensors(self):
         """
         Remove all sensors from a Simulation object.
@@ -544,7 +517,7 @@ class Simulation:
 
         This feature is not currently supported by VoxCad
 
-        :param location: Force location in voxels
+        :param location: Sensor location in voxels
         :return: None
         """
         x = location[0] - self.__model.coords[0]
@@ -582,7 +555,6 @@ class Simulation:
         f.write('<VXA Version="' + str(1.1) + '">\n')
         self.writeSimData(f)
         self.writeEnvironmentData(f)
-        self.writeForces(f)
         self.writeSensors(f)
         self.__model.writeVXCData(f, compression)
         f.write('</VXA>\n')
@@ -693,27 +665,6 @@ class Simulation:
         f.write('    <TempPeriod>' + str(self.__temperatureVaryPeriod) + '</TempPeriod>\n')
         f.write('  </Thermal>\n')
         f.write('</Environment>\n')
-
-    def writeForces(self, f: TextIO):
-        """
-        Write voxel forces to a text file using the .vxa format.
-
-        :param f: File to write to
-        :return: None
-        """
-        f.write('<Forces>\n')
-        for force in self.__forces:
-            f.write('  <Force>\n')
-            f.write('    <X_Index>' + str(int(force[0])) + '</X_Index>\n')
-            f.write('    <Y_Index>' + str(int(force[1])) + '</Y_Index>\n')
-            f.write('    <Z_Index>' + str(int(force[2])) + '</Z_Index>\n')
-            f.write('    <X_Component>' + str(int(force[3])) + '</X_Component>\n')
-            f.write('    <Y_Component>' + str(int(force[4])) + '</Y_Component>\n')
-            f.write('    <Z_Component>' + str(int(force[5])) + '</Z_Component>\n')
-            f.write('    <Location>' + str(force[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
-            f.write('    <Vector>' + str(force[3:6]).replace('[', '').replace(',', '').replace(']', '') + '</Vector>\n')
-            f.write('  </Force>\n')
-        f.write('</Forces>\n')
 
     def writeSensors(self, f: TextIO):
         """
