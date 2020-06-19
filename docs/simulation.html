@@ -695,11 +695,31 @@ class Simulation:
 
         :param filename: File name
         :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
-        :return:
+        :return: None
         &#34;&#34;&#34;
         self.saveVXA(filename)
 
         command_string = &#39;voxcad &#39; + filename + &#39;.vxa&#39;
+        p = subprocess.Popen(command_string, shell=True)
+        p.wait()
+
+        if delete_files:
+            print(&#39;Removing file: &#39; + filename + &#39;.vxa&#39;)
+            os.remove(filename + &#39;.vxa&#39;)
+
+    def runSim(self, filename: str = &#39;temp&#39;, delete_files: bool = True):
+        &#34;&#34;&#34;
+        Run a Simulation object using Voxelyze.
+
+        This function requires Voxelyze to be located on the system PATH.
+
+        :param filename: File name
+        :param delete_files: Enable/disable deleting simulation file when process is complete
+        :return: None
+        &#34;&#34;&#34;
+        self.saveVXA(filename)
+
+        command_string = &#39;voxelyze -f &#39; + filename + &#39;.vxa -o &#39; + filename + &#39;.xml -p&#39;
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 
@@ -1402,11 +1422,31 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 
         :param filename: File name
         :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
-        :return:
+        :return: None
         &#34;&#34;&#34;
         self.saveVXA(filename)
 
         command_string = &#39;voxcad &#39; + filename + &#39;.vxa&#39;
+        p = subprocess.Popen(command_string, shell=True)
+        p.wait()
+
+        if delete_files:
+            print(&#39;Removing file: &#39; + filename + &#39;.vxa&#39;)
+            os.remove(filename + &#39;.vxa&#39;)
+
+    def runSim(self, filename: str = &#39;temp&#39;, delete_files: bool = True):
+        &#34;&#34;&#34;
+        Run a Simulation object using Voxelyze.
+
+        This function requires Voxelyze to be located on the system PATH.
+
+        :param filename: File name
+        :param delete_files: Enable/disable deleting simulation file when process is complete
+        :return: None
+        &#34;&#34;&#34;
+        self.saveVXA(filename)
+
+        command_string = &#39;voxelyze -f &#39; + filename + &#39;.vxa -o &#39; + filename + &#39;.xml -p&#39;
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 
@@ -1921,8 +1961,9 @@ applied.</p>
 <dd>File name</dd>
 <dt><strong><code>delete_files</code></strong></dt>
 <dd>Enable/disable deleting simulation file when VoxCad is closed</dd>
-</dl>
-<p>Returns:</p></div>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1949,11 +1990,51 @@ applied.</p>
 
     :param filename: File name
     :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
-    :return:
+    :return: None
     &#34;&#34;&#34;
     self.saveVXA(filename)
 
     command_string = &#39;voxcad &#39; + filename + &#39;.vxa&#39;
+    p = subprocess.Popen(command_string, shell=True)
+    p.wait()
+
+    if delete_files:
+        print(&#39;Removing file: &#39; + filename + &#39;.vxa&#39;)
+        os.remove(filename + &#39;.vxa&#39;)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.simulation.Simulation.runSim"><code class="name flex">
+<span>def <span class="ident">runSim</span></span>(<span>self, filename: str = 'temp', delete_files: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Run a Simulation object using Voxelyze.</p>
+<p>This function requires Voxelyze to be located on the system PATH.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>filename</code></strong></dt>
+<dd>File name</dd>
+<dt><strong><code>delete_files</code></strong></dt>
+<dd>Enable/disable deleting simulation file when process is complete</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def runSim(self, filename: str = &#39;temp&#39;, delete_files: bool = True):
+    &#34;&#34;&#34;
+    Run a Simulation object using Voxelyze.
+
+    This function requires Voxelyze to be located on the system PATH.
+
+    :param filename: File name
+    :param delete_files: Enable/disable deleting simulation file when process is complete
+    :return: None
+    &#34;&#34;&#34;
+    self.saveVXA(filename)
+
+    command_string = &#39;voxelyze -f &#39; + filename + &#39;.vxa -o &#39; + filename + &#39;.xml -p&#39;
     p = subprocess.Popen(command_string, shell=True)
     p.wait()
 
@@ -2596,6 +2677,7 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 <li><code><a title="voxelfuse.simulation.Simulation.getStopCondition" href="#voxelfuse.simulation.Simulation.getStopCondition">getStopCondition</a></code></li>
 <li><code><a title="voxelfuse.simulation.Simulation.getThermal" href="#voxelfuse.simulation.Simulation.getThermal">getThermal</a></code></li>
 <li><code><a title="voxelfuse.simulation.Simulation.launchSim" href="#voxelfuse.simulation.Simulation.launchSim">launchSim</a></code></li>
+<li><code><a title="voxelfuse.simulation.Simulation.runSim" href="#voxelfuse.simulation.Simulation.runSim">runSim</a></code></li>
 <li><code><a title="voxelfuse.simulation.Simulation.saveVXA" href="#voxelfuse.simulation.Simulation.saveVXA">saveVXA</a></code></li>
 <li><code><a title="voxelfuse.simulation.Simulation.setCollision" href="#voxelfuse.simulation.Simulation.setCollision">setCollision</a></code></li>
 <li><code><a title="voxelfuse.simulation.Simulation.setDamping" href="#voxelfuse.simulation.Simulation.setDamping">setDamping</a></code></li>

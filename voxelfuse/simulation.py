@@ -665,11 +665,31 @@ class Simulation:
 
         :param filename: File name
         :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
-        :return:
+        :return: None
         """
         self.saveVXA(filename)
 
         command_string = 'voxcad ' + filename + '.vxa'
+        p = subprocess.Popen(command_string, shell=True)
+        p.wait()
+
+        if delete_files:
+            print('Removing file: ' + filename + '.vxa')
+            os.remove(filename + '.vxa')
+
+    def runSim(self, filename: str = 'temp', delete_files: bool = True):
+        """
+        Run a Simulation object using Voxelyze.
+
+        This function requires Voxelyze to be located on the system PATH.
+
+        :param filename: File name
+        :param delete_files: Enable/disable deleting simulation file when process is complete
+        :return: None
+        """
+        self.saveVXA(filename)
+
+        command_string = 'voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 
