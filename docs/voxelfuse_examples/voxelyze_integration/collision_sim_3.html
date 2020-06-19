@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
-<title>voxelfuse_examples.voxelyze_integration.collision_sim_2 API documentation</title>
-<meta name="description" content="Export a simulation of multiple falling objects …" />
+<title>voxelfuse_examples.voxelyze_integration.collision_sim_3 API documentation</title>
+<meta name="description" content="Export multiple simulations of a falling object …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,10 +17,10 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>voxelfuse_examples.voxelyze_integration.collision_sim_2</code></h1>
+<h1 class="title">Module <code>voxelfuse_examples.voxelyze_integration.collision_sim_3</code></h1>
 </header>
 <section id="section-intro">
-<p>Export a simulation of multiple falling objects.</p>
+<p>Export multiple simulations of a falling object.</p>
 <hr>
 <p>Copyright 2020 - Cole Brauer, Dan Aukes</p>
 <details class="source">
@@ -28,58 +28,34 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
-Export a simulation of multiple falling objects.
+Export multiple simulations of a falling object.
 
 ----
 
 Copyright 2020 - Cole Brauer, Dan Aukes
 &#34;&#34;&#34;
 
-import PyQt5.QtGui as qg
-import sys
 from voxelfuse.voxel_model import VoxelModel
-from voxelfuse.simulation import Simulation
-from voxelfuse.mesh import Mesh
-from voxelfuse.plot import Plot
-from voxelfuse.primitives import empty, cube
-from voxelfuse.materials import material_properties
-
-workspaceX = 10
-workspaceY = 10
-workspaceZ = 25
-
-particleSize = 3
-particleSpacing = 5
+from voxelfuse.primitives import cube, cuboid
+from voxelfuse.simulation import Simulation, StopCondition
 
 if __name__==&#39;__main__&#39;:
-    app1 = qg.QApplication(sys.argv)
+    cubeModel = cube(5, (0, 0, 4), material=5)
+    planeModel = cuboid((9, 9, 1), (-2, -2, 0), material=5)
 
-    # Initialize an empty model
-    model = empty()
-    mat = 1
+    modelResult = planeModel | cubeModel
+    modelResult = modelResult.scale(1)
+    modelResult = modelResult.removeDuplicateMaterials()
 
-    # Add multiple objects, changing the material for each
-    for x in range(0,workspaceX, particleSpacing):
-        for y in range(0, workspaceY, particleSpacing):
-            for z in range(0, workspaceZ, particleSpacing):
-                model = model | cube(particleSize, (x+round(z/particleSpacing), y+round(z/particleSpacing), z+5), (mat % (len(material_properties) - 1)) + 1, 1) # Slightly offset x and y so stacks will fall over
-                mat = mat+1 # Increment material
+    simulation = Simulation(modelResult)  # Initialize a simulation
+    simulation.setCollision() # Enable self-collision
+    simulation.setDamping(environment=0.1)
 
-    # Clean up result
-    model = model.fitWorkspace() # Using this to show that Simulation correctly handles models with a coordinate offset
-    model = model.removeDuplicateMaterials()
-
-    # Create simulation file
-    simulation = Simulation(model) # Initialize a simulation
-    simulation.setCollision() # Enable self collisions with default settings
-    simulation.addBoundaryConditionBox() # Add a box boundary with default settings (fixed constraint, YZ plane at X=0)
-    simulation.addBoundaryConditionBox(position=(0.99, 0, 0)) # Add a boundary condition at x = max, leave other settings at default (fixed constraint, YZ plane)
-
-    # Add some forces and sensors
-    simulation.addSensor((3, 9, 16))
-    simulation.addSensor((4, 10, 12))
-
-    simulation.launchSim(&#39;collision_sim_2&#39;, delete_files=False) # Launch simulation, save simulation file</code></pre>
+    for f in range(4):
+        simulation.clearBoundaryConditions()
+        simulation.addBoundaryConditionBox()
+        simulation.addBoundaryConditionVoxel((2, 2, 8), 0b000000, force=(0, 0, -0.1*f))
+        simulation.saveVXA(&#39;collision_sim_3_&#39; + str(f)) # Save simulation file</code></pre>
 </details>
 </section>
 <section>

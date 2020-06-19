@@ -47,8 +47,6 @@ if __name__=='__main__':
     simulation.addBoundaryConditionBox(position=(0.99, 0, 0)) # Add a boundary condition at x = max, leave other settings at default (fixed constraint, YZ plane)
 
     # Add some forces and sensors
-    simulation.addForce(location=(7, 8, 11), vector=(-10, 0, 0))
-    simulation.addForce(location=(8, 9, 16), vector=(-5, 0, 0))
     simulation.addSensor((3, 9, 16))
     simulation.addSensor((4, 10, 12))
 

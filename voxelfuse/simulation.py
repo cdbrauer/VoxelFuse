@@ -52,8 +52,8 @@ class Simulation:
 
         :param voxel_model: VoxelModel
         """
-        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
-        self.__model.coords = (0, 0, 0) # Set coords to zero to move object to origin if it is at negative coordinates
+        # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty()
 
         # Simulator ##############
         # Integration
@@ -103,8 +103,7 @@ class Simulation:
         self.__temperatureVaryAmplitude = 0.0
         self.__temperatureVaryPeriod = 0.0
 
-        # Forces & Sensors #######
-        self.__forces = []
+        # Sensors #######
         self.__sensors = []
 
         # Results ################
@@ -125,7 +124,6 @@ class Simulation:
         # Make lists copies instead of references
         new_simulation.__bcRegions = simulation.__bcRegions.copy()
         new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
-        new_simulation.__forces = simulation.__forces.copy()
         new_simulation.__sensors = simulation.__sensors.copy()
 
         return new_simulation
@@ -142,8 +140,8 @@ class Simulation:
         :param voxel_model: VoxelModel
         :return: None
         """
-        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty() # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
-        self.__model.coords = (0, 0, 0)  # Set coords to zero to move object to origin if it is at negative coordinates
+        # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty()
 
     def setDamping(self, bond: float = 1.0, environment: float = 0.0001):
         """
@@ -299,8 +297,60 @@ class Simulation:
     #   1: Fixed, displacement will be applied
     # Displacement is expressed in mm
 
+    def clearBoundaryConditions(self):
+        """
+        Remove all boundary conditions from a Simulation object.
+
+        :return: None
+        """
+        self.__bcRegions = []
+        self.__bcVoxels = []
+
     # Default box boundary condition is a fixed constraint in the YZ plane
-    def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0), size: Tuple[float, float, float] = (0.01, 1.0, 1.0), fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+    def addBoundaryConditionVoxel(self, position: Tuple[int, int, int] = (0, 0, 0),
+                                  fixed_dof: int = 0b111111,
+                                  force: Tuple[float, float, float] = (0, 0, 0),
+                                  displacement: Tuple[float, float, float] = (0, 0, 0),
+                                  torque: Tuple[float, float, float] = (0, 0, 0),
+                                  angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+        """
+        Add a boundary condition at a specific voxel.
+
+        The fixed DOF value should be set as a 6-bit binary value (e.g. 0b111111) and the bits
+        correspond to: Rz, Ry, Rx, Z, Y, X. If a bit is set to 0, the corresponding force/torque
+        will be applied. If a bit is set to 1, the DOF will be fixed and the displacement will be
+        applied.
+
+        :param position: Position in voxels
+        :param fixed_dof: Fixed degrees of freedom
+        :param force: Force vector in N
+        :param displacement: Displacement vector in mm
+        :param torque: Torque values in Nm
+        :param angular_displacement: Angular displacement values in deg
+        :return: None
+        """
+        x = position[0] - self.__model.coords[0]
+        y = position[1] - self.__model.coords[1]
+        z = position[2] - self.__model.coords[2]
+
+        x_len = int(self.__model.voxels.shape[0])
+        y_len = int(self.__model.voxels.shape[1])
+        z_len = int(self.__model.voxels.shape[2])
+
+        pos = ((x+0.5)/x_len, (y+0.5)/y_len, (z+0.5)/z_len)
+        radius = 0.49/x_len
+
+        self.__bcRegions.append([BCShape.SPHERE, pos, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
+        self.__bcVoxels.append([x, y, z])
+
+    # Default box boundary condition is a fixed constraint in the XY plane (bottom layer)
+    def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+                                size: Tuple[float, float, float] = (1.0, 1.0, 0.01),
+                                fixed_dof: int = 0b111111,
+                                force: Tuple[float, float, float] = (0, 0, 0),
+                                displacement: Tuple[float, float, float] = (0, 0, 0),
+                                torque: Tuple[float, float, float] = (0, 0, 0),
+                                angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
         """
         Add a box-shaped boundary condition.
 
@@ -344,7 +394,13 @@ class Simulation:
         self.__bcVoxels.append(bcVoxels)
 
     # Default sphere boundary condition is a fixed constraint centered in the model
-    def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5), radius: float = 0.05, fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+    def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5),
+                                   radius: float = 0.05,
+                                   fixed_dof: int = 0b111111,
+                                   force: Tuple[float, float, float] = (0, 0, 0),
+                                   displacement: Tuple[float, float, float] = (0, 0, 0),
+                                   torque: Tuple[float, float, float] = (0, 0, 0),
+                                   angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
         """
         Add a spherical boundary condition.
 
@@ -388,7 +444,14 @@ class Simulation:
         self.__bcVoxels.append(bcVoxels)
 
     # Default cylinder boundary condition is a fixed constraint centered in the model
-    def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0, height: float = 0.1, radius: float = 0.05, fixed_dof: int = 0b111111, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+    def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0,
+                                     height: float = 0.1,
+                                     radius: float = 0.05,
+                                     fixed_dof: int = 0b111111,
+                                     force: Tuple[float, float, float] = (0, 0, 0),
+                                     displacement: Tuple[float, float, float] = (0, 0, 0),
+                                     torque: Tuple[float, float, float] = (0, 0, 0),
+                                     angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
         """
         Add a cylindrical boundary condition.
 
@@ -443,18 +506,13 @@ class Simulation:
 
         self.__bcVoxels.append(bcVoxels)
 
-    def addForce(self, location: Tuple[int, int, int] = (0, 0, 0), vector: Tuple[float, float, float] = (0, 0, 0)):
+    def clearSensors(self):
         """
-        Add a force to a voxel.
+        Remove all sensors from a Simulation object.
 
-        This feature is not currently supported by VoxCad
-
-        :param location: Force location in voxels
-        :param vector: Force vector in N
         :return: None
         """
-        force = [location[0], location[1], location[2], vector[0], vector[1], vector[2]]
-        self.__forces.append(force)
+        self.__sensors = []
 
     def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0)):
         """
@@ -462,10 +520,14 @@ class Simulation:
 
         This feature is not currently supported by VoxCad
 
-        :param location: Force location in voxels
+        :param location: Sensor location in voxels
         :return: None
         """
-        sensor = [location[0], location[1], location[2]]
+        x = location[0] - self.__model.coords[0]
+        y = location[1] - self.__model.coords[1]
+        z = location[2] - self.__model.coords[2]
+
+        sensor = [x, y, z]
         self.__sensors.append(sensor)
 
     # Export simulation ##################################
@@ -496,7 +558,6 @@ class Simulation:
         f.write('<VXA Version="' + str(1.1) + '">\n')
         self.writeSimData(f)
         self.writeEnvironmentData(f)
-        self.writeForces(f)
         self.writeSensors(f)
         self.__model.writeVXCData(f, compression)
         f.write('</VXA>\n')
@@ -607,27 +668,6 @@ class Simulation:
         f.write('    <TempPeriod>' + str(self.__temperatureVaryPeriod) + '</TempPeriod>\n')
         f.write('  </Thermal>\n')
         f.write('</Environment>\n')
-
-    def writeForces(self, f: TextIO):
-        """
-        Write voxel forces to a text file using the .vxa format.
-
-        :param f: File to write to
-        :return: None
-        """
-        f.write('<Forces>\n')
-        for force in self.__forces:
-            f.write('  <Force>\n')
-            f.write('    <X_Index>' + str(int(force[0])) + '</X_Index>\n')
-            f.write('    <Y_Index>' + str(int(force[1])) + '</Y_Index>\n')
-            f.write('    <Z_Index>' + str(int(force[2])) + '</Z_Index>\n')
-            f.write('    <X_Component>' + str(int(force[3])) + '</X_Component>\n')
-            f.write('    <Y_Component>' + str(int(force[4])) + '</Y_Component>\n')
-            f.write('    <Z_Component>' + str(int(force[5])) + '</Z_Component>\n')
-            f.write('    <Location>' + str(force[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
-            f.write('    <Vector>' + str(force[3:6]).replace('[', '').replace(',', '').replace(']', '') + '</Vector>\n')
-            f.write('  </Force>\n')
-        f.write('</Forces>\n')
 
     def writeSensors(self, f: TextIO):
         """
