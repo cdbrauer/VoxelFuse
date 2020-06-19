@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<VXA Version="1.1">
+<Simulator>
+  <Integration>
+    <Integrator>0</Integrator>
+    <DtFrac>1.0</DtFrac>
+  </Integration>
+  <Damping>
+    <BondDampingZ>1.0</BondDampingZ>
+    <ColDampingZ>1.0</ColDampingZ>
+    <SlowDampingZ>0.1</SlowDampingZ>
+  </Damping>
+  <Collisions>
+    <SelfColEnabled>1</SelfColEnabled>
+    <ColSystem>3</ColSystem>
+    <CollisionHorizon>3</CollisionHorizon>
+  </Collisions>
+  <Features>
+    <BlendingEnabled>0</BlendingEnabled>
+    <XMixRadius>0</XMixRadius>
+    <YMixRadius>0</YMixRadius>
+    <ZMixRadius>0</ZMixRadius>
+    <BlendModel>0</BlendModel>
+    <PolyExp>1</PolyExp>
+    <VolumeEffectsEnabled>0</VolumeEffectsEnabled>
+  </Features>
+  <StopCondition>
+    <StopConditionType>0</StopConditionType>
+    <StopConditionValue>0.0</StopConditionValue>
+  </StopCondition>
+  <EquilibriumMode>
+    <EquilibriumModeEnabled>0</EquilibriumModeEnabled>
+  </EquilibriumMode>
+</Simulator>
+<Environment>
+  <Boundary_Conditions>
+    <NumBCs>2</NumBCs>
+    <FRegion>
+      <PrimType>0</PrimType>
+      <X>0.0</X>
+      <Y>0.0</Y>
+      <Z>0.0</Z>
+      <dX>1.0</dX>
+      <dY>1.0</dY>
+      <dZ>0.01</dZ>
+      <Radius>0</Radius>
+      <R>0.6</R>
+      <G>0.4</G>
+      <B>0.4</B>
+      <alpha>0.5</alpha>
+      <DofFixed>63</DofFixed>
+      <ForceX>0</ForceX>
+      <ForceY>0</ForceY>
+      <ForceZ>0</ForceZ>
+      <TorqueX>0</TorqueX>
+      <TorqueY>0</TorqueY>
+      <TorqueZ>0</TorqueZ>
+      <DisplaceX>0.0</DisplaceX>
+      <DisplaceY>0.0</DisplaceY>
+      <DisplaceZ>0.0</DisplaceZ>
+      <AngDisplaceX>0</AngDisplaceX>
+      <AngDisplaceY>0</AngDisplaceY>
+      <AngDisplaceZ>0</AngDisplaceZ>
+      <IntersectedVoxels>
+        <Voxel>-2 -2 0</Voxel>
+        <Voxel>-2 -1 0</Voxel>
+        <Voxel>-2 0 0</Voxel>
+        <Voxel>-2 1 0</Voxel>
+        <Voxel>-2 2 0</Voxel>
+        <Voxel>-2 3 0</Voxel>
+        <Voxel>-2 4 0</Voxel>
+        <Voxel>-2 5 0</Voxel>
+        <Voxel>-2 6 0</Voxel>
+        <Voxel>-1 -2 0</Voxel>
+        <Voxel>-1 -1 0</Voxel>
+        <Voxel>-1 0 0</Voxel>
+        <Voxel>-1 1 0</Voxel>
+        <Voxel>-1 2 0</Voxel>
+        <Voxel>-1 3 0</Voxel>
+        <Voxel>-1 4 0</Voxel>
+        <Voxel>-1 5 0</Voxel>
+        <Voxel>-1 6 0</Voxel>
+        <Voxel>0 -2 0</Voxel>
+        <Voxel>0 -1 0</Voxel>
+        <Voxel>0 0 0</Voxel>
+        <Voxel>0 1 0</Voxel>
+        <Voxel>0 2 0</Voxel>
+        <Voxel>0 3 0</Voxel>
+        <Voxel>0 4 0</Voxel>
+        <Voxel>0 5 0</Voxel>
+        <Voxel>0 6 0</Voxel>
+        <Voxel>1 -2 0</Voxel>
+        <Voxel>1 -1 0</Voxel>
+        <Voxel>1 0 0</Voxel>
+        <Voxel>1 1 0</Voxel>
+        <Voxel>1 2 0</Voxel>
+        <Voxel>1 3 0</Voxel>
+        <Voxel>1 4 0</Voxel>
+        <Voxel>1 5 0</Voxel>
+        <Voxel>1 6 0</Voxel>
+        <Voxel>2 -2 0</Voxel>
+        <Voxel>2 -1 0</Voxel>
+        <Voxel>2 0 0</Voxel>
+        <Voxel>2 1 0</Voxel>
+        <Voxel>2 2 0</Voxel>
+        <Voxel>2 3 0</Voxel>
+        <Voxel>2 4 0</Voxel>
+        <Voxel>2 5 0</Voxel>
+        <Voxel>2 6 0</Voxel>
+        <Voxel>3 -2 0</Voxel>
+        <Voxel>3 -1 0</Voxel>
+        <Voxel>3 0 0</Voxel>
+        <Voxel>3 1 0</Voxel>
+        <Voxel>3 2 0</Voxel>
+        <Voxel>3 3 0</Voxel>
+        <Voxel>3 4 0</Voxel>
+        <Voxel>3 5 0</Voxel>
+        <Voxel>3 6 0</Voxel>
+        <Voxel>4 -2 0</Voxel>
+        <Voxel>4 -1 0</Voxel>
+        <Voxel>4 0 0</Voxel>
+        <Voxel>4 1 0</Voxel>
+        <Voxel>4 2 0</Voxel>
+        <Voxel>4 3 0</Voxel>
+        <Voxel>4 4 0</Voxel>
+        <Voxel>4 5 0</Voxel>
+        <Voxel>4 6 0</Voxel>
+        <Voxel>5 -2 0</Voxel>
+        <Voxel>5 -1 0</Voxel>
+        <Voxel>5 0 0</Voxel>
+        <Voxel>5 1 0</Voxel>
+        <Voxel>5 2 0</Voxel>
+        <Voxel>5 3 0</Voxel>
+        <Voxel>5 4 0</Voxel>
+        <Voxel>5 5 0</Voxel>
+        <Voxel>5 6 0</Voxel>
+        <Voxel>6 -2 0</Voxel>
+        <Voxel>6 -1 0</Voxel>
+        <Voxel>6 0 0</Voxel>
+        <Voxel>6 1 0</Voxel>
+        <Voxel>6 2 0</Voxel>
+        <Voxel>6 3 0</Voxel>
+        <Voxel>6 4 0</Voxel>
+        <Voxel>6 5 0</Voxel>
+        <Voxel>6 6 0</Voxel>
+      </IntersectedVoxels>
+    </FRegion>
+    <FRegion>
+      <PrimType>2</PrimType>
+      <X>0.5</X>
+      <Y>0.5</Y>
+      <Z>0.9444444444444444</Z>
+      <dX>0.0</dX>
+      <dY>0.0</dY>
+      <dZ>0.0</dZ>
+      <Radius>0.05444444444444444</Radius>
+      <R>0.6</R>
+      <G>0.4</G>
+      <B>0.4</B>
+      <alpha>0.5</alpha>
+      <DofFixed>0</DofFixed>
+      <ForceX>0</ForceX>
+      <ForceY>0</ForceY>
+      <ForceZ>-0.0</ForceZ>
+      <TorqueX>0</TorqueX>
+      <TorqueY>0</TorqueY>
+      <TorqueZ>0</TorqueZ>
+      <DisplaceX>0.0</DisplaceX>
+      <DisplaceY>0.0</DisplaceY>
+      <DisplaceZ>0.0</DisplaceZ>
+      <AngDisplaceX>0</AngDisplaceX>
+      <AngDisplaceY>0</AngDisplaceY>
+      <AngDisplaceZ>0</AngDisplaceZ>
+      <IntersectedVoxels>
+        <Voxel>4</Voxel>
+        <Voxel>4</Voxel>
+        <Voxel>8</Voxel>
+      </IntersectedVoxels>
+    </FRegion>
+  </Boundary_Conditions>
+  <Gravity>
+    <GravEnabled>1</GravEnabled>
+    <GravAcc>-9.81</GravAcc>
+    <FloorEnabled>1</FloorEnabled>
+  </Gravity>
+  <Thermal>
+    <TempEnabled>0</TempEnabled>
+    <TempAmplitude>0.0</TempAmplitude>
+    <TempBase>25.0</TempBase>
+    <VaryTempEnabled>0</VaryTempEnabled>
+    <TempPeriod>0.0</TempPeriod>
+  </Thermal>
+</Environment>
+<Forces>
+</Forces>
+<Sensors>
+</Sensors>
+<VXC Version="0.94">
+  <Lattice>
+    <Lattice_Dim>0.001</Lattice_Dim>
+    <X_Dim_Adj>1</X_Dim_Adj>
+    <Y_Dim_Adj>1</Y_Dim_Adj>
+    <Z_Dim_Adj>1</Z_Dim_Adj>
+    <X_Line_Offset>0</X_Line_Offset>
+    <Y_Line_Offset>0</Y_Line_Offset>
+    <X_Layer_Offset>0</X_Layer_Offset>
+    <Y_Layer_Offset>0</Y_Layer_Offset>
+  </Lattice>
+  <Voxel>
+    <Vox_Name>BOX</Vox_Name>
+    <X_Squeeze>1</X_Squeeze>
+    <Y_Squeeze>1</Y_Squeeze>
+    <Z_Squeeze>1</Z_Squeeze>
+  </Voxel>
+  <Palette>
+    <Material ID="1">
+      <MatType>0</MatType>
+      <Name>Rubber</Name>
+      <Display>
+        <Red>0.2</Red>
+        <Green>0.2</Green>
+        <Blue>0.2</Blue>
+        <Alpha>1</Alpha>
+      </Display>
+      <Mechanical>
+        <MatModel>0</MatModel>
+        <Elastic_Mod>518000.0</Elastic_Mod>
+        <Plastic_Mod>0.0</Plastic_Mod>
+        <Yield_Stress>3223000.0</Yield_Stress>
+        <FailModel>1</FailModel>
+        <Fail_Stress>3164000.0</Fail_Stress>
+        <Fail_Strain>1.028</Fail_Strain>
+        <Density>930.0</Density>
+        <Poissons_Ratio>0.5</Poissons_Ratio>
+        <CTE>1e-07</CTE>
+        <MaterialTempPhase>0.0</MaterialTempPhase>
+        <uStatic>0.9</uStatic>
+        <uDynamic>0.8</uDynamic>
+      </Mechanical>
+    </Material>
+  </Palette>
+  <Structure Compression="ASCII_READABLE">
+    <X_Voxels>9</X_Voxels>
+    <Y_Voxels>9</Y_Voxels>
+    <Z_Voxels>9</Z_Voxels>
+    <Data>
+      <Layer><![CDATA[111111111111111111111111111111111111111111111111111111111111111111111111111111111]]></Layer>
+      <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000001111100001111100001111100001111100001111100000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000001111100001111100001111100001111100001111100000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000001111100001111100001111100001111100001111100000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000001111100001111100001111100001111100001111100000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000001111100001111100001111100001111100001111100000000000000000000]]></Layer>
+    </Data>
+  </Structure>
+</VXC>
+</VXA>

@@ -296,6 +296,15 @@ class Simulation:
     #   1: Fixed, displacement will be applied
     # Displacement is expressed in mm
 
+    def clearBoundaryConditions(self):
+        """
+        Remove all boundary conditions from a Simulation object.
+
+        :return: None
+        """
+        self.__bcRegions = []
+        self.__bcVoxels = []
+
     # Default box boundary condition is a fixed constraint in the YZ plane
     def addBoundaryConditionVoxel(self, position: Tuple[int, int, int] = (0, 0, 0),
                                   fixed_dof: int = 0b111111,
@@ -496,6 +505,14 @@ class Simulation:
 
         self.__bcVoxels.append(bcVoxels)
 
+    def clearForces(self):
+        """
+        Remove all forces from a Simulation object.
+
+        :return: None
+        """
+        self.__forces = []
+
     def addForce(self, location: Tuple[int, int, int] = (0, 0, 0), vector: Tuple[float, float, float] = (0, 0, 0)):
         """
         Add a force to a voxel.
@@ -512,6 +529,14 @@ class Simulation:
 
         force = [x, y, z, vector[0], vector[1], vector[2]]
         self.__forces.append(force)
+
+    def clearSensors(self):
+        """
+        Remove all sensors from a Simulation object.
+
+        :return: None
+        """
+        self.__sensors = []
 
     def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0)):
         """
