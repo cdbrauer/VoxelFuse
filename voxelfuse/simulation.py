@@ -735,26 +735,17 @@ class Simulation:
         # Create simulation file
         self.saveVXA(filename)
 
-        # Check if Voxelyze is included in working directory
-        if os.path.exists('./voxelyze'): # TODO: Make this use a copy bundled with the library
-            print('Using Voxelyze in working directory')
-            # Check OS type
-            if os.name.startswith('nt'):
-                # Windows - run simulation file with WSL
-                command_string = 'wsl ./voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
-            else:
-                # Linux - run simulation file directly
-                command_string = './voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
-        else:
-            print('Using Voxelyze on the system path')
-            # Check OS type
-            if os.name.startswith('nt'):
-                # Windows - run simulation file with WSL
-                command_string = 'wsl voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
-            else:
-                # Linux - run simulation file directly
-                command_string = 'voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+        voxelyze_path = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
 
+        # Check OS type
+        if os.name.startswith('nt'):
+            # Windows - run Voxelyze with WSL
+            command_string = 'wsl ' + voxelyze_path + ' -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+        else:
+            # Linux - run Voxelyze directly
+            command_string = voxelyze_path + ' -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+
+        print('Launching Voxelyze using: ' + command_string)
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 

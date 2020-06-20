@@ -21,4 +21,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=requirements,
+    include_package_data=True,
+    package_data={
+        'utils':[
+            'utils/voxelyze',
+        ],
+    },
 )
