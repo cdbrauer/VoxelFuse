@@ -746,6 +746,9 @@ class Simulation:
         data = f.readlines()
         f.close()
 
+        # Clear any previous results
+        self.results = []
+
         # Find start and end locations for individual sensors
         startLoc = []
         endLoc = []
@@ -776,7 +779,11 @@ class Simulation:
 
                 # Combine the current tag and value
                 if tag == 'Location':
-                    currentResult = {tag: tuple(map(int, value.split(' ')))}
+                    coords =  tuple(map(int, value.split(' ')))
+                    x = coords[0] + self.__model.coords[0]
+                    y = coords[1] + self.__model.coords[1]
+                    z = coords[2] + self.__model.coords[2]
+                    currentResult = {tag:(x, y, z)}
                 elif ' ' in value:
                     currentResult = {tag:tuple(map(float, value.split(' ')))}
                 else:
