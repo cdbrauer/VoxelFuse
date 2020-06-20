@@ -720,7 +720,7 @@ class Simulation:
             print('Removing file: ' + filename + '.vxa')
             os.remove(filename + '.vxa')
 
-    def runSim(self, filename: str = 'temp', delete_files: bool = True):
+    def runSim(self, filename: str = 'temp', delete_files: bool = True, voxelyze_on_path: bool = False):
         """
         Run a Simulation object using Voxelyze.
 
@@ -730,20 +730,24 @@ class Simulation:
 
         :param filename: File name
         :param delete_files: Enable/disable deleting simulation file when process is complete
+        :param voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
         :return: None
         """
         # Create simulation file
         self.saveVXA(filename)
 
-        # Check OS type
-        if os.name.startswith('nt'):
-            # Windows - run Voxelyze with WSL
-            voxelyze_path = os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze'
-            command_string = 'wsl ' + voxelyze_path + ' -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+        if voxelyze_on_path:
+            command_string = 'voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
         else:
-            # Linux - run Voxelyze directly
-            voxelyze_path = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
-            command_string = voxelyze_path + ' -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+            # Check OS type
+            if os.name.startswith('nt'):
+                # Windows - run Voxelyze with WSL
+                voxelyze_path = os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze'
+                command_string = 'wsl ' + voxelyze_path + ' -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+            else:
+                # Linux - run Voxelyze directly
+                voxelyze_path = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
+                command_string = voxelyze_path + ' -f ' + filename + '.vxa -o ' + filename + '.xml -p'
 
         print('Launching Voxelyze using: ' + command_string)
         p = subprocess.Popen(command_string, shell=True)
