@@ -2036,7 +2036,7 @@ def makeMesh(filename: str, delete_files: bool = True):
     with open('output.geo', 'w') as f:
         f.writelines(geo_string)
 
-    command_string = 'gmsh output.geo -3 -format msh'
+    command_string = 'gmsh output.geo -3 -format msh' # TODO: Use a bundled version of gmsh (see runSim in simulation.py)
     p = subprocess.Popen(command_string, shell=True)
     p.wait()
     mesh_file = 'output.msh'

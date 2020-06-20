@@ -712,7 +712,7 @@ class Simulation:
         """
         self.saveVXA(filename)
 
-        command_string = 'voxcad ' + filename + '.vxa'
+        command_string = 'voxcad ' + filename + '.vxa' # TODO: Use a bundled version of VoxCad (see runSim)
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 
@@ -735,8 +735,26 @@ class Simulation:
         # Create simulation file
         self.saveVXA(filename)
 
-        # Run simulation file
-        command_string = 'voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+        # Check if Voxelyze is included in working directory
+        if os.path.exists('./voxelyze'): # TODO: Make this use a copy bundled with the library
+            print('Using Voxelyze in working directory')
+            # Check OS type
+            if os.name.startswith('nt'):
+                # Windows - run simulation file with WSL
+                command_string = 'wsl ./voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+            else:
+                # Linux - run simulation file directly
+                command_string = './voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+        else:
+            print('Using Voxelyze on the system path')
+            # Check OS type
+            if os.name.startswith('nt'):
+                # Windows - run simulation file with WSL
+                command_string = 'wsl voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+            else:
+                # Linux - run simulation file directly
+                command_string = 'voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 
