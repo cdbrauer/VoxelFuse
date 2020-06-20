@@ -735,14 +735,14 @@ class Simulation:
         # Create simulation file
         self.saveVXA(filename)
 
-        voxelyze_path = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
-
         # Check OS type
         if os.name.startswith('nt'):
             # Windows - run Voxelyze with WSL
+            voxelyze_path = os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze'
             command_string = 'wsl ' + voxelyze_path + ' -f ' + filename + '.vxa -o ' + filename + '.xml -p'
         else:
             # Linux - run Voxelyze directly
+            voxelyze_path = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
             command_string = voxelyze_path + ' -f ' + filename + '.vxa -o ' + filename + '.xml -p'
 
         print('Launching Voxelyze using: ' + command_string)
