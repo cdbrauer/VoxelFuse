@@ -679,9 +679,6 @@ class Simulation:
         f.write('<Sensors>\n')
         for sensor in self.__sensors:
             f.write('  <Sensor>\n')
-            f.write('    <X_Index>' + str(int(sensor[0])) + '</X_Index>\n')
-            f.write('    <Y_Index>' + str(int(sensor[1])) + '</Y_Index>\n')
-            f.write('    <Z_Index>' + str(int(sensor[2])) + '</Z_Index>\n')
             f.write('    <Location>' + str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
             f.write('  </Sensor>\n')
         f.write('</Sensors>\n')
