@@ -9,7 +9,7 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 # Import Libraries
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.simulation import Simulation, StopCondition
-from voxelfuse.optimization import optimizeTopology, SimResult
+from voxelfuse.optimization import optimizeTopology, ResultType
 
 # Start Application
 if __name__ == '__main__':
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     simulation.addBoundaryConditionBox(position=(0.99, 0, 0), size=(0.01, 1, 1), fixed_dof=0b000000, force=(0, 0, -10))
 
     # Run optimization
-    newBeamModel = optimizeTopology(simulation, SimResult.FACTOR_OF_SAFETY, 15, removal_tolerance=10, max_iter=50, protected=[1])
+    newBeamModel = optimizeTopology(simulation, ResultType.FACTOR_OF_SAFETY, 15, removal_tolerance=10, max_iter=1, protected=[1])
 
     # Export updated model
     simulation.setModel(newBeamModel)

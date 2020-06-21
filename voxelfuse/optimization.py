@@ -13,7 +13,7 @@ from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.simulation import Simulation
 from voxelfuse.materials import material_properties
 
-class SimResult(Enum):
+class ResultType(Enum):
     """
     Options for simulation result measurements.
     """
@@ -21,7 +21,7 @@ class SimResult(Enum):
     STRESS = 'BondStress'
     PRESSURE = 'Pressure'
 
-def optimizeTopology(simulation, condition: SimResult, value: float, removal_tolerance: float = 0, max_iter: int = 10, protected = None):
+def optimizeTopology(simulation, condition: ResultType, value: float, removal_tolerance: float = 0, max_iter: int = 10, protected = None):
     """
     Remove material from a model until a threshold value is reached.
 
@@ -29,7 +29,7 @@ def optimizeTopology(simulation, condition: SimResult, value: float, removal_tol
     must stay BELOW the threshold (e.g. stress, pressure) still need to be added.
 
     :param simulation: Simulation object with desired loads and constraints
-    :param condition: Measurement to monitor, set with SimResult class
+    :param condition: Measurement to monitor, set with ResultType class
     :param value: Measurement threshold value
     :param removal_tolerance: Sets how close voxels must be to the max/min value in order to be removed
     :param max_iter: Maximum number of material removal iterations
