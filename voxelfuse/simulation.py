@@ -683,7 +683,7 @@ class Simulation:
             f.write('  </Sensor>\n')
         f.write('</Sensors>\n')
 
-    def launchSim(self, filename: str = 'temp', delete_files: bool = True):
+    def launchSim(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False):
         """
         Launch a Simulation object in VoxCad.
 
@@ -705,11 +705,27 @@ class Simulation:
 
         :param filename: File name
         :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
+        :param voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
         :return: None
         """
         self.saveVXA(filename)
 
-        command_string = 'voxcad ' + filename + '.vxa' # TODO: Use a bundled version of VoxCad (see runSim)
+        if voxcad_on_path:
+            command_string = 'voxcad '
+        else:
+            # Check OS type
+            if os.name.startswith('nt'):
+                # Windows - run Voxelyze with WSL
+                voxcad_path = os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/VoxCad '
+                command_string = 'wsl ' + voxcad_path
+            else:
+                # Linux - run Voxelyze directly
+                voxcad_path = os.path.dirname(os.path.realpath(__file__)) + '/utils/VoxCad '
+                command_string = voxcad_path
+
+        command_string = command_string + filename + '.vxa'
+
+        print('Launching VoxCad using: ' + command_string)
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 
@@ -717,7 +733,7 @@ class Simulation:
             print('Removing file: ' + filename + '.vxa')
             os.remove(filename + '.vxa')
 
-    def runSim(self, filename: str = 'temp', delete_files: bool = True, voxelyze_on_path: bool = False):
+    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, voxelyze_on_path: bool = False):
         """
         Run a Simulation object using Voxelyze.
 
@@ -725,7 +741,8 @@ class Simulation:
         the results attribute of the Simulation object. Enabling delete_files will delete both the .vxa and .xml files
         once the results have been loaded. This function requires Voxelyze to be located on the system PATH.
 
-        :param filename: File name
+        :param filename: File name for .vxa and .xml files
+        :param value_map: Index of the desired value map type
         :param delete_files: Enable/disable deleting simulation file when process is complete
         :param voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
         :return: None
@@ -734,17 +751,19 @@ class Simulation:
         self.saveVXA(filename)
 
         if voxelyze_on_path:
-            command_string = 'voxelyze -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+            command_string = 'voxelyze '
         else:
             # Check OS type
             if os.name.startswith('nt'):
                 # Windows - run Voxelyze with WSL
                 voxelyze_path = os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze'
-                command_string = 'wsl ' + voxelyze_path + ' -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+                command_string = 'wsl ' + voxelyze_path
             else:
                 # Linux - run Voxelyze directly
                 voxelyze_path = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
-                command_string = voxelyze_path + ' -f ' + filename + '.vxa -o ' + filename + '.xml -p'
+                command_string = voxelyze_path
+
+        command_string = command_string + ' -f ' + filename + '.vxa -o ' + filename + '.xml -vm ' + str(value_map) + ' -p'
 
         print('Launching Voxelyze using: ' + command_string)
         p = subprocess.Popen(command_string, shell=True)
@@ -811,3 +830,5 @@ class Simulation:
             os.remove(filename + '.vxa')
             print('Removing file: ' + filename + '.xml')
             os.remove(filename + '.xml')
+            print('Removing file: value_map.txt')
+            os.remove('value_map.txt')
