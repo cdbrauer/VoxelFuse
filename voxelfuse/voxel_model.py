@@ -2017,12 +2017,13 @@ class VoxelModel:
         f.write('</VXC>\n')
 
 # Helper functions ##############################################################
-def makeMesh(filename: str, delete_files: bool = True):
+def makeMesh(filename: str, delete_files: bool = True, gmsh_on_path: bool = False):
     """
     Import mesh data from file
 
     :param filename: File name with extension
     :param delete_files: Enable/disable deleting temporary files when finished
+    :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
     :return: Mesh data (points, tris, and tets)
     """
     template = '''
@@ -2036,11 +2037,26 @@ def makeMesh(filename: str, delete_files: bool = True):
     with open('output.geo', 'w') as f:
         f.writelines(geo_string)
 
-    command_string = 'gmsh output.geo -3 -format msh' # TODO: Use a bundled version of gmsh (see runSim in simulation.py)
+    if gmsh_on_path:
+        command_string = 'gmsh '
+    else:
+        # Check OS type
+        if os.name.startswith('nt'):
+            # Windows
+            command_string = os.path.dirname(os.path.realpath(__file__)) + '\\utils\\gmsh.exe'
+        else:
+            # Linux
+            command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/gmsh'
+
+    command_string = command_string + ' output.geo -3 -format msh'
+
+    print('Launching gmsh using: ' + command_string)
     p = subprocess.Popen(command_string, shell=True)
     p.wait()
+
     mesh_file = 'output.msh'
     data = meshio.read(mesh_file)
+
     if delete_files:
         os.remove('output.msh')
         os.remove('output.geo')

@@ -716,12 +716,10 @@ class Simulation:
             # Check OS type
             if os.name.startswith('nt'):
                 # Windows
-                voxcad_path = os.path.dirname(os.path.realpath(__file__)) + '\\utils\\VoxCad_Win.exe '
-                command_string = voxcad_path
+                command_string = os.path.dirname(os.path.realpath(__file__)) + '\\utils\\VoxCad.exe '
             else:
                 # Linux
-                voxcad_path = os.path.dirname(os.path.realpath(__file__)) + '/utils/VoxCad '
-                command_string = voxcad_path
+                command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/VoxCad '
 
         command_string = command_string + filename + '.vxa'
 
@@ -756,12 +754,10 @@ class Simulation:
             # Check OS type
             if os.name.startswith('nt'):
                 # Windows - run Voxelyze with WSL
-                voxelyze_path = os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze'
-                command_string = 'wsl ' + voxelyze_path
+                command_string = 'wsl ' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze'
             else:
                 # Linux - run Voxelyze directly
-                voxelyze_path = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
-                command_string = voxelyze_path
+                command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
 
         command_string = command_string + ' -f ' + filename + '.vxa -o ' + filename + '.xml -vm ' + str(value_map) + ' -p'
 
