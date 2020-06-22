@@ -826,5 +826,7 @@ class Simulation:
             os.remove(filename + '.vxa')
             print('Removing file: ' + filename + '.xml')
             os.remove(filename + '.xml')
-            print('Removing file: value_map.txt')
-            os.remove('value_map.txt')
+
+            if os.path.exists('value_map.txt'):
+                print('Removing file: value_map.txt')
+                os.remove('value_map.txt')
