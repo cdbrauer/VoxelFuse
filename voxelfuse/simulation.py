@@ -108,6 +108,7 @@ class Simulation:
 
         # Results ################
         self.results = []
+        self.valueMap = np.zeros_like(voxel_model.voxels, dtype=np.float32)
 
     @classmethod
     def copy(cls, simulation):
@@ -819,6 +820,26 @@ class Simulation:
 
             # Append the results dictionary for the current sensor to the simulation results list
             self.results.append(sensorResults)
+
+        if os.path.exists('value_map.txt'):
+            # Open simulation value map results
+            f = open('value_map.txt', 'r')
+            print('Opening file: ' + f.name)
+            data = f.readlines()
+            f.close()
+
+            # Clear any previous results
+            self.valueMap = np.zeros_like(self.__model.voxels, dtype=np.float32)
+
+            # Get map size
+            x_len = self.valueMap.shape[0]
+            y_len = self.valueMap.shape[1]
+            z_len = self.valueMap.shape[2]
+
+            for z in tqdm(range(z_len), desc='Loading layers'):
+                vals = np.array(data[z][:-2].split(","), dtype=np.float32)
+                for y in range(y_len):
+                    self.valueMap[:, y, z] = vals[y*x_len:(y+1)*x_len]
 
         # Remove temporary files
         if delete_files:
