@@ -10,12 +10,17 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 
 import os
 import subprocess
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from enum import Enum
 from typing import Tuple, TextIO
 from tqdm import tqdm
 import numpy as np
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.primitives import empty, cuboid, sphere, cylinder
+
+# Floating point error threshold for rounding to zero
+FLOATING_ERROR = 0.0000000001
 
 class StopCondition(Enum):
     """
@@ -105,6 +110,9 @@ class Simulation:
 
         # Sensors #######
         self.__sensors = []
+
+        # Temperature Controls #######
+        self.__tempControls = []
 
         # Results ################
         self.results = []
@@ -531,6 +539,116 @@ class Simulation:
         sensor = [x, y, z]
         self.__sensors.append(sensor)
 
+    def clearTempControls(self):
+        """
+        Remove all temperature control elements from a Simulation object.
+
+        :return: None
+        """
+        self.__tempControls = []
+
+    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), temperature: float = 0):
+        """
+        Add a temperature control element to a voxel.
+
+        This feature is not currently supported by VoxCad
+
+        :param location: Control element location in voxels
+        :param temperature: Control element temperature
+        :return: None
+        """
+        x = location[0] - self.__model.coords[0]
+        y = location[1] - self.__model.coords[1]
+        z = location[2] - self.__model.coords[2]
+
+        element = [x, y, z, temperature]
+        self.__tempControls.append(element)
+
+    def setTempControlsFromValueMap(self, valueMap = None):
+        """
+        Set the simulation temperature control elements based on a value map of target volumes.
+
+        If a valueMap is not specified, the Simulation object's value map attribute will
+        be used. To update this attribute, first use ``runSim(value_map=10)`` to get the
+        result volumes from running the simulation with any previous temp control settings.
+
+        :param valueMap: Array of target volumes for each voxel
+        :return:
+        """
+        if valueMap is None:
+            valueMap = self.valueMap
+
+        # Clear any existing temp controls
+        self.clearTempControls()
+
+        # Get map size
+        x_len = valueMap.shape[0]
+        y_len = valueMap.shape[1]
+        z_len = valueMap.shape[2]
+
+        # Get initial volume
+        v0 = (1 / self.__model.resolution) ** 3
+
+        # Find required temperature change at each voxel
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if abs(valueMap[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
+                        # Get volume change
+                        vol_delta = valueMap[x, y, z] - v0
+
+                        # Get CTE value
+                        # TODO: Create a function for getting material properties of a voxel
+                        cte = -0.02  # material_properties[manipulatorModel.voxels[x, y, z]]['CTE']
+
+                        # Get required temperature change relative to base temperature
+                        temp_delta = (vol_delta / (v0 * cte))
+
+                        # Get base temperature
+                        temp_base = (self.getThermal())[1]
+
+                        # Add a temperature control element
+                        self.addTempControl((x, y, z), temp_base+temp_delta)
+
+    def saveTempControls(self, filename: str, figure: bool = False):
+        """
+        Save the temperature control elements applied to a model to a .csv file.
+
+        :param filename: File name
+        :param figure: Enable/disable exporting a figure as well
+        :return: None
+        """
+        f = open(filename + '.csv', 'w+')
+        print('Saving file: ' + f.name)
+        f.write('X,Y,Z,Temperature (deg C)\n')
+        for i in range(len(self.__tempControls)):
+            f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
+        f.close()
+
+        if figure:
+            # Get plot data
+            points = np.array(self.__tempControls)
+            xs = points[:, 0]
+            ys = points[:, 1]
+            zs = points[:, 2]
+            temps = points[:, 3]
+            colors = np.array(abs((temps - np.min(temps)) / (np.max(temps) - np.min(temps))), dtype=np.str)  # Grayscale range
+
+            # Plot results
+            fig = plt.figure()
+            ax1 = fig.add_subplot(121)
+            ax1.scatter(zs, ys, c=colors, marker='s')
+            ax1.axis('equal')
+            ax1.set_title('Side')
+            ax2 = fig.add_subplot(122)
+            ax2.scatter(xs, ys, c=colors, marker='s')
+            ax2.axis('equal')
+            ax2.set_title('Top')
+
+            # Save figure
+            print('Saving file: ' + filename + '.png')
+            plt.savefig(filename + '.png')
+
     # Export simulation ##################################
     # Export simulation object to .vxa file for import into VoxCad or Voxelyze
     def saveVXA(self, filename: str, compression: bool = False):
@@ -560,6 +678,7 @@ class Simulation:
         self.writeSimData(f)
         self.writeEnvironmentData(f)
         self.writeSensors(f)
+        self.writeTempControls(f)
         self.__model.writeVXCData(f, compression)
         f.write('</VXA>\n')
 
@@ -683,6 +802,21 @@ class Simulation:
             f.write('    <Location>' + str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
             f.write('  </Sensor>\n')
         f.write('</Sensors>\n')
+
+    def writeTempControls(self, f: TextIO):
+        """
+        Write temperature control element to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        """
+        f.write('<TempControls>\n')
+        for element in self.__tempControls:
+            f.write('  <Element>\n')
+            f.write('    <Location>' + str(element[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
+            f.write('    <Temperature>' + str(element[3]).replace('[', '').replace(',', '').replace(']', '') + '</Temperature>\n')
+            f.write('  </Element>\n')
+        f.write('</TempControls>\n')
 
     def launchSim(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False):
         """
