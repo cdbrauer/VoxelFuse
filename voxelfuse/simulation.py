@@ -564,7 +564,7 @@ class Simulation:
         element = [x, y, z, temperature]
         self.__tempControls.append(element)
 
-    def setTempControlsFromValueMap(self, valueMap = None):
+    def setTempControlsFromVolumeValueMap(self, valueMap = None):
         """
         Set the simulation temperature control elements based on a value map of target volumes.
 
@@ -609,6 +609,29 @@ class Simulation:
 
                         # Add a temperature control element
                         self.addTempControl((x, y, z), temp_base+temp_delta)
+
+    def setTempControlsFromTempValueMap(self, valueMap):
+        """
+        Set the simulation temperature control elements based on a value map of target temperatures.
+
+        :param valueMap: Array of target temperatures for each voxel
+        :return:
+        """
+
+        # Clear any existing temp controls
+        self.clearTempControls()
+
+        # Get map size
+        x_len = valueMap.shape[0]
+        y_len = valueMap.shape[1]
+        z_len = valueMap.shape[2]
+
+        # Find required temperature change at each voxel
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if abs(valueMap[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
+                        self.addTempControl((x, y, z), valueMap[x, y, z])
 
     def saveTempControls(self, filename: str, figure: bool = False):
         """
@@ -866,16 +889,17 @@ class Simulation:
             print('Removing file: ' + filename + '.vxa')
             os.remove(filename + '.vxa')
 
-    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, voxelyze_on_path: bool = False):
+    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False):
         """
         Run a Simulation object using Voxelyze.
 
         This function will create a .vxa file, run the file with Voxelyze, and then load the .xml results file into
         the results attribute of the Simulation object. Enabling delete_files will delete both the .vxa and .xml files
         once the results have been loaded. This function requires Voxelyze to be located on the system PATH.
-
+s
         :param filename: File name for .vxa and .xml files
         :param value_map: Index of the desired value map type
+        :param export_stl: Enable/disable exporting an stl file of the result
         :param delete_files: Enable/disable deleting simulation file when process is complete
         :param voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
         :return: None
@@ -895,6 +919,9 @@ class Simulation:
                 command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
 
         command_string = command_string + ' -f ' + filename + '.vxa -o ' + filename + '.xml -vm ' + str(value_map) + ' -p'
+
+        if export_stl:
+            command_string = command_string + ' -stl ' + filename + '.stl'
 
         print('Launching Voxelyze using: ' + command_string)
         p = subprocess.Popen(command_string, shell=True)
