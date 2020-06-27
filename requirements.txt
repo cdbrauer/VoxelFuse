@@ -7,3 +7,4 @@ py-vox-io
 meshio
 numba
 tqdm
+matplotlib
