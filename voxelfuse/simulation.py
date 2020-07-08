@@ -58,7 +58,7 @@ class Simulation:
         :param voxel_model: VoxelModel
         """
         # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
-        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty()
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1))
 
         # Simulator ##############
         # Integration
@@ -150,7 +150,7 @@ class Simulation:
         :return: None
         """
         # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
-        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty()
+        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1))
 
     def setDamping(self, bond: float = 1.0, environment: float = 0.0001):
         """

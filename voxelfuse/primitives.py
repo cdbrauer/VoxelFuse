@@ -12,16 +12,17 @@ from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.materials import material_properties
 
 # Basic primitives
-def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
+def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1, num_materials: int = len(material_properties)):
     """
     Create a VoxelModel containing a single empty voxel at the specified coordinates.
 
     :param coords: Model origin coordinates
     :param resolution: Number of voxels per mm
+    :param num_materials: Number of material types in materials vector
     :return: VoxelModel
     """
     model_data = np.zeros((1, 1, 1), dtype=np.uint16)
-    materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+    materials = np.zeros((1, num_materials + 1), dtype=np.float)
     model = VoxelModel(model_data, materials, coords=coords, resolution=resolution)
     return model
 

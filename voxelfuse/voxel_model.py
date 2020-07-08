@@ -201,16 +201,17 @@ class VoxelModel:
         return new_model
 
     @classmethod
-    def empty(cls, size: Tuple[int, int, int], resolution: float = 1):
+    def empty(cls, size: Tuple[int, int, int], resolution: float = 1, num_materials: int = len(material_properties)):
         """
         Initialize an empty VoxelModel.
 
         :param size: Size of the empty model in voxels
         :param resolution: Number of voxels per mm
+        :param num_materials: Number of material types in materials vector
         :return: VoxelModel
         """
         modelData = np.zeros(size, dtype=np.uint16)
-        materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+        materials = np.zeros((1, num_materials + 1), dtype=np.float)
         new_model = cls(modelData, materials, resolution=resolution)
         return new_model
 
@@ -369,7 +370,7 @@ class VoxelModel:
         :return: VoxelModel
         """
         mask = np.array(self.voxels == material, dtype=np.bool)
-        materials = np.zeros((2, len(material_properties)+1), dtype=np.float32)
+        materials = np.zeros((2, self.materials.shape[1]), dtype=np.float32)
         materials[1] = self.materials[material]
         return VoxelModel(mask.astype(int), materials, self.coords, self.resolution)
 
@@ -480,10 +481,10 @@ class VoxelModel:
         :return: VoxelModel
         """
         new_voxels = self.getOccupied().voxels # Converts input model to a mask, no effect if input is already a mask
-        material_vector = np.zeros(len(material_properties)+1, dtype=np.float32)
+        material_vector = np.zeros(self.materials.shape[1], dtype=np.float32)
         material_vector[0] = 1
         material_vector[material+1] = 1
-        a = np.zeros(len(material_properties)+1, dtype=np.float32)
+        a = np.zeros(self.materials.shape[1], dtype=np.float32)
         b = material_vector
         m = np.vstack((a, b))
         return VoxelModel(new_voxels, m, self.coords, self.resolution)
@@ -512,7 +513,7 @@ class VoxelModel:
         :return: VoxelMode
         """
         new_voxels = self.getOccupied().voxels  # Converts input model to a mask, no effect if input is already a mask
-        a = np.zeros(len(material_properties)+1, dtype=np.float32)
+        a = np.zeros(len(material_vector), dtype=np.float32)
         b = material_vector
         materials = np.vstack((a, b))
         return VoxelModel(new_voxels, materials, self.coords, self.resolution)
@@ -713,7 +714,7 @@ class VoxelModel:
         z_len = a.shape[2]
 
         new_voxels = np.zeros_like(a, dtype=np.uint16)
-        new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float32)
+        new_materials = np.zeros((1, len(self.materials[0])), dtype=np.float32)
 
         for x in range(x_len):
             for y in range(y_len):
@@ -785,7 +786,7 @@ class VoxelModel:
         z_len = a.shape[2]
 
         new_voxels = np.zeros_like(a, dtype=np.uint16)
-        new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
+        new_materials = np.zeros((1, len(self.materials[0])), dtype=np.float32)
 
         for x in range(x_len):
             for y in range(y_len):
@@ -851,7 +852,7 @@ class VoxelModel:
             z_len = a.shape[2]
 
             new_voxels = np.zeros_like(a, dtype=np.uint16)
-            new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float32)
+            new_materials = np.zeros((1, len(self.materials[0])), dtype=np.float32)
 
             for x in range(x_len):
                 for y in range(y_len):
@@ -923,7 +924,7 @@ class VoxelModel:
             z_len = a.shape[2]
 
             new_voxels = np.zeros_like(a, dtype=np.uint16)
-            new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float32)
+            new_materials = np.zeros((1, len(self.materials[0])), dtype=np.float32)
 
             for x in range(x_len):
                 for y in range(y_len):
@@ -1143,13 +1144,13 @@ class VoxelModel:
         if radius == 0:
             return VoxelModel.copy(self)
 
-        full_model = toFullMaterials(self.voxels, self.materials, len(material_properties)+1)
+        full_model = toFullMaterials(self.voxels, self.materials, len(self.materials[0]))
 
-        for m in tqdm(range(len(material_properties)), desc='Blur - applying gaussian filter'):
+        for m in tqdm(range(len(self.materials[0])-1), desc='Blur - applying gaussian filter'):
             full_model[:, :, :, m+1] = ndimage.gaussian_filter(full_model[:, :, :, m+1], sigma=radius/2)
 
         mask = full_model[:, :, :, 0]
-        mask = np.repeat(mask[..., None], len(material_properties)+1, axis=3)
+        mask = np.repeat(mask[..., None], len(self.materials[0]), axis=3)
         full_model = np.multiply(full_model, mask)
 
         return toIndexedMaterials(full_model, self, self.resolution)
@@ -1221,7 +1222,7 @@ class VoxelModel:
         new_model = self.removeNegatives()
         material_sums = np.sum(new_model.materials[:, 1:], 1)
         material_sums[material_sums == 0] = 1
-        material_sums = np.repeat(material_sums[..., None], len(material_properties), axis=1)
+        material_sums = np.repeat(material_sums[..., None], len(self.materials[0])-1, axis=1)
         new_model.materials[:,1:] = np.divide(new_model.materials[:,1:], material_sums)
         return new_model
 
@@ -1502,19 +1503,19 @@ class VoxelModel:
         for key in material_properties[0]:
             if key == 'name' or key == 'process':
                 string = ''
-                for i in range(len(material_properties)):
+                for i in range(len(self.materials[0])-1):
                     if self.materials[material][i + 1] > 0:
                         string = string + material_properties[i][key] + ' '
                 avgProps.update({key: string})
             elif key == 'MM' or key == 'FM':
                 var = 0
-                for i in range(len(material_properties)):
+                for i in range(len(self.materials[0])-1):
                     if self.materials[material][i + 1] > 0:
                         var = max(var, material_properties[i][key])
                 avgProps.update({key: var})
             else:
                 var = 0
-                for i in range(len(material_properties)):
+                for i in range(len(self.materials[0])-1):
                     var = var + self.materials[material][i + 1] * material_properties[i][key]
                 avgProps.update({key: var})
         return avgProps
@@ -2285,7 +2286,7 @@ def toIndexedMaterials(voxels, model, resolution):
     z_len = model.voxels.shape[2]
 
     new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
-    new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
+    new_materials = np.zeros((1, len(model.materials[0])), dtype=np.float32)
 
     for x in range(x_len): # tqdm(range(x_len), desc='Converting to indexed materials'):
         for y in range(y_len):
