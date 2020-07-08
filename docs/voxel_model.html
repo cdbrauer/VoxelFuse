@@ -1520,6 +1520,43 @@ class VoxelModel:
         volumeMM3 = volumeVoxels * ((1/self.resolution)**3)
         return volumeVoxels, volumeMM3
 
+    def getMaterialProperties(self, material):
+        &#34;&#34;&#34;
+        Get the average material properties of a row in a model&#39;s material array.
+
+        :param material: Material index
+        :return: Dictionary of material properties
+        &#34;&#34;&#34;
+        avgProps = {}
+        for key in material_properties[0]:
+            if key == &#39;name&#39; or key == &#39;process&#39;:
+                string = &#39;&#39;
+                for i in range(len(material_properties)):
+                    if self.materials[material][i + 1] &gt; 0:
+                        string = string + material_properties[i][key] + &#39; &#39;
+                avgProps.update({key: string})
+            elif key == &#39;MM&#39; or key == &#39;FM&#39;:
+                var = 0
+                for i in range(len(material_properties)):
+                    if self.materials[material][i + 1] &gt; 0:
+                        var = max(var, material_properties[i][key])
+                avgProps.update({key: var})
+            else:
+                var = 0
+                for i in range(len(material_properties)):
+                    var = var + self.materials[material][i + 1] * material_properties[i][key]
+                avgProps.update({key: var})
+        return avgProps
+
+    def getVoxelProperties(self, coords: Tuple[int, int, int]):
+        &#34;&#34;&#34;
+        Get the average material properties of a specific voxel.
+
+        :param coords: Voxel coordinates
+        :return: Dictionary of material properties
+        &#34;&#34;&#34;
+        return self.getMaterialProperties(self.voxels[coords[0], coords[1], coords[2]])
+
     # Manufacturing Features ##############################
 
     def projection(self, direction: Dir, material: int = 1):
@@ -1962,25 +1999,7 @@ class VoxelModel:
         # Materials
         f.write(&#39;  &lt;Palette&gt;\n&#39;)
         for row in tqdm(range(1, len(self.materials[:, 0])), desc=&#39;Writing materials&#39;):
-            avgProps = {}
-            for key in material_properties[0]:
-                if key == &#39;name&#39; or key == &#39;process&#39;:
-                    string = &#39;&#39;
-                    for i in range(len(material_properties)):
-                        if self.materials[row][i+1] &gt; 0:
-                            string = string + material_properties[i][key] + &#39; &#39;
-                    avgProps.update({key: string})
-                elif key == &#39;MM&#39; or key == &#39;FM&#39;:
-                    var = 0
-                    for i in range(len(material_properties)):
-                        if self.materials[row][i + 1] &gt; 0:
-                            var = max(var, material_properties[i][key])
-                    avgProps.update({key: var})
-                else:
-                    var = 0
-                    for i in range(len(material_properties)):
-                        var = var + self.materials[row][i + 1] * material_properties[i][key]
-                    avgProps.update({key: var})
+            avgProps = self.getMaterialProperties(row)
 
             f.write(&#39;    &lt;Material ID=&#34;&#39; + str(row) + &#39;&#34;&gt;\n&#39;)
             f.write(&#39;      &lt;MatType&gt;&#39; + str(0) + &#39;&lt;/MatType&gt;\n&#39;)
@@ -2046,12 +2065,13 @@ class VoxelModel:
         f.write(&#39;&lt;/VXC&gt;\n&#39;)
 
 # Helper functions ##############################################################
-def makeMesh(filename: str, delete_files: bool = True):
+def makeMesh(filename: str, delete_files: bool = True, gmsh_on_path: bool = False):
     &#34;&#34;&#34;
     Import mesh data from file
 
     :param filename: File name with extension
     :param delete_files: Enable/disable deleting temporary files when finished
+    :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
     :return: Mesh data (points, tris, and tets)
     &#34;&#34;&#34;
     template = &#39;&#39;&#39;
@@ -2065,11 +2085,26 @@ def makeMesh(filename: str, delete_files: bool = True):
     with open(&#39;output.geo&#39;, &#39;w&#39;) as f:
         f.writelines(geo_string)
 
-    command_string = &#39;gmsh output.geo -3 -format msh&#39;
+    if gmsh_on_path:
+        command_string = &#39;gmsh &#39;
+    else:
+        # Check OS type
+        if os.name.startswith(&#39;nt&#39;):
+            # Windows
+            command_string = os.path.dirname(os.path.realpath(__file__)) + &#39;\\utils\\gmsh.exe&#39;
+        else:
+            # Linux
+            command_string = os.path.dirname(os.path.realpath(__file__)) + &#39;/utils/gmsh&#39;
+
+    command_string = command_string + &#39; output.geo -3 -format msh&#39;
+
+    print(&#39;Launching gmsh using: &#39; + command_string)
     p = subprocess.Popen(command_string, shell=True)
     p.wait()
+
     mesh_file = &#39;output.msh&#39;
     data = meshio.read(mesh_file)
+
     if delete_files:
         os.remove(&#39;output.msh&#39;)
         os.remove(&#39;output.geo&#39;)
@@ -2468,7 +2503,7 @@ def findFilledVoxels(a, b):
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.makeMesh"><code class="name flex">
-<span>def <span class="ident">makeMesh</span></span>(<span>filename: str, delete_files: bool = True)</span>
+<span>def <span class="ident">makeMesh</span></span>(<span>filename: str, delete_files: bool = True, gmsh_on_path: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Import mesh data from file</p>
@@ -2478,6 +2513,8 @@ def findFilledVoxels(a, b):
 <dd>File name with extension</dd>
 <dt><strong><code>delete_files</code></strong></dt>
 <dd>Enable/disable deleting temporary files when finished</dd>
+<dt><strong><code>gmsh_on_path</code></strong></dt>
+<dd>Enable/disable using system gmsh rather than bundled gmsh</dd>
 <dt><strong><code>Returns</code></strong> :&ensp;<code>Mesh data (points, tris, and tets)</code></dt>
 <dd>&nbsp;</dd>
 </dl></div>
@@ -2485,12 +2522,13 @@ def findFilledVoxels(a, b):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def makeMesh(filename: str, delete_files: bool = True):
+<pre><code class="python">def makeMesh(filename: str, delete_files: bool = True, gmsh_on_path: bool = False):
     &#34;&#34;&#34;
     Import mesh data from file
 
     :param filename: File name with extension
     :param delete_files: Enable/disable deleting temporary files when finished
+    :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
     :return: Mesh data (points, tris, and tets)
     &#34;&#34;&#34;
     template = &#39;&#39;&#39;
@@ -2504,11 +2542,26 @@ def findFilledVoxels(a, b):
     with open(&#39;output.geo&#39;, &#39;w&#39;) as f:
         f.writelines(geo_string)
 
-    command_string = &#39;gmsh output.geo -3 -format msh&#39;
+    if gmsh_on_path:
+        command_string = &#39;gmsh &#39;
+    else:
+        # Check OS type
+        if os.name.startswith(&#39;nt&#39;):
+            # Windows
+            command_string = os.path.dirname(os.path.realpath(__file__)) + &#39;\\utils\\gmsh.exe&#39;
+        else:
+            # Linux
+            command_string = os.path.dirname(os.path.realpath(__file__)) + &#39;/utils/gmsh&#39;
+
+    command_string = command_string + &#39; output.geo -3 -format msh&#39;
+
+    print(&#39;Launching gmsh using: &#39; + command_string)
     p = subprocess.Popen(command_string, shell=True)
     p.wait()
+
     mesh_file = &#39;output.msh&#39;
     data = meshio.read(mesh_file)
+
     if delete_files:
         os.remove(&#39;output.msh&#39;)
         os.remove(&#39;output.geo&#39;)
@@ -4359,6 +4412,43 @@ Returns:</p></div>
         volumeMM3 = volumeVoxels * ((1/self.resolution)**3)
         return volumeVoxels, volumeMM3
 
+    def getMaterialProperties(self, material):
+        &#34;&#34;&#34;
+        Get the average material properties of a row in a model&#39;s material array.
+
+        :param material: Material index
+        :return: Dictionary of material properties
+        &#34;&#34;&#34;
+        avgProps = {}
+        for key in material_properties[0]:
+            if key == &#39;name&#39; or key == &#39;process&#39;:
+                string = &#39;&#39;
+                for i in range(len(material_properties)):
+                    if self.materials[material][i + 1] &gt; 0:
+                        string = string + material_properties[i][key] + &#39; &#39;
+                avgProps.update({key: string})
+            elif key == &#39;MM&#39; or key == &#39;FM&#39;:
+                var = 0
+                for i in range(len(material_properties)):
+                    if self.materials[material][i + 1] &gt; 0:
+                        var = max(var, material_properties[i][key])
+                avgProps.update({key: var})
+            else:
+                var = 0
+                for i in range(len(material_properties)):
+                    var = var + self.materials[material][i + 1] * material_properties[i][key]
+                avgProps.update({key: var})
+        return avgProps
+
+    def getVoxelProperties(self, coords: Tuple[int, int, int]):
+        &#34;&#34;&#34;
+        Get the average material properties of a specific voxel.
+
+        :param coords: Voxel coordinates
+        :return: Dictionary of material properties
+        &#34;&#34;&#34;
+        return self.getMaterialProperties(self.voxels[coords[0], coords[1], coords[2]])
+
     # Manufacturing Features ##############################
 
     def projection(self, direction: Dir, material: int = 1):
@@ -4801,25 +4891,7 @@ Returns:</p></div>
         # Materials
         f.write(&#39;  &lt;Palette&gt;\n&#39;)
         for row in tqdm(range(1, len(self.materials[:, 0])), desc=&#39;Writing materials&#39;):
-            avgProps = {}
-            for key in material_properties[0]:
-                if key == &#39;name&#39; or key == &#39;process&#39;:
-                    string = &#39;&#39;
-                    for i in range(len(material_properties)):
-                        if self.materials[row][i+1] &gt; 0:
-                            string = string + material_properties[i][key] + &#39; &#39;
-                    avgProps.update({key: string})
-                elif key == &#39;MM&#39; or key == &#39;FM&#39;:
-                    var = 0
-                    for i in range(len(material_properties)):
-                        if self.materials[row][i + 1] &gt; 0:
-                            var = max(var, material_properties[i][key])
-                    avgProps.update({key: var})
-                else:
-                    var = 0
-                    for i in range(len(material_properties)):
-                        var = var + self.materials[row][i + 1] * material_properties[i][key]
-                    avgProps.update({key: var})
+            avgProps = self.getMaterialProperties(row)
 
             f.write(&#39;    &lt;Material ID=&#34;&#39; + str(row) + &#39;&#34;&gt;\n&#39;)
             f.write(&#39;      &lt;MatType&gt;&#39; + str(0) + &#39;&lt;/MatType&gt;\n&#39;)
@@ -6083,6 +6155,51 @@ and defines the shape of the structuring element.</p>
     return new_model</code></pre>
 </details>
 </dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.getMaterialProperties"><code class="name flex">
+<span>def <span class="ident">getMaterialProperties</span></span>(<span>self, material)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the average material properties of a row in a model's material array.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>material</code></strong></dt>
+<dd>Material index</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>Dictionary</code> of <code>material properties</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getMaterialProperties(self, material):
+    &#34;&#34;&#34;
+    Get the average material properties of a row in a model&#39;s material array.
+
+    :param material: Material index
+    :return: Dictionary of material properties
+    &#34;&#34;&#34;
+    avgProps = {}
+    for key in material_properties[0]:
+        if key == &#39;name&#39; or key == &#39;process&#39;:
+            string = &#39;&#39;
+            for i in range(len(material_properties)):
+                if self.materials[material][i + 1] &gt; 0:
+                    string = string + material_properties[i][key] + &#39; &#39;
+            avgProps.update({key: string})
+        elif key == &#39;MM&#39; or key == &#39;FM&#39;:
+            var = 0
+            for i in range(len(material_properties)):
+                if self.materials[material][i + 1] &gt; 0:
+                    var = max(var, material_properties[i][key])
+            avgProps.update({key: var})
+        else:
+            var = 0
+            for i in range(len(material_properties)):
+                var = var + self.materials[material][i + 1] * material_properties[i][key]
+            avgProps.update({key: var})
+    return avgProps</code></pre>
+</details>
+</dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.getOccupied"><code class="name flex">
 <span>def <span class="ident">getOccupied</span></span>(<span>self)</span>
 </code></dt>
@@ -6175,6 +6292,32 @@ and defines the shape of the structuring element.</p>
     volumeVoxels = np.count_nonzero(new_model.voxels)
     volumeMM3 = volumeVoxels * ((1/self.resolution)**3)
     return volumeVoxels, volumeMM3</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.getVoxelProperties"><code class="name flex">
+<span>def <span class="ident">getVoxelProperties</span></span>(<span>self, coords: Tuple[int, int, int])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the average material properties of a specific voxel.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>coords</code></strong></dt>
+<dd>Voxel coordinates</dd>
+<dt><strong><code>Returns</code></strong> :&ensp;<code>Dictionary</code> of <code>material properties</code></dt>
+<dd>&nbsp;</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getVoxelProperties(self, coords: Tuple[int, int, int]):
+    &#34;&#34;&#34;
+    Get the average material properties of a specific voxel.
+
+    :param coords: Voxel coordinates
+    :return: Dictionary of material properties
+    &#34;&#34;&#34;
+    return self.getMaterialProperties(self.voxels[coords[0], coords[1], coords[2]])</code></pre>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.intersection"><code class="name flex">
@@ -7806,25 +7949,7 @@ based on proximity to empty regions that are inaccessible to the removal process
     # Materials
     f.write(&#39;  &lt;Palette&gt;\n&#39;)
     for row in tqdm(range(1, len(self.materials[:, 0])), desc=&#39;Writing materials&#39;):
-        avgProps = {}
-        for key in material_properties[0]:
-            if key == &#39;name&#39; or key == &#39;process&#39;:
-                string = &#39;&#39;
-                for i in range(len(material_properties)):
-                    if self.materials[row][i+1] &gt; 0:
-                        string = string + material_properties[i][key] + &#39; &#39;
-                avgProps.update({key: string})
-            elif key == &#39;MM&#39; or key == &#39;FM&#39;:
-                var = 0
-                for i in range(len(material_properties)):
-                    if self.materials[row][i + 1] &gt; 0:
-                        var = max(var, material_properties[i][key])
-                avgProps.update({key: var})
-            else:
-                var = 0
-                for i in range(len(material_properties)):
-                    var = var + self.materials[row][i + 1] * material_properties[i][key]
-                avgProps.update({key: var})
+        avgProps = self.getMaterialProperties(row)
 
         f.write(&#39;    &lt;Material ID=&#34;&#39; + str(row) + &#39;&#34;&gt;\n&#39;)
         f.write(&#39;      &lt;MatType&gt;&#39; + str(0) + &#39;&lt;/MatType&gt;\n&#39;)
@@ -8038,9 +8163,11 @@ based on proximity to empty regions that are inaccessible to the removal process
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getBoundingBox" href="#voxelfuse.voxel_model.VoxelModel.getBoundingBox">getBoundingBox</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getCenter" href="#voxelfuse.voxel_model.VoxelModel.getCenter">getCenter</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getComponents" href="#voxelfuse.voxel_model.VoxelModel.getComponents">getComponents</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.getMaterialProperties" href="#voxelfuse.voxel_model.VoxelModel.getMaterialProperties">getMaterialProperties</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getOccupied" href="#voxelfuse.voxel_model.VoxelModel.getOccupied">getOccupied</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getUnoccupied" href="#voxelfuse.voxel_model.VoxelModel.getUnoccupied">getUnoccupied</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getVolume" href="#voxelfuse.voxel_model.VoxelModel.getVolume">getVolume</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.getVoxelProperties" href="#voxelfuse.voxel_model.VoxelModel.getVoxelProperties">getVoxelProperties</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.intersection" href="#voxelfuse.voxel_model.VoxelModel.intersection">intersection</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.isolateComponent" href="#voxelfuse.voxel_model.VoxelModel.isolateComponent">isolateComponent</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.isolateLayer" href="#voxelfuse.voxel_model.VoxelModel.isolateLayer">isolateLayer</a></code></li>

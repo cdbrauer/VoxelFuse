@@ -49,8 +49,8 @@ if __name__==&#39;__main__&#39;:
 
     simulation = Simulation(modelResult)  # Initialize a simulation
     simulation.setCollision() # Enable self-collision
-    simulation.setStopCondition(StopCondition.TIME_VALUE, 0.01) # Set simulation time limit
-    simulation.launchSim(&#39;collision_sim_1&#39;, delete_files=False) # Launch simulation, save simulation file</code></pre>
+    # simulation.setStopCondition(StopCondition.TIME_VALUE, 0.01) # Set simulation time limit
+    simulation.runSimVoxCad(&#39;collision_sim_1&#39;, delete_files=False) # Launch simulation, save simulation file</code></pre>
 </details>
 </section>
 <section>

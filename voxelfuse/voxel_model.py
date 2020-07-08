@@ -1491,6 +1491,43 @@ class VoxelModel:
         volumeMM3 = volumeVoxels * ((1/self.resolution)**3)
         return volumeVoxels, volumeMM3
 
+    def getMaterialProperties(self, material):
+        """
+        Get the average material properties of a row in a model's material array.
+
+        :param material: Material index
+        :return: Dictionary of material properties
+        """
+        avgProps = {}
+        for key in material_properties[0]:
+            if key == 'name' or key == 'process':
+                string = ''
+                for i in range(len(material_properties)):
+                    if self.materials[material][i + 1] > 0:
+                        string = string + material_properties[i][key] + ' '
+                avgProps.update({key: string})
+            elif key == 'MM' or key == 'FM':
+                var = 0
+                for i in range(len(material_properties)):
+                    if self.materials[material][i + 1] > 0:
+                        var = max(var, material_properties[i][key])
+                avgProps.update({key: var})
+            else:
+                var = 0
+                for i in range(len(material_properties)):
+                    var = var + self.materials[material][i + 1] * material_properties[i][key]
+                avgProps.update({key: var})
+        return avgProps
+
+    def getVoxelProperties(self, coords: Tuple[int, int, int]):
+        """
+        Get the average material properties of a specific voxel.
+
+        :param coords: Voxel coordinates
+        :return: Dictionary of material properties
+        """
+        return self.getMaterialProperties(self.voxels[coords[0], coords[1], coords[2]])
+
     # Manufacturing Features ##############################
 
     def projection(self, direction: Dir, material: int = 1):
@@ -1933,25 +1970,7 @@ class VoxelModel:
         # Materials
         f.write('  <Palette>\n')
         for row in tqdm(range(1, len(self.materials[:, 0])), desc='Writing materials'):
-            avgProps = {}
-            for key in material_properties[0]:
-                if key == 'name' or key == 'process':
-                    string = ''
-                    for i in range(len(material_properties)):
-                        if self.materials[row][i+1] > 0:
-                            string = string + material_properties[i][key] + ' '
-                    avgProps.update({key: string})
-                elif key == 'MM' or key == 'FM':
-                    var = 0
-                    for i in range(len(material_properties)):
-                        if self.materials[row][i + 1] > 0:
-                            var = max(var, material_properties[i][key])
-                    avgProps.update({key: var})
-                else:
-                    var = 0
-                    for i in range(len(material_properties)):
-                        var = var + self.materials[row][i + 1] * material_properties[i][key]
-                    avgProps.update({key: var})
+            avgProps = self.getMaterialProperties(row)
 
             f.write('    <Material ID="' + str(row) + '">\n')
             f.write('      <MatType>' + str(0) + '</MatType>\n')
@@ -2017,12 +2036,13 @@ class VoxelModel:
         f.write('</VXC>\n')
 
 # Helper functions ##############################################################
-def makeMesh(filename: str, delete_files: bool = True):
+def makeMesh(filename: str, delete_files: bool = True, gmsh_on_path: bool = False):
     """
     Import mesh data from file
 
     :param filename: File name with extension
     :param delete_files: Enable/disable deleting temporary files when finished
+    :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
     :return: Mesh data (points, tris, and tets)
     """
     template = '''
@@ -2036,11 +2056,26 @@ def makeMesh(filename: str, delete_files: bool = True):
     with open('output.geo', 'w') as f:
         f.writelines(geo_string)
 
-    command_string = 'gmsh output.geo -3 -format msh'
+    if gmsh_on_path:
+        command_string = 'gmsh '
+    else:
+        # Check OS type
+        if os.name.startswith('nt'):
+            # Windows
+            command_string = os.path.dirname(os.path.realpath(__file__)) + '\\utils\\gmsh.exe'
+        else:
+            # Linux
+            command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/gmsh'
+
+    command_string = command_string + ' output.geo -3 -format msh'
+
+    print('Launching gmsh using: ' + command_string)
     p = subprocess.Popen(command_string, shell=True)
     p.wait()
+
     mesh_file = 'output.msh'
     data = meshio.read(mesh_file)
+
     if delete_files:
         os.remove('output.msh')
         os.remove('output.geo')

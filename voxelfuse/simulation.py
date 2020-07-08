@@ -10,12 +10,17 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 
 import os
 import subprocess
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from enum import Enum
 from typing import Tuple, TextIO
 from tqdm import tqdm
 import numpy as np
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.primitives import empty, cuboid, sphere, cylinder
+
+# Floating point error threshold for rounding to zero
+FLOATING_ERROR = 0.0000000001
 
 class StopCondition(Enum):
     """
@@ -105,6 +110,13 @@ class Simulation:
 
         # Sensors #######
         self.__sensors = []
+
+        # Temperature Controls #######
+        self.__tempControls = []
+
+        # Results ################
+        self.results = []
+        self.valueMap = np.zeros_like(voxel_model.voxels, dtype=np.float32)
 
     @classmethod
     def copy(cls, simulation):
@@ -527,6 +539,139 @@ class Simulation:
         sensor = [x, y, z]
         self.__sensors.append(sensor)
 
+    def clearTempControls(self):
+        """
+        Remove all temperature control elements from a Simulation object.
+
+        :return: None
+        """
+        self.__tempControls = []
+
+    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), temperature: float = 0):
+        """
+        Add a temperature control element to a voxel.
+
+        This feature is not currently supported by VoxCad
+
+        :param location: Control element location in voxels
+        :param temperature: Control element temperature
+        :return: None
+        """
+        x = location[0] - self.__model.coords[0]
+        y = location[1] - self.__model.coords[1]
+        z = location[2] - self.__model.coords[2]
+
+        element = [x, y, z, temperature]
+        self.__tempControls.append(element)
+
+    def applyTempMap(self, valueMap):
+        """
+        Set the simulation temperature control elements based on a value map of target temperatures.
+
+        :param valueMap: Array of target temperatures for each voxel
+        :return:
+        """
+
+        # Clear any existing temp controls
+        self.clearTempControls()
+
+        # Get map size
+        x_len = valueMap.shape[0]
+        y_len = valueMap.shape[1]
+        z_len = valueMap.shape[2]
+
+        # Find required temperature change at each voxel
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if abs(valueMap[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
+                        self.addTempControl((x, y, z), valueMap[x, y, z])
+
+    def applyVolumeMap(self, valueMap = None):
+        """
+        Set the simulation temperature control elements based on a value map of target volumes.
+
+        If a valueMap is not specified, the Simulation object's value map attribute will
+        be used. To update this attribute, first use ``runSim(value_map=10)`` to get the
+        result volumes from running the simulation with any previous settings.
+
+        :param valueMap: Array of target volumes for each voxel
+        :return:
+        """
+        if valueMap is None:
+            valueMap = self.valueMap
+
+        # Clear any existing temp controls
+        self.clearTempControls()
+
+        # Get map size
+        x_len = valueMap.shape[0]
+        y_len = valueMap.shape[1]
+        z_len = valueMap.shape[2]
+
+        # Get initial volume
+        v0 = (1 / self.__model.resolution) ** 3
+
+        # Find required temperature change at each voxel
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if abs(valueMap[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
+                        # Get volume change
+                        vol_delta = valueMap[x, y, z] - v0
+
+                        # Get CTE value
+                        avgProps = self.__model.getVoxelProperties((x, y, z))
+                        cte = avgProps['CTE']
+
+                        # Get required temperature change relative to base temperature
+                        temp_delta = (vol_delta / (v0 * cte))
+
+                        # Get base temperature
+                        temp_base = (self.getThermal())[1]
+
+                        # Add a temperature control element
+                        self.addTempControl((x, y, z), temp_base+temp_delta)
+
+    def saveTempControls(self, filename: str, figure: bool = False):
+        """
+        Save the temperature control elements applied to a model to a .csv file.
+
+        :param filename: File name
+        :param figure: Enable/disable exporting a figure as well
+        :return: None
+        """
+        f = open(filename + '.csv', 'w+')
+        print('Saving file: ' + f.name)
+        f.write('X,Y,Z,Temperature (deg C)\n')
+        for i in range(len(self.__tempControls)):
+            f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
+        f.close()
+
+        if figure:
+            # Get plot data
+            points = np.array(self.__tempControls)
+            xs = points[:, 0]
+            ys = points[:, 1]
+            zs = points[:, 2]
+            temps = points[:, 3]
+            colors = np.array(abs((temps - np.min(temps)) / (np.max(temps) - np.min(temps))), dtype=np.str)  # Grayscale range
+
+            # Plot results
+            fig = plt.figure()
+            ax1 = fig.add_subplot(121)
+            ax1.scatter(zs, ys, c=colors, marker='s')
+            ax1.axis('equal')
+            ax1.set_title('Side')
+            ax2 = fig.add_subplot(122)
+            ax2.scatter(xs, ys, c=colors, marker='s')
+            ax2.axis('equal')
+            ax2.set_title('Top')
+
+            # Save figure
+            print('Saving file: ' + filename + '.png')
+            plt.savefig(filename + '.png')
+
     # Export simulation ##################################
     # Export simulation object to .vxa file for import into VoxCad or Voxelyze
     def saveVXA(self, filename: str, compression: bool = False):
@@ -556,6 +701,7 @@ class Simulation:
         self.writeSimData(f)
         self.writeEnvironmentData(f)
         self.writeSensors(f)
+        self.writeTempControls(f)
         self.__model.writeVXCData(f, compression)
         f.write('</VXA>\n')
 
@@ -676,18 +822,152 @@ class Simulation:
         f.write('<Sensors>\n')
         for sensor in self.__sensors:
             f.write('  <Sensor>\n')
-            f.write('    <X_Index>' + str(int(sensor[0])) + '</X_Index>\n')
-            f.write('    <Y_Index>' + str(int(sensor[1])) + '</Y_Index>\n')
-            f.write('    <Z_Index>' + str(int(sensor[2])) + '</Z_Index>\n')
             f.write('    <Location>' + str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
             f.write('  </Sensor>\n')
         f.write('</Sensors>\n')
 
-    def launchSim(self, filename: str = 'temp', delete_files: bool = True):
+    def writeTempControls(self, f: TextIO):
         """
-        Launch a Simulation object in VoxCad.
+        Write temperature control element to a text file using the .vxa format.
 
-        This function requires VoxCad to be located on the system PATH.
+        :param f: File to write to
+        :return: None
+        """
+        f.write('<TempControls>\n')
+        for element in self.__tempControls:
+            f.write('  <Element>\n')
+            f.write('    <Location>' + str(element[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
+            f.write('    <Temperature>' + str(element[3]).replace('[', '').replace(',', '').replace(']', '') + '</Temperature>\n')
+            f.write('  </Element>\n')
+        f.write('</TempControls>\n')
+
+    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False):
+        """
+        Run a Simulation object using Voxelyze.
+
+        This function will create a .vxa file, run the file with Voxelyze, and then load the .xml results file into
+        the results attribute of the Simulation object. Enabling delete_files will delete both the .vxa and .xml files
+        once the results have been loaded.
+
+        :param filename: File name for .vxa and .xml files
+        :param value_map: Index of the desired value map type
+        :param export_stl: Enable/disable exporting an stl file of the result
+        :param delete_files: Enable/disable deleting simulation file when process is complete
+        :param voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
+        :return: None
+        """
+        # Create simulation file
+        self.saveVXA(filename)
+
+        if voxelyze_on_path:
+            command_string = 'voxelyze '
+        else:
+            # Check OS type
+            if os.name.startswith('nt'):
+                # Windows - run Voxelyze with WSL
+                command_string = 'wsl ' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze'
+            else:
+                # Linux - run Voxelyze directly
+                command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
+
+        command_string = command_string + ' -f ' + filename + '.vxa -o ' + filename + '.xml -vm ' + str(value_map) + ' -p'
+
+        if export_stl:
+            command_string = command_string + ' -stl ' + filename + '.stl'
+
+        print('Launching Voxelyze using: ' + command_string)
+        p = subprocess.Popen(command_string, shell=True)
+        p.wait()
+
+        # Open simulation results
+        f = open(filename + '.xml', 'r')
+        print('Opening file: ' + f.name)
+        data = f.readlines()
+        f.close()
+
+        # Clear any previous results
+        self.results = []
+
+        # Find start and end locations for individual sensors
+        startLoc = []
+        endLoc = []
+        for row in tqdm(range(len(data)), desc='Finding sensor tags'):
+            data[row] = data[row].replace('\t', '')
+            if data[row][:-1] == '<Sensor>':
+                startLoc.append(row)
+            elif data[row][:-1] == '</Sensor>':
+                endLoc.append(row)
+
+        # Read the data from each sensor
+        for sensor in tqdm(range(len(startLoc)), desc='Reading sensor results'):
+            # Create a dictionary to hold the current sensor results
+            sensorResults = {}
+
+            # Read the data from each sensor tag
+            for row in range(startLoc[sensor]+1, endLoc[sensor]):
+                # Determine the current tag
+                tag = ''
+                for col in range(1, len(data[row])):
+                    if data[row][col] == '>':
+                        tag = data[row][1:col]
+                        break
+
+                # Remove the tags and newline to determine the current value
+                data[row] = data[row].replace('<'+tag+'>', '').replace('</'+tag+'>', '')
+                value = data[row][:-1]
+
+                # Combine the current tag and value
+                if tag == 'Location':
+                    coords =  tuple(map(int, value.split(' ')))
+                    x = coords[0] + self.__model.coords[0]
+                    y = coords[1] + self.__model.coords[1]
+                    z = coords[2] + self.__model.coords[2]
+                    currentResult = {tag:(x, y, z)}
+                elif ' ' in value:
+                    currentResult = {tag:tuple(map(float, value.split(' ')))}
+                else:
+                    currentResult = {tag:float(value)}
+
+                # Add the current tag and value to the sensor results dictionary
+                sensorResults.update(currentResult)
+
+            # Append the results dictionary for the current sensor to the simulation results list
+            self.results.append(sensorResults)
+
+        if os.path.exists('value_map.txt'):
+            # Open simulation value map results
+            f = open('value_map.txt', 'r')
+            print('Opening file: ' + f.name)
+            data = f.readlines()
+            f.close()
+
+            # Clear any previous results
+            self.valueMap = np.zeros_like(self.__model.voxels, dtype=np.float32)
+
+            # Get map size
+            x_len = self.valueMap.shape[0]
+            y_len = self.valueMap.shape[1]
+            z_len = self.valueMap.shape[2]
+
+            for z in tqdm(range(z_len), desc='Loading layers'):
+                vals = np.array(data[z][:-2].split(","), dtype=np.float32)
+                for y in range(y_len):
+                    self.valueMap[:, y, z] = vals[y*x_len:(y+1)*x_len]
+
+        # Remove temporary files
+        if delete_files:
+            print('Removing file: ' + filename + '.vxa')
+            os.remove(filename + '.vxa')
+            print('Removing file: ' + filename + '.xml')
+            os.remove(filename + '.xml')
+
+            if os.path.exists('value_map.txt'):
+                print('Removing file: value_map.txt')
+                os.remove('value_map.txt')
+
+    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False):
+        """
+        Run a Simulation object using the VoxCad GUI.
 
         ----
 
@@ -699,17 +979,31 @@ class Simulation:
 
         ``simulation.setStopCondition(StopCondition.TIME_VALUE, 0.01)``
 
-        ``simulation.launchSim('collision_sim_1', delete_files=False)``
+        ``simulation.runSimVoxCad('collision_sim_1', delete_files=False)``
 
         ----
 
         :param filename: File name
         :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
-        :return:
+        :param voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
+        :return: None
         """
         self.saveVXA(filename)
 
-        command_string = 'voxcad ' + filename + '.vxa'
+        if voxcad_on_path:
+            command_string = 'voxcad '
+        else:
+            # Check OS type
+            if os.name.startswith('nt'):
+                # Windows
+                command_string = os.path.dirname(os.path.realpath(__file__)) + '\\utils\\VoxCad.exe '
+            else:
+                # Linux
+                command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/VoxCad '
+
+        command_string = command_string + filename + '.vxa'
+
+        print('Launching VoxCad using: ' + command_string)
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 
