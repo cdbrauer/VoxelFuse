@@ -564,13 +564,36 @@ class Simulation:
         element = [x, y, z, temperature]
         self.__tempControls.append(element)
 
-    def setTempControlsFromVolumeValueMap(self, valueMap = None):
+    def applyTempMap(self, valueMap):
+        """
+        Set the simulation temperature control elements based on a value map of target temperatures.
+
+        :param valueMap: Array of target temperatures for each voxel
+        :return:
+        """
+
+        # Clear any existing temp controls
+        self.clearTempControls()
+
+        # Get map size
+        x_len = valueMap.shape[0]
+        y_len = valueMap.shape[1]
+        z_len = valueMap.shape[2]
+
+        # Find required temperature change at each voxel
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if abs(valueMap[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
+                        self.addTempControl((x, y, z), valueMap[x, y, z])
+
+    def applyVolumeMap(self, valueMap = None):
         """
         Set the simulation temperature control elements based on a value map of target volumes.
 
         If a valueMap is not specified, the Simulation object's value map attribute will
         be used. To update this attribute, first use ``runSim(value_map=10)`` to get the
-        result volumes from running the simulation with any previous temp control settings.
+        result volumes from running the simulation with any previous settings.
 
         :param valueMap: Array of target volumes for each voxel
         :return:
@@ -598,8 +621,8 @@ class Simulation:
                         vol_delta = valueMap[x, y, z] - v0
 
                         # Get CTE value
-                        # TODO: Create a function for getting material properties of a voxel
-                        cte = -0.02  # material_properties[manipulatorModel.voxels[x, y, z]]['CTE']
+                        avgProps = self.__model.getVoxelProperties((x, y, z))
+                        cte = avgProps['CTE']
 
                         # Get required temperature change relative to base temperature
                         temp_delta = (vol_delta / (v0 * cte))
@@ -609,29 +632,6 @@ class Simulation:
 
                         # Add a temperature control element
                         self.addTempControl((x, y, z), temp_base+temp_delta)
-
-    def setTempControlsFromTempValueMap(self, valueMap):
-        """
-        Set the simulation temperature control elements based on a value map of target temperatures.
-
-        :param valueMap: Array of target temperatures for each voxel
-        :return:
-        """
-
-        # Clear any existing temp controls
-        self.clearTempControls()
-
-        # Get map size
-        x_len = valueMap.shape[0]
-        y_len = valueMap.shape[1]
-        z_len = valueMap.shape[2]
-
-        # Find required temperature change at each voxel
-        for x in range(x_len):
-            for y in range(y_len):
-                for z in range(z_len):
-                    if abs(valueMap[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
-                        self.addTempControl((x, y, z), valueMap[x, y, z])
 
     def saveTempControls(self, filename: str, figure: bool = False):
         """
@@ -841,62 +841,14 @@ class Simulation:
             f.write('  </Element>\n')
         f.write('</TempControls>\n')
 
-    def launchSim(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False):
-        """
-        Launch a Simulation object in VoxCad.
-
-        This function requires VoxCad to be located on the system PATH.
-
-        ----
-
-        Example:
-
-        ``simulation = Simulation(modelResult)``
-
-        ``simulation.setCollision()``
-
-        ``simulation.setStopCondition(StopCondition.TIME_VALUE, 0.01)``
-
-        ``simulation.launchSim('collision_sim_1', delete_files=False)``
-
-        ----
-
-        :param filename: File name
-        :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
-        :param voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
-        :return: None
-        """
-        self.saveVXA(filename)
-
-        if voxcad_on_path:
-            command_string = 'voxcad '
-        else:
-            # Check OS type
-            if os.name.startswith('nt'):
-                # Windows
-                command_string = os.path.dirname(os.path.realpath(__file__)) + '\\utils\\VoxCad.exe '
-            else:
-                # Linux
-                command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/VoxCad '
-
-        command_string = command_string + filename + '.vxa'
-
-        print('Launching VoxCad using: ' + command_string)
-        p = subprocess.Popen(command_string, shell=True)
-        p.wait()
-
-        if delete_files:
-            print('Removing file: ' + filename + '.vxa')
-            os.remove(filename + '.vxa')
-
     def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False):
         """
         Run a Simulation object using Voxelyze.
 
         This function will create a .vxa file, run the file with Voxelyze, and then load the .xml results file into
         the results attribute of the Simulation object. Enabling delete_files will delete both the .vxa and .xml files
-        once the results have been loaded. This function requires Voxelyze to be located on the system PATH.
-s
+        once the results have been loaded.
+
         :param filename: File name for .vxa and .xml files
         :param value_map: Index of the desired value map type
         :param export_stl: Enable/disable exporting an stl file of the result
@@ -1012,3 +964,49 @@ s
             if os.path.exists('value_map.txt'):
                 print('Removing file: value_map.txt')
                 os.remove('value_map.txt')
+
+    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False):
+        """
+        Run a Simulation object using the VoxCad GUI.
+
+        ----
+
+        Example:
+
+        ``simulation = Simulation(modelResult)``
+
+        ``simulation.setCollision()``
+
+        ``simulation.setStopCondition(StopCondition.TIME_VALUE, 0.01)``
+
+        ``simulation.runSimVoxCad('collision_sim_1', delete_files=False)``
+
+        ----
+
+        :param filename: File name
+        :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
+        :param voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
+        :return: None
+        """
+        self.saveVXA(filename)
+
+        if voxcad_on_path:
+            command_string = 'voxcad '
+        else:
+            # Check OS type
+            if os.name.startswith('nt'):
+                # Windows
+                command_string = os.path.dirname(os.path.realpath(__file__)) + '\\utils\\VoxCad.exe '
+            else:
+                # Linux
+                command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/VoxCad '
+
+        command_string = command_string + filename + '.vxa'
+
+        print('Launching VoxCad using: ' + command_string)
+        p = subprocess.Popen(command_string, shell=True)
+        p.wait()
+
+        if delete_files:
+            print('Removing file: ' + filename + '.vxa')
+            os.remove(filename + '.vxa')

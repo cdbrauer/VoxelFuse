@@ -25,4 +25,4 @@ if __name__=='__main__':
     simulation.addBoundaryConditionBox() # Add a box boundary condition with default settings (fixed constraint, YZ plane at X=0)
     simulation.addBoundaryConditionBox(position=(0.99, 0, 0), size=(0.01, 0.5, 1.0), fixed_dof=0b111110, force=(30, 0, 0)) # Add a boundary condition at X = max, apply a 30N force
     simulation.addBoundaryConditionBox(position=(0.99, 0.5, 0), size=(0.01, 0.5, 1.0), fixed_dof=0b111110, force=(30, 0, 0)) # Add a boundary condition at X = max, apply a 30N force
-    simulation.launchSim()  # Launch simulation
+    simulation.runSimVoxCad()  # Launch simulation

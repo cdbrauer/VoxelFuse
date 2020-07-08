@@ -1491,6 +1491,37 @@ class VoxelModel:
         volumeMM3 = volumeVoxels * ((1/self.resolution)**3)
         return volumeVoxels, volumeMM3
 
+    def getMaterialProperties(self, material):
+        """
+        Get the average material properties of a row in a model's material array.
+
+        :param material: Material index
+        :return: Dictionary of material properties
+        """
+        avgProps = {}
+        for key in material_properties[0]:
+            if key == 'name' or key == 'process':
+                string = ''
+                for i in range(len(material_properties)):
+                    if self.materials[material][i + 1] > 0:
+                        string = string + material_properties[i][key] + ' '
+                avgProps.update({key: string})
+            elif key == 'MM' or key == 'FM':
+                var = 0
+                for i in range(len(material_properties)):
+                    if self.materials[material][i + 1] > 0:
+                        var = max(var, material_properties[i][key])
+                avgProps.update({key: var})
+            else:
+                var = 0
+                for i in range(len(material_properties)):
+                    var = var + self.materials[material][i + 1] * material_properties[i][key]
+                avgProps.update({key: var})
+        return avgProps
+
+    def getVoxelProperties(self, coords: Tuple[int, int, int]):
+        return self.getMaterialProperties(self.voxels[coords[0], coords[1], coords[2]])
+
     # Manufacturing Features ##############################
 
     def projection(self, direction: Dir, material: int = 1):
@@ -1933,25 +1964,7 @@ class VoxelModel:
         # Materials
         f.write('  <Palette>\n')
         for row in tqdm(range(1, len(self.materials[:, 0])), desc='Writing materials'):
-            avgProps = {}
-            for key in material_properties[0]:
-                if key == 'name' or key == 'process':
-                    string = ''
-                    for i in range(len(material_properties)):
-                        if self.materials[row][i+1] > 0:
-                            string = string + material_properties[i][key] + ' '
-                    avgProps.update({key: string})
-                elif key == 'MM' or key == 'FM':
-                    var = 0
-                    for i in range(len(material_properties)):
-                        if self.materials[row][i + 1] > 0:
-                            var = max(var, material_properties[i][key])
-                    avgProps.update({key: var})
-                else:
-                    var = 0
-                    for i in range(len(material_properties)):
-                        var = var + self.materials[row][i + 1] * material_properties[i][key]
-                    avgProps.update({key: var})
+            avgProps = self.getMaterialProperties(row)
 
             f.write('    <Material ID="' + str(row) + '">\n')
             f.write('      <MatType>' + str(0) + '</MatType>\n')
