@@ -19,6 +19,7 @@ Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at 
 - Conversion of voxel data to mesh surfaces
 - Model rendering with grids and axes
 - VoxCad simulation configuration
+- Voxelyze simulation configuration/execution
 - .vf, .vox, and .stl file import
 - .vf, .vxc, .vxa, and .stl file export
 - .gcode file modification
@@ -29,9 +30,11 @@ The voxelfuse library can be installed using pip.
 
     pip3 install voxelfuse
 
-To use the .stl file import commands/examples, [Gmsh](http://gmsh.info/) must also be installed and on the system path.
+[Gmsh](http://gmsh.info/) is used for .stl file import and Windows/Linux binaries are included with the library.
 
-To use the simulation commands/examples, [VoxCad](https://sites.google.com/site/voxcadproject/) must also be installed and on the system path.
+[VoxCad/Voxelyze](https://sites.google.com/site/voxcadproject/) are used for simulation features. Windows/Linux
+binaries for VoxCad are included with the library. A Linux binary for Voxelyze is included which can also be used on
+Windows if [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) is configured.
 
 ## Templates
 
@@ -82,14 +85,14 @@ Template for creating scripts using VoxCad simulation:
 
         # Create simulation and launch
         simulation = Simulation(modelIn)
-        simulation.launchSim()
+        simulation.runSimVoxCad()
 
 ## .vox File Generation
-If desired, input models can be created in a .vox file format to allow different materials to be specified in a single model.  This also speeds up import times. My process using [MagicaVoxel](https://ephtracy.github.io) is as follows:
+If desired, input models can be created in a .vox file format to allow different materials to be specified in a single model.  This also speeds up import times compared to .stl files. My process using [MagicaVoxel](https://ephtracy.github.io) is as follows:
 
 1. Use the "Open" button under the "Palette" section to open the [color-palette-11mat.png](../master/images/color-palette-11mat.png) file. This will give you 11 colors that correspond to the materials defined in materials.py
 2. Create your model. By default the library will use a scale of 1mm per voxel when importing/exporting.
-3. Save the model as a .vox file using the "export" function  (NOT the "save" function).
+3. Save the model as a .vox file using the "export" function (NOT the "save" function).
 
 Using MagicaVoxel and the .vox format will limit you to using distinct voxel materials. The library's import function will convert these files to a data format that allows material mixing.
 

@@ -1520,6 +1520,12 @@ class VoxelModel:
         return avgProps
 
     def getVoxelProperties(self, coords: Tuple[int, int, int]):
+        """
+        Get the average material properties of a specific voxel.
+
+        :param coords: Voxel coordinates
+        :return: Dictionary of material properties
+        """
         return self.getMaterialProperties(self.voxels[coords[0], coords[1], coords[2]])
 
     # Manufacturing Features ##############################
