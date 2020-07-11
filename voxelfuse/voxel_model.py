@@ -15,7 +15,7 @@ import base64
 from enum import Enum
 from typing import Tuple, TextIO
 from pyvox.parser import VoxParser
-from voxelfuse.materials import material_properties
+from voxelfuse.materials import *
 from scipy import ndimage
 from numba import njit, prange
 from tqdm import tqdm
@@ -1520,6 +1520,27 @@ class VoxelModel:
                 avgProps.update({key: var})
         return avgProps
 
+    def getSSData(self, material):
+        """
+        Get the stress-strain data for a row in a model's material array.
+
+        This is currently returned based on the material present in the highest percentage.
+
+        TODO: Make this average multiple stress-strain curves
+
+        :param material: Material index
+        :return: Dictionary of material properties
+        """
+        materialIndex = self.materials[material][1:].argmax()
+
+        try:
+            SSData = {'stress':ss_data[materialIndex]['stress'], 'strain':ss_data[materialIndex]['strain']}
+        except KeyError:
+            print('Stress-strain data not available for ' + ss_data[materialIndex]['name'])
+            SSData = None
+
+        return SSData
+
     def getVoxelProperties(self, coords: Tuple[int, int, int]):
         """
         Get the average material properties of a specific voxel.
@@ -1972,7 +1993,6 @@ class VoxelModel:
         f.write('  <Palette>\n')
         for row in tqdm(range(1, len(self.materials[:, 0])), desc='Writing materials'):
             avgProps = self.getMaterialProperties(row)
-
             f.write('    <Material ID="' + str(row) + '">\n')
             f.write('      <MatType>' + str(0) + '</MatType>\n')
             f.write('      <Name>' + avgProps['name'][0:-1] + '</Name>\n')
@@ -1984,6 +2004,21 @@ class VoxelModel:
             f.write('      </Display>\n')
             f.write('      <Mechanical>\n')
             f.write('        <MatModel>' + str(int(avgProps['MM'])) + '</MatModel>\n')
+
+            if int(avgProps['MM']) == 3:
+                SSData = self.getSSData(row)
+                f.write('        <SSData>\n')
+                f.write('          <NumDataPts>' + str(len(SSData['strain'])) + '</NumDataPts>\n')
+                f.write('          <StrainData>\n')
+                for point in range(len(SSData['strain'])):
+                    f.write('            <Strain>' + str(SSData['strain'][point]) + '</Strain>\n')
+                f.write('          </StrainData>\n')
+                f.write('          <StressData>\n')
+                for point in range(len(SSData['stress'])):
+                    f.write('            <Stress>' + str(SSData['stress'][point]) + '</Stress>\n')
+                f.write('          </StressData>\n')
+                f.write('        </SSData>\n')
+
             f.write('        <Elastic_Mod>' + str(avgProps['E']) + '</Elastic_Mod>\n')
             f.write('        <Plastic_Mod>' + str(avgProps['Z']) + '</Plastic_Mod>\n')
             f.write('        <Yield_Stress>' + str(avgProps['eY']) + '</Yield_Stress>\n')
