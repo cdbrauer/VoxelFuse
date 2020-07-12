@@ -674,7 +674,7 @@ class Simulation:
 
     # Export simulation ##################################
     # Export simulation object to .vxa file for import into VoxCad or Voxelyze
-    def saveVXA(self, filename: str, compression: bool = False):
+    def saveVXA(self, filename: str, compression: bool = False,  E_override: float = -1):
         """
         Save model data to a .vxa file
 
@@ -702,7 +702,7 @@ class Simulation:
         self.writeEnvironmentData(f)
         self.writeSensors(f)
         self.writeTempControls(f)
-        self.__model.writeVXCData(f, compression)
+        self.__model.writeVXCData(f, compression, E_override=E_override)
         f.write('</VXA>\n')
 
         f.close()
@@ -841,7 +841,7 @@ class Simulation:
             f.write('  </Element>\n')
         f.write('</TempControls>\n')
 
-    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False):
+    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False, E_override: float = -1):
         """
         Run a Simulation object using Voxelyze.
 
@@ -857,7 +857,7 @@ class Simulation:
         :return: None
         """
         # Create simulation file
-        self.saveVXA(filename)
+        self.saveVXA(filename, E_override=E_override)
 
         if voxelyze_on_path:
             command_string = 'voxelyze '
