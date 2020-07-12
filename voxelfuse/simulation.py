@@ -965,7 +965,7 @@ class Simulation:
                 print('Removing file: value_map.txt')
                 os.remove('value_map.txt')
 
-    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False):
+    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, E_override: float = -1):
         """
         Run a Simulation object using the VoxCad GUI.
 
@@ -988,7 +988,7 @@ class Simulation:
         :param voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
         :return: None
         """
-        self.saveVXA(filename)
+        self.saveVXA(filename, E_override=E_override)
 
         if voxcad_on_path:
             command_string = 'voxcad '
