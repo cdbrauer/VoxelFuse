@@ -1883,7 +1883,7 @@ class VoxelModel:
         coords = np.array(data[loc[0,0]][:-2].split(","), dtype=np.int16)
 
         if loc[6,0] > -1:
-            resolution = int(data[loc[6,0]][:-1])
+            resolution = float(data[loc[6,0]][:-1])
         else:
             resolution = 1
 
