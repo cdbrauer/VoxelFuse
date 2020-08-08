@@ -121,7 +121,7 @@ class VoxelModel:
         return cls(v2, materials, coords=coords, resolution=resolution)
 
     @classmethod
-    def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1, gmsh_on_path: bool = False):
         """
         Create a VoxelModel from an imported mesh file.
 
@@ -137,9 +137,10 @@ class VoxelModel:
         :param coords: Model origin coordinates
         :param material: Material index corresponding to materials.py
         :param resolution: Number of voxels per mm
+        :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
         :return: VoxelModel
         """
-        data = makeMesh(filename, True)
+        data = makeMesh(filename, True, gmsh_on_path)
 
         points = data.points
 

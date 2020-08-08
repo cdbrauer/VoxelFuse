@@ -17,9 +17,13 @@ from voxelfuse.plot import Plot
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
+    # Import model file
     model = VoxelModel.fromMeshFile('axes.stl', (0, 0, 0))
 
-    # Create mesh data
+    # To use a copy of gmsh on the system path, replace line 21 with the following:
+    # model = VoxelModel.fromMeshFile('axes.stl', (0, 0, 0), gmsh_on_path=True)
+
+    # Create new mesh data for plotting
     mesh1 = Mesh.fromVoxelModel(model)
 
     # Create plot
