@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
-<title>voxelfuse_examples API documentation</title>
-<meta name="description" content="" />
+<title>voxelfuse_examples.infill.infill API documentation</title>
+<meta name="description" content="Multimaterial gyroid infill generation …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,54 +17,49 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Namespace <code>voxelfuse_examples</code></h1>
+<h1 class="title">Module <code>voxelfuse_examples.infill.infill</code></h1>
 </header>
 <section id="section-intro">
+<p>Multimaterial gyroid infill generation.</p>
+<hr>
+<p>Copyright 2020 - Cole Brauer, Dan Aukes</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Multimaterial gyroid infill generation.
+
+----
+
+Copyright 2020 - Cole Brauer, Dan Aukes
+&#34;&#34;&#34;
+
+from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.mesh import Mesh
+
+if __name__==&#39;__main__&#39;:
+    # User preferences
+    modelName = &#39;joint2.2.vox&#39;
+    blurRadius = 10
+
+    # Create base model
+    modelIn = VoxelModel.fromVoxFile(modelName)
+
+    # Apply blur
+    modelBlur = modelIn.blur(blurRadius)
+
+    # Apply dither
+    modelResult = modelBlur.dither(blur=False)
+
+    # Create mesh data
+    for m in range(1, len(modelResult.materials)):
+        currentMaterial = modelResult.isolateMaterial(m)
+        currentMesh = Mesh.fromVoxelModel(currentMaterial)
+        currentMesh.export(&#39;output_&#39; + str(m) + &#39;.stl&#39;)</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="voxelfuse_examples.blurred_materials" href="blurred_materials/index.html">voxelfuse_examples.blurred_materials</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.fish_tail" href="fish_tail/index.html">voxelfuse_examples.fish_tail</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.gcode_modification" href="gcode_modification/index.html">voxelfuse_examples.gcode_modification</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.infill" href="infill/index.html">voxelfuse_examples.infill</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.lattice_generation" href="lattice_generation/index.html">voxelfuse_examples.lattice_generation</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.load_mesh" href="load_mesh/index.html">voxelfuse_examples.load_mesh</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.primitive_generation" href="primitive_generation/index.html">voxelfuse_examples.primitive_generation</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.strength_test_coupon" href="strength_test_coupon/index.html">voxelfuse_examples.strength_test_coupon</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.surface_voxels" href="surface_voxels/index.html">voxelfuse_examples.surface_voxels</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.voxelyze_integration" href="voxelyze_integration/index.html">voxelfuse_examples.voxelyze_integration</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -79,18 +74,9 @@
 <ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="voxelfuse_examples.blurred_materials" href="blurred_materials/index.html">voxelfuse_examples.blurred_materials</a></code></li>
-<li><code><a title="voxelfuse_examples.fish_tail" href="fish_tail/index.html">voxelfuse_examples.fish_tail</a></code></li>
-<li><code><a title="voxelfuse_examples.gcode_modification" href="gcode_modification/index.html">voxelfuse_examples.gcode_modification</a></code></li>
-<li><code><a title="voxelfuse_examples.infill" href="infill/index.html">voxelfuse_examples.infill</a></code></li>
-<li><code><a title="voxelfuse_examples.lattice_generation" href="lattice_generation/index.html">voxelfuse_examples.lattice_generation</a></code></li>
-<li><code><a title="voxelfuse_examples.load_mesh" href="load_mesh/index.html">voxelfuse_examples.load_mesh</a></code></li>
-<li><code><a title="voxelfuse_examples.primitive_generation" href="primitive_generation/index.html">voxelfuse_examples.primitive_generation</a></code></li>
-<li><code><a title="voxelfuse_examples.strength_test_coupon" href="strength_test_coupon/index.html">voxelfuse_examples.strength_test_coupon</a></code></li>
-<li><code><a title="voxelfuse_examples.surface_voxels" href="surface_voxels/index.html">voxelfuse_examples.surface_voxels</a></code></li>
-<li><code><a title="voxelfuse_examples.voxelyze_integration" href="voxelyze_integration/index.html">voxelfuse_examples.voxelyze_integration</a></code></li>
+<li><code><a title="voxelfuse_examples.infill" href="index.html">voxelfuse_examples.infill</a></code></li>
 </ul>
 </li>
 </ul>

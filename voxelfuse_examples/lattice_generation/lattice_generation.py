@@ -1,6 +1,11 @@
 """
-Copyright 2020
-Cole Brauer, Dan Aukes
+Lattice structure generation.
+
+Generate a lattice structure over a cylindrical region based on a template element file.
+
+----
+
+Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 # Import Libraries

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
-<title>voxelfuse_examples API documentation</title>
-<meta name="description" content="" />
+<title>voxelfuse_examples.lattice_generation.lattice_generation API documentation</title>
+<meta name="description" content="Lattice structure generation …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,54 +17,83 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Namespace <code>voxelfuse_examples</code></h1>
+<h1 class="title">Module <code>voxelfuse_examples.lattice_generation.lattice_generation</code></h1>
 </header>
 <section id="section-intro">
+<p>Lattice structure generation.</p>
+<p>Generate a lattice structure over a cylindrical region based on a template element file.</p>
+<hr>
+<p>Copyright 2020 - Cole Brauer, Dan Aukes</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Lattice structure generation.
+
+Generate a lattice structure over a cylindrical region based on a template element file.
+
+----
+
+Copyright 2020 - Cole Brauer, Dan Aukes
+&#34;&#34;&#34;
+
+# Import Libraries
+import PyQt5.QtGui as qg
+import sys
+import numpy as np
+from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.primitives import cylinder
+from voxelfuse.mesh import Mesh
+from voxelfuse.plot import Plot
+
+# Start Application
+if __name__==&#39;__main__&#39;:
+    app1 = qg.QApplication(sys.argv)
+
+    dilate_radius = 2
+
+    # Import element template
+    T = VoxelModel.fromVoxFile(&#39;lattice_element_1m.vox&#39;)
+    T = T.dilateBounded(dilate_radius)
+
+    # Create target volume model
+    M = cylinder(30, 60).translate((30,30,0))
+    M = M.setCoords((0,0,0))
+
+    t = T.voxels.shape[0]
+    size = M.voxels.shape
+
+    # Create empty model to hold result
+    V = VoxelModel.empty(size)
+
+    # Add tiled lattice elements
+    for x in range(int(np.ceil(size[0]/t))):
+        for y in range(int(np.ceil(size[1] / t))):
+            for z in range(int(np.ceil(size[2]/t))):
+                T = T.setCoords((M.coords[0]+(x*t), M.coords[1]+(y*t), M.coords[2]+(z*t)))
+                V = V | T
+
+    # Intersect lattice with target volume
+    V = M &amp; V
+
+    # Create Mesh
+    mesh1 = Mesh.fromVoxelModel(T)
+    mesh2 = Mesh.fromVoxelModel(M)
+    mesh3 = Mesh.fromVoxelModel(V)
+
+    mesh1.export(&#39;T.stl&#39;)
+    mesh2.export(&#39;M.stl&#39;)
+    mesh3.export(&#39;V.stl&#39;)
+
+    # Create Plot
+    plot3 = Plot(mesh3)
+    plot3.show()
+    app1.processEvents()
+    app1.exec_()</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="voxelfuse_examples.blurred_materials" href="blurred_materials/index.html">voxelfuse_examples.blurred_materials</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.fish_tail" href="fish_tail/index.html">voxelfuse_examples.fish_tail</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.gcode_modification" href="gcode_modification/index.html">voxelfuse_examples.gcode_modification</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.infill" href="infill/index.html">voxelfuse_examples.infill</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.lattice_generation" href="lattice_generation/index.html">voxelfuse_examples.lattice_generation</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.load_mesh" href="load_mesh/index.html">voxelfuse_examples.load_mesh</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.primitive_generation" href="primitive_generation/index.html">voxelfuse_examples.primitive_generation</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.strength_test_coupon" href="strength_test_coupon/index.html">voxelfuse_examples.strength_test_coupon</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.surface_voxels" href="surface_voxels/index.html">voxelfuse_examples.surface_voxels</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.voxelyze_integration" href="voxelyze_integration/index.html">voxelfuse_examples.voxelyze_integration</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -79,18 +108,9 @@
 <ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="voxelfuse_examples.blurred_materials" href="blurred_materials/index.html">voxelfuse_examples.blurred_materials</a></code></li>
-<li><code><a title="voxelfuse_examples.fish_tail" href="fish_tail/index.html">voxelfuse_examples.fish_tail</a></code></li>
-<li><code><a title="voxelfuse_examples.gcode_modification" href="gcode_modification/index.html">voxelfuse_examples.gcode_modification</a></code></li>
-<li><code><a title="voxelfuse_examples.infill" href="infill/index.html">voxelfuse_examples.infill</a></code></li>
-<li><code><a title="voxelfuse_examples.lattice_generation" href="lattice_generation/index.html">voxelfuse_examples.lattice_generation</a></code></li>
-<li><code><a title="voxelfuse_examples.load_mesh" href="load_mesh/index.html">voxelfuse_examples.load_mesh</a></code></li>
-<li><code><a title="voxelfuse_examples.primitive_generation" href="primitive_generation/index.html">voxelfuse_examples.primitive_generation</a></code></li>
-<li><code><a title="voxelfuse_examples.strength_test_coupon" href="strength_test_coupon/index.html">voxelfuse_examples.strength_test_coupon</a></code></li>
-<li><code><a title="voxelfuse_examples.surface_voxels" href="surface_voxels/index.html">voxelfuse_examples.surface_voxels</a></code></li>
-<li><code><a title="voxelfuse_examples.voxelyze_integration" href="voxelyze_integration/index.html">voxelfuse_examples.voxelyze_integration</a></code></li>
+<li><code><a title="voxelfuse_examples.lattice_generation" href="index.html">voxelfuse_examples.lattice_generation</a></code></li>
 </ul>
 </li>
 </ul>

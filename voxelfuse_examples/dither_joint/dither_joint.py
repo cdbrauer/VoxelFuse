@@ -1,5 +1,7 @@
 """
-Multimaterial 3D printing with dithering.
+Material Dithering.
+
+Use dithering to add graded material transitions to a multi-material part.
 
 ----
 
@@ -20,7 +22,7 @@ modelIn = VoxelModel.fromVoxFile(modelName)
 modelBlur = modelIn.blur(blurRadius)
 
 # Apply dither
-modelDither = modelBlur.dither(blur=False)
+modelDither = modelBlur.dither(blur=False) # Blur operation separated for clarity
 
 # Create mesh data
 for m in range(1, len(modelDither.materials)):
