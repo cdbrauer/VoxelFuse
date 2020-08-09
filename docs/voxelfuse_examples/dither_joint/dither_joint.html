@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
-<title>voxelfuse_examples.infill.infill API documentation</title>
-<meta name="description" content="Infill Generation …" />
+<title>voxelfuse_examples.dither_joint.dither_joint API documentation</title>
+<meta name="description" content="Material Dithering …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,11 +17,11 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>voxelfuse_examples.infill.infill</code></h1>
+<h1 class="title">Module <code>voxelfuse_examples.dither_joint.dither_joint</code></h1>
 </header>
 <section id="section-intro">
-<p>Infill Generation.</p>
-<p>Generate a part containing a shell of one material, and infill of another material.</p>
+<p>Material Dithering.</p>
+<p>Use dithering to add graded material transitions to a multi-material part.</p>
 <hr>
 <p>Copyright 2020 - Cole Brauer, Dan Aukes</p>
 <details class="source">
@@ -29,9 +29,9 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
-Infill Generation.
+Material Dithering.
 
-Generate a part containing a shell of one material, and infill of another material.
+Use dithering to add graded material transitions to a multi-material part.
 
 ----
 
@@ -39,40 +39,25 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 &#34;&#34;&#34;
 
 from voxelfuse.voxel_model import VoxelModel
-from voxelfuse.primitives import sphere
-from voxelfuse.periodic import gyroid
 from voxelfuse.mesh import Mesh
 
 if __name__==&#39;__main__&#39;:
     # User preferences
-    modelRadius = 60
-    infillScale = 30
-    infillThickness = 1
-    shellThickness = 1
+    modelName = &#39;joint2.2.vox&#39;
+    blurRadius = 10
 
-    # Create volume model
-    volume = sphere(radius=modelRadius, material=3)
-    volume = volume.setCoords((0,0,0))
+    # Import model
+    modelIn = VoxelModel.fromVoxFile(modelName)
 
-    # Create infill structure
-    infillN, infillP = gyroid(size=(modelRadius*2, modelRadius*2, modelRadius*2), scale=infillScale)
-    infillN = infillN.dilate(infillThickness)
-    infillP = infillP.dilate(infillThickness)
-    infill = infillN &amp; infillP
+    # Apply blur
+    modelBlur = modelIn.blur(blurRadius)
 
-    # Hollow out volume model
-    hollow = volume.erode(shellThickness)
-    shell = volume.difference(hollow)
-
-    # Trim infill model
-    infill = infill &amp; hollow
-
-    # Combine infill and shell
-    result = shell | infill
+    # Apply dither
+    modelDither = modelBlur.dither(blur=False) # Blur operation separated for clarity
 
     # Create mesh data
-    for m in range(1, len(result.materials)):
-        currentMaterial = result.isolateMaterial(m)
+    for m in range(1, len(modelDither.materials)):
+        currentMaterial = modelDither.isolateMaterial(m)
         currentMesh = Mesh.fromVoxelModel(currentMaterial)
         currentMesh.export(&#39;output_&#39; + str(m) + &#39;.stl&#39;)</code></pre>
 </details>
@@ -94,7 +79,7 @@ if __name__==&#39;__main__&#39;:
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="voxelfuse_examples.infill" href="index.html">voxelfuse_examples.infill</a></code></li>
+<li><code><a title="voxelfuse_examples.dither_joint" href="index.html">voxelfuse_examples.dither_joint</a></code></li>
 </ul>
 </li>
 </ul>
