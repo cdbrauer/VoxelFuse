@@ -2078,10 +2078,10 @@ def makeMesh(filename: str, delete_files: bool = True, gmsh_on_path: bool = Fals
         # Check OS type
         if os.name.startswith('nt'):
             # Windows
-            command_string = os.path.dirname(os.path.realpath(__file__)) + '\\utils\\gmsh.exe'
+            command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\gmsh.exe"'
         else:
             # Linux
-            command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/gmsh'
+            command_string = f'"{os.path.dirname(os.path.realpath(__file__))}/utils/gmsh"'
 
     command_string = command_string + ' output.geo -3 -format msh'
 
