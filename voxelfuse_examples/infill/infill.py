@@ -21,11 +21,11 @@ if __name__=='__main__':
     shellThickness = 1
 
     # Create volume model
-    volume = sphere(radius=modelRadius, material=3)
+    volume = sphere(radius=modelRadius, material=1)
     volume = volume.setCoords((0,0,0))
 
     # Create infill structure
-    infillN, infillP = gyroid(size=(modelRadius*2, modelRadius*2, modelRadius*2), scale=infillScale)
+    infillN, infillP = gyroid(size=(modelRadius*2, modelRadius*2, modelRadius*2), scale=infillScale, material1=2, material2=2)
     infillN = infillN.dilate(infillThickness)
     infillP = infillP.dilate(infillThickness)
     infill = infillN & infillP
