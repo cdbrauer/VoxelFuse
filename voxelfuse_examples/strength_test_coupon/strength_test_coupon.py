@@ -46,7 +46,7 @@ if __name__=='__main__':
             end2 = VoxelModel.fromMeshFile('end2x10.stl', (980, 0, 0), 1)
         else:
             end1 = VoxelModel.fromMeshFile('end1.stl', (0, 0, 0), 1)
-            center = VoxelModel.fromMeshFile('center.stl', (67, 3, 0), 2)
+            center = VoxelModel.fromMeshFile('center.stl', (66, 4, 0), 2)
             end2 = VoxelModel.fromMeshFile('end2.stl', (98, 0, 0), 1)
 
         # Combine components

@@ -150,7 +150,7 @@ class VoxelModel:
         return cls(v2, materials, coords=coords, resolution=resolution)
 
     @classmethod
-    def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1, gmsh_on_path: bool = False):
         &#34;&#34;&#34;
         Create a VoxelModel from an imported mesh file.
 
@@ -166,9 +166,10 @@ class VoxelModel:
         :param coords: Model origin coordinates
         :param material: Material index corresponding to materials.py
         :param resolution: Number of voxels per mm
+        :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
         :return: VoxelModel
         &#34;&#34;&#34;
-        data = makeMesh(filename, True)
+        data = makeMesh(filename, True, gmsh_on_path)
 
         points = data.points
 
@@ -1208,6 +1209,21 @@ class VoxelModel:
         new_model = new_model.intersection(region)
         new_model = new_model.union(self)
         return new_model
+
+    def dither(self, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=True):
+        if radius == 0:
+            return VoxelModel.copy(self)
+
+        if blur:
+            new_model = self.blur(radius)
+            new_model = new_model.scaleValues()
+        else:
+            new_model = self.scaleValues()
+
+        full_model = toFullMaterials(new_model.voxels, new_model.materials, len(material_properties) + 1)
+        full_model = ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold)
+
+        return toIndexedMaterials(full_model, self, self.resolution)
 
     # Cleanup ##############################
 
@@ -2328,7 +2344,62 @@ def toIndexedMaterials(voxels, model, resolution):
                     new_materials = np.vstack((new_materials, m))
                     new_voxels[x, y, z] = len(new_materials) - 1
 
-    return VoxelModel(new_voxels, new_materials, coords=model.coords, resolution=resolution)</code></pre>
+    return VoxelModel(new_voxels, new_materials, coords=model.coords, resolution=resolution)
+
+@njit()
+def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len, error_spread_threshold):
+    if y &lt; y_len and x &lt; x_len and z &lt; z_len:
+        high = np.where(model[x, y, z, 1:] &gt; error_spread_threshold)[0]
+        if len(high) == 0:
+            model[x, y, z, i] += error * constant * model[x, y, z, 0]
+
+@njit()
+def ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold):
+    x_len = full_model.shape[0]
+    y_len = full_model.shape[1]
+    z_len = full_model.shape[2]
+
+    for z in range(z_len):
+        for y in range(y_len):
+            for x in range(x_len):
+                voxel = full_model[x, y, z]
+                if voxel[0] == 1.0:
+                    max_i = voxel[1:].argmax()+1
+                    for i in range(1, len(voxel)):
+                        if full_model[x, y, z, i] != 0:
+                            old = full_model[x, y, z, i]
+
+                            if i == max_i:
+                                full_model[x, y, z, i] = 1
+                            else:
+                                full_model[x, y, z, i] = 0
+
+                            error = old - full_model[x, y, z, i]
+
+                            if use_full:
+                                # Based on Fundamentals of 3D Halftoning by Lou and Stucki
+                                addError(full_model, error, 4/21, i, x+1, y, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x+2, y, z, x_len, y_len, z_len, error_spread_threshold)
+
+                                addError(full_model, error, 4/21, i, x, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x, y+2, z, x_len, y_len, z_len, error_spread_threshold)
+
+                                addError(full_model, error, 1/21, i, x+1, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x-1, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+
+                                addError(full_model, error, 1/21, i, x, y-1, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x-1, y, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x, y+1, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x+1, y, z+1, x_len, y_len, z_len, error_spread_threshold)
+
+                                addError(full_model, error, 4/21, i, x, y, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x, y, z+2, x_len, y_len, z_len, error_spread_threshold)
+                            else:
+                                addError(full_model, error, x_error, i, x+1, y, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, y_error, i, x, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, z_error, i, x, y, z+1, x_len, y_len, z_len, error_spread_threshold)
+
+    return full_model</code></pre>
 </details>
 </section>
 <section>
@@ -2338,6 +2409,23 @@ def toIndexedMaterials(voxels, model, resolution):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="voxelfuse.voxel_model.addError"><code class="name flex">
+<span>def <span class="ident">addError</span></span>(<span>model, error, constant, i, x, y, z, x_len, y_len, z_len, error_spread_threshold)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@njit()
+def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len, error_spread_threshold):
+    if y &lt; y_len and x &lt; x_len and z &lt; z_len:
+        high = np.where(model[x, y, z, 1:] &gt; error_spread_threshold)[0]
+        if len(high) == 0:
+            model[x, y, z, i] += error * constant * model[x, y, z, 0]</code></pre>
+</details>
+</dd>
 <dt id="voxelfuse.voxel_model.alignDims"><code class="name flex">
 <span>def <span class="ident">alignDims</span></span>(<span>modelA, modelB)</span>
 </code></dt>
@@ -2440,6 +2528,64 @@ different scales or that a resolution value has been incorrectly set.</p>
         return False
     else:
         return True</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.voxel_model.ditherOptimized"><code class="name flex">
+<span>def <span class="ident">ditherOptimized</span></span>(<span>full_model, use_full, x_error, y_error, z_error, error_spread_threshold)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@njit()
+def ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold):
+    x_len = full_model.shape[0]
+    y_len = full_model.shape[1]
+    z_len = full_model.shape[2]
+
+    for z in range(z_len):
+        for y in range(y_len):
+            for x in range(x_len):
+                voxel = full_model[x, y, z]
+                if voxel[0] == 1.0:
+                    max_i = voxel[1:].argmax()+1
+                    for i in range(1, len(voxel)):
+                        if full_model[x, y, z, i] != 0:
+                            old = full_model[x, y, z, i]
+
+                            if i == max_i:
+                                full_model[x, y, z, i] = 1
+                            else:
+                                full_model[x, y, z, i] = 0
+
+                            error = old - full_model[x, y, z, i]
+
+                            if use_full:
+                                # Based on Fundamentals of 3D Halftoning by Lou and Stucki
+                                addError(full_model, error, 4/21, i, x+1, y, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x+2, y, z, x_len, y_len, z_len, error_spread_threshold)
+
+                                addError(full_model, error, 4/21, i, x, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x, y+2, z, x_len, y_len, z_len, error_spread_threshold)
+
+                                addError(full_model, error, 1/21, i, x+1, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x-1, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+
+                                addError(full_model, error, 1/21, i, x, y-1, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x-1, y, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x, y+1, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x+1, y, z+1, x_len, y_len, z_len, error_spread_threshold)
+
+                                addError(full_model, error, 4/21, i, x, y, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x, y, z+2, x_len, y_len, z_len, error_spread_threshold)
+                            else:
+                                addError(full_model, error, x_error, i, x+1, y, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, y_error, i, x, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, z_error, i, x, y, z+1, x_len, y_len, z_len, error_spread_threshold)
+
+    return full_model</code></pre>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.findFilledVoxels"><code class="name flex">
@@ -3042,7 +3188,7 @@ Returns:</p></div>
         return cls(v2, materials, coords=coords, resolution=resolution)
 
     @classmethod
-    def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1, gmsh_on_path: bool = False):
         &#34;&#34;&#34;
         Create a VoxelModel from an imported mesh file.
 
@@ -3058,9 +3204,10 @@ Returns:</p></div>
         :param coords: Model origin coordinates
         :param material: Material index corresponding to materials.py
         :param resolution: Number of voxels per mm
+        :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
         :return: VoxelModel
         &#34;&#34;&#34;
-        data = makeMesh(filename, True)
+        data = makeMesh(filename, True, gmsh_on_path)
 
         points = data.points
 
@@ -4101,6 +4248,21 @@ Returns:</p></div>
         new_model = new_model.union(self)
         return new_model
 
+    def dither(self, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=True):
+        if radius == 0:
+            return VoxelModel.copy(self)
+
+        if blur:
+            new_model = self.blur(radius)
+            new_model = new_model.scaleValues()
+        else:
+            new_model = self.scaleValues()
+
+        full_model = toFullMaterials(new_model.voxels, new_model.materials, len(material_properties) + 1)
+        full_model = ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold)
+
+        return toIndexedMaterials(full_model, self, self.resolution)
+
     # Cleanup ##############################
 
     def removeNegatives(self):
@@ -5050,7 +5212,7 @@ def emptyLike(cls, voxel_model):
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.fromMeshFile"><code class="name flex">
-<span>def <span class="ident">fromMeshFile</span></span>(<span>filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
+<span>def <span class="ident">fromMeshFile</span></span>(<span>filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1, gmsh_on_path: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create a VoxelModel from an imported mesh file.</p>
@@ -5068,6 +5230,8 @@ def emptyLike(cls, voxel_model):
 <dd>Material index corresponding to materials.py</dd>
 <dt><strong><code>resolution</code></strong></dt>
 <dd>Number of voxels per mm</dd>
+<dt><strong><code>gmsh_on_path</code></strong></dt>
+<dd>Enable/disable using system gmsh rather than bundled gmsh</dd>
 <dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
 <dd>&nbsp;</dd>
 </dl></div>
@@ -5076,7 +5240,7 @@ def emptyLike(cls, voxel_model):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1, gmsh_on_path: bool = False):
     &#34;&#34;&#34;
     Create a VoxelModel from an imported mesh file.
 
@@ -5092,9 +5256,10 @@ def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), m
     :param coords: Model origin coordinates
     :param material: Material index corresponding to materials.py
     :param resolution: Number of voxels per mm
+    :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
     :return: VoxelModel
     &#34;&#34;&#34;
-    data = makeMesh(filename, True)
+    data = makeMesh(filename, True, gmsh_on_path)
 
     points = data.points
 
@@ -5828,6 +5993,31 @@ to inside corners.</p>
             new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
 
     return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.dither"><code class="name flex">
+<span>def <span class="ident">dither</span></span>(<span>self, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dither(self, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=True):
+    if radius == 0:
+        return VoxelModel.copy(self)
+
+    if blur:
+        new_model = self.blur(radius)
+        new_model = new_model.scaleValues()
+    else:
+        new_model = self.scaleValues()
+
+    full_model = toFullMaterials(new_model.voxels, new_model.materials, len(material_properties) + 1)
+    full_model = ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold)
+
+    return toIndexedMaterials(full_model, self, self.resolution)</code></pre>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.divide"><code class="name flex">
@@ -8090,8 +8280,10 @@ based on proximity to empty regions that are inaccessible to the removal process
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="two-column">
+<li><code><a title="voxelfuse.voxel_model.addError" href="#voxelfuse.voxel_model.addError">addError</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.alignDims" href="#voxelfuse.voxel_model.alignDims">alignDims</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.checkResolution" href="#voxelfuse.voxel_model.checkResolution">checkResolution</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.ditherOptimized" href="#voxelfuse.voxel_model.ditherOptimized">ditherOptimized</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.findFilledVoxels" href="#voxelfuse.voxel_model.findFilledVoxels">findFilledVoxels</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.generateMaterials" href="#voxelfuse.voxel_model.generateMaterials">generateMaterials</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.makeMesh" href="#voxelfuse.voxel_model.makeMesh">makeMesh</a></code></li>
@@ -8153,6 +8345,7 @@ based on proximity to empty regions that are inaccessible to the removal process
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.difference" href="#voxelfuse.voxel_model.VoxelModel.difference">difference</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.dilate" href="#voxelfuse.voxel_model.VoxelModel.dilate">dilate</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.dilateBounded" href="#voxelfuse.voxel_model.VoxelModel.dilateBounded">dilateBounded</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.dither" href="#voxelfuse.voxel_model.VoxelModel.dither">dither</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.divide" href="#voxelfuse.voxel_model.VoxelModel.divide">divide</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.empty" href="#voxelfuse.voxel_model.VoxelModel.empty">empty</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.emptyLike" href="#voxelfuse.voxel_model.VoxelModel.emptyLike">emptyLike</a></code></li>

@@ -27,6 +27,7 @@ if __name__=='__main__':
 
     # Create mesh data
     mesh1 = Mesh.fromVoxelModel(model_result)
+    mesh1.export('primitives.stl')
 
     # Create plot
     plot1 = Plot(mesh1)
