@@ -51,15 +51,27 @@ if __name__==&#39;__main__&#39;:
 
     # Apply blur
     modelBlur = modelIn.blur(blurRadius)
+    modelBlur = modelBlur.scaleValues()
 
     # Apply dither
     modelDither = modelBlur.dither(blur=False) # Blur operation separated for clarity
 
     # Create mesh data
+    for m in range(1, len(modelIn.materials)):
+        currentMaterial = modelIn.isolateMaterial(m)
+        currentMesh = Mesh.fromVoxelModel(currentMaterial)
+        currentMesh.export(&#39;input_&#39; + str(m) + &#39;.stl&#39;)
+
+    modelBlur = modelBlur.round(0.1).removeDuplicateMaterials()
+    for m in range(1, len(modelBlur.materials)):
+        currentMaterial = modelBlur.isolateMaterial(m)
+        currentMesh = Mesh.fromVoxelModel(currentMaterial)
+        currentMesh.export(&#39;blur_&#39; + str(m) + &#39;.stl&#39;)
+
     for m in range(1, len(modelDither.materials)):
         currentMaterial = modelDither.isolateMaterial(m)
         currentMesh = Mesh.fromVoxelModel(currentMaterial)
-        currentMesh.export(&#39;output_&#39; + str(m) + &#39;.stl&#39;)</code></pre>
+        currentMesh.export(&#39;dither_&#39; + str(m) + &#39;.stl&#39;)</code></pre>
 </details>
 </section>
 <section>
