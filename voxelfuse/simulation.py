@@ -58,7 +58,7 @@ class Simulation:
         :param voxel_model: VoxelModel
         """
         # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
-        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1))
+        self.__model = ((VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1))).removeDuplicateMaterials()
 
         # Simulator ##############
         # Integration
@@ -134,6 +134,9 @@ class Simulation:
         new_simulation.__bcRegions = simulation.__bcRegions.copy()
         new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
         new_simulation.__sensors = simulation.__sensors.copy()
+        new_simulation.__tempControls = simulation.__tempControls.copy()
+        new_simulation.results = simulation.results.copy()
+        new_simulation.valueMap = simulation.valueMap.copy()
 
         return new_simulation
 
@@ -150,7 +153,7 @@ class Simulation:
         :return: None
         """
         # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
-        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1))
+        self.__model = ((VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1))).removeDuplicateMaterials()
 
     def setDamping(self, bond: float = 1.0, environment: float = 0.0001):
         """
@@ -547,28 +550,30 @@ class Simulation:
         """
         self.__tempControls = []
 
-    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), temperature: float = 0):
+    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), temperature: float = 0, phase_offset: float = 0):
         """
         Add a temperature control element to a voxel.
 
         This feature is not currently supported by VoxCad
 
         :param location: Control element location in voxels
-        :param temperature: Control element temperature
+        :param temperature: Control element temperature or temperature amplitude (deg C)
+        :param phase_offset: Control element phase offset for time-varying thermal (rad)
         :return: None
         """
         x = location[0] - self.__model.coords[0]
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        element = [x, y, z, temperature]
+        element = [x, y, z, temperature, phase_offset]
         self.__tempControls.append(element)
 
-    def applyTempMap(self, valueMap):
+    def applyTempMap(self, value_map, phase_map = None):
         """
         Set the simulation temperature control elements based on a value map of target temperatures.
 
-        :param valueMap: Array of target temperatures for each voxel
+        :param value_map: Array of target temperatures for each voxel (deg C)
+        :param phase_map: Array of phase offsets for each voxel (rad)
         :return:
         """
 
@@ -576,18 +581,21 @@ class Simulation:
         self.clearTempControls()
 
         # Get map size
-        x_len = valueMap.shape[0]
-        y_len = valueMap.shape[1]
-        z_len = valueMap.shape[2]
+        x_len = value_map.shape[0]
+        y_len = value_map.shape[1]
+        z_len = value_map.shape[2]
 
         # Find required temperature change at each voxel
         for x in range(x_len):
             for y in range(y_len):
                 for z in range(z_len):
-                    if abs(valueMap[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
-                        self.addTempControl((x, y, z), valueMap[x, y, z])
+                    if abs(value_map[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
+                        if phase_map is None:
+                            self.addTempControl((x, y, z), value_map[x, y, z])
+                        else:
+                            self.addTempControl((x, y, z), value_map[x, y, z], phase_map[x, y, z])
 
-    def applyVolumeMap(self, valueMap = None):
+    def applyVolumeMap(self, value_map = None):
         """
         Set the simulation temperature control elements based on a value map of target volumes.
 
@@ -595,19 +603,19 @@ class Simulation:
         be used. To update this attribute, first use ``runSim(value_map=10)`` to get the
         result volumes from running the simulation with any previous settings.
 
-        :param valueMap: Array of target volumes for each voxel
+        :param value_map: Array of target volumes for each voxel
         :return:
         """
-        if valueMap is None:
-            valueMap = self.valueMap
+        if value_map is None:
+            value_map = self.valueMap
 
         # Clear any existing temp controls
         self.clearTempControls()
 
         # Get map size
-        x_len = valueMap.shape[0]
-        y_len = valueMap.shape[1]
-        z_len = valueMap.shape[2]
+        x_len = value_map.shape[0]
+        y_len = value_map.shape[1]
+        z_len = value_map.shape[2]
 
         # Get initial volume
         v0 = (1 / self.__model.resolution) ** 3
@@ -616,9 +624,9 @@ class Simulation:
         for x in range(x_len):
             for y in range(y_len):
                 for z in range(z_len):
-                    if abs(valueMap[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
+                    if abs(value_map[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
                         # Get volume change
-                        vol_delta = valueMap[x, y, z] - v0
+                        vol_delta = value_map[x, y, z] - v0
 
                         # Get CTE value
                         avgProps = self.__model.getVoxelProperties((x, y, z))
@@ -643,7 +651,7 @@ class Simulation:
         """
         f = open(filename + '.csv', 'w+')
         print('Saving file: ' + f.name)
-        f.write('X,Y,Z,Temperature (deg C)\n')
+        f.write('X,Y,Z,Temperature (deg C),Phase Offset (rad)\n')
         for i in range(len(self.__tempControls)):
             f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
         f.close()
@@ -838,6 +846,7 @@ class Simulation:
             f.write('  <Element>\n')
             f.write('    <Location>' + str(element[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
             f.write('    <Temperature>' + str(element[3]).replace('[', '').replace(',', '').replace(']', '') + '</Temperature>\n')
+            f.write('    <PhaseOffset>' + str(element[4]).replace('[', '').replace(',', '').replace(']', '') + '</PhaseOffset>\n')
             f.write('  </Element>\n')
         f.write('</TempControls>\n')
 
@@ -860,15 +869,15 @@ class Simulation:
         self.saveVXA(filename, E_override=E_override)
 
         if voxelyze_on_path:
-            command_string = 'voxelyze '
+            command_string = 'voxelyze'
         else:
             # Check OS type
             if os.name.startswith('nt'):
                 # Windows - run Voxelyze with WSL
-                command_string = 'wsl ' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze'
+                command_string = 'wsl "' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze"'
             else:
                 # Linux - run Voxelyze directly
-                command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
+                command_string = f'"{os.path.dirname(os.path.realpath(__file__))}/utils/voxelyze"'
 
         command_string = command_string + ' -f ' + filename + '.vxa -o ' + filename + '.xml -vm ' + str(value_map) + ' -p'
 
@@ -996,10 +1005,10 @@ class Simulation:
             # Check OS type
             if os.name.startswith('nt'):
                 # Windows
-                command_string = os.path.dirname(os.path.realpath(__file__)) + '\\utils\\VoxCad.exe '
+                command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\VoxCad.exe" '
             else:
                 # Linux
-                command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/VoxCad '
+                command_string =  f'"{os.path.dirname(os.path.realpath(__file__))}/utils/VoxCad" '
 
         command_string = command_string + filename + '.vxa'
 
