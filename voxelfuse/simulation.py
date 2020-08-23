@@ -22,6 +22,15 @@ from voxelfuse.primitives import empty, cuboid, sphere, cylinder
 # Floating point error threshold for rounding to zero
 FLOATING_ERROR = 0.0000000001
 
+class Axis(Enum):
+    """
+    Options for axes and planes.
+    """
+    NONE = -1
+    X = 0
+    Y = 1
+    Z = 2
+
 class StopCondition(Enum):
     """
     Options for simulation stop conditions.
@@ -526,20 +535,21 @@ class Simulation:
         """
         self.__sensors = []
 
-    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0)):
+    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0), axis: Axis = Axis.NONE):
         """
         Add a sensor to a voxel.
 
         This feature is not currently supported by VoxCad
 
         :param location: Sensor location in voxels
+        :param axis: Sensor measurement axis
         :return: None
         """
         x = location[0] - self.__model.coords[0]
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        sensor = [x, y, z]
+        sensor = [x, y, z, axis.value]
         self.__sensors.append(sensor)
 
     def clearTempControls(self):
@@ -831,6 +841,7 @@ class Simulation:
         for sensor in self.__sensors:
             f.write('  <Sensor>\n')
             f.write('    <Location>' + str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
+            f.write('    <Axis>' + str(sensor[3]) + '</Axis>\n')
             f.write('  </Sensor>\n')
         f.write('</Sensors>\n')
 
