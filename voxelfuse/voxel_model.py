@@ -1975,7 +1975,7 @@ class VoxelModel:
 
         f.close()
 
-    def writeVXCData(self, f: TextIO, compression: bool = False, E_override: float = -1):
+    def writeVXCData(self, f: TextIO, compression: bool = False, E_override: float = -1, E_override_mat: int = 1):
         """
         Write geometry and material data to a text file using the .vxc format.
 
@@ -2035,10 +2035,10 @@ class VoxelModel:
                 f.write('          </StressData>\n')
                 f.write('        </SSData>\n')
 
-            if E_override == -1:
-                f.write('        <Elastic_Mod>' + str(avgProps['E']) + '</Elastic_Mod>\n')
-            else:
+            if row == E_override_mat and E_override != -1:
                 f.write('        <Elastic_Mod>' + str(E_override) + '</Elastic_Mod>\n')
+            else:
+                f.write('        <Elastic_Mod>' + str(avgProps['E']) + '</Elastic_Mod>\n')
 
             f.write('        <Plastic_Mod>' + str(avgProps['Z']) + '</Plastic_Mod>\n')
             f.write('        <Yield_Stress>' + str(avgProps['eY']) + '</Yield_Stress>\n')
