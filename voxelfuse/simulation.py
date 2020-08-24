@@ -116,6 +116,7 @@ class Simulation:
         self.__temperatureVaryEnable = False
         self.__temperatureVaryAmplitude = 0.0
         self.__temperatureVaryPeriod = 0.0
+        self.__growthAmplitude = 0.0
 
         # Sensors #######
         self.__sensors = []
@@ -225,19 +226,21 @@ class Simulation:
         self.__gravityValue = value
         self.__floorEnable = enable_floor
 
-    def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0):
+    def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0, growth_amplitude: float = 0.0):
         """
         Set a fixed environment temperature.
 
         :param enable: Enable/disable temperature
         :param base_temp: Temperature in degrees C
+        :param growth_amplitude: Set to 1 to enable expansion from base size
         :return: None
         """
         self.__temperatureEnable = enable
         self.__temperatureBaseValue = base_temp
         self.__temperatureVaryEnable = False
+        self.__growthAmplitude = growth_amplitude
 
-    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0):
+    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0, growth_amplitude: float = 0.0):
         """
         Set a varying environment temperature.
 
@@ -245,6 +248,7 @@ class Simulation:
         :param base_temp: Base temperature in degrees C
         :param amplitude: Temperature fluctuation amplitude
         :param period: Temperature fluctuation period
+        :param growth_amplitude: Set to 1 to enable expansion from base size
         :return: None
         """
         self.__temperatureEnable = enable
@@ -252,6 +256,7 @@ class Simulation:
         self.__temperatureVaryEnable = enable
         self.__temperatureVaryAmplitude = amplitude
         self.__temperatureVaryPeriod = period
+        self.__growthAmplitude = growth_amplitude
 
     # Read settings ##################################
     def getModel(self):
@@ -828,6 +833,7 @@ class Simulation:
         f.write('    <VaryTempEnabled>' + str(int(self.__temperatureVaryEnable)) + '</VaryTempEnabled>\n')
         f.write('    <TempPeriod>' + str(self.__temperatureVaryPeriod) + '</TempPeriod>\n')
         f.write('  </Thermal>\n')
+        f.write('  <GrowthAmplitude>' + str(self.__growthAmplitude) + '</GrowthAmplitude>\n')
         f.write('</Environment>\n')
 
     def writeSensors(self, f: TextIO):
