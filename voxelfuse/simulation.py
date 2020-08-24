@@ -267,6 +267,15 @@ class Simulation:
         """
         return self.__model
 
+    def getVoxelDim(self):
+        """
+        Get the side dimension of a voxel in mm.
+
+        :return: Float
+        """
+        res = self.__model.resolution
+        return (1.0/res) * 0.001
+
     def getDamping(self):
         """
         Get simulation damping parameters.

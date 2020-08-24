@@ -1491,6 +1491,15 @@ class VoxelModel:
 
     # Model Info ##############################
 
+    def getVoxelDim(self):
+        """
+        Get the side dimension of a voxel in mm.
+
+        :return: Float
+        """
+        res = self.resolution
+        return (1.0/res) * 0.001
+
     def getVolume(self, component: int = 0, material: int = 0):
         """
         Get the volume of a model or model component.
