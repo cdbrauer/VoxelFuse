@@ -1045,3 +1045,36 @@ class Simulation:
         if delete_files:
             print('Removing file: ' + filename + '.vxa')
             os.remove(filename + '.vxa')
+
+    def saveResults(self, filename):
+        """
+        Saves a simulation's results ditionary to a .csv file.
+
+        :param filename: Name of output file
+        :return:
+        """
+        # Get result table keys and size
+        keys = list(self.results[0].keys())
+        rows = len(self.results)
+        cols = len(keys)
+
+        # Create results file
+        f = open(filename + '.csv', 'w+')
+        print('Saving file: ' + f.name)
+
+        # Write headings
+        f.write('Sensor')
+        for c in range(cols):
+            f.write(',' + str(keys[c]))
+        f.write('\n')
+
+        # Write values
+        for r in range(rows):
+            f.write(str(r))
+            vals = list(self.results[r].values())
+            for c in range(cols):
+                f.write(',' + str(vals[c]).replace(',', ' '))
+            f.write('\n')
+
+        # Close file
+        f.close()
