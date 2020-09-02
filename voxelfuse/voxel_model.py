@@ -309,16 +309,23 @@ class VoxelModel:
         new_model.components = new_components
         return new_model
 
-    def removeDuplicateMaterials(self, CUDA_enable: bool = True, CUDA_device: int = 0):
+    def removeDuplicateMaterials(self):
         """
         Remove duplicate rows from a model's material array.
 
-        :param CUDA_enable: Enable GPU acceleration using a CUDA-capable GPU
-        :param CUDA_device: Select GPU in a multi-GPU system
         :return: VoxelModel
         """
         new_voxels = np.copy(self.voxels)
         new_materials = np.unique(self.materials, axis=0)
+
+        # Get CUDA settings
+        try:
+            CUDA_enable = bool(os.environ.get('VF_CUDA_ENABLE'))
+            CUDA_device = int(os.environ.get('VF_CUDA_DEVICE'))
+        except TypeError:
+            print('CUDA environment variables not found')
+            CUDA_enable = False
+            CUDA_device = 0
 
         if CUDA_enable:
             # Select GPU
@@ -2109,6 +2116,71 @@ class VoxelModel:
         f.write('    </Data>\n')
         f.write('  </Structure>\n')
         f.write('</VXC>\n')
+
+class GpuSettings:
+    """
+    Object to store GPU settings.
+
+    After initializing and configuring the GPU settings, use applySettings() to
+    apply them. Changes will only persist for the current python session.
+
+    For persistent GPU settings, configure these environment variables:
+
+    ``VF_CUDA_ENABLE = 1`` 
+
+    ``VF_CUDA_DEVICE = <desired GPU ID>``
+
+    ----
+
+    Example:
+
+    ``gpu = GpuSettings()``
+
+    ``print('Default CUDA settings:') + str(gpu.CUDA_enable) + ', ' + str(gpu.CUDA_device))``
+
+    ``gpu.setCUDA(True, 1)``
+
+    ``gpu.applySettings()``
+
+    ----
+    """
+    def __init__(self):
+        """
+        Initialize a GpuSettings object.
+        """
+        # Get CUDA settings from environment variables
+        try:
+            CUDA_enable = bool(os.environ.get('VF_CUDA_ENABLE'))
+            CUDA_device = int(os.environ.get('VF_CUDA_DEVICE'))
+        except TypeError:
+            print('CUDA environment variables not found')
+            CUDA_enable = False
+            CUDA_device = 0
+
+        self.CUDA_enable = CUDA_enable
+        self.CUDA_device = CUDA_device
+
+    def setCUDA(self, CUDA_enable: bool = True, CUDA_device: int = 0):
+        """
+        Set overrides for CUDA settings.
+
+        :param CUDA_enable: Enable/disable CUDA acceleration
+        :param CUDA_device: Select CUDA device
+        :return: None
+        """
+        self.CUDA_enable = CUDA_enable
+        self.CUDA_device = CUDA_device
+
+    def applySettings(self):
+        """
+        Apply GPU settings as overrides.
+
+        These changes will only persist for the current python session.
+
+        :return: None
+        """
+        os.environ['VF_CUDA_ENABLE'] = str(int(self.CUDA_enable))
+        os.environ['VF_CUDA_DEVICE'] = str(self.CUDA_device)
 
 # Helper functions ##############################################################
 def makeMesh(filename: str, delete_files: bool = True, gmsh_on_path: bool = False):
