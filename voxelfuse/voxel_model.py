@@ -12,13 +12,13 @@ import meshio
 import numpy as np
 import zlib
 import base64
+from scipy import ndimage
+from numba import njit, prange, cuda
+from tqdm import tqdm
 from enum import Enum
 from typing import Tuple, TextIO
 from pyvox.parser import VoxParser
 from voxelfuse.materials import *
-from scipy import ndimage
-from numba import njit, prange
-from tqdm import tqdm
 
 # Floating point error threshold for rounding to zero
 FLOATING_ERROR = 0.0000000001
@@ -309,27 +309,37 @@ class VoxelModel:
         new_model.components = new_components
         return new_model
 
-    def removeDuplicateMaterials(self):
+    def removeDuplicateMaterials(self, CUDA_enable: bool = True, CUDA_device: int = 0):
         """
         Remove duplicate rows from a model's material array.
 
+        :param CUDA_enable: Enable GPU acceleration using a CUDA-capable GPU
+        :param CUDA_device: Select GPU in a multi-GPU system
         :return: VoxelModel
         """
+        new_voxels = np.copy(self.voxels)
         new_materials = np.unique(self.materials, axis=0)
 
-        x_len = self.voxels.shape[0]
-        y_len = self.voxels.shape[1]
-        z_len = self.voxels.shape[2]
+        if CUDA_enable:
+            # Select GPU
+            cuda.select_device(CUDA_device)
 
-        new_voxels = np.zeros_like(self.voxels, dtype=np.uint16)
+            # CUDA blocks
+            blockdim = (8, 8, 8) # 512 threads (1024 threads max)
+            griddim = (new_voxels.shape[0] // blockdim[0] + 1, new_voxels.shape[1] // blockdim[1] + 1, new_voxels.shape[2] // blockdim[2] + 1)
 
-        for x in tqdm(range(x_len), desc='Removing duplicate materials'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    i = self.voxels[x, y, z]
-                    m = self.materials[i]
-                    ni = np.where(np.equal(new_materials, m).all(1))[0][0]
-                    new_voxels[x, y, z] = ni
+            # Update material indices
+            updateMatIndices[griddim, blockdim](new_voxels, self.materials, new_materials)
+
+        else:
+            x_len, y_len, z_len = self.voxels.shape
+            for x in tqdm(range(x_len), desc='Removing duplicate materials'):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        i = self.voxels[x, y, z]
+                        m = self.materials[i]
+                        ni = np.where(np.equal(new_materials, m).all(1))[0][0]
+                        new_voxels[x, y, z] = ni
 
         return VoxelModel(new_voxels, new_materials, self.coords, self.resolution)
 
@@ -2420,3 +2430,35 @@ def ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_sprea
                                 addError(full_model, error, z_error, i, x, y, z+1, x_len, y_len, z_len, error_spread_threshold)
 
     return full_model
+
+
+@cuda.jit
+def updateMatIndices(voxels, old_materials, new_materials):
+    # Get current voxel coordinates
+    x, y, z = cuda.grid(3)
+    x_max, y_max, z_max = voxels.shape
+
+    # Ignore coordinates outside of model
+    if (x >= x_max) or (y >= y_max) or (z >= z_max):
+        return
+
+    # Get target material
+    target_mat_index = voxels[x, y, z]
+    target_mat = old_materials[target_mat_index, :]
+
+    # Search for material
+    for m in range(new_materials.shape[0]):
+        # If all material channels match...
+        match = True
+        for c in range(new_materials.shape[1]):
+            error = abs(new_materials[m, c] - target_mat[c])
+            if error > FLOATING_ERROR:
+                match = False
+                break
+
+        # ...save the current index and end search
+        if match:
+            voxels[x, y, z] = m
+            break
+        else:
+            voxels[x, y, z] = -1
