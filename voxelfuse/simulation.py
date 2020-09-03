@@ -899,8 +899,8 @@ class Simulation:
         else:
             # Check OS type
             if os.name.startswith('nt'):
-                # Windows - run Voxelyze with WSL
-                command_string = 'wsl "' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze"'
+                # command_string = 'wsl "' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze"' # Windows - run Voxelyze with WSL
+                command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\voxelyze.exe"'
             else:
                 # Linux - run Voxelyze directly
                 command_string = f'"{os.path.dirname(os.path.realpath(__file__))}/utils/voxelyze"'
