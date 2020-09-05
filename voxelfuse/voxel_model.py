@@ -2001,7 +2001,7 @@ class VoxelModel:
 
         f.close()
 
-    def writeVXCData(self, f: TextIO, compression: bool = False, E_override: float = -1, E_override_mat: int = 1):
+    def writeVXCData(self, f: TextIO, compression: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
         """
         Write geometry and material data to a text file using the .vxc format.
 
@@ -2061,7 +2061,7 @@ class VoxelModel:
                 f.write('          </StressData>\n')
                 f.write('        </SSData>\n')
 
-            if row == E_override_mat and E_override != -1:
+            if row == override_mat and E_override != -1:
                 f.write('        <Elastic_Mod>' + str(E_override) + '</Elastic_Mod>\n')
             else:
                 f.write('        <Elastic_Mod>' + str(avgProps['E']) + '</Elastic_Mod>\n')
@@ -2073,7 +2073,12 @@ class VoxelModel:
             f.write('        <Fail_Strain>' + str(avgProps['SF']) + '</Fail_Strain>\n')
             f.write('        <Density>' + str(avgProps['p'] * 1e3) + '</Density>\n') # Convert g/cm^3 to kg/m^3
             f.write('        <Poissons_Ratio>' + str(avgProps['v']) + '</Poissons_Ratio>\n')
-            f.write('        <CTE>' + str(avgProps['CTE']) + '</CTE>\n')
+
+            if row == override_mat and cte_override != 99:
+                f.write('        <CTE>' + str(cte_override) + '</CTE>\n')
+            else:
+                f.write('        <CTE>' + str(avgProps['CTE']) + '</CTE>\n')
+
             f.write('        <MaterialTempPhase>' + str(avgProps['TP']) + '</MaterialTempPhase>\n')
             f.write('        <uStatic>' + str(avgProps['uS']) + '</uStatic>\n')
             f.write('        <uDynamic>' + str(avgProps['uD']) + '</uDynamic>\n')

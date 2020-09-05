@@ -706,7 +706,7 @@ class Simulation:
 
     # Export simulation ##################################
     # Export simulation object to .vxa file for import into VoxCad or Voxelyze
-    def saveVXA(self, filename: str, compression: bool = False,  E_override: float = -1, E_override_mat: int = 1):
+    def saveVXA(self, filename: str, compression: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
         """
         Save model data to a .vxa file
 
@@ -734,7 +734,7 @@ class Simulation:
         self.writeEnvironmentData(f)
         self.writeSensors(f)
         self.writeTempControls(f)
-        self.__model.writeVXCData(f, compression, E_override=E_override, E_override_mat=E_override_mat)
+        self.__model.writeVXCData(f, compression, override_mat=override_mat, E_override=E_override, cte_override=cte_override)
         f.write('</VXA>\n')
 
         f.close()
@@ -876,7 +876,7 @@ class Simulation:
             f.write('  </Element>\n')
         f.write('</TempControls>\n')
 
-    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False, E_override: float = -1, E_override_mat: int = 1):
+    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
         """
         Run a Simulation object using Voxelyze.
 
@@ -892,7 +892,7 @@ class Simulation:
         :return: None
         """
         # Create simulation file
-        self.saveVXA(filename, E_override=E_override, E_override_mat=E_override_mat)
+        self.saveVXA(filename, override_mat=override_mat, E_override=E_override, cte_override=cte_override)
 
         if voxelyze_on_path:
             command_string = 'voxelyze'
@@ -1000,7 +1000,7 @@ class Simulation:
                 print('Removing file: value_map.txt')
                 os.remove('value_map.txt')
 
-    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, E_override: float = -1):
+    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
         """
         Run a Simulation object using the VoxCad GUI.
 
@@ -1023,7 +1023,8 @@ class Simulation:
         :param voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
         :return: None
         """
-        self.saveVXA(filename, E_override=E_override)
+        # Create simulation file
+        self.saveVXA(filename, override_mat=override_mat, E_override=E_override, cte_override=cte_override)
 
         if voxcad_on_path:
             command_string = 'voxcad '
