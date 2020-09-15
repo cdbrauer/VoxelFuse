@@ -226,7 +226,7 @@ class Simulation:
         self.__gravityValue = value
         self.__floorEnable = enable_floor
 
-    def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0, growth_amplitude: float = 0.0):
+    def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0, growth_amplitude: float = 1.0):
         """
         Set a fixed environment temperature.
 
@@ -574,14 +574,16 @@ class Simulation:
         """
         self.__tempControls = []
 
-    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), temperature: float = 0, phase_offset: float = 0):
+    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), amplitude1: float = 0, amplitude2: float = 0, changeX: float = 0.5, phase_offset: float = 0):
         """
         Add a temperature control element to a voxel.
 
         This feature is not currently supported by VoxCad
 
         :param location: Control element location in voxels
-        :param temperature: Control element temperature or temperature amplitude (deg C)
+        :param amplitude1: Control element positive temperature amplitude (deg C)
+        :param amplitude2: Control element negative temperature amplitude (deg C)
+        :param changeX: Percent of period spanned by positive temperature amplitude (0-1)
         :param phase_offset: Control element phase offset for time-varying thermal (rad)
         :return: None
         """
@@ -589,14 +591,16 @@ class Simulation:
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        element = [x, y, z, temperature, phase_offset]
+        element = [x, y, z, amplitude1, amplitude2, changeX, phase_offset]
         self.__tempControls.append(element)
 
-    def applyTempMap(self, value_map, phase_map = None):
+    def applyTempMap(self, amp1_map, amp2_map = None, changeX_map = None, phase_map = None):
         """
-        Set the simulation temperature control elements based on a value map of target temperatures.
+        Set the simulation temperature control elements based on a value maps of target temperature settings.
 
-        :param value_map: Array of target temperatures for each voxel (deg C)
+        :param amp1_map: Array of target positive temperature amplitudes for each voxel (deg C)
+        :param amp2_map: Array of target negative temperature amplitudes for each voxel (deg C)
+        :param changeX_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
         :param phase_map: Array of phase offsets for each voxel (rad)
         :return:
         """
@@ -605,65 +609,80 @@ class Simulation:
         self.clearTempControls()
 
         # Get map size
-        x_len = value_map.shape[0]
-        y_len = value_map.shape[1]
-        z_len = value_map.shape[2]
+        x_len = amp1_map.shape[0]
+        y_len = amp1_map.shape[1]
+        z_len = amp1_map.shape[2]
 
         # Find required temperature change at each voxel
         for x in range(x_len):
             for y in range(y_len):
                 for z in range(z_len):
-                    if abs(value_map[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
-                        if phase_map is None:
-                            self.addTempControl((x, y, z), value_map[x, y, z])
+                    if abs(amp1_map[x, y, z]) > FLOATING_ERROR or abs(amp2_map[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
+                        element = [x, y, z, amp1_map[x, y, z]]
+
+                        if amp2_map is None:
+                            element.append(amp1_map[x, y, z])
                         else:
-                            self.addTempControl((x, y, z), value_map[x, y, z], phase_map[x, y, z])
+                            element.append(amp2_map[x, y, z])
 
-    def applyVolumeMap(self, value_map = None):
-        """
-        Set the simulation temperature control elements based on a value map of target volumes.
+                        if changeX_map is None:
+                            element.append(0.5)
+                        else:
+                            element.append(changeX_map[x, y, z])
 
-        If a valueMap is not specified, the Simulation object's value map attribute will
-        be used. To update this attribute, first use ``runSim(value_map=10)`` to get the
-        result volumes from running the simulation with any previous settings.
+                        if phase_map is None:
+                            element.append(0)
+                        else:
+                            element.append(phase_map[x, y, z])
 
-        :param value_map: Array of target volumes for each voxel
-        :return:
-        """
-        if value_map is None:
-            value_map = self.valueMap
+                        self.__tempControls.append(element)
 
-        # Clear any existing temp controls
-        self.clearTempControls()
-
-        # Get map size
-        x_len = value_map.shape[0]
-        y_len = value_map.shape[1]
-        z_len = value_map.shape[2]
-
-        # Get initial volume
-        v0 = (1 / self.__model.resolution) ** 3
-
-        # Find required temperature change at each voxel
-        for x in range(x_len):
-            for y in range(y_len):
-                for z in range(z_len):
-                    if abs(value_map[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
-                        # Get volume change
-                        vol_delta = value_map[x, y, z] - v0
-
-                        # Get CTE value
-                        avgProps = self.__model.getVoxelProperties((x, y, z))
-                        cte = avgProps['CTE']
-
-                        # Get required temperature change relative to base temperature
-                        temp_delta = (vol_delta / (v0 * cte))
-
-                        # Get base temperature
-                        temp_base = (self.getThermal())[1]
-
-                        # Add a temperature control element
-                        self.addTempControl((x, y, z), temp_base+temp_delta)
+    # TODO: Remove this -- its confusing and inaccurate for hydrogels
+    # def applyVolumeMap(self, value_map = None):
+    #     """
+    #     Set the simulation temperature control elements based on a value map of target volumes.
+    #
+    #     If a valueMap is not specified, the Simulation object's value map attribute will
+    #     be used. To update this attribute, first use ``runSim(value_map=10)`` to get the
+    #     result volumes from running the simulation with any previous settings.
+    #
+    #     :param value_map: Array of target volumes for each voxel
+    #     :return:
+    #     """
+    #     if value_map is None:
+    #         value_map = self.valueMap
+    #
+    #     # Clear any existing temp controls
+    #     self.clearTempControls()
+    #
+    #     # Get map size
+    #     x_len = value_map.shape[0]
+    #     y_len = value_map.shape[1]
+    #     z_len = value_map.shape[2]
+    #
+    #     # Get initial volume
+    #     v0 = (1 / self.__model.resolution) ** 3
+    #
+    #     # Find required temperature change at each voxel
+    #     for x in range(x_len):
+    #         for y in range(y_len):
+    #             for z in range(z_len):
+    #                 if abs(value_map[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
+    #                     # Get volume change
+    #                     vol_delta = value_map[x, y, z] - v0
+    #
+    #                     # Get CTE value
+    #                     avgProps = self.__model.getVoxelProperties((x, y, z))
+    #                     cte = avgProps['CTE']
+    #
+    #                     # Get required temperature change relative to base temperature
+    #                     temp_delta = (vol_delta / (v0 * cte))
+    #
+    #                     # Get base temperature
+    #                     temp_base = (self.getThermal())[1]
+    #
+    #                     # Add a temperature control element
+    #                     self.addTempControl((x, y, z), temp_base+temp_delta)
 
     def saveTempControls(self, filename: str, figure: bool = False):
         """
@@ -675,7 +694,7 @@ class Simulation:
         """
         f = open(filename + '.csv', 'w+')
         print('Saving file: ' + f.name)
-        f.write('X,Y,Z,Temperature (deg C),Phase Offset (rad)\n')
+        f.write('X,Y,Z,Amplitude 1 (deg C),Amplitude 2 (deg C),Change X,Phase Offset (rad)\n')
         for i in range(len(self.__tempControls)):
             f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
         f.close()
@@ -872,11 +891,13 @@ class Simulation:
             f.write('  <Element>\n')
             f.write('    <Location>' + str(element[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
             f.write('    <Temperature>' + str(element[3]).replace('[', '').replace(',', '').replace(']', '') + '</Temperature>\n')
-            f.write('    <PhaseOffset>' + str(element[4]).replace('[', '').replace(',', '').replace(']', '') + '</PhaseOffset>\n')
+            f.write('    <Amplitude2>' + str(element[4]).replace('[', '').replace(',', '').replace(']', '') + '</Amplitude2>\n')
+            f.write('    <ChangeX>' + str(element[5]).replace('[', '').replace(',', '').replace(']', '') + '</ChangeX>\n')
+            f.write('    <PhaseOffset>' + str(element[6]).replace('[', '').replace(',', '').replace(']', '') + '</PhaseOffset>\n')
             f.write('  </Element>\n')
         f.write('</TempControls>\n')
 
-    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
+    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
         """
         Run a Simulation object using Voxelyze.
 
@@ -889,6 +910,7 @@ class Simulation:
         :param export_stl: Enable/disable exporting an stl file of the result
         :param delete_files: Enable/disable deleting simulation file when process is complete
         :param voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
+        :param wsl: Enable/disable using Windows Subsystem for Linux with bundled Voxelyze
         :return: None
         """
         # Create simulation file
@@ -898,11 +920,12 @@ class Simulation:
             command_string = 'voxelyze'
         else:
             # Check OS type
-            if os.name.startswith('nt'):
-                # command_string = 'wsl "' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze"' # Windows - run Voxelyze with WSL
-                command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\voxelyze.exe"'
-            else:
-                # Linux - run Voxelyze directly
+            if os.name.startswith('nt'): # Windows
+                if wsl:
+                    command_string = 'wsl "' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze"'
+                else:
+                    command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\voxelyze.exe"'
+            else: # Linux
                 command_string = f'"{os.path.dirname(os.path.realpath(__file__))}/utils/voxelyze"'
 
         command_string = command_string + ' -f ' + filename + '.vxa -o ' + filename + '.xml -vm ' + str(value_map) + ' -p'
@@ -1000,7 +1023,7 @@ class Simulation:
                 print('Removing file: value_map.txt')
                 os.remove('value_map.txt')
 
-    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
+    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
         """
         Run a Simulation object using the VoxCad GUI.
 
@@ -1021,6 +1044,7 @@ class Simulation:
         :param filename: File name
         :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
         :param voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
+        :param wsl: Enable/disable using Windows Subsystem for Linux with bundled VoxCad
         :return: None
         """
         # Create simulation file
@@ -1030,11 +1054,12 @@ class Simulation:
             command_string = 'voxcad '
         else:
             # Check OS type
-            if os.name.startswith('nt'):
-                # Windows
-                command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\VoxCad.exe" '
-            else:
-                # Linux
+            if os.name.startswith('nt'): # Windows
+                if wsl:
+                    command_string = 'wsl "' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/VoxCad"'
+                else:
+                    command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\VoxCad.exe"'
+            else: # Linux
                 command_string =  f'"{os.path.dirname(os.path.realpath(__file__))}/utils/VoxCad" '
 
         command_string = command_string + filename + '.vxa'
@@ -1049,7 +1074,7 @@ class Simulation:
 
     def saveResults(self, filename):
         """
-        Saves a simulation's results ditionary to a .csv file.
+        Saves a simulation's results dictionary to a .csv file.
 
         :param filename: Name of output file
         :return:
