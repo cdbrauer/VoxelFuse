@@ -226,7 +226,7 @@ class Simulation:
         self.__gravityValue = value
         self.__floorEnable = enable_floor
 
-    def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0, growth_amplitude: float = 1.0):
+    def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0, growth_amplitude: float = 0.0):
         """
         Set a fixed environment temperature.
 
@@ -240,7 +240,7 @@ class Simulation:
         self.__temperatureVaryEnable = False
         self.__growthAmplitude = growth_amplitude
 
-    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0, growth_amplitude: float = 0.0):
+    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0, growth_amplitude: float = 1.0):
         """
         Set a varying environment temperature.
 
