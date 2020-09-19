@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from enum import Enum
 from typing import Tuple, TextIO
-from tqdm import tqdm
+# from tqdm import tqdm
 import numpy as np
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.primitives import empty, cuboid, sphere, cylinder
@@ -420,7 +420,7 @@ class Simulation:
         z_offset = int(bcRegion.coords[2])
 
         bcVoxels = []
-        for x in tqdm(range(x_len), desc='Finding constrained voxels'):
+        for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
             for y in range(y_len):
                 for z in range(z_len):
                     if bcRegion.voxels[x, y, z] != 0:
@@ -470,7 +470,7 @@ class Simulation:
         z_offset = int(bcRegion.coords[2])
 
         bcVoxels = []
-        for x in tqdm(range(x_len), desc='Finding constrained voxels'):
+        for x in  range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
             for y in range(y_len):
                 for z in range(z_len):
                     if bcRegion.voxels[x, y, z] != 0:
@@ -533,7 +533,7 @@ class Simulation:
         z_offset = int(bcRegion.coords[2])
 
         bcVoxels = []
-        for x in tqdm(range(x_len), desc='Finding constrained voxels'):
+        for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
             for y in range(y_len):
                 for z in range(z_len):
                     if bcRegion.voxels[x, y, z] != 0:
@@ -813,7 +813,7 @@ class Simulation:
         f.write('  <Boundary_Conditions>\n')
         f.write('    <NumBCs>' + str(len(self.__bcRegions)) + '</NumBCs>\n')
 
-        for r in tqdm(range(len(self.__bcRegions)), desc='Writing boundary conditions'):
+        for r in range(len(self.__bcRegions)): # tqdm(range(len(self.__bcRegions)), desc='Writing boundary conditions'):
             f.write('    <FRegion>\n')
             f.write('      <PrimType>' + str(int(self.__bcRegions[r][0].value)) + '</PrimType>\n')
             f.write('      <X>' + str(self.__bcRegions[r][1][0]) + '</X>\n')
@@ -939,7 +939,7 @@ class Simulation:
 
         # Open simulation results
         f = open(filename + '.xml', 'r')
-        print('Opening file: ' + f.name)
+        #print('Opening file: ' + f.name)
         data = f.readlines()
         f.close()
 
@@ -949,7 +949,7 @@ class Simulation:
         # Find start and end locations for individual sensors
         startLoc = []
         endLoc = []
-        for row in tqdm(range(len(data)), desc='Finding sensor tags'):
+        for row in range(len(data)): # tqdm(range(len(data)), desc='Finding sensor tags'):
             data[row] = data[row].replace('\t', '')
             if data[row][:-1] == '<Sensor>':
                 startLoc.append(row)
@@ -957,7 +957,7 @@ class Simulation:
                 endLoc.append(row)
 
         # Read the data from each sensor
-        for sensor in tqdm(range(len(startLoc)), desc='Reading sensor results'):
+        for sensor in range(len(startLoc)): # tqdm(range(len(startLoc)), desc='Reading sensor results'):
             # Create a dictionary to hold the current sensor results
             sensorResults = {}
 
@@ -1007,20 +1007,20 @@ class Simulation:
             y_len = self.valueMap.shape[1]
             z_len = self.valueMap.shape[2]
 
-            for z in tqdm(range(z_len), desc='Loading layers'):
+            for z in range(z_len): # tqdm(range(z_len), desc='Loading layers'):
                 vals = np.array(data[z][:-2].split(","), dtype=np.float32)
                 for y in range(y_len):
                     self.valueMap[:, y, z] = vals[y*x_len:(y+1)*x_len]
 
         # Remove temporary files
         if delete_files:
-            print('Removing file: ' + filename + '.vxa')
+            #print('Removing file: ' + filename + '.vxa')
             os.remove(filename + '.vxa')
-            print('Removing file: ' + filename + '.xml')
+            #print('Removing file: ' + filename + '.xml')
             os.remove(filename + '.xml')
 
             if os.path.exists('value_map.txt'):
-                print('Removing file: value_map.txt')
+                #print('Removing file: value_map.txt')
                 os.remove('value_map.txt')
 
     def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
