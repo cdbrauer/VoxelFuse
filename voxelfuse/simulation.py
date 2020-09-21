@@ -574,7 +574,8 @@ class Simulation:
         """
         self.__tempControls = []
 
-    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), amplitude1: float = 0, amplitude2: float = 0, changeX: float = 0.5, phase_offset: float = 0):
+    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), amplitude1: float = 0, amplitude2: float = 0, changeX: float = 0.5,
+                       phase_offset: float = 0, heat_rate: float = 0, cool_rate: float = 0, const_temp: bool = False):
         """
         Add a temperature control element to a voxel.
 
@@ -585,16 +586,20 @@ class Simulation:
         :param amplitude2: Control element negative temperature amplitude (deg C)
         :param changeX: Percent of period spanned by positive temperature amplitude (0-1)
         :param phase_offset: Control element phase offset for time-varying thermal (rad)
+        :param heat_rate: Set the max rate at which the control element can heat up (deg C/sec)
+        :param cool_rate: Set the max rate at which the control element can cool down (deg C/sec)
+        :param const_temp: Enable/disable setting a constant target temperature that respects heating/cooling rates
         :return: None
         """
         x = location[0] - self.__model.coords[0]
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        element = [x, y, z, amplitude1, amplitude2, changeX, phase_offset]
+        element = [x, y, z, amplitude1, amplitude2, changeX, phase_offset, heat_rate, cool_rate, const_temp]
         self.__tempControls.append(element)
 
-    def applyTempMap(self, amp1_map, amp2_map = None, changeX_map = None, phase_map = None):
+    def applyTempMap(self, amp1_map, amp2_map=None, changeX_map=None, phase_map=None, heat_rate_map=None,
+                     cool_rate_map=None, const_temp_map=None):
         """
         Set the simulation temperature control elements based on a value maps of target temperature settings.
 
@@ -634,6 +639,21 @@ class Simulation:
                             element.append(0)
                         else:
                             element.append(phase_map[x, y, z])
+
+                        if heat_rate_map is None:
+                            element.append(0)
+                        else:
+                            element.append(heat_rate_map[x, y, z])
+
+                        if cool_rate_map is None:
+                            element.append(0)
+                        else:
+                            element.append(cool_rate_map[x, y, z])
+
+                        if const_temp_map is None:
+                            element.append(False)
+                        else:
+                            element.append(const_temp_map[x, y, z])
 
                         self.__tempControls.append(element)
 
@@ -694,7 +714,7 @@ class Simulation:
         """
         f = open(filename + '.csv', 'w+')
         print('Saving file: ' + f.name)
-        f.write('X,Y,Z,Amplitude 1 (deg C),Amplitude 2 (deg C),Change X,Phase Offset (rad)\n')
+        f.write('X,Y,Z,Amplitude 1 (deg C),Amplitude 2 (deg C),Change X,Phase Offset (rad),Heating Rate (deg C/sec),Cooling Rate (deg C/sec),Constant Temperature Target\n')
         for i in range(len(self.__tempControls)):
             f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
         f.close()
@@ -894,6 +914,9 @@ class Simulation:
             f.write('    <Amplitude2>' + str(element[4]).replace('[', '').replace(',', '').replace(']', '') + '</Amplitude2>\n')
             f.write('    <ChangeX>' + str(element[5]).replace('[', '').replace(',', '').replace(']', '') + '</ChangeX>\n')
             f.write('    <PhaseOffset>' + str(element[6]).replace('[', '').replace(',', '').replace(']', '') + '</PhaseOffset>\n')
+            f.write('    <HeatRate>' + str(element[7]).replace('[', '').replace(',', '').replace(']', '') + '</HeatRate>\n')
+            f.write('    <CoolRate>' + str(element[8]).replace('[', '').replace(',', '').replace(']', '') + '</CoolRate>\n')
+            f.write('    <ConstantTemp>' + str(int(element[9])).replace('[', '').replace(',', '').replace(']', '') + '</ConstantTemp>\n')
             f.write('  </Element>\n')
         f.write('</TempControls>\n')
 
