@@ -1209,6 +1209,8 @@ class VoxelModel:
         else:
             new_model = self.scaleValues()
 
+        new_model.voxels = new_model.voxels.astype(dtype=np.uint16)
+
         full_model = toFullMaterials(new_model.voxels, new_model.materials, len(material_properties) + 1)
         full_model = ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold)
 
