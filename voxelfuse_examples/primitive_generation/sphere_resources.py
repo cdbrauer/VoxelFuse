@@ -20,7 +20,7 @@ def memory_usage_psutil():
 
 if __name__ == '__main__':
     process_times = []
-    process_times2 = []
+    max_memory_values = []
 
     scales = [0.1, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
     for scale in scales:
@@ -33,19 +33,19 @@ if __name__ == '__main__':
         mem_psutil.append(memory_usage_psutil())
         print('Model Created')
 
-        ditherMesh = Mesh.fromVoxelModel(ditherResult)
-        mem_psutil.append(memory_usage_psutil())
+        # ditherMesh = Mesh.fromVoxelModel(ditherResult)
+        # mem_psutil.append(memory_usage_psutil())
 
         time_process_finished = time.time()
 
         if scale > 0.5: # Skip first iteration to avoid "warm up" on first loop
             process_times.append(time_process_finished - time_process_started)
-            process_times2.append(np.max(np.array(mem_psutil)[:, 1]))
+            max_memory_values.append(np.max(np.array(mem_psutil)[:, 1]))
 
     # Plot results ##########################
     plt.subplot(2, 1, 1)
     plt.subplots_adjust(left=0.12, right=0.95, hspace=0.6)
-    plt.plot(scales[1:], process_times2)
+    plt.plot(scales[1:], max_memory_values)
     plt.title("Max Memory Usage")
     plt.xlabel("Scale")
     plt.ylabel("MB")
