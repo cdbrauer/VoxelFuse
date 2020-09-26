@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from enum import Enum
 from typing import List, Tuple, TextIO
-# from tqdm import tqdm
+from tqdm import tqdm
 import numpy as np
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.primitives import empty, cuboid, sphere, cylinder
@@ -1193,7 +1193,7 @@ class MultiSimulation:
 
         # Set up simulations
         sim_array = []
-        for config in self.__setup_params:
+        for config in tqdm(self.__setup_params, desc='Initializing simulations'):
             sim_array.append(self.__setup_fcn(config))
 
         # Initialize processing pool
@@ -1245,6 +1245,23 @@ class MultiSimulation:
 
         # Close file
         f.close()
+
+    def exportVXA(self, filename: str, config_number: int = -1):
+        """
+        Export VXA files for all or specified simulation configurations.
+
+        :param filename: File name
+        :param config_number: Config to export, -1 to export all configs
+        :return: None
+        """
+        if config_number == -1:
+            for config in tqdm(self.__setup_params, desc='Saving simulations'):
+                sim = self.__setup_fcn(config)
+                sim.saveVXA(filename + '_' + str(config[0]))
+        else:
+            config = self.__setup_params[config_number]
+            sim = self.__setup_fcn(config)
+            sim.saveVXA(filename)
 
 # Helper functions
 def poolInit(disp_result_array, t_result_array):
