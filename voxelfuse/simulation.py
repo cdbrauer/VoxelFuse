@@ -9,11 +9,14 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import os
+import time
 import subprocess
+import multiprocessing
+
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from enum import Enum
-from typing import Tuple, TextIO
+from typing import List, Tuple, TextIO
 # from tqdm import tqdm
 import numpy as np
 from voxelfuse.voxel_model import VoxelModel
@@ -56,7 +59,7 @@ class Simulation:
     Simulation object that stores a VoxelModel and its associated simulation settings.
     """
 
-    def __init__(self, voxel_model):
+    def __init__(self, voxel_model, id_number: int = 0):
         """
         Initialize a Simulation object with default settings.
 
@@ -67,6 +70,7 @@ class Simulation:
         :param voxel_model: VoxelModel
         """
         # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        self.id = id_number
         self.__model = ((VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1))).removeDuplicateMaterials()
 
         # Simulator ##############
@@ -1127,3 +1131,151 @@ class Simulation:
 
         # Close file
         f.close()
+
+class MultiSimulation:
+    """
+    MultiSimulation object that holds settings for generating a simulation and running multiple parallel trials of it using different parameters.
+    """
+
+    def __init__(self, setup_fcn, setup_params: List[Tuple], thread_count):
+        """
+        Initialize a MultiSimulation object.
+
+        :param setup_fcn: Function to use for initializing Simulation objects. Should take a single tuple as an input and return a single Simulation object.
+        :param setup_params: List containing the desired input tuples for setup_fcn
+        :param thread_count: Maximum number of CPU threads
+        """
+        self.__setup_fcn = setup_fcn
+        self.__setup_params = setup_params
+        self.__thread_count = thread_count
+
+        # Initialize result arrays
+        self.total_time = 0
+        self.displacement_result = multiprocessing.Array('d', len(setup_params))
+        self.time_result = multiprocessing.Array('d', len(setup_params))
+
+    def getParams(self):
+        """
+        Get the current simulation setup parameters.
+
+        :return: List containing the current input tuples for setup_fcn
+        """
+        return self.__setup_params
+
+    def setParams(self, setup_params: List[Tuple]):
+        """
+        Update the simulation setup parameters.
+
+        :param setup_params: List containing the desired input tuples for setup_fcn
+        :return: None
+        """
+        self.__setup_params = setup_params
+        self.displacement_result = multiprocessing.Array('d', len(setup_params))
+        self.time_result = multiprocessing.Array('d', len(setup_params))
+
+    def confirmSimCount(self):
+        """
+        Print the number of simulations to be run and confirm that the user would like to continue.
+
+        :return: None
+        """
+        print("Trials to run: " + str(len(self.__setup_params)))
+        input("Press Enter to continue...")
+
+    def run(self):
+        """
+        Run all simulation configurations and save the results.
+
+        :return: None
+        """
+        # Save start time
+        time_started = time.time()
+
+        # Set up simulations
+        sim_array = []
+        for config in self.__setup_params:
+            sim_array.append(self.__setup_fcn(config))
+
+        # Initialize processing pool
+        p = multiprocessing.Pool(self.__thread_count, initializer=poolInit, initargs=(self.displacement_result, self.time_result))
+        p.map(simProcess, sim_array)
+
+        # Get elapsed time
+        time_finished = time.time()
+        self.total_time = time_finished - time_started
+
+    def export(self, filename: str, labels: List[str]):
+        """
+        Export a CSV file containing simulation setup parameters and the corresponding simulation results.
+
+        :param filename: File name
+        :param labels: Column headers for simulation setup parameters
+        :return: None
+        """
+        # Add labels for results
+        labels.append('Displacement (mm)')
+        labels.append('Simulation Time (s)')
+
+        # Get result table size
+        rows = len(self.__setup_params)
+        cols = len(labels)
+
+        # Create results file
+        f = open(filename + '.csv', 'w+')
+        print('Saving file: ' + f.name)
+
+        # Write sim info
+        f.write('Simulation Elapsed Time (mins),' + str(self.total_time / 60.0) + '\n')
+        f.write('Trial Count,' + str(rows) + '\n')
+        f.write('Max Thread Count,' + str(self.__thread_count) + '\n')
+        f.write('\n')
+
+        # Write headings
+        for c in range(cols):
+            f.write(labels[c] + ',')
+        f.write('\n')
+
+        # Write values
+        for r in range(rows):
+            for c in range(cols - 2):
+                f.write(str(self.__setup_params[r][c]) + ',')
+            f.write(str(self.displacement_result[r]) + ',')
+            f.write(str(self.time_result[r]))
+            f.write('\n')
+
+        # Close file
+        f.close()
+
+# Helper functions
+def poolInit(disp_result_array, t_result_array):
+    """
+    Initialize shared result variables.
+
+    :param disp_result_array: Multiprocessing array to hold displacement results
+    :param t_result_array: Multiprocessing array to hold time results
+    :return: None
+    """
+    global disp_result, t_result
+    disp_result = disp_result_array
+    t_result = t_result_array
+
+def simProcess(simulation: Simulation):
+    """
+    Simulation process.
+
+    :param simulation: Simulation object to run
+    :return: None
+    """
+    print('\nProcess ' + str(simulation.id) + ' started')
+
+    # Run simulation
+    time_process_started = time.time()
+    simulation.runSim('results/crawling_sim_2_' + str(simulation.id), wsl=True)
+    time_process_finished = time.time()
+
+    # Read results
+    disp_result[simulation.id] = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+    t_result[simulation.id] = time_process_finished - time_process_started
+
+    # Finished
+    print('\nProcess ' + str(simulation.id) + ' finished')
