@@ -1192,9 +1192,17 @@ class MultiSimulation:
         time_started = time.time()
 
         # Set up simulations
+        sim_id = 0
         sim_array = []
         for config in tqdm(self.__setup_params, desc='Initializing simulations'):
-            sim_array.append(self.__setup_fcn(config))
+            sim = self.__setup_fcn(config)
+
+            # Use automatic sim id if one is not already set
+            if sim.id == 0:
+                sim.id = sim_id
+                sim_id = sim_id + 1
+
+            sim_array.append(sim)
 
         # Initialize processing pool
         p = multiprocessing.Pool(self.__thread_count, initializer=poolInit, initargs=(self.displacement_result, self.time_result))
@@ -1287,11 +1295,14 @@ def simProcess(simulation: Simulation):
 
     # Run simulation
     time_process_started = time.time()
-    simulation.runSim('results/crawling_sim_2_' + str(simulation.id), wsl=True)
+    simulation.runSim('sim_' + str(simulation.id), wsl=True)
     time_process_finished = time.time()
 
     # Read results
-    disp_result[simulation.id] = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+    disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
+    disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
+    disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+    disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
     t_result[simulation.id] = time_process_finished - time_process_started
 
     # Finished
