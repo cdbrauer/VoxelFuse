@@ -128,6 +128,9 @@ class Simulation:
         # Temperature Controls #######
         self.__tempControls = []
 
+        # Disconnected Bonds #######
+        self.__disconnections = []
+
         # Results ################
         self.results = []
         self.valueMap = np.zeros_like(voxel_model.voxels, dtype=np.float32)
@@ -570,6 +573,25 @@ class Simulation:
         sensor = [x, y, z, axis.value]
         self.__sensors.append(sensor)
 
+    def clearDisconnections(self):
+        """
+        Clear all disconnected voxel bonds.
+
+        :return: None
+        """
+        self.__disconnections = []
+
+    def addDisconnection(self, voxel_1: Tuple[int, int, int], voxel_2: Tuple[int, int, int]):
+        """
+        Specify a pair of voxels which should be disconnected
+
+        :param voxel_1: Coordinates in voxels
+        :param voxel_2: Coordinates in voxels
+        :return:
+        """
+
+        self.__disconnections.append([voxel_1[0], voxel_1[1], voxel_1[2], voxel_2[0], voxel_2[1], voxel_2[2]])
+
     def clearTempControls(self):
         """
         Remove all temperature control elements from a Simulation object.
@@ -777,6 +799,7 @@ class Simulation:
         self.writeEnvironmentData(f)
         self.writeSensors(f)
         self.writeTempControls(f)
+        self.writeDisconnections(f)
         self.__model.writeVXCData(f, compression, override_mat=override_mat, E_override=E_override, cte_override=cte_override)
         f.write('</VXA>\n')
 
@@ -923,6 +946,21 @@ class Simulation:
             f.write('    <ConstantTemp>' + str(int(element[9])).replace('[', '').replace(',', '').replace(']', '') + '</ConstantTemp>\n')
             f.write('  </Element>\n')
         f.write('</TempControls>\n')
+
+    def writeDisconnections(self, f: TextIO):
+        """
+        Write bond disconnections to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        """
+        f.write('<Disconnections>\n')
+        for element in self.__disconnections:
+            f.write('  <Break>\n')
+            f.write('    <Voxel1>' + str(element[:3]).replace('[', '').replace(',', '').replace(']', '') + '</Voxel1>\n')
+            f.write('    <Voxel2>' + str(element[3:]).replace('[', '').replace(',', '').replace(']', '') + '</Voxel2>\n')
+            f.write('  </Break>\n')
+        f.write('</Disconnections>\n')
 
     def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
         """
