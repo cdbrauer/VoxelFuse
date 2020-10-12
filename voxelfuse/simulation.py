@@ -648,7 +648,7 @@ class Simulation:
         for x in range(x_len):
             for y in range(y_len):
                 for z in range(z_len):
-                    if abs(amp1_map[x, y, z]) > FLOATING_ERROR or abs(amp2_map[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
+                    if abs(amp1_map[x, y, z]) > FLOATING_ERROR or ((amp2_map is not None) and (abs(amp2_map[x, y, z]) > FLOATING_ERROR)):  # If voxel is not empty
                         element = [x, y, z, amp1_map[x, y, z]]
 
                         if amp2_map is None:
