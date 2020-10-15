@@ -96,6 +96,7 @@ class Simulation:
         self.__blendingModel = 0
         self.__polyExp = 1
         self.__volumeEffectsEnable = False
+        self.__hydrogelModelEnable = False
 
         # Stop conditions
         self.__stopConditionType = StopCondition.NONE
@@ -199,6 +200,15 @@ class Simulation:
         """
         self.__collisionEnable = enable
         self.__collisionDamping = damping
+
+    def setHydrogelModel(self, enable: bool = True):
+        """
+        Set hydrogel model parameters.
+
+        :param enable: Enable/disable hydrogel model
+        :return: None
+        """
+        self.__hydrogelModelEnable = enable
 
     def setStopCondition(self, condition: StopCondition = StopCondition.NONE, value: float = 0):
         """
@@ -601,7 +611,7 @@ class Simulation:
         self.__tempControls = []
 
     def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), amplitude1: float = 0, amplitude2: float = 0, changeX: float = 0.5,
-                       phase_offset: float = 0, heat_rate: float = 0, cool_rate: float = 0, const_temp: bool = False):
+                       phase_offset: float = 0, const_temp: bool = False, square_wave: bool = False):
         """
         Add a temperature control element to a voxel.
 
@@ -612,20 +622,18 @@ class Simulation:
         :param amplitude2: Control element negative temperature amplitude (deg C)
         :param changeX: Percent of period spanned by positive temperature amplitude (0-1)
         :param phase_offset: Control element phase offset for time-varying thermal (rad)
-        :param heat_rate: Set the max rate at which the control element can heat up (deg C/sec)
-        :param cool_rate: Set the max rate at which the control element can cool down (deg C/sec)
         :param const_temp: Enable/disable setting a constant target temperature that respects heating/cooling rates
+        :param square_wave: Enable/disable converting signal to a square wave (positive -> a = amplitude1, negative -> a = 0)
         :return: None
         """
         x = location[0] - self.__model.coords[0]
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        element = [x, y, z, amplitude1, amplitude2, changeX, phase_offset, heat_rate, cool_rate, const_temp]
+        element = [x, y, z, amplitude1, amplitude2, changeX, phase_offset, const_temp, square_wave]
         self.__tempControls.append(element)
 
-    def applyTempMap(self, amp1_map, amp2_map=None, changeX_map=None, phase_map=None, heat_rate_map=None,
-                     cool_rate_map=None, const_temp_map=None):
+    def applyTempMap(self, amp1_map, amp2_map=None, changeX_map=None, phase_map=None, const_temp_map=None, square_wave_map=None):
         """
         Set the simulation temperature control elements based on a value maps of target temperature settings.
 
@@ -633,6 +641,8 @@ class Simulation:
         :param amp2_map: Array of target negative temperature amplitudes for each voxel (deg C)
         :param changeX_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
         :param phase_map: Array of phase offsets for each voxel (rad)
+        :param const_temp_map: Array of boolean values to enable/disable constant temperature mode
+        :param square_wave_map:  Array of boolean values to enable/disable square wave mode
         :return:
         """
 
@@ -666,20 +676,15 @@ class Simulation:
                         else:
                             element.append(phase_map[x, y, z])
 
-                        if heat_rate_map is None:
-                            element.append(0)
-                        else:
-                            element.append(heat_rate_map[x, y, z])
-
-                        if cool_rate_map is None:
-                            element.append(0)
-                        else:
-                            element.append(cool_rate_map[x, y, z])
-
                         if const_temp_map is None:
                             element.append(False)
                         else:
                             element.append(const_temp_map[x, y, z])
+
+                        if square_wave_map is None:
+                            element.append(False)
+                        else:
+                            element.append(square_wave_map[x, y, z])
 
                         self.__tempControls.append(element)
 
@@ -933,6 +938,8 @@ class Simulation:
         :param f: File to write to
         :return: None
         """
+        f.write('<EnableHydrogelModel>' + str(int(self.__hydrogelModelEnable)) + '</EnableHydrogelModel>\n')
+
         f.write('<TempControls>\n')
         for element in self.__tempControls:
             f.write('  <Element>\n')
@@ -941,9 +948,8 @@ class Simulation:
             f.write('    <Amplitude2>' + str(element[4]).replace('[', '').replace(',', '').replace(']', '') + '</Amplitude2>\n')
             f.write('    <ChangeX>' + str(element[5]).replace('[', '').replace(',', '').replace(']', '') + '</ChangeX>\n')
             f.write('    <PhaseOffset>' + str(element[6]).replace('[', '').replace(',', '').replace(']', '') + '</PhaseOffset>\n')
-            f.write('    <HeatRate>' + str(element[7]).replace('[', '').replace(',', '').replace(']', '') + '</HeatRate>\n')
-            f.write('    <CoolRate>' + str(element[8]).replace('[', '').replace(',', '').replace(']', '') + '</CoolRate>\n')
-            f.write('    <ConstantTemp>' + str(int(element[9])).replace('[', '').replace(',', '').replace(']', '') + '</ConstantTemp>\n')
+            f.write('    <ConstantTemp>' + str(int(element[7])).replace('[', '').replace(',', '').replace(']', '') + '</ConstantTemp>\n')
+            f.write('    <SquareWave>' + str(int(element[8])).replace('[', '').replace(',', '').replace(']', '') + '</SquareWave>\n')
             f.write('  </Element>\n')
         f.write('</TempControls>\n')
 
@@ -962,7 +968,7 @@ class Simulation:
             f.write('  </Break>\n')
         f.write('</Disconnections>\n')
 
-    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
+    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, log_interval: int = -1, voxelyze_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
         """
         Run a Simulation object using Voxelyze.
 
@@ -973,6 +979,7 @@ class Simulation:
         :param filename: File name for .vxa and .xml files
         :param value_map: Index of the desired value map type
         :param export_stl: Enable/disable exporting an stl file of the result
+        :param log_interval: Set the step interval at which sensor log entries should be recorded, -1 to disable log
         :param delete_files: Enable/disable deleting simulation file when process is complete
         :param voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
         :param wsl: Enable/disable using Windows Subsystem for Linux with bundled Voxelyze
@@ -994,6 +1001,9 @@ class Simulation:
                 command_string = f'"{os.path.dirname(os.path.realpath(__file__))}/utils/voxelyze"'
 
         command_string = command_string + ' -f ' + filename + '.vxa -o ' + filename + '.xml -vm ' + str(value_map) + ' -p'
+
+        if log_interval > 0:
+            command_string = command_string + ' -log-interval ' + str(log_interval)
 
         if export_stl:
             command_string = command_string + ' -stl ' + filename + '.stl'
@@ -1220,7 +1230,7 @@ class MultiSimulation:
         print("Trials to run: " + str(len(self.__setup_params)))
         input("Press Enter to continue...")
 
-    def run(self):
+    def run(self, enable_log : bool = False):
         """
         Run all simulation configurations and save the results.
 
@@ -1244,7 +1254,10 @@ class MultiSimulation:
 
         # Initialize processing pool
         p = multiprocessing.Pool(self.__thread_count, initializer=poolInit, initargs=(self.displacement_result, self.time_result))
-        p.map(simProcess, sim_array)
+        if enable_log:
+            p.map(simProcessLog, sim_array)
+        else:
+            p.map(simProcess, sim_array)
 
         # Get elapsed time
         time_finished = time.time()
@@ -1334,6 +1347,30 @@ def simProcess(simulation: Simulation):
     # Run simulation
     time_process_started = time.time()
     simulation.runSim('sim_' + str(simulation.id), wsl=True)
+    time_process_finished = time.time()
+
+    # Read results
+    disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
+    disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
+    disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+    disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
+    t_result[simulation.id] = time_process_finished - time_process_started
+
+    # Finished
+    print('\nProcess ' + str(simulation.id) + ' finished')
+
+def simProcessLog(simulation: Simulation):
+    """
+    Simulation process.
+
+    :param simulation: Simulation object to run
+    :return: None
+    """
+    print('\nProcess ' + str(simulation.id) + ' started')
+
+    # Run simulation
+    time_process_started = time.time()
+    simulation.runSim('sim_' + str(simulation.id), log_interval=10000, wsl=True)
     time_process_finished = time.time()
 
     # Read results
