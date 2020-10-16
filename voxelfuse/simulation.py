@@ -1272,7 +1272,7 @@ class MultiSimulation:
         :return: None
         """
         # Add labels for results
-        labels.append('Displacement (mm)')
+        labels.append('Displacement (m)')
         labels.append('Simulation Time (s)')
 
         # Get result table size
