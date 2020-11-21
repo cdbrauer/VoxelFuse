@@ -1346,7 +1346,7 @@ def simProcess(simulation: Simulation):
 
     # Run simulation
     time_process_started = time.time()
-    simulation.runSim('sim_' + str(simulation.id), wsl=True)
+    simulation.runSim('sim_' + str(simulation.id), log_interval=-1, export_stl=False)
     time_process_finished = time.time()
 
     # Read results
@@ -1370,7 +1370,7 @@ def simProcessLog(simulation: Simulation):
 
     # Run simulation
     time_process_started = time.time()
-    simulation.runSim('sim_' + str(simulation.id), log_interval=10000, wsl=True)
+    simulation.runSim('sim_' + str(simulation.id), log_interval=10000, export_stl=True)
     time_process_finished = time.time()
 
     # Read results
