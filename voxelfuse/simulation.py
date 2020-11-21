@@ -71,7 +71,7 @@ class Simulation:
         """
         # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
         self.id = id_number
-        self.__model = ((VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1))).removeDuplicateMaterials()
+        self.__model = ((VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1), resolution=voxel_model.resolution)).removeDuplicateMaterials()
 
         # Simulator ##############
         # Integration
@@ -430,7 +430,7 @@ class Simulation:
 
         regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
         regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        bcRegion = cuboid(regionSize, regionPosition) & self.__model
+        bcRegion = cuboid(regionSize, regionPosition, resolution=self.__model.resolution) & self.__model
 
         x_offset = int(bcRegion.coords[0])
         y_offset = int(bcRegion.coords[1])
@@ -480,7 +480,7 @@ class Simulation:
 
         regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
         regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        bcRegion = sphere(regionRadius, regionPosition) & self.__model
+        bcRegion = sphere(regionRadius, regionPosition, resolution=self.__model.resolution) & self.__model
 
         x_offset = int(bcRegion.coords[0])
         y_offset = int(bcRegion.coords[1])
@@ -536,7 +536,7 @@ class Simulation:
         regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
         regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
         regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        bcRegion = cylinder(regionRadius, regionHeight, regionPosition)
+        bcRegion = cylinder(regionRadius, regionHeight, regionPosition, resolution=self.__model.resolution)
 
         if axis == 0:
             bcRegion = bcRegion.rotate90(axis=1)
