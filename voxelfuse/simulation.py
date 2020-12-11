@@ -968,7 +968,7 @@ class Simulation:
             f.write('  </Break>\n')
         f.write('</Disconnections>\n')
 
-    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, log_interval: int = -1, voxelyze_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
+    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, log_interval: int = -1, history_interval: int = -1, voxelyze_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
         """
         Run a Simulation object using Voxelyze.
 
@@ -978,15 +978,19 @@ class Simulation:
 
         :param filename: File name for .vxa and .xml files
         :param value_map: Index of the desired value map type
-        :param export_stl: Enable/disable exporting an stl file of the result
         :param log_interval: Set the step interval at which sensor log entries should be recorded, -1 to disable log
+        :param history_interval: Set the step interval at which history file entries should be recorded, -1 for default interval
         :param delete_files: Enable/disable deleting simulation file when process is complete
         :param voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
         :param wsl: Enable/disable using Windows Subsystem for Linux with bundled Voxelyze
         :return: None
         """
+        # Create results directory
+        if not os.path.exists('sim_results'):
+            os.makedirs('sim_results')
+
         # Create simulation file
-        self.saveVXA(filename, override_mat=override_mat, E_override=E_override, cte_override=cte_override)
+        self.saveVXA('sim_results/' + filename, override_mat=override_mat, E_override=E_override, cte_override=cte_override)
 
         if voxelyze_on_path:
             command_string = 'voxelyze'
@@ -1000,20 +1004,20 @@ class Simulation:
             else: # Linux
                 command_string = f'"{os.path.dirname(os.path.realpath(__file__))}/utils/voxelyze"'
 
-        command_string = command_string + ' -f ' + filename + '.vxa -o ' + filename + '.xml -vm ' + str(value_map) + ' -p'
+        command_string = command_string + ' -f sim_results/' + filename + '.vxa -o sim_results/' + filename + ' -vm ' + str(value_map) + ' -p'
 
         if log_interval > 0:
             command_string = command_string + ' -log-interval ' + str(log_interval)
 
-        if export_stl:
-            command_string = command_string + ' -stl ' + filename + '.stl'
+        if history_interval > 0:
+            command_string = command_string + ' -history-interval ' + str(history_interval)
 
         print('Launching Voxelyze using: ' + command_string)
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 
         # Open simulation results
-        f = open(filename + '.xml', 'r')
+        f = open('sim_results/' + filename + '.xml', 'r')
         #print('Opening file: ' + f.name)
         data = f.readlines()
         f.close()
@@ -1090,13 +1094,13 @@ class Simulation:
         # Remove temporary files
         if delete_files:
             #print('Removing file: ' + filename + '.vxa')
-            os.remove(filename + '.vxa')
+            os.remove('sim_results/' + filename + '.vxa')
             #print('Removing file: ' + filename + '.xml')
-            os.remove(filename + '.xml')
+            os.remove('sim_results/' + filename + '.xml')
 
-            if os.path.exists('value_map.txt'):
+            if os.path.exists('sim_results/value_map.txt'):
                 #print('Removing file: value_map.txt')
-                os.remove('value_map.txt')
+                os.remove('sim_results/value_map.txt')
 
     def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
         """
@@ -1346,7 +1350,7 @@ def simProcess(simulation: Simulation):
 
     # Run simulation
     time_process_started = time.time()
-    simulation.runSim('sim_' + str(simulation.id), log_interval=-1, export_stl=False)
+    simulation.runSim('sim_' + str(simulation.id), log_interval=-1, history_interval=100000, wsl=True)
     time_process_finished = time.time()
 
     # Read results
@@ -1370,7 +1374,7 @@ def simProcessLog(simulation: Simulation):
 
     # Run simulation
     time_process_started = time.time()
-    simulation.runSim('sim_' + str(simulation.id), log_interval=10000, export_stl=True)
+    simulation.runSim('sim_' + str(simulation.id), log_interval=100000, history_interval=100000, wsl=True)
     time_process_finished = time.time()
 
     # Read results
