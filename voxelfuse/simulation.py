@@ -121,6 +121,7 @@ class Simulation:
         self.__temperatureVaryEnable = False
         self.__temperatureVaryAmplitude = 0.0
         self.__temperatureVaryPeriod = 0.0
+        self.__temperatureVaryOffset = 0.0
         self.__growthAmplitude = 0.0
 
         # Sensors #######
@@ -257,14 +258,16 @@ class Simulation:
         self.__temperatureVaryEnable = False
         self.__growthAmplitude = growth_amplitude
 
-    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0, growth_amplitude: float = 1.0):
+    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0, offset: float = 0.0, growth_amplitude: float = 1.0):
         """
         Set a varying environment temperature.
+
 
         :param enable: Enable/disable temperature
         :param base_temp: Base temperature in degrees C
         :param amplitude: Temperature fluctuation amplitude
         :param period: Temperature fluctuation period
+        :param offset: Temperature offset (not currently supported)
         :param growth_amplitude: Set to 1 to enable expansion from base size
         :return: None
         """
@@ -273,6 +276,7 @@ class Simulation:
         self.__temperatureVaryEnable = enable
         self.__temperatureVaryAmplitude = amplitude
         self.__temperatureVaryPeriod = period
+        self.__temperatureVaryOffset = offset
         self.__growthAmplitude = growth_amplitude
 
     # Read settings ##################################
@@ -337,9 +341,9 @@ class Simulation:
         """
         Get simulation temperature parameters.
 
-        :return: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period
+        :return: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period, Temperature offset
         """
-        return self.__temperatureEnable, self.__temperatureBaseValue, self.__temperatureVaryEnable, self.__temperatureVaryAmplitude, self.__temperatureVaryPeriod
+        return self.__temperatureEnable, self.__temperatureBaseValue, self.__temperatureVaryEnable, self.__temperatureVaryAmplitude, self.__temperatureVaryPeriod, self.__temperatureVaryOffset
 
     # Add forces, constraints, and sensors ##################################
     # Boundary condition sizes and positions are expressed as percentages of the overall model size
@@ -611,7 +615,7 @@ class Simulation:
         self.__tempControls = []
 
     def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), amplitude1: float = 0, amplitude2: float = 0, changeX: float = 0.5,
-                       phase_offset: float = 0, const_temp: bool = False, square_wave: bool = False):
+                       phase_offset: float = 0, temp_offset: float = 0, const_temp: bool = False, square_wave: bool = False):
         """
         Add a temperature control element to a voxel.
 
@@ -622,6 +626,7 @@ class Simulation:
         :param amplitude2: Control element negative temperature amplitude (deg C)
         :param changeX: Percent of period spanned by positive temperature amplitude (0-1)
         :param phase_offset: Control element phase offset for time-varying thermal (rad)
+        :param temp_offset: Control element temperature offset for time-varying thermal (deg C)
         :param const_temp: Enable/disable setting a constant target temperature that respects heating/cooling rates
         :param square_wave: Enable/disable converting signal to a square wave (positive -> a = amplitude1, negative -> a = 0)
         :return: None
@@ -630,10 +635,10 @@ class Simulation:
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        element = [x, y, z, amplitude1, amplitude2, changeX, phase_offset, const_temp, square_wave]
+        element = [x, y, z, amplitude1, amplitude2, changeX, phase_offset, temp_offset, const_temp, square_wave]
         self.__tempControls.append(element)
 
-    def applyTempMap(self, amp1_map, amp2_map=None, changeX_map=None, phase_map=None, const_temp_map=None, square_wave_map=None):
+    def applyTempMap(self, amp1_map, amp2_map=None, changeX_map=None, phase_map=None, offset_map=None, const_temp_map=None, square_wave_map=None):
         """
         Set the simulation temperature control elements based on a value maps of target temperature settings.
 
@@ -641,6 +646,7 @@ class Simulation:
         :param amp2_map: Array of target negative temperature amplitudes for each voxel (deg C)
         :param changeX_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
         :param phase_map: Array of phase offsets for each voxel (rad)
+        :param offset_map: Array of temperature offsets for each voxel (deg C)
         :param const_temp_map: Array of boolean values to enable/disable constant temperature mode
         :param square_wave_map:  Array of boolean values to enable/disable square wave mode
         :return:
@@ -676,6 +682,11 @@ class Simulation:
                         else:
                             element.append(phase_map[x, y, z])
 
+                        if offset_map is None:
+                            element.append(0)
+                        else:
+                            element.append(offset_map[x, y, z])
+
                         if const_temp_map is None:
                             element.append(False)
                         else:
@@ -688,53 +699,6 @@ class Simulation:
 
                         self.__tempControls.append(element)
 
-    # TODO: Remove this -- its confusing and inaccurate for hydrogels
-    # def applyVolumeMap(self, value_map = None):
-    #     """
-    #     Set the simulation temperature control elements based on a value map of target volumes.
-    #
-    #     If a valueMap is not specified, the Simulation object's value map attribute will
-    #     be used. To update this attribute, first use ``runSim(value_map=10)`` to get the
-    #     result volumes from running the simulation with any previous settings.
-    #
-    #     :param value_map: Array of target volumes for each voxel
-    #     :return:
-    #     """
-    #     if value_map is None:
-    #         value_map = self.valueMap
-    #
-    #     # Clear any existing temp controls
-    #     self.clearTempControls()
-    #
-    #     # Get map size
-    #     x_len = value_map.shape[0]
-    #     y_len = value_map.shape[1]
-    #     z_len = value_map.shape[2]
-    #
-    #     # Get initial volume
-    #     v0 = (1 / self.__model.resolution) ** 3
-    #
-    #     # Find required temperature change at each voxel
-    #     for x in range(x_len):
-    #         for y in range(y_len):
-    #             for z in range(z_len):
-    #                 if abs(value_map[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
-    #                     # Get volume change
-    #                     vol_delta = value_map[x, y, z] - v0
-    #
-    #                     # Get CTE value
-    #                     avgProps = self.__model.getVoxelProperties((x, y, z))
-    #                     cte = avgProps['CTE']
-    #
-    #                     # Get required temperature change relative to base temperature
-    #                     temp_delta = (vol_delta / (v0 * cte))
-    #
-    #                     # Get base temperature
-    #                     temp_base = (self.getThermal())[1]
-    #
-    #                     # Add a temperature control element
-    #                     self.addTempControl((x, y, z), temp_base+temp_delta)
-
     def saveTempControls(self, filename: str, figure: bool = False):
         """
         Save the temperature control elements applied to a model to a .csv file.
@@ -745,7 +709,7 @@ class Simulation:
         """
         f = open(filename + '.csv', 'w+')
         print('Saving file: ' + f.name)
-        f.write('X,Y,Z,Amplitude 1 (deg C),Amplitude 2 (deg C),Change X,Phase Offset (rad),Heating Rate (deg C/sec),Cooling Rate (deg C/sec),Constant Temperature Target\n')
+        f.write('X,Y,Z,Amplitude 1 (deg C),Amplitude 2 (deg C),Change X,Phase Offset (rad),Temperature Offset (deg C),Constant Temperature Enabled,Square Wave Enabled\n')
         for i in range(len(self.__tempControls)):
             f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
         f.close()
@@ -912,6 +876,7 @@ class Simulation:
         f.write('    <TempBase>' + str(self.__temperatureBaseValue) + '</TempBase>\n')
         f.write('    <VaryTempEnabled>' + str(int(self.__temperatureVaryEnable)) + '</VaryTempEnabled>\n')
         f.write('    <TempPeriod>' + str(self.__temperatureVaryPeriod) + '</TempPeriod>\n')
+        f.write('    <TempOffset>' + str(self.__temperatureVaryOffset) + '</TempOffset>\n')
         f.write('  </Thermal>\n')
         f.write('  <GrowthAmplitude>' + str(self.__growthAmplitude) + '</GrowthAmplitude>\n')
         f.write('</Environment>\n')
@@ -948,8 +913,9 @@ class Simulation:
             f.write('    <Amplitude2>' + str(element[4]).replace('[', '').replace(',', '').replace(']', '') + '</Amplitude2>\n')
             f.write('    <ChangeX>' + str(element[5]).replace('[', '').replace(',', '').replace(']', '') + '</ChangeX>\n')
             f.write('    <PhaseOffset>' + str(element[6]).replace('[', '').replace(',', '').replace(']', '') + '</PhaseOffset>\n')
-            f.write('    <ConstantTemp>' + str(int(element[7])).replace('[', '').replace(',', '').replace(']', '') + '</ConstantTemp>\n')
-            f.write('    <SquareWave>' + str(int(element[8])).replace('[', '').replace(',', '').replace(']', '') + '</SquareWave>\n')
+            f.write('    <Offset>' + str(element[7]).replace('[', '').replace(',', '').replace(']', '') + '</Offset>\n')
+            f.write('    <ConstantTemp>' + str(int(element[8])).replace('[', '').replace(',', '').replace(']', '') + '</ConstantTemp>\n')
+            f.write('    <SquareWave>' + str(int(element[9])).replace('[', '').replace(',', '').replace(']', '') + '</SquareWave>\n')
             f.write('  </Element>\n')
         f.write('</TempControls>\n')
 
