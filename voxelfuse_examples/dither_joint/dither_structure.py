@@ -29,7 +29,7 @@ if __name__=='__main__':
     model = modelIn.setMaterialVector(materialVector)
 
     # Apply dither
-    modelDither = model.dither(blur=False) # Blur operation separated for clarity
+    modelDither = model.dither()
 
     # Create mesh data
     for m in range(1, len(modelDither.materials)):

@@ -3,7 +3,7 @@ VoxelModel Class
 
 ----
 
-Copyright 2020 - Cole Brauer, Dan Aukes
+Copyright 2021 - Cole Brauer, Dan Aukes
 """
 
 import os
@@ -313,6 +313,9 @@ class VoxelModel:
         """
         Remove duplicate rows from a model's material array.
 
+        This function can be greatly accelerated using CUDA. For more information on how to enable CUDA in VoxelFuse,
+        see the GpuSettings class.
+
         :return: VoxelModel
         """
         new_voxels = np.copy(self.voxels)
@@ -323,7 +326,7 @@ class VoxelModel:
             CUDA_enable = bool(os.environ.get('VF_CUDA_ENABLE'))
             CUDA_device = int(os.environ.get('VF_CUDA_DEVICE'))
         except TypeError:
-            print('CUDA environment variables not found')
+            print('CUDA environment variables not found, defaulting to CUDA disabled')
             CUDA_enable = False
             CUDA_device = 0
 
@@ -1099,7 +1102,7 @@ class VoxelModel:
         :param radius: Radius for dilation/erosion in voxels
         :param plane:  Dilation/erosion directions, set using Axes class
         :param structType: Shape of structuring element, set using Struct class
-        :param connectivity: onnectivity of structuring element (1-3)
+        :param connectivity: connectivity of structuring element (1-3)
         :return: VoxelModel
         """
         if radius == 0:
@@ -1199,11 +1202,25 @@ class VoxelModel:
         new_model = new_model.union(self)
         return new_model
 
-    def dither(self, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=True):
-        if radius == 0:
-            return VoxelModel.copy(self)
+    def dither(self, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=False, radius=1):
+        """
+        Apply material-wise dithering to a model.
 
-        if blur:
+        Applying dithering will modify the model so that each voxel contains material in only a single material channel.
+        Regions of the model which contained mixtures of materials will be converted to distributions of adjacent single
+        material voxels.
+
+        :param use_full: Enabling will use a Stucki error diffusion filter. Disabling will use the provided values for x, y, and z error
+        :param x_error: Percentage of error to spread in X
+        :param y_error: Percentage of error to spread in Y
+        :param z_error:  Percentage of error to spread in Z
+        :param error_spread_threshold: If a voxel contains a material channel that accounts for more than this percentage of the voxel, no additional error will be spread to it
+        :param blur: Enable/disable applying a blur operation before the dither operation
+        :param radius: Radius value for the optional blur operation
+        :return: VoxelModel
+        """
+
+        if blur and (radius > 0):
             new_model = self.blur(radius)
             new_model = new_model.scaleValues()
         else:
@@ -1356,8 +1373,7 @@ class VoxelModel:
         xV = int(round(vector[0] * self.resolution))
         yV = int(round(vector[1] * self.resolution))
         zV = int(round(vector[2] * self.resolution))
-        vector_voxels = (xV, yV, zV)
-        new_model = self.translate(vector_voxels)
+        new_model = self.translate((xV, yV, zV))
         return new_model
 
     def rotate(self, angle: float, axis: Axes = Axes.Z):
@@ -1824,43 +1840,51 @@ class VoxelModel:
         y_coord = self.coords[1]
         z_coord = self.coords[2]
 
-        f.write('<coords>\n' + str(x_coord) + ',' + str(y_coord) + ',' + str(z_coord) + ',\n</coords>\n')
+        writeOpening(f, 'coords')
+        f.write(str(x_coord) + ',' + str(y_coord) + ',' + str(z_coord) + ',\n')
+        writeClosing(f, 'coords')
 
-        f.write('<resolution>\n' + str(self.resolution) + '\n</resolution>\n')
+        writeOpening(f, 'resolution')
+        f.write(str(self.resolution) + '\n')
+        writeClosing(f, 'resolution')
 
-        f.write('<materials>\n')
+        writeOpening(f, 'materials')
         for r in range(len(self.materials[:,0])): # tqdm(range(len(self.materials[:,0])), desc='Writing materials'):
             for c in range(len(self.materials[0,:])):
                 f.write(str(self.materials[r,c]) + ',')
             f.write('\n')
-        f.write('</materials>\n')
+        writeClosing(f, 'materials')
 
         x_len = self.voxels.shape[0]
         y_len = self.voxels.shape[1]
         z_len = self.voxels.shape[2]
 
-        f.write('<size>\n' + str(x_len) + ',' + str(y_len) + ',' + str(z_len) + ',\n</size>\n')
+        writeOpening(f, 'size')
+        f.write(str(x_len) + ',' + str(y_len) + ',' + str(z_len) + ',\n')
+        writeClosing(f, 'size')
 
-        f.write('<voxels>\n')
+        writeOpening(f, 'voxels')
         for x in range(x_len): # tqdm(range(x_len), desc='Writing voxels'):
             for z in range(z_len):
                 for y in range(y_len):
                     f.write(str(int(self.voxels[x,y,z])) + ',')
                 f.write(';')
             f.write('\n')
-        f.write('</voxels>\n')
+        writeClosing(f, 'voxels')
 
-        f.write('<components>\n' + str(self.numComponents) + '\n</components>\n')
+        writeOpening(f, 'components')
+        f.write(str(self.numComponents) + '\n')
+        writeClosing(f, 'components')
 
         if self.numComponents > 0:
-            f.write('<labels>\n')
+            writeOpening(f, 'labels')
             for x in range(x_len): # tqdm(range(x_len), desc='Writing components'):
                 for z in range(z_len):
                     for y in range(y_len):
                         f.write(str(int(self.components[x,y,z])) + ',')
                     f.write(';')
                 f.write('\n')
-            f.write('</labels>\n')
+            writeClosing(f, 'labels')
 
         f.close()
 
@@ -1998,12 +2022,12 @@ class VoxelModel:
         export_model = (VoxelModel.copy(self).fitWorkspace()) | empty_model  # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
         export_model.coords = (0, 0, 0)  # Set coords to zero to move object to origin if it is at negative coordinates
 
-        f.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
+        writeHeader(f, '1.0', 'ISO-8859-1')
         export_model.writeVXCData(f, compression)
 
         f.close()
 
-    def writeVXCData(self, f: TextIO, compression: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
+    def writeVXCData(self, f: TextIO, compression: bool = False):
         """
         Write geometry and material data to a text file using the .vxc format.
 
@@ -2011,97 +2035,93 @@ class VoxelModel:
         :param compression:  Enable/disable voxel data compression
         :return: None
         """
-        f.write('<VXC Version="' + str(0.94) + '">\n')
+        writeOpening(f, 'VXC Version="' + str(0.94) + '"', 1)
 
         # Lattice settings
-        f.write('  <Lattice>\n')
-        f.write('    <Lattice_Dim>' + str((1/self.resolution) * 0.001) + '</Lattice_Dim>\n')
-        f.write('    <X_Dim_Adj>' + str(1) + '</X_Dim_Adj>\n')
-        f.write('    <Y_Dim_Adj>' + str(1) + '</Y_Dim_Adj>\n')
-        f.write('    <Z_Dim_Adj>' + str(1) + '</Z_Dim_Adj>\n')
-        f.write('    <X_Line_Offset>' + str(0) + '</X_Line_Offset>\n')
-        f.write('    <Y_Line_Offset>' + str(0) + '</Y_Line_Offset>\n')
-        f.write('    <X_Layer_Offset>' + str(0) + '</X_Layer_Offset>\n')
-        f.write('    <Y_Layer_Offset>' + str(0) + '</Y_Layer_Offset>\n')
-        f.write('  </Lattice>\n')
+        writeOpening(f, 'Lattice', 1)
+        writeTag(f, 'Lattice_Dim', (1/self.resolution) * 0.001, 2)
+        writeTag(f, 'X_Dim_Adj', 1, 2)
+        writeTag(f, 'Y_Dim_Adj', 1, 2)
+        writeTag(f, 'Z_Dim_Adj', 1, 2)
+        writeTag(f, 'X_Line_Offset', 0, 2)
+        writeTag(f, 'Y_Line_Offset', 0, 2)
+        writeTag(f, 'X_Layer_Offset', 0, 2)
+        writeTag(f, 'Y_Layer_Offset', 0, 2)
+        writeClosing(f, 'Lattice', 1)
 
         # Voxel settings
-        f.write('  <Voxel>\n')
-        f.write('    <Vox_Name>BOX</Vox_Name>\n')
-        f.write('    <X_Squeeze>' + str(1) + '</X_Squeeze>\n')
-        f.write('    <Y_Squeeze>' + str(1) + '</Y_Squeeze>\n')
-        f.write('    <Z_Squeeze>' + str(1) + '</Z_Squeeze>\n')
-        f.write('  </Voxel>\n')
+        writeOpening(f, 'Voxel', 1)
+        writeTag(f, 'Vox_Name', 'BOX', 2)
+        writeTag(f, 'X_Squeeze', 1, 2)
+        writeTag(f, 'Y_Squeeze', 1, 2)
+        writeTag(f, 'Z_Squeeze', 1, 2)
+        writeClosing(f, 'Voxel', 1)
 
         # Materials
-        f.write('  <Palette>\n')
+        writeOpening(f, 'Palette', 1)
         for row in range(1, len(self.materials[:, 0])): # tqdm(range(1, len(self.materials[:, 0])), desc='Writing materials'):
             avgProps = self.getMaterialProperties(row)
-            f.write('    <Material ID="' + str(row) + '">\n')
-            f.write('      <MatType>' + str(0) + '</MatType>\n')
-            f.write('      <Name>' + avgProps['name'][0:-1] + '</Name>\n')
-            f.write('      <Display>\n')
-            f.write('        <Red>' + str(avgProps['r']) + '</Red>\n')
-            f.write('        <Green>' + str(avgProps['g']) + '</Green>\n')
-            f.write('        <Blue>' + str(avgProps['b']) + '</Blue>\n')
-            f.write('        <Alpha>' + str(1) + '</Alpha>\n')
-            f.write('      </Display>\n')
-            f.write('      <Mechanical>\n')
-            f.write('        <MatModel>' + str(int(avgProps['MM'])) + '</MatModel>\n')
+            writeOpening(f, 'Material ID="' + str(row) + '"', 2)
+            writeTag(f, 'MatType', 0, 3)
+            writeTag(f, 'Name', avgProps['name'][0:-1], 3)
 
+            writeOpening(f, 'Display', 3)
+            writeTag(f, 'Red', avgProps['r'], 4)
+            writeTag(f, 'Green', avgProps['g'], 4)
+            writeTag(f, 'Blue', avgProps['b'], 4)
+            writeTag(f, 'Alpha', 1, 4)
+            writeClosing(f, 'Display', 3)
+
+            writeOpening(f, 'Mechanical', 3)
+            writeTag(f, 'MatModel', int(avgProps['MM']), 4)
             if int(avgProps['MM']) == 3:
                 SSData = self.getSSData(row)
-                f.write('        <SSData>\n')
-                f.write('          <NumDataPts>' + str(len(SSData['strain'])) + '</NumDataPts>\n')
-                f.write('          <StrainData>\n')
+                writeOpening(f, 'SSData', 4)
+                writeTag(f, 'NumDataPts', len(SSData['strain']), 5)
+
+                writeOpening(f, 'StrainData', 5)
                 for point in range(len(SSData['strain'])):
-                    f.write('            <Strain>' + str(SSData['strain'][point]) + '</Strain>\n')
-                f.write('          </StrainData>\n')
-                f.write('          <StressData>\n')
+                    writeTag(f, 'Strain', SSData['strain'][point], 6)
+                writeClosing(f, 'StrainData', 5)
+
+                writeOpening(f, 'StressData', 5)
                 for point in range(len(SSData['stress'])):
-                    f.write('            <Stress>' + str(SSData['stress'][point]) + '</Stress>\n')
-                f.write('          </StressData>\n')
-                f.write('        </SSData>\n')
+                    writeTag(f, 'Stress', SSData['stress'][point], 6)
+                writeClosing(f, 'StressData', 5)
+                writeClosing(f, 'SSData', 4)
 
-            if row == override_mat and E_override != -1:
-                f.write('        <Elastic_Mod>' + str(E_override) + '</Elastic_Mod>\n')
-            else:
-                f.write('        <Elastic_Mod>' + str(avgProps['E']) + '</Elastic_Mod>\n')
+            writeTag(f, 'Elastic_Mod', avgProps['E'], 4)
+            writeTag(f, 'Plastic_Mod', avgProps['Z'], 4)
+            writeTag(f, 'Yield_Stress', avgProps['eY'], 4)
+            writeTag(f, 'FailModel', int(avgProps['FM']), 4)
+            writeTag(f, 'Fail_Stress', avgProps['eF'], 4)
+            writeTag(f, 'Fail_Strain', avgProps['SF'], 4)
+            writeTag(f, 'Density', avgProps['p'] * 1e3, 4)
+            writeTag(f, 'Poissons_Ratio', avgProps['v'], 4)
+            writeTag(f, 'CTE', avgProps['CTE'], 4)
+            writeTag(f, 'MaterialTempPhase', avgProps['TP'], 4)
+            writeTag(f, 'uStatic', avgProps['uS'], 4)
+            writeTag(f, 'uDynamic', avgProps['uD'], 4)
 
-            f.write('        <Plastic_Mod>' + str(avgProps['Z']) + '</Plastic_Mod>\n')
-            f.write('        <Yield_Stress>' + str(avgProps['eY']) + '</Yield_Stress>\n')
-            f.write('        <FailModel>' + str(int(avgProps['FM'])) + '</FailModel>\n')
-            f.write('        <Fail_Stress>' + str(avgProps['eF']) + '</Fail_Stress>\n')
-            f.write('        <Fail_Strain>' + str(avgProps['SF']) + '</Fail_Strain>\n')
-            f.write('        <Density>' + str(avgProps['p'] * 1e3) + '</Density>\n') # Convert g/cm^3 to kg/m^3
-            f.write('        <Poissons_Ratio>' + str(avgProps['v']) + '</Poissons_Ratio>\n')
-
-            if row == override_mat and cte_override != 99:
-                f.write('        <CTE>' + str(cte_override) + '</CTE>\n')
-            else:
-                f.write('        <CTE>' + str(avgProps['CTE']) + '</CTE>\n')
-
-            f.write('        <MaterialTempPhase>' + str(avgProps['TP']) + '</MaterialTempPhase>\n')
-            f.write('        <uStatic>' + str(avgProps['uS']) + '</uStatic>\n')
-            f.write('        <uDynamic>' + str(avgProps['uD']) + '</uDynamic>\n')
-            f.write('      </Mechanical>\n')
-            f.write('    </Material>\n')
-        f.write('  </Palette>\n')
+            writeClosing(f, 'Mechanical', 3)
+            writeClosing(f, 'Material', 2)
+        writeClosing(f, 'Palette', 1)
 
         # Structure
         if compression:
-            f.write('  <Structure Compression="ZLIB">\n')
+            writeOpening(f, 'Structure Compression="ZLIB"', 1)
         else:
-            f.write('  <Structure Compression="ASCII_READABLE">\n')
+            writeOpening(f, 'Structure Compression="ASCII_READABLE"', 1)
 
         x_len = self.voxels.shape[0]
         y_len = self.voxels.shape[1]
         z_len = self.voxels.shape[2]
 
-        f.write('    <X_Voxels>' + str(x_len) + '</X_Voxels>\n')
-        f.write('    <Y_Voxels>' + str(y_len) + '</Y_Voxels>\n')
-        f.write('    <Z_Voxels>' + str(z_len) + '</Z_Voxels>\n')
-        f.write('    <Data>\n')
+        writeTag(f, 'X_Voxels', x_len, 2)
+        writeTag(f, 'Y_Voxels', y_len, 2)
+        writeTag(f, 'Z_Voxels', z_len, 2)
+
+        writeOpening(f, 'Data', 2)
 
         for z in range(z_len): # tqdm(range(z_len), desc='Writing voxels'):
             layer = np.copy(self.voxels[:, :, z])
@@ -2118,11 +2138,11 @@ class VoxelModel:
                 for vox in layerData:
                     layerDataStr = layerDataStr + str(vox)
 
-            f.write('      <Layer><![CDATA[' + layerDataStr + ']]></Layer>\n')
+            writeTag(f, 'Layer', '<![CDATA[' + layerDataStr + ']]>', 3)
 
-        f.write('    </Data>\n')
-        f.write('  </Structure>\n')
-        f.write('</VXC>\n')
+        writeClosing(f, 'Data', 2)
+        writeClosing(f, 'Structure', 1)
+        writeClosing(f, 'VXC', 1)
 
 class GpuSettings:
     """
@@ -2541,3 +2561,26 @@ def updateMatIndices(voxels, old_materials, new_materials):
             break
         else:
             voxels[x, y, z] = -1
+
+'''
+Functions for writing to xml files
+'''
+def writeHeader(f: TextIO, version: str, encoding: str):
+    f.write('<?xml version="' + version + '" encoding="' + encoding + '"?>\n')
+
+def writeTag(f: TextIO, name: str, value, tab_level: int = 0):
+    for i in range(tab_level):
+        f.write('  ')
+    f.write('<' + name + '>')
+    f.write(str(value))
+    f.write('</' + name + '>\n')
+
+def writeOpening(f: TextIO, name: str, tab_level: int = 0):
+    for i in range(tab_level):
+        f.write('  ')
+    f.write('<' + name + '>\n')
+
+def writeClosing(f: TextIO, name: str, tab_level: int = 0):
+    for i in range(tab_level):
+        f.write('  ')
+    f.write('</' + name + '>\n')

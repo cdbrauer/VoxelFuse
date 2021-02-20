@@ -24,7 +24,7 @@ if __name__=='__main__':
     modelBlur = modelBlur.scaleValues()
 
     # Apply dither
-    modelDither = modelBlur.dither(blur=False) # Blur operation separated for clarity
+    modelDither = modelBlur.dither()
 
     # Create mesh data
     for m in range(1, len(modelIn.materials)):
