@@ -19,8 +19,8 @@ from enum import Enum
 from typing import List, Tuple, TextIO
 from tqdm import tqdm
 import numpy as np
-from voxelfuse.voxel_model import VoxelModel
-from voxelfuse.primitives import empty, cuboid, sphere, cylinder
+from voxelfuse.voxel_model import VoxelModel, writeHeader, writeData, writeOpen, writeClos
+from voxelfuse.primitives import empty #, cuboid, sphere, cylinder # Formerly needed for finding bcVoxels
 
 # Floating point error threshold for rounding to zero
 FLOATING_ERROR = 0.0000000001
@@ -108,7 +108,7 @@ class Simulation:
         # Environment ############
         # Boundary conditions
         self.__bcRegions = []
-        self.__bcVoxels = []
+        # self.__bcVoxels = [] # This data is not needed by the Voxelyze engine, and was disabled
 
         # Gravity
         self.__gravityEnable = True
@@ -151,7 +151,7 @@ class Simulation:
 
         # Make lists copies instead of references
         new_simulation.__bcRegions = simulation.__bcRegions.copy()
-        new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
+        # new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
         new_simulation.__sensors = simulation.__sensors.copy()
         new_simulation.__tempControls = simulation.__tempControls.copy()
         new_simulation.results = simulation.results.copy()
@@ -313,6 +313,14 @@ class Simulation:
         """
         return self.__collisionEnable, self.__collisionDamping
 
+    def getHydrogelModel(self):
+        """
+        Get hydrogel model parameters.
+
+        :return: Enable/disable hydrogel model
+        """
+        return self.__hydrogelModelEnable
+
     def getStopCondition(self):
         """
         Get simulation stop condition.
@@ -360,7 +368,7 @@ class Simulation:
         :return: None
         """
         self.__bcRegions = []
-        self.__bcVoxels = []
+        # self.__bcVoxels = []
 
     # Default box boundary condition is a fixed constraint in the YZ plane
     def addBoundaryConditionVoxel(self, position: Tuple[int, int, int] = (0, 0, 0),
@@ -397,7 +405,7 @@ class Simulation:
         radius = 0.49/x_len
 
         self.__bcRegions.append([BCShape.SPHERE, pos, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-        self.__bcVoxels.append([x, y, z])
+        # self.__bcVoxels.append([x, y, z])
 
     # Default box boundary condition is a fixed constraint in the XY plane (bottom layer)
     def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0),
@@ -428,26 +436,26 @@ class Simulation:
         """
         self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
 
-        x_len = int(self.__model.voxels.shape[0])
-        y_len = int(self.__model.voxels.shape[1])
-        z_len = int(self.__model.voxels.shape[2])
+        # x_len = int(self.__model.voxels.shape[0])
+        # y_len = int(self.__model.voxels.shape[1])
+        # z_len = int(self.__model.voxels.shape[2])
 
-        regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
-        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        bcRegion = cuboid(regionSize, regionPosition, resolution=self.__model.resolution) & self.__model
+        # regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
+        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        # bcRegion = cuboid(regionSize, regionPosition, resolution=self.__model.resolution) & self.__model
 
-        x_offset = int(bcRegion.coords[0])
-        y_offset = int(bcRegion.coords[1])
-        z_offset = int(bcRegion.coords[2])
+        # x_offset = int(bcRegion.coords[0])
+        # y_offset = int(bcRegion.coords[1])
+        # z_offset = int(bcRegion.coords[2])
 
-        bcVoxels = []
-        for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    if bcRegion.voxels[x, y, z] != 0:
-                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+        # bcVoxels = []
+        # for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
+        #     for y in range(y_len):
+        #         for z in range(z_len):
+        #             if bcRegion.voxels[x, y, z] != 0:
+        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
 
-        self.__bcVoxels.append(bcVoxels)
+        # self.__bcVoxels.append(bcVoxels)
 
     # Default sphere boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5),
@@ -478,26 +486,26 @@ class Simulation:
         """
         self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
 
-        x_len = int(self.__model.voxels.shape[0])
-        y_len = int(self.__model.voxels.shape[1])
-        z_len = int(self.__model.voxels.shape[2])
-
-        regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
-        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        bcRegion = sphere(regionRadius, regionPosition, resolution=self.__model.resolution) & self.__model
-
-        x_offset = int(bcRegion.coords[0])
-        y_offset = int(bcRegion.coords[1])
-        z_offset = int(bcRegion.coords[2])
-
-        bcVoxels = []
-        for x in  range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    if bcRegion.voxels[x, y, z] != 0:
-                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
-
-        self.__bcVoxels.append(bcVoxels)
+        # x_len = int(self.__model.voxels.shape[0])
+        # y_len = int(self.__model.voxels.shape[1])
+        # z_len = int(self.__model.voxels.shape[2])
+        #
+        # regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        # bcRegion = sphere(regionRadius, regionPosition, resolution=self.__model.resolution) & self.__model
+        #
+        # x_offset = int(bcRegion.coords[0])
+        # y_offset = int(bcRegion.coords[1])
+        # z_offset = int(bcRegion.coords[2])
+        #
+        # bcVoxels = []
+        # for x in  range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
+        #     for y in range(y_len):
+        #         for z in range(z_len):
+        #             if bcRegion.voxels[x, y, z] != 0:
+        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+        #
+        # self.__bcVoxels.append(bcVoxels)
 
     # Default cylinder boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0,
@@ -533,34 +541,34 @@ class Simulation:
         size[axis] = height
         self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
 
-        x_len = int(self.__model.voxels.shape[0])
-        y_len = int(self.__model.voxels.shape[1])
-        z_len = int(self.__model.voxels.shape[2])
-
-        regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
-        regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
-        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        bcRegion = cylinder(regionRadius, regionHeight, regionPosition, resolution=self.__model.resolution)
-
-        if axis == 0:
-            bcRegion = bcRegion.rotate90(axis=1)
-        elif axis == 1:
-            bcRegion = bcRegion.rotate90(axis=0)
-
-        bcRegion = bcRegion & self.__model
-
-        x_offset = int(bcRegion.coords[0])
-        y_offset = int(bcRegion.coords[1])
-        z_offset = int(bcRegion.coords[2])
-
-        bcVoxels = []
-        for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    if bcRegion.voxels[x, y, z] != 0:
-                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
-
-        self.__bcVoxels.append(bcVoxels)
+        # x_len = int(self.__model.voxels.shape[0])
+        # y_len = int(self.__model.voxels.shape[1])
+        # z_len = int(self.__model.voxels.shape[2])
+        #
+        # regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+        # regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
+        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        # bcRegion = cylinder(regionRadius, regionHeight, regionPosition, resolution=self.__model.resolution)
+        #
+        # if axis == 0:
+        #     bcRegion = bcRegion.rotate90(axis=1)
+        # elif axis == 1:
+        #     bcRegion = bcRegion.rotate90(axis=0)
+        #
+        # bcRegion = bcRegion & self.__model
+        #
+        # x_offset = int(bcRegion.coords[0])
+        # y_offset = int(bcRegion.coords[1])
+        # z_offset = int(bcRegion.coords[2])
+        #
+        # bcVoxels = []
+        # for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
+        #     for y in range(y_len):
+        #         for z in range(z_len):
+        #             if bcRegion.voxels[x, y, z] != 0:
+        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+        #
+        # self.__bcVoxels.append(bcVoxels)
 
     def clearSensors(self):
         """
@@ -570,7 +578,7 @@ class Simulation:
         """
         self.__sensors = []
 
-    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0), axis: Axis = Axis.NONE):
+    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0), axis: Axis = Axis.NONE): # TODO: Make Voxelyze use axis parameter
         """
         Add a sensor to a voxel.
 
@@ -603,7 +611,6 @@ class Simulation:
         :param voxel_2: Coordinates in voxels
         :return:
         """
-
         self.__disconnections.append([voxel_1[0], voxel_1[1], voxel_1[2], voxel_2[0], voxel_2[1], voxel_2[2]])
 
     def clearTempControls(self):
@@ -740,7 +747,7 @@ class Simulation:
 
     # Export simulation ##################################
     # Export simulation object to .vxa file for import into VoxCad or Voxelyze
-    def saveVXA(self, filename: str, compression: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
+    def saveVXA(self, filename: str, compression: bool = False):
         """
         Save model data to a .vxa file
 
@@ -762,16 +769,15 @@ class Simulation:
         f = open(filename + '.vxa', 'w+')
         print('Saving file: ' + f.name)
 
-        f.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
-        f.write('<VXA Version="' + str(1.1) + '">\n')
+        writeHeader(f, '1.0', 'ISO-8859-1')
+        writeOpen(f, 'VXA Version="' + str(1.1) + '"', 0)
         self.writeSimData(f)
         self.writeEnvironmentData(f)
         self.writeSensors(f)
         self.writeTempControls(f)
         self.writeDisconnections(f)
-        self.__model.writeVXCData(f, compression, override_mat=override_mat, E_override=E_override, cte_override=cte_override)
-        f.write('</VXA>\n')
-
+        self.__model.writeVXCData(f, compression)
+        writeClos(f, 'VXA')
         f.close()
 
     # Write simulator settings to file
@@ -783,38 +789,43 @@ class Simulation:
         :return: None
         """
         # Simulator settings
-        f.write('<Simulator>\n')
-        f.write('  <Integration>\n')
-        f.write('    <Integrator>' + str(self.__integrator) + '</Integrator>\n')
-        f.write('    <DtFrac>' + str(self.__dtFraction) + '</DtFrac>\n')
-        f.write('  </Integration>\n')
-        f.write('  <Damping>\n')
-        f.write('    <BondDampingZ>' + str(self.__dampingBond) + '</BondDampingZ>\n')
-        f.write('    <ColDampingZ>' + str(self.__collisionDamping) + '</ColDampingZ>\n')
-        f.write('    <SlowDampingZ>' + str(self.__dampingEnvironment) + '</SlowDampingZ>\n')
-        f.write('  </Damping>\n')
-        f.write('  <Collisions>\n')
-        f.write('    <SelfColEnabled>' + str(int(self.__collisionEnable)) + '</SelfColEnabled>\n')
-        f.write('    <ColSystem>' + str(self.__collisionSystem) + '</ColSystem>\n')
-        f.write('    <CollisionHorizon>' + str(self.__collisionHorizon) + '</CollisionHorizon>\n')
-        f.write('  </Collisions>\n')
-        f.write('  <Features>\n')
-        f.write('    <BlendingEnabled>' + str(int(self.__blendingEnable)) + '</BlendingEnabled>\n')
-        f.write('    <XMixRadius>' + str(self.__xMixRadius) + '</XMixRadius>\n')
-        f.write('    <YMixRadius>' + str(self.__yMixRadius) + '</YMixRadius>\n')
-        f.write('    <ZMixRadius>' + str(self.__zMixRadius) + '</ZMixRadius>\n')
-        f.write('    <BlendModel>' + str(self.__blendingModel) + '</BlendModel>\n')
-        f.write('    <PolyExp>' + str(self.__polyExp) + '</PolyExp>\n')
-        f.write('    <VolumeEffectsEnabled>' + str(int(self.__volumeEffectsEnable)) + '</VolumeEffectsEnabled>\n')
-        f.write('  </Features>\n')
-        f.write('  <StopCondition>\n')
-        f.write('    <StopConditionType>' + str(self.__stopConditionType.value) + '</StopConditionType>\n')
-        f.write('    <StopConditionValue>' + str(self.__stopConditionValue) + '</StopConditionValue>\n')
-        f.write('  </StopCondition>\n')
-        f.write('  <EquilibriumMode>\n')
-        f.write('    <EquilibriumModeEnabled>' + str(int(self.__equilibriumModeEnable)) + '</EquilibriumModeEnabled>\n')
-        f.write('  </EquilibriumMode>\n')
-        f.write('</Simulator>\n')
+        writeOpen(f, 'Simulator', 0)
+        writeOpen(f, 'Integration', 1)
+        writeData(f, 'Integrator', self.__integrator, 2)
+        writeData(f, 'DtFrac', self.__dtFraction, 2)
+        writeClos(f, 'Integration', 1)
+
+        writeOpen(f, 'Damping', 1)
+        writeData(f, 'BondDampingZ', self.__dampingBond, 2)
+        writeData(f, 'ColDampingZ', self.__collisionDamping, 2)
+        writeData(f, 'SlowDampingZ', self.__dampingEnvironment, 2)
+        writeClos(f, 'Damping', 1)
+
+        writeOpen(f, 'Collisions', 1)
+        writeData(f, 'SelfColEnabled', int(self.__collisionEnable), 2)
+        writeData(f, 'ColSystem', self.__collisionSystem, 2)
+        writeData(f, 'CollisionHorizon', self.__collisionHorizon, 2)
+        writeClos(f, 'Collisions', 1)
+
+        writeOpen(f, 'Features', 1)
+        writeData(f, 'BlendingEnabled', int(self.__blendingEnable), 2)
+        writeData(f, 'XMixRadius', self.__xMixRadius, 2)
+        writeData(f, 'YMixRadius', self.__yMixRadius, 2)
+        writeData(f, 'ZMixRadius', self.__zMixRadius, 2)
+        writeData(f, 'BlendModel', self.__blendingModel, 2)
+        writeData(f, 'PolyExp', self.__polyExp, 2)
+        writeData(f, 'VolumeEffectsEnabled', int(self.__volumeEffectsEnable), 2)
+        writeClos(f, 'Features', 1)
+
+        writeOpen(f, 'StopCondition', 1)
+        writeData(f, 'StopConditionType', self.__stopConditionType.value, 2)
+        writeData(f, 'StopConditionValue', self.__stopConditionValue, 2)
+        writeClos(f, 'StopCondition', 1)
+
+        writeOpen(f, 'EquilibriumMode', 1)
+        writeData(f, 'EquilibriumModeEnabled', int(self.__equilibriumModeEnable), 2)
+        writeClos(f, 'EquilibriumMode', 1)
+        writeClos(f, 'Simulator', 0)
 
     # Write environment settings to file
     def writeEnvironmentData(self, f: TextIO):
@@ -825,61 +836,56 @@ class Simulation:
         :return: None
         """
         # Environment settings
-        f.write('<Environment>\n')
-        f.write('  <Boundary_Conditions>\n')
-        f.write('    <NumBCs>' + str(len(self.__bcRegions)) + '</NumBCs>\n')
-
+        writeOpen(f, 'Environment', 0)
+        writeOpen(f, 'Boundary_Conditions', 1)
+        writeData(f, 'NumBCs', len(self.__bcRegions), 2)
         for r in range(len(self.__bcRegions)): # tqdm(range(len(self.__bcRegions)), desc='Writing boundary conditions'):
-            f.write('    <FRegion>\n')
-            f.write('      <PrimType>' + str(int(self.__bcRegions[r][0].value)) + '</PrimType>\n')
-            f.write('      <X>' + str(self.__bcRegions[r][1][0]) + '</X>\n')
-            f.write('      <Y>' + str(self.__bcRegions[r][1][1]) + '</Y>\n')
-            f.write('      <Z>' + str(self.__bcRegions[r][1][2]) + '</Z>\n')
-            f.write('      <dX>' + str(self.__bcRegions[r][2][0]) + '</dX>\n')
-            f.write('      <dY>' + str(self.__bcRegions[r][2][1]) + '</dY>\n')
-            f.write('      <dZ>' + str(self.__bcRegions[r][2][2]) + '</dZ>\n')
-            f.write('      <Radius>' + str(self.__bcRegions[r][3]) + '</Radius>\n')
-            f.write('      <R>' + str(self.__bcRegions[r][4][0]) + '</R>\n')
-            f.write('      <G>' + str(self.__bcRegions[r][4][1]) + '</G>\n')
-            f.write('      <B>' + str(self.__bcRegions[r][4][2]) + '</B>\n')
-            f.write('      <alpha>' + str(self.__bcRegions[r][4][3]) + '</alpha>\n')
-            f.write('      <DofFixed>' + str(self.__bcRegions[r][5]) + '</DofFixed>\n')
-            f.write('      <ForceX>' + str(self.__bcRegions[r][6][0]) + '</ForceX>\n')
-            f.write('      <ForceY>' + str(self.__bcRegions[r][6][1]) + '</ForceY>\n')
-            f.write('      <ForceZ>' + str(self.__bcRegions[r][6][2]) + '</ForceZ>\n')
-            f.write('      <TorqueX>' + str(self.__bcRegions[r][7][0]) + '</TorqueX>\n')
-            f.write('      <TorqueY>' + str(self.__bcRegions[r][7][1]) + '</TorqueY>\n')
-            f.write('      <TorqueZ>' + str(self.__bcRegions[r][7][2]) + '</TorqueZ>\n')
-            f.write('      <DisplaceX>' + str(self.__bcRegions[r][8][0] * 1e-3) + '</DisplaceX>\n')
-            f.write('      <DisplaceY>' + str(self.__bcRegions[r][8][1] * 1e-3) + '</DisplaceY>\n')
-            f.write('      <DisplaceZ>' + str(self.__bcRegions[r][8][2] * 1e-3) + '</DisplaceZ>\n')
-            f.write('      <AngDisplaceX>' + str(self.__bcRegions[r][9][0]) + '</AngDisplaceX>\n')
-            f.write('      <AngDisplaceY>' + str(self.__bcRegions[r][9][1]) + '</AngDisplaceY>\n')
-            f.write('      <AngDisplaceZ>' + str(self.__bcRegions[r][9][2]) + '</AngDisplaceZ>\n')
-            f.write('      <IntersectedVoxels>\n')
+            writeOpen(f, 'FRegion', 2)
+            writeData(f, 'PrimType', int(self.__bcRegions[r][0].value), 3)
+            writeData(f, 'X', self.__bcRegions[r][1][0], 3)
+            writeData(f, 'Y', self.__bcRegions[r][1][1], 3)
+            writeData(f, 'Z', self.__bcRegions[r][1][2], 3)
+            writeData(f, 'dX', self.__bcRegions[r][2][0], 3)
+            writeData(f, 'dY', self.__bcRegions[r][2][1], 3)
+            writeData(f, 'dZ', self.__bcRegions[r][2][2], 3)
+            writeData(f, 'Radius', self.__bcRegions[r][3], 3)
+            writeData(f, 'R', self.__bcRegions[r][4][0], 3)
+            writeData(f, 'G', self.__bcRegions[r][4][1], 3)
+            writeData(f, 'B', self.__bcRegions[r][4][2], 3)
+            writeData(f, 'alpha', self.__bcRegions[r][4][3], 3)
+            writeData(f, 'DofFixed', self.__bcRegions[r][5], 3)
+            writeData(f, 'ForceX', self.__bcRegions[r][6][0], 3)
+            writeData(f, 'ForceY', self.__bcRegions[r][6][1], 3)
+            writeData(f, 'ForceZ', self.__bcRegions[r][6][2], 3)
+            writeData(f, 'TorqueX', self.__bcRegions[r][7][0], 3)
+            writeData(f, 'TorqueY', self.__bcRegions[r][7][1], 3)
+            writeData(f, 'TorqueZ', self.__bcRegions[r][7][2], 3)
+            writeData(f, 'DisplaceX', self.__bcRegions[r][8][0] * 1e-3, 3)
+            writeData(f, 'DisplaceY', self.__bcRegions[r][8][1] * 1e-3, 3)
+            writeData(f, 'DisplaceZ', self.__bcRegions[r][8][2] * 1e-3, 3)
+            writeData(f, 'AngDisplaceX', self.__bcRegions[r][9][0], 3)
+            writeData(f, 'AngDisplaceY', self.__bcRegions[r][9][1], 3)
+            writeData(f, 'AngDisplaceZ', self.__bcRegions[r][9][2], 3)
+            writeClos(f, 'FRegion', 2)
+        writeClos(f, 'Boundary_Conditions', 1)
 
-            for v in self.__bcVoxels[r]:
-                f.write('        <Voxel>' + str(v).replace('[', '').replace(',', '').replace(']', '') + '</Voxel>\n')
+        writeOpen(f, 'Gravity', 1)
+        writeData(f, 'GravEnabled', int(self.__gravityEnable), 2)
+        writeData(f, 'GravAcc', self.__gravityValue, 2)
+        writeData(f, 'FloorEnabled', int(self.__floorEnable), 2)
+        writeClos(f, 'Gravity', 1)
 
-            f.write('      </IntersectedVoxels>\n')
-            f.write('    </FRegion>\n')
+        writeOpen(f, 'Thermal', 1)
+        writeData(f, 'TempEnabled', int(self.__temperatureEnable), 2)
+        writeData(f, 'TempAmplitude', self.__temperatureVaryAmplitude, 2)
+        writeData(f, 'TempBase', self.__temperatureBaseValue, 2)
+        writeData(f, 'VaryTempEnabled', int(self.__temperatureVaryEnable), 2)
+        writeData(f, 'TempPeriod', self.__temperatureVaryPeriod, 2)
+        writeData(f, 'TempOffset', self.__temperatureVaryOffset, 2)
+        writeClos(f, 'Thermal', 1)
 
-        f.write('  </Boundary_Conditions>\n')
-        f.write('  <Gravity>\n')
-        f.write('    <GravEnabled>' + str(int(self.__gravityEnable)) + '</GravEnabled>\n')
-        f.write('    <GravAcc>' + str(self.__gravityValue) + '</GravAcc>\n')
-        f.write('    <FloorEnabled>' + str(int(self.__floorEnable)) + '</FloorEnabled>\n')
-        f.write('  </Gravity>\n')
-        f.write('  <Thermal>\n')
-        f.write('    <TempEnabled>' + str(int(self.__temperatureEnable)) + '</TempEnabled>\n')
-        f.write('    <TempAmplitude>' + str(self.__temperatureVaryAmplitude) + '</TempAmplitude>\n')
-        f.write('    <TempBase>' + str(self.__temperatureBaseValue) + '</TempBase>\n')
-        f.write('    <VaryTempEnabled>' + str(int(self.__temperatureVaryEnable)) + '</VaryTempEnabled>\n')
-        f.write('    <TempPeriod>' + str(self.__temperatureVaryPeriod) + '</TempPeriod>\n')
-        f.write('    <TempOffset>' + str(self.__temperatureVaryOffset) + '</TempOffset>\n')
-        f.write('  </Thermal>\n')
-        f.write('  <GrowthAmplitude>' + str(self.__growthAmplitude) + '</GrowthAmplitude>\n')
-        f.write('</Environment>\n')
+        writeData(f, 'GrowthAmplitude', self.__growthAmplitude, 1)
+        writeClos(f, 'Environment', 0)
 
     def writeSensors(self, f: TextIO):
         """
@@ -888,13 +894,13 @@ class Simulation:
         :param f: File to write to
         :return: None
         """
-        f.write('<Sensors>\n')
+        writeOpen(f, 'Sensors', 0)
         for sensor in self.__sensors:
-            f.write('  <Sensor>\n')
-            f.write('    <Location>' + str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
-            f.write('    <Axis>' + str(sensor[3]) + '</Axis>\n')
-            f.write('  </Sensor>\n')
-        f.write('</Sensors>\n')
+            writeOpen(f, 'Sensor', 1)
+            writeData(f, 'Location', str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Axis', sensor[3], 2)
+            writeClos(f, 'Sensor', 1)
+        writeClos(f, 'Sensors', 0)
 
     def writeTempControls(self, f: TextIO):
         """
@@ -903,21 +909,21 @@ class Simulation:
         :param f: File to write to
         :return: None
         """
-        f.write('<EnableHydrogelModel>' + str(int(self.__hydrogelModelEnable)) + '</EnableHydrogelModel>\n')
+        writeData(f, 'EnableHydrogelModel', int(self.__hydrogelModelEnable), 0)
 
-        f.write('<TempControls>\n')
+        writeOpen(f, 'TempControls', 0)
         for element in self.__tempControls:
-            f.write('  <Element>\n')
-            f.write('    <Location>' + str(element[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
-            f.write('    <Temperature>' + str(element[3]).replace('[', '').replace(',', '').replace(']', '') + '</Temperature>\n')
-            f.write('    <Amplitude2>' + str(element[4]).replace('[', '').replace(',', '').replace(']', '') + '</Amplitude2>\n')
-            f.write('    <ChangeX>' + str(element[5]).replace('[', '').replace(',', '').replace(']', '') + '</ChangeX>\n')
-            f.write('    <PhaseOffset>' + str(element[6]).replace('[', '').replace(',', '').replace(']', '') + '</PhaseOffset>\n')
-            f.write('    <Offset>' + str(element[7]).replace('[', '').replace(',', '').replace(']', '') + '</Offset>\n')
-            f.write('    <ConstantTemp>' + str(int(element[8])).replace('[', '').replace(',', '').replace(']', '') + '</ConstantTemp>\n')
-            f.write('    <SquareWave>' + str(int(element[9])).replace('[', '').replace(',', '').replace(']', '') + '</SquareWave>\n')
-            f.write('  </Element>\n')
-        f.write('</TempControls>\n')
+            writeOpen(f, 'Element', 1)
+            writeData(f, 'Location', str(element[0:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Temperature', str(element[3]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Amplitude2', str(element[4]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'ChangeX', str(element[5]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'PhaseOffset', str(element[6]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Offset', str(element[7]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'ConstantTemp', str(int(element[8])).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'SquareWave', str(int(element[9])).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeClos(f, 'Element', 1)
+        writeClos(f, 'TempControls', 0)
 
     def writeDisconnections(self, f: TextIO):
         """
@@ -926,15 +932,15 @@ class Simulation:
         :param f: File to write to
         :return: None
         """
-        f.write('<Disconnections>\n')
+        writeOpen(f, 'Disconnections', 0)
         for element in self.__disconnections:
-            f.write('  <Break>\n')
-            f.write('    <Voxel1>' + str(element[:3]).replace('[', '').replace(',', '').replace(']', '') + '</Voxel1>\n')
-            f.write('    <Voxel2>' + str(element[3:]).replace('[', '').replace(',', '').replace(']', '') + '</Voxel2>\n')
-            f.write('  </Break>\n')
-        f.write('</Disconnections>\n')
+            writeOpen(f, 'Break', 1)
+            writeData(f, 'Voxel1', str(element[:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Voxel2', str(element[3:]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeClos(f, 'Break', 1)
+        writeClos(f, 'Disconnections', 0)
 
-    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, log_interval: int = -1, history_interval: int = -1, voxelyze_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
+    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, log_interval: int = -1, history_interval: int = -1, voxelyze_on_path: bool = False, wsl: bool = False):
         """
         Run a Simulation object using Voxelyze.
 
@@ -956,7 +962,7 @@ class Simulation:
             os.makedirs('sim_results')
 
         # Create simulation file
-        self.saveVXA('sim_results/' + filename, override_mat=override_mat, E_override=E_override, cte_override=cte_override)
+        self.saveVXA('sim_results/' + filename)
 
         if voxelyze_on_path:
             command_string = 'voxelyze'
@@ -1059,16 +1065,13 @@ class Simulation:
 
         # Remove temporary files
         if delete_files:
-            #print('Removing file: ' + filename + '.vxa')
             os.remove('sim_results/' + filename + '.vxa')
-            #print('Removing file: ' + filename + '.xml')
             os.remove('sim_results/' + filename + '.xml')
 
             if os.path.exists('sim_results/value_map.txt'):
-                #print('Removing file: value_map.txt')
                 os.remove('sim_results/value_map.txt')
 
-    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, wsl: bool = False, override_mat: int = 1, E_override: float = -1, cte_override: float = 99):
+    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, wsl: bool = False):
         """
         Run a Simulation object using the VoxCad GUI.
 
@@ -1093,7 +1096,7 @@ class Simulation:
         :return: None
         """
         # Create simulation file
-        self.saveVXA(filename, override_mat=override_mat, E_override=E_override, cte_override=cte_override)
+        self.saveVXA(filename)
 
         if voxcad_on_path:
             command_string = 'voxcad '
