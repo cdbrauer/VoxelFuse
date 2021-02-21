@@ -1840,51 +1840,51 @@ class VoxelModel:
         y_coord = self.coords[1]
         z_coord = self.coords[2]
 
-        writeOpening(f, 'coords')
+        writeOpen(f, 'coords')
         f.write(str(x_coord) + ',' + str(y_coord) + ',' + str(z_coord) + ',\n')
-        writeClosing(f, 'coords')
+        writeClos(f, 'coords')
 
-        writeOpening(f, 'resolution')
+        writeOpen(f, 'resolution')
         f.write(str(self.resolution) + '\n')
-        writeClosing(f, 'resolution')
+        writeClos(f, 'resolution')
 
-        writeOpening(f, 'materials')
+        writeOpen(f, 'materials')
         for r in range(len(self.materials[:,0])): # tqdm(range(len(self.materials[:,0])), desc='Writing materials'):
             for c in range(len(self.materials[0,:])):
                 f.write(str(self.materials[r,c]) + ',')
             f.write('\n')
-        writeClosing(f, 'materials')
+        writeClos(f, 'materials')
 
         x_len = self.voxels.shape[0]
         y_len = self.voxels.shape[1]
         z_len = self.voxels.shape[2]
 
-        writeOpening(f, 'size')
+        writeOpen(f, 'size')
         f.write(str(x_len) + ',' + str(y_len) + ',' + str(z_len) + ',\n')
-        writeClosing(f, 'size')
+        writeClos(f, 'size')
 
-        writeOpening(f, 'voxels')
+        writeOpen(f, 'voxels')
         for x in range(x_len): # tqdm(range(x_len), desc='Writing voxels'):
             for z in range(z_len):
                 for y in range(y_len):
                     f.write(str(int(self.voxels[x,y,z])) + ',')
                 f.write(';')
             f.write('\n')
-        writeClosing(f, 'voxels')
+        writeClos(f, 'voxels')
 
-        writeOpening(f, 'components')
+        writeOpen(f, 'components')
         f.write(str(self.numComponents) + '\n')
-        writeClosing(f, 'components')
+        writeClos(f, 'components')
 
         if self.numComponents > 0:
-            writeOpening(f, 'labels')
+            writeOpen(f, 'labels')
             for x in range(x_len): # tqdm(range(x_len), desc='Writing components'):
                 for z in range(z_len):
                     for y in range(y_len):
                         f.write(str(int(self.components[x,y,z])) + ',')
                     f.write(';')
                 f.write('\n')
-            writeClosing(f, 'labels')
+            writeClos(f, 'labels')
 
         f.close()
 
@@ -2035,93 +2035,93 @@ class VoxelModel:
         :param compression:  Enable/disable voxel data compression
         :return: None
         """
-        writeOpening(f, 'VXC Version="' + str(0.94) + '"', 1)
+        writeOpen(f, 'VXC Version="' + str(0.94) + '"', 1)
 
         # Lattice settings
-        writeOpening(f, 'Lattice', 1)
-        writeTag(f, 'Lattice_Dim', (1/self.resolution) * 0.001, 2)
-        writeTag(f, 'X_Dim_Adj', 1, 2)
-        writeTag(f, 'Y_Dim_Adj', 1, 2)
-        writeTag(f, 'Z_Dim_Adj', 1, 2)
-        writeTag(f, 'X_Line_Offset', 0, 2)
-        writeTag(f, 'Y_Line_Offset', 0, 2)
-        writeTag(f, 'X_Layer_Offset', 0, 2)
-        writeTag(f, 'Y_Layer_Offset', 0, 2)
-        writeClosing(f, 'Lattice', 1)
+        writeOpen(f, 'Lattice', 1)
+        writeData(f, 'Lattice_Dim', (1 / self.resolution) * 0.001, 2)
+        writeData(f, 'X_Dim_Adj', 1, 2)
+        writeData(f, 'Y_Dim_Adj', 1, 2)
+        writeData(f, 'Z_Dim_Adj', 1, 2)
+        writeData(f, 'X_Line_Offset', 0, 2)
+        writeData(f, 'Y_Line_Offset', 0, 2)
+        writeData(f, 'X_Layer_Offset', 0, 2)
+        writeData(f, 'Y_Layer_Offset', 0, 2)
+        writeClos(f, 'Lattice', 1)
 
         # Voxel settings
-        writeOpening(f, 'Voxel', 1)
-        writeTag(f, 'Vox_Name', 'BOX', 2)
-        writeTag(f, 'X_Squeeze', 1, 2)
-        writeTag(f, 'Y_Squeeze', 1, 2)
-        writeTag(f, 'Z_Squeeze', 1, 2)
-        writeClosing(f, 'Voxel', 1)
+        writeOpen(f, 'Voxel', 1)
+        writeData(f, 'Vox_Name', 'BOX', 2)
+        writeData(f, 'X_Squeeze', 1, 2)
+        writeData(f, 'Y_Squeeze', 1, 2)
+        writeData(f, 'Z_Squeeze', 1, 2)
+        writeClos(f, 'Voxel', 1)
 
         # Materials
-        writeOpening(f, 'Palette', 1)
+        writeOpen(f, 'Palette', 1)
         for row in range(1, len(self.materials[:, 0])): # tqdm(range(1, len(self.materials[:, 0])), desc='Writing materials'):
             avgProps = self.getMaterialProperties(row)
-            writeOpening(f, 'Material ID="' + str(row) + '"', 2)
-            writeTag(f, 'MatType', 0, 3)
-            writeTag(f, 'Name', avgProps['name'][0:-1], 3)
+            writeOpen(f, 'Material ID="' + str(row) + '"', 2)
+            writeData(f, 'MatType', 0, 3)
+            writeData(f, 'Name', avgProps['name'][0:-1], 3)
 
-            writeOpening(f, 'Display', 3)
-            writeTag(f, 'Red', avgProps['r'], 4)
-            writeTag(f, 'Green', avgProps['g'], 4)
-            writeTag(f, 'Blue', avgProps['b'], 4)
-            writeTag(f, 'Alpha', 1, 4)
-            writeClosing(f, 'Display', 3)
+            writeOpen(f, 'Display', 3)
+            writeData(f, 'Red', avgProps['r'], 4)
+            writeData(f, 'Green', avgProps['g'], 4)
+            writeData(f, 'Blue', avgProps['b'], 4)
+            writeData(f, 'Alpha', 1, 4)
+            writeClos(f, 'Display', 3)
 
-            writeOpening(f, 'Mechanical', 3)
-            writeTag(f, 'MatModel', int(avgProps['MM']), 4)
+            writeOpen(f, 'Mechanical', 3)
+            writeData(f, 'MatModel', int(avgProps['MM']), 4)
             if int(avgProps['MM']) == 3:
                 SSData = self.getSSData(row)
-                writeOpening(f, 'SSData', 4)
-                writeTag(f, 'NumDataPts', len(SSData['strain']), 5)
+                writeOpen(f, 'SSData', 4)
+                writeData(f, 'NumDataPts', len(SSData['strain']), 5)
 
-                writeOpening(f, 'StrainData', 5)
+                writeOpen(f, 'StrainData', 5)
                 for point in range(len(SSData['strain'])):
-                    writeTag(f, 'Strain', SSData['strain'][point], 6)
-                writeClosing(f, 'StrainData', 5)
+                    writeData(f, 'Strain', SSData['strain'][point], 6)
+                writeClos(f, 'StrainData', 5)
 
-                writeOpening(f, 'StressData', 5)
+                writeOpen(f, 'StressData', 5)
                 for point in range(len(SSData['stress'])):
-                    writeTag(f, 'Stress', SSData['stress'][point], 6)
-                writeClosing(f, 'StressData', 5)
-                writeClosing(f, 'SSData', 4)
+                    writeData(f, 'Stress', SSData['stress'][point], 6)
+                writeClos(f, 'StressData', 5)
+                writeClos(f, 'SSData', 4)
 
-            writeTag(f, 'Elastic_Mod', avgProps['E'], 4)
-            writeTag(f, 'Plastic_Mod', avgProps['Z'], 4)
-            writeTag(f, 'Yield_Stress', avgProps['eY'], 4)
-            writeTag(f, 'FailModel', int(avgProps['FM']), 4)
-            writeTag(f, 'Fail_Stress', avgProps['eF'], 4)
-            writeTag(f, 'Fail_Strain', avgProps['SF'], 4)
-            writeTag(f, 'Density', avgProps['p'] * 1e3, 4)
-            writeTag(f, 'Poissons_Ratio', avgProps['v'], 4)
-            writeTag(f, 'CTE', avgProps['CTE'], 4)
-            writeTag(f, 'MaterialTempPhase', avgProps['TP'], 4)
-            writeTag(f, 'uStatic', avgProps['uS'], 4)
-            writeTag(f, 'uDynamic', avgProps['uD'], 4)
+            writeData(f, 'Elastic_Mod', avgProps['E'], 4)
+            writeData(f, 'Plastic_Mod', avgProps['Z'], 4)
+            writeData(f, 'Yield_Stress', avgProps['eY'], 4)
+            writeData(f, 'FailModel', int(avgProps['FM']), 4)
+            writeData(f, 'Fail_Stress', avgProps['eF'], 4)
+            writeData(f, 'Fail_Strain', avgProps['SF'], 4)
+            writeData(f, 'Density', avgProps['p'] * 1e3, 4)
+            writeData(f, 'Poissons_Ratio', avgProps['v'], 4)
+            writeData(f, 'CTE', avgProps['CTE'], 4)
+            writeData(f, 'MaterialTempPhase', avgProps['TP'], 4)
+            writeData(f, 'uStatic', avgProps['uS'], 4)
+            writeData(f, 'uDynamic', avgProps['uD'], 4)
 
-            writeClosing(f, 'Mechanical', 3)
-            writeClosing(f, 'Material', 2)
-        writeClosing(f, 'Palette', 1)
+            writeClos(f, 'Mechanical', 3)
+            writeClos(f, 'Material', 2)
+        writeClos(f, 'Palette', 1)
 
         # Structure
         if compression:
-            writeOpening(f, 'Structure Compression="ZLIB"', 1)
+            writeOpen(f, 'Structure Compression="ZLIB"', 1)
         else:
-            writeOpening(f, 'Structure Compression="ASCII_READABLE"', 1)
+            writeOpen(f, 'Structure Compression="ASCII_READABLE"', 1)
 
         x_len = self.voxels.shape[0]
         y_len = self.voxels.shape[1]
         z_len = self.voxels.shape[2]
 
-        writeTag(f, 'X_Voxels', x_len, 2)
-        writeTag(f, 'Y_Voxels', y_len, 2)
-        writeTag(f, 'Z_Voxels', z_len, 2)
+        writeData(f, 'X_Voxels', x_len, 2)
+        writeData(f, 'Y_Voxels', y_len, 2)
+        writeData(f, 'Z_Voxels', z_len, 2)
 
-        writeOpening(f, 'Data', 2)
+        writeOpen(f, 'Data', 2)
 
         for z in range(z_len): # tqdm(range(z_len), desc='Writing voxels'):
             layer = np.copy(self.voxels[:, :, z])
@@ -2138,11 +2138,11 @@ class VoxelModel:
                 for vox in layerData:
                     layerDataStr = layerDataStr + str(vox)
 
-            writeTag(f, 'Layer', '<![CDATA[' + layerDataStr + ']]>', 3)
+            writeData(f, 'Layer', '<![CDATA[' + layerDataStr + ']]>', 3)
 
-        writeClosing(f, 'Data', 2)
-        writeClosing(f, 'Structure', 1)
-        writeClosing(f, 'VXC', 1)
+        writeClos(f, 'Data', 2)
+        writeClos(f, 'Structure', 1)
+        writeClos(f, 'VXC', 1)
 
 class GpuSettings:
     """
@@ -2566,21 +2566,54 @@ def updateMatIndices(voxels, old_materials, new_materials):
 Functions for writing to xml files
 '''
 def writeHeader(f: TextIO, version: str, encoding: str):
+    """
+    Write XML file header
+
+    :param f: File object
+    :param version: XML version number
+    :param encoding: Encoding type
+    :return: None
+    """
     f.write('<?xml version="' + version + '" encoding="' + encoding + '"?>\n')
 
-def writeTag(f: TextIO, name: str, value, tab_level: int = 0):
+def writeData(f: TextIO, name: str, value, tab_level: int = 0):
+    """
+    Write a data element and the surrounding tags.
+
+    :param f: File object
+    :param name: Tag name
+    :param value: Data value
+    :param tab_level: Number of tabs (2 spaces) before start of line
+    :return: None
+    """
     for i in range(tab_level):
         f.write('  ')
     f.write('<' + name + '>')
     f.write(str(value))
     f.write('</' + name + '>\n')
 
-def writeOpening(f: TextIO, name: str, tab_level: int = 0):
+def writeOpen(f: TextIO, name: str, tab_level: int = 0):
+    """
+    Write an opening tag.
+
+    :param f: File object
+    :param name: Tag name
+    :param tab_level: Number of tabs (2 spaces) before start of line
+    :return: None
+    """
     for i in range(tab_level):
         f.write('  ')
     f.write('<' + name + '>\n')
 
-def writeClosing(f: TextIO, name: str, tab_level: int = 0):
+def writeClos(f: TextIO, name: str, tab_level: int = 0):
+    """
+    Write a closing tag.
+
+    :param f: File object
+    :param name: Tag name
+    :param tab_level: Number of tabs (2 spaces) before start of line
+    :return: None
+    """
     for i in range(tab_level):
         f.write('  ')
     f.write('</' + name + '>\n')
