@@ -22,6 +22,9 @@ jobs:
       - run: python3 -m pip install pdoc3
       - run: python3 -m pip list
       
+      # Add python packages directory to PATH
+      - run: export PATH=/home/runner/.local/bin:$PATH
+      
       # Generate documentation for each package
       - run: pdoc --html -o docs -f voxelfuse
       - run: pdoc --html -o docs -f voxelfuse_examples
