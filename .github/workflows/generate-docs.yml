@@ -15,12 +15,20 @@ jobs:
       # Check-out repository
       - uses: actions/checkout@v2
 
-      # Set up Python build environment and install pdoc3
+      # Set up Python build environment
       - run: python3 -m pip install --upgrade wheel
       - run: python3 -m pip install --upgrade setuptools
       - run: python3 -m pip install --upgrade pip
-      - run: python3 -m pip install pdoc3
       - run: python3 -m pip install -r requirements.txt
+
+      # Install pdoc with reST tag support
+      - run: mkdir pdoc_reST
+      - run: cd pdoc_reST
+      - run: git clone -b reST_style_docstrings_support https://github.com/muecelee/pdoc.git
+      - run: cd pdoc
+      - run: python3 -m pip install .
+
+      # Verify python packages installed properly
       - run: python3 -m pip list
       
       # Add python packages directory to PATH
