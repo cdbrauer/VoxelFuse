@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>voxelfuse.simulation API documentation</title>
 <meta name="description" content="Simulation Class …" />
-<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
-<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
-<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
 </head>
 <body>
 <main>
@@ -1399,15 +1401,9 @@ def simProcessLog(simulation: Simulation):
 </code></dt>
 <dd>
 <div class="desc"><p>Initialize shared result variables.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>disp_result_array</code></strong></dt>
-<dd>Multiprocessing array to hold displacement results</dd>
-<dt><strong><code>t_result_array</code></strong></dt>
-<dd>Multiprocessing array to hold time results</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param disp_result_array: Multiprocessing array to hold displacement results
+:param t_result_array: Multiprocessing array to hold time results
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1430,13 +1426,8 @@ def simProcessLog(simulation: Simulation):
 </code></dt>
 <dd>
 <div class="desc"><p>Simulation process.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>simulation</code></strong></dt>
-<dd>Simulation object to run</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param simulation: Simulation object to run
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1471,13 +1462,8 @@ def simProcessLog(simulation: Simulation):
 </code></dt>
 <dd>
 <div class="desc"><p>Simulation process.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>simulation</code></strong></dt>
-<dd>Simulation object to run</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param simulation: Simulation object to run
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1600,15 +1586,9 @@ def simProcessLog(simulation: Simulation):
 <dd>
 <div class="desc"><p>MultiSimulation object that holds settings for generating a simulation and running multiple parallel trials of it using different parameters.</p>
 <p>Initialize a MultiSimulation object.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>setup_fcn</code></strong></dt>
-<dd>Function to use for initializing Simulation objects. Should take a single tuple as an input and return a single Simulation object.</dd>
-<dt><strong><code>setup_params</code></strong></dt>
-<dd>List containing the desired input tuples for setup_fcn</dd>
-<dt><strong><code>thread_count</code></strong></dt>
-<dd>Maximum number of CPU threads</dd>
-</dl></div>
+<p>:param setup_fcn: Function to use for initializing Simulation objects. Should take a single tuple as an input and return a single Simulation object.
+:param setup_params: List containing the desired input tuples for setup_fcn
+:param thread_count: Maximum number of CPU threads</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1762,7 +1742,7 @@ def simProcessLog(simulation: Simulation):
 </code></dt>
 <dd>
 <div class="desc"><p>Print the number of simulations to be run and confirm that the user would like to continue.</p>
-<p>Returns: None</p></div>
+<p>:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1782,15 +1762,9 @@ def simProcessLog(simulation: Simulation):
 </code></dt>
 <dd>
 <div class="desc"><p>Export a CSV file containing simulation setup parameters and the corresponding simulation results.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name</dd>
-<dt><strong><code>labels</code></strong></dt>
-<dd>Column headers for simulation setup parameters</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name
+:param labels: Column headers for simulation setup parameters
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1843,15 +1817,9 @@ def simProcessLog(simulation: Simulation):
 </code></dt>
 <dd>
 <div class="desc"><p>Export VXA files for all or specified simulation configurations.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name</dd>
-<dt><strong><code>config_number</code></strong></dt>
-<dd>Config to export, -1 to export all configs</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name
+:param config_number: Config to export, -1 to export all configs
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1879,7 +1847,7 @@ def simProcessLog(simulation: Simulation):
 </code></dt>
 <dd>
 <div class="desc"><p>Get the current simulation setup parameters.</p>
-<p>Returns: List containing the current input tuples for setup_fcn</p></div>
+<p>:return: List containing the current input tuples for setup_fcn</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1898,7 +1866,7 @@ def simProcessLog(simulation: Simulation):
 </code></dt>
 <dd>
 <div class="desc"><p>Run all simulation configurations and save the results.</p>
-<p>Returns: None</p></div>
+<p>:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1942,13 +1910,8 @@ def simProcessLog(simulation: Simulation):
 </code></dt>
 <dd>
 <div class="desc"><p>Update the simulation setup parameters.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>setup_params</code></strong></dt>
-<dd>List containing the desired input tuples for setup_fcn</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param setup_params: List containing the desired input tuples for setup_fcn
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1977,11 +1940,7 @@ def simProcessLog(simulation: Simulation):
 <p>Models located at positive coordinate values will have their workspace
 size adjusted to maintain their position in the exported simulation.
 Models located at negative coordinate values will be shifted to the origin.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>voxel_model</code></strong></dt>
-<dd>VoxelModel</dd>
-</dl></div>
+<p>:param voxel_model: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3092,13 +3051,8 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Create new Simulation object with the same settings as an existing Simulation object.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>simulation</code></strong></dt>
-<dd>Simulation to copy</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.simulation.Simulation" href="#voxelfuse.simulation.Simulation">Simulation</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param simulation: Simulation to copy
+:return: Simulation</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3130,7 +3084,7 @@ def copy(cls, simulation):
 <h3>Methods</h3>
 <dl>
 <dt id="voxelfuse.simulation.Simulation.addBoundaryConditionBox"><code class="name flex">
-<span>def <span class="ident">addBoundaryConditionBox</span></span>(<span>self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0), size: Tuple[float, float, float] = (1.0, 1.0, 0.01), fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
+<span>def <span class="ident">addBoundaryConditionBox</span></span>(<span>self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0), size: Tuple[float, float, float] = (1.0, 1.0, 0.01), fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Add a box-shaped boundary condition.</p>
@@ -3140,25 +3094,14 @@ value (e.g. 0b111111) and the bits correspond to: Rz, Ry, Rx, Z, Y, X.
 If a bit is set to 0, the corresponding force/torque will be applied. If
 a bit is set to 1, the DOF will be fixed and the displacement will be
 applied.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>position</code></strong></dt>
-<dd>Box corner position (0-1)</dd>
-<dt><strong><code>size</code></strong></dt>
-<dd>Box size (0-1)</dd>
-<dt><strong><code>fixed_dof</code></strong></dt>
-<dd>Fixed degrees of freedom</dd>
-<dt><strong><code>force</code></strong></dt>
-<dd>Force vector in N</dd>
-<dt><strong><code>displacement</code></strong></dt>
-<dd>Displacement vector in mm</dd>
-<dt><strong><code>torque</code></strong></dt>
-<dd>Torque values in Nm</dd>
-<dt><strong><code>angular_displacement</code></strong></dt>
-<dd>Angular displacement values in deg</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param position: Box corner position (0-1)
+:param size: Box size (0-1)
+:param fixed_dof: Fixed degrees of freedom
+:param force: Force vector in N
+:param displacement: Displacement vector in mm
+:param torque: Torque values in Nm
+:param angular_displacement: Angular displacement values in deg
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3193,7 +3136,7 @@ applied.</p>
 </details>
 </dd>
 <dt id="voxelfuse.simulation.Simulation.addBoundaryConditionCylinder"><code class="name flex">
-<span>def <span class="ident">addBoundaryConditionCylinder</span></span>(<span>self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0, height: float = 0.1, radius: float = 0.05, fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
+<span>def <span class="ident">addBoundaryConditionCylinder</span></span>(<span>self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0, height: float = 0.1, radius: float = 0.05, fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Add a cylindrical boundary condition.</p>
@@ -3203,29 +3146,16 @@ value (e.g. 0b111111) and the bits correspond to: Rz, Ry, Rx, Z, Y, X.
 If a bit is set to 0, the corresponding force/torque will be applied. If
 a bit is set to 1, the DOF will be fixed and the displacement will be
 applied.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>position</code></strong></dt>
-<dd>Boundary condition origin position (0-1)</dd>
-<dt><strong><code>axis</code></strong></dt>
-<dd>Cylinder axis (0-2)</dd>
-<dt><strong><code>height</code></strong></dt>
-<dd>Cylinder height (0-1)</dd>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Cylinder radius (0-1)</dd>
-<dt><strong><code>fixed_dof</code></strong></dt>
-<dd>Fixed degrees of freedom</dd>
-<dt><strong><code>force</code></strong></dt>
-<dd>Force vector in N</dd>
-<dt><strong><code>displacement</code></strong></dt>
-<dd>Displacement vector in mm</dd>
-<dt><strong><code>torque</code></strong></dt>
-<dd>Torque values in Nm</dd>
-<dt><strong><code>angular_displacement</code></strong></dt>
-<dd>Angular displacement values in deg</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param position: Boundary condition origin position (0-1)
+:param axis: Cylinder axis (0-2)
+:param height: Cylinder height (0-1)
+:param radius: Cylinder radius (0-1)
+:param fixed_dof: Fixed degrees of freedom
+:param force: Force vector in N
+:param displacement: Displacement vector in mm
+:param torque: Torque values in Nm
+:param angular_displacement: Angular displacement values in deg
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3265,7 +3195,7 @@ applied.</p>
 </details>
 </dd>
 <dt id="voxelfuse.simulation.Simulation.addBoundaryConditionSphere"><code class="name flex">
-<span>def <span class="ident">addBoundaryConditionSphere</span></span>(<span>self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5), radius: float = 0.05, fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
+<span>def <span class="ident">addBoundaryConditionSphere</span></span>(<span>self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5), radius: float = 0.05, fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Add a spherical boundary condition.</p>
@@ -3275,25 +3205,14 @@ value (e.g. 0b111111) and the bits correspond to: Rz, Ry, Rx, Z, Y, X.
 If a bit is set to 0, the corresponding force/torque will be applied. If
 a bit is set to 1, the DOF will be fixed and the displacement will be
 applied.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>position</code></strong></dt>
-<dd>Sphere center position (0-1)</dd>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Sphere radius (0-1)</dd>
-<dt><strong><code>fixed_dof</code></strong></dt>
-<dd>Fixed degrees of freedom</dd>
-<dt><strong><code>force</code></strong></dt>
-<dd>Force vector in N</dd>
-<dt><strong><code>displacement</code></strong></dt>
-<dd>Displacement vector in mm</dd>
-<dt><strong><code>torque</code></strong></dt>
-<dd>Torque values in Nm</dd>
-<dt><strong><code>angular_displacement</code></strong></dt>
-<dd>Angular displacement values in deg</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param position: Sphere center position (0-1)
+:param radius: Sphere radius (0-1)
+:param fixed_dof: Fixed degrees of freedom
+:param force: Force vector in N
+:param displacement: Displacement vector in mm
+:param torque: Torque values in Nm
+:param angular_displacement: Angular displacement values in deg
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3328,7 +3247,7 @@ applied.</p>
 </details>
 </dd>
 <dt id="voxelfuse.simulation.Simulation.addBoundaryConditionVoxel"><code class="name flex">
-<span>def <span class="ident">addBoundaryConditionVoxel</span></span>(<span>self, position: Tuple[int, int, int] = (0, 0, 0), fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
+<span>def <span class="ident">addBoundaryConditionVoxel</span></span>(<span>self, position: Tuple[int, int, int] = (0, 0, 0), fixed_dof: int = 63, force: Tuple[float, float, float] = (0, 0, 0), displacement: Tuple[float, float, float] = (0, 0, 0), torque: Tuple[float, float, float] = (0, 0, 0), angular_displacement: Tuple[float, float, float] = (0, 0, 0))</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Add a boundary condition at a specific voxel.</p>
@@ -3336,23 +3255,13 @@ applied.</p>
 correspond to: Rz, Ry, Rx, Z, Y, X. If a bit is set to 0, the corresponding force/torque
 will be applied. If a bit is set to 1, the DOF will be fixed and the displacement will be
 applied.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>position</code></strong></dt>
-<dd>Position in voxels</dd>
-<dt><strong><code>fixed_dof</code></strong></dt>
-<dd>Fixed degrees of freedom</dd>
-<dt><strong><code>force</code></strong></dt>
-<dd>Force vector in N</dd>
-<dt><strong><code>displacement</code></strong></dt>
-<dd>Displacement vector in mm</dd>
-<dt><strong><code>torque</code></strong></dt>
-<dd>Torque values in Nm</dd>
-<dt><strong><code>angular_displacement</code></strong></dt>
-<dd>Angular displacement values in deg</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param position: Position in voxels
+:param fixed_dof: Fixed degrees of freedom
+:param force: Force vector in N
+:param displacement: Displacement vector in mm
+:param torque: Torque values in Nm
+:param angular_displacement: Angular displacement values in deg
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3398,14 +3307,9 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Specify a pair of voxels which should be disconnected</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>voxel_1</code></strong></dt>
-<dd>Coordinates in voxels</dd>
-<dt><strong><code>voxel_2</code></strong></dt>
-<dd>Coordinates in voxels</dd>
-</dl>
-<p>Returns:</p></div>
+<p>:param voxel_1: Coordinates in voxels
+:param voxel_2: Coordinates in voxels
+:return:</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3422,20 +3326,14 @@ applied.</p>
 </details>
 </dd>
 <dt id="voxelfuse.simulation.Simulation.addSensor"><code class="name flex">
-<span>def <span class="ident">addSensor</span></span>(<span>self, location: Tuple[int, int, int] = (0, 0, 0), axis: <a title="voxelfuse.simulation.Axis" href="#voxelfuse.simulation.Axis">Axis</a> = Axis.NONE)</span>
+<span>def <span class="ident">addSensor</span></span>(<span>self, location: Tuple[int, int, int] = (0, 0, 0), axis: <a title="voxelfuse.simulation.Axis" href="#voxelfuse.simulation.Axis">Axis</a> = Axis.NONE)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Add a sensor to a voxel.</p>
 <p>This feature is not currently supported by VoxCad</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>location</code></strong></dt>
-<dd>Sensor location in voxels</dd>
-<dt><strong><code>axis</code></strong></dt>
-<dd>Sensor measurement axis</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param location: Sensor location in voxels
+:param axis: Sensor measurement axis
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3459,32 +3357,20 @@ applied.</p>
 </details>
 </dd>
 <dt id="voxelfuse.simulation.Simulation.addTempControl"><code class="name flex">
-<span>def <span class="ident">addTempControl</span></span>(<span>self, location: Tuple[int, int, int] = (0, 0, 0), amplitude1: float = 0, amplitude2: float = 0, changeX: float = 0.5, phase_offset: float = 0, temp_offset: float = 0, const_temp: bool = False, square_wave: bool = False)</span>
+<span>def <span class="ident">addTempControl</span></span>(<span>self, location: Tuple[int, int, int] = (0, 0, 0), amplitude1: float = 0, amplitude2: float = 0, changeX: float = 0.5, phase_offset: float = 0, temp_offset: float = 0, const_temp: bool = False, square_wave: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Add a temperature control element to a voxel.</p>
 <p>This feature is not currently supported by VoxCad</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>location</code></strong></dt>
-<dd>Control element location in voxels</dd>
-<dt><strong><code>amplitude1</code></strong></dt>
-<dd>Control element positive temperature amplitude (deg C)</dd>
-<dt><strong><code>amplitude2</code></strong></dt>
-<dd>Control element negative temperature amplitude (deg C)</dd>
-<dt><strong><code>changeX</code></strong></dt>
-<dd>Percent of period spanned by positive temperature amplitude (0-1)</dd>
-<dt><strong><code>phase_offset</code></strong></dt>
-<dd>Control element phase offset for time-varying thermal (rad)</dd>
-<dt><strong><code>temp_offset</code></strong></dt>
-<dd>Control element temperature offset for time-varying thermal (deg C)</dd>
-<dt><strong><code>const_temp</code></strong></dt>
-<dd>Enable/disable setting a constant target temperature that respects heating/cooling rates</dd>
-<dt><strong><code>square_wave</code></strong></dt>
-<dd>Enable/disable converting signal to a square wave (positive -&gt; a = amplitude1, negative -&gt; a = 0)</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param location: Control element location in voxels
+:param amplitude1: Control element positive temperature amplitude (deg C)
+:param amplitude2: Control element negative temperature amplitude (deg C)
+:param changeX: Percent of period spanned by positive temperature amplitude (0-1)
+:param phase_offset: Control element phase offset for time-varying thermal (rad)
+:param temp_offset: Control element temperature offset for time-varying thermal (deg C)
+:param const_temp: Enable/disable setting a constant target temperature that respects heating/cooling rates
+:param square_wave: Enable/disable converting signal to a square wave (positive -&gt; a = amplitude1, negative -&gt; a = 0)
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3519,24 +3405,15 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set the simulation temperature control elements based on a value maps of target temperature settings.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>amp1_map</code></strong></dt>
-<dd>Array of target positive temperature amplitudes for each voxel (deg C)</dd>
-<dt><strong><code>amp2_map</code></strong></dt>
-<dd>Array of target negative temperature amplitudes for each voxel (deg C)</dd>
-<dt><strong><code>changeX_map</code></strong></dt>
-<dd>Array containing percent of period spanned by positive temperature amplitude for each voxel</dd>
-<dt><strong><code>phase_map</code></strong></dt>
-<dd>Array of phase offsets for each voxel (rad)</dd>
-<dt><strong><code>offset_map</code></strong></dt>
-<dd>Array of temperature offsets for each voxel (deg C)</dd>
-<dt><strong><code>const_temp_map</code></strong></dt>
-<dd>Array of boolean values to enable/disable constant temperature mode</dd>
-<dt><strong><code>square_wave_map</code></strong></dt>
-<dd>Array of boolean values to enable/disable square wave mode</dd>
-</dl>
-<p>Returns:</p></div>
+<p>:param amp1_map: Array of target positive temperature amplitudes for each voxel (deg C)
+:param amp2_map: Array of target negative temperature amplitudes for each voxel (deg C)
+:param changeX_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
+:param phase_map: Array of phase offsets for each voxel (rad)
+:param offset_map: Array of temperature offsets for each voxel (deg C)
+:param const_temp_map: Array of boolean values to enable/disable constant temperature mode
+:param square_wave_map:
+Array of boolean values to enable/disable square wave mode
+:return:</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3608,7 +3485,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Remove all boundary conditions from a Simulation object.</p>
-<p>Returns: None</p></div>
+<p>:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3627,7 +3504,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Clear all disconnected voxel bonds.</p>
-<p>Returns: None</p></div>
+<p>:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3646,7 +3523,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Remove all sensors from a Simulation object.</p>
-<p>Returns: None</p></div>
+<p>:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3665,7 +3542,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Remove all temperature control elements from a Simulation object.</p>
-<p>Returns: None</p></div>
+<p>:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3684,7 +3561,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get simulation collision parameters.</p>
-<p>Returns: Enable/disable collisions, Collision damping</p></div>
+<p>:return: Enable/disable collisions, Collision damping</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3703,7 +3580,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get simulation damping parameters.</p>
-<p>Returns: Voxel bond damping, Environment damping</p></div>
+<p>:return: Voxel bond damping, Environment damping</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3722,7 +3599,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get simulation equilibrium mode.</p>
-<p>Returns: Enable/disable equilibrium mode</p></div>
+<p>:return: Enable/disable equilibrium mode</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3741,7 +3618,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get simulation gravity parameters.</p>
-<p>Returns: Enable/disable gravity, Acceleration due to gravity in m/sec^2, Enable/disable ground plane</p></div>
+<p>:return: Enable/disable gravity, Acceleration due to gravity in m/sec^2, Enable/disable ground plane</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3760,7 +3637,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get hydrogel model parameters.</p>
-<p>Returns: Enable/disable hydrogel model</p></div>
+<p>:return: Enable/disable hydrogel model</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3779,7 +3656,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the simulation model.</p>
-<p>Returns: VoxelModel</p></div>
+<p>:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3798,7 +3675,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get simulation stop condition.</p>
-<p>Returns: Stop condition type, Stop condition value</p></div>
+<p>:return: Stop condition type, Stop condition value</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3817,7 +3694,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get simulation temperature parameters.</p>
-<p>Returns: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period, Temperature offset</p></div>
+<p>:return: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period, Temperature offset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3836,7 +3713,7 @@ applied.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the side dimension of a voxel in mm.</p>
-<p>Returns: Float</p></div>
+<p>:return: Float</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3859,25 +3736,14 @@ applied.</p>
 <p>This function will create a .vxa file, run the file with Voxelyze, and then load the .xml results file into
 the results attribute of the Simulation object. Enabling delete_files will delete both the .vxa and .xml files
 once the results have been loaded.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name for .vxa and .xml files</dd>
-<dt><strong><code>value_map</code></strong></dt>
-<dd>Index of the desired value map type</dd>
-<dt><strong><code>log_interval</code></strong></dt>
-<dd>Set the step interval at which sensor log entries should be recorded, -1 to disable log</dd>
-<dt><strong><code>history_interval</code></strong></dt>
-<dd>Set the step interval at which history file entries should be recorded, -1 for default interval</dd>
-<dt><strong><code>delete_files</code></strong></dt>
-<dd>Enable/disable deleting simulation file when process is complete</dd>
-<dt><strong><code>voxelyze_on_path</code></strong></dt>
-<dd>Enable/disable using system Voxelyze rather than bundled Voxelyze</dd>
-<dt><strong><code>wsl</code></strong></dt>
-<dd>Enable/disable using Windows Subsystem for Linux with bundled Voxelyze</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name for .vxa and .xml files
+:param value_map: Index of the desired value map type
+:param log_interval: Set the step interval at which sensor log entries should be recorded, -1 to disable log
+:param history_interval: Set the step interval at which history file entries should be recorded, -1 for default interval
+:param delete_files: Enable/disable deleting simulation file when process is complete
+:param voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
+:param wsl: Enable/disable using Windows Subsystem for Linux with bundled Voxelyze
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4026,19 +3892,11 @@ once the results have been loaded.</p>
 <p><code>simulation.setStopCondition(<a title="voxelfuse.simulation.StopCondition.TIME_VALUE" href="#voxelfuse.simulation.StopCondition.TIME_VALUE">StopCondition.TIME_VALUE</a>, 0.01)</code></p>
 <p><code>simulation.runSimVoxCad('collision_sim_1', delete_files=False)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name</dd>
-<dt><strong><code>delete_files</code></strong></dt>
-<dd>Enable/disable deleting simulation file when VoxCad is closed</dd>
-<dt><strong><code>voxcad_on_path</code></strong></dt>
-<dd>Enable/disable using system VoxCad rather than bundled VoxCad</dd>
-<dt><strong><code>wsl</code></strong></dt>
-<dd>Enable/disable using Windows Subsystem for Linux with bundled VoxCad</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name
+:param delete_files: Enable/disable deleting simulation file when VoxCad is closed
+:param voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
+:param wsl: Enable/disable using Windows Subsystem for Linux with bundled VoxCad
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4098,12 +3956,8 @@ once the results have been loaded.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Saves a simulation's results dictionary to a .csv file.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>Name of output file</dd>
-</dl>
-<p>Returns:</p></div>
+<p>:param filename: Name of output file
+:return:</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4147,15 +4001,9 @@ once the results have been loaded.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Save the temperature control elements applied to a model to a .csv file.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name</dd>
-<dt><strong><code>figure</code></strong></dt>
-<dd>Enable/disable exporting a figure as well</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name
+:param figure: Enable/disable exporting a figure as well
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4213,15 +4061,9 @@ for larger models, but it may introduce geometry errors that particularly affect
 small models.</p>
 <p>The .vxa file type can be opened using VoxCad simulation software. However, it
 cannot currently be reopened by a VoxelFuse script.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name</dd>
-<dt><strong><code>compression</code></strong></dt>
-<dd>Enable/disable voxel data compression</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name
+:param compression: Enable/disable voxel data compression
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4267,15 +4109,9 @@ cannot currently be reopened by a VoxelFuse script.</p>
 <div class="desc"><p>Set simulation collision parameters.</p>
 <p>A damping value of 0 represents completely elastic collisions and
 higher values represent inelastic collisions.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>enable</code></strong></dt>
-<dd>Enable/disable collisions</dd>
-<dt><strong><code>damping</code></strong></dt>
-<dd>Collision damping (0-2)</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param enable: Enable/disable collisions
+:param damping: Collision damping (0-2)
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4302,15 +4138,9 @@ higher values represent inelastic collisions.</p>
 <div class="desc"><p>Set simulation damping parameters.</p>
 <p>Environment damping can be used to simulate fluid environments. 0 represents
 a vacuum and larger values represent a viscous fluid.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>bond</code></strong></dt>
-<dd>Voxel bond damping (0-1)</dd>
-<dt><strong><code>environment</code></strong></dt>
-<dd>Environment damping (0-0.1)</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param bond: Voxel bond damping (0-1)
+:param environment: Environment damping (0-0.1)
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4335,13 +4165,8 @@ a vacuum and larger values represent a viscous fluid.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set simulation equilibrium mode.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>enable</code></strong></dt>
-<dd>Enable/disable equilibrium mode</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param enable: Enable/disable equilibrium mode
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4361,17 +4186,10 @@ a vacuum and larger values represent a viscous fluid.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set a fixed environment temperature.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>enable</code></strong></dt>
-<dd>Enable/disable temperature</dd>
-<dt><strong><code>base_temp</code></strong></dt>
-<dd>Temperature in degrees C</dd>
-<dt><strong><code>growth_amplitude</code></strong></dt>
-<dd>Set to 1 to enable expansion from base size</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param enable: Enable/disable temperature
+:param base_temp: Temperature in degrees C
+:param growth_amplitude: Set to 1 to enable expansion from base size
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4396,17 +4214,10 @@ a vacuum and larger values represent a viscous fluid.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set simulation gravity parameters.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>enable</code></strong></dt>
-<dd>Enable/disable gravity</dd>
-<dt><strong><code>value</code></strong></dt>
-<dd>Acceleration due to gravity in m/sec^2</dd>
-<dt><strong><code>enable_floor</code></strong></dt>
-<dd>Enable/disable ground plane</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param enable: Enable/disable gravity
+:param value: Acceleration due to gravity in m/sec^2
+:param enable_floor: Enable/disable ground plane
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4430,13 +4241,8 @@ a vacuum and larger values represent a viscous fluid.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set hydrogel model parameters.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>enable</code></strong></dt>
-<dd>Enable/disable hydrogel model</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param enable: Enable/disable hydrogel model
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4459,13 +4265,8 @@ a vacuum and larger values represent a viscous fluid.</p>
 <p>Models located at positive coordinate values will have their workspace
 size adjusted to maintain their position in the exported simulation.
 Models located at negative coordinate values will be shifted to the origin.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>voxel_model</code></strong></dt>
-<dd>VoxelModel</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param voxel_model: VoxelModel
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4490,15 +4291,9 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set simulation stop condition.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>condition</code></strong></dt>
-<dd>Stop condition type, set using StopCondition class</dd>
-<dt><strong><code>value</code></strong></dt>
-<dd>Stop condition value</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param condition: Stop condition type, set using StopCondition class
+:param value: Stop condition value
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4520,23 +4315,13 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set a varying environment temperature.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>enable</code></strong></dt>
-<dd>Enable/disable temperature</dd>
-<dt><strong><code>base_temp</code></strong></dt>
-<dd>Base temperature in degrees C</dd>
-<dt><strong><code>amplitude</code></strong></dt>
-<dd>Temperature fluctuation amplitude</dd>
-<dt><strong><code>period</code></strong></dt>
-<dd>Temperature fluctuation period</dd>
-<dt><strong><code>offset</code></strong></dt>
-<dd>Temperature offset (not currently supported)</dd>
-<dt><strong><code>growth_amplitude</code></strong></dt>
-<dd>Set to 1 to enable expansion from base size</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param enable: Enable/disable temperature
+:param base_temp: Base temperature in degrees C
+:param amplitude: Temperature fluctuation amplitude
+:param period: Temperature fluctuation period
+:param offset: Temperature offset (not currently supported)
+:param growth_amplitude: Set to 1 to enable expansion from base size
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4564,17 +4349,12 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 </details>
 </dd>
 <dt id="voxelfuse.simulation.Simulation.writeDisconnections"><code class="name flex">
-<span>def <span class="ident">writeDisconnections</span></span>(<span>self, f: <class 'TextIO'>)</span>
+<span>def <span class="ident">writeDisconnections</span></span>(<span>self, f: TextIO)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write bond disconnections to a text file using the .vxa format.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>f</code></strong></dt>
-<dd>File to write to</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param f: File to write to
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4596,17 +4376,12 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 </details>
 </dd>
 <dt id="voxelfuse.simulation.Simulation.writeEnvironmentData"><code class="name flex">
-<span>def <span class="ident">writeEnvironmentData</span></span>(<span>self, f: <class 'TextIO'>)</span>
+<span>def <span class="ident">writeEnvironmentData</span></span>(<span>self, f: TextIO)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write simulation environment parameters to a text file using the .vxa format.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>f</code></strong></dt>
-<dd>File to write to</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param f: File to write to
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4672,17 +4447,12 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 </details>
 </dd>
 <dt id="voxelfuse.simulation.Simulation.writeSensors"><code class="name flex">
-<span>def <span class="ident">writeSensors</span></span>(<span>self, f: <class 'TextIO'>)</span>
+<span>def <span class="ident">writeSensors</span></span>(<span>self, f: TextIO)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write voxel sensors to a text file using the .vxa format.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>f</code></strong></dt>
-<dd>File to write to</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param f: File to write to
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4704,17 +4474,12 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 </details>
 </dd>
 <dt id="voxelfuse.simulation.Simulation.writeSimData"><code class="name flex">
-<span>def <span class="ident">writeSimData</span></span>(<span>self, f: <class 'TextIO'>)</span>
+<span>def <span class="ident">writeSimData</span></span>(<span>self, f: TextIO)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write simulation parameters to a text file using the .vxa format.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>f</code></strong></dt>
-<dd>File to write to</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param f: File to write to
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4767,17 +4532,12 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 </details>
 </dd>
 <dt id="voxelfuse.simulation.Simulation.writeTempControls"><code class="name flex">
-<span>def <span class="ident">writeTempControls</span></span>(<span>self, f: <class 'TextIO'>)</span>
+<span>def <span class="ident">writeTempControls</span></span>(<span>self, f: TextIO)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write temperature control element to a text file using the .vxa format.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>f</code></strong></dt>
-<dd>File to write to</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param f: File to write to
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -4981,9 +4741,7 @@ Models located at negative coordinate values will be shifted to the origin.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.2.dev6+g840cf93</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad()</script>
 </body>
 </html>

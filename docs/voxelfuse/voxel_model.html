@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>voxelfuse.voxel_model API documentation</title>
 <meta name="description" content="VoxelModel Class …" />
-<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
-<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
-<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
 </head>
 <body>
 <main>
@@ -2685,15 +2687,9 @@ def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len, error_spre
 <dd>
 <div class="desc"><p>Make object dimensions compatible for solid body operations.</p>
 <p>This function accounts for location coordinates.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>modelA</code></strong></dt>
-<dd>Input model A</dd>
-<dt><strong><code>modelB</code></strong></dt>
-<dd>Input model B</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Resized model A, resized model B, New model coordinates</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param modelA: Input model A
+:param modelB: Input model B
+:return: Resized model A, resized model B, New model coordinates</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -2749,15 +2745,9 @@ def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len, error_spre
 <p>Incompatible resolutions will print an error. This will not prevent the
 operation from running, but it may indicate that the models are at
 different scales or that a resolution value has been incorrectly set.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>modelA</code></strong></dt>
-<dd>Input model A</dd>
-<dt><strong><code>modelB</code></strong></dt>
-<dd>Input model B</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Check successful T/F</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param modelA: Input model A
+:param modelB: Input model B
+:return: Check successful T/F</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -2875,13 +2865,8 @@ def findFilledVoxels(a, b):
 </code></dt>
 <dd>
 <div class="desc"><p>Generate the materials table for a single-material VoxelModel.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>m</code></strong></dt>
-<dd>Material index corresponding to materials.py</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Array containing the specified material and the empty material</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param m: Material index corresponding to materials.py
+:return: Array containing the specified material and the empty material</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -2906,17 +2891,10 @@ def findFilledVoxels(a, b):
 </code></dt>
 <dd>
 <div class="desc"><p>Import mesh data from file</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name with extension</dd>
-<dt><strong><code>delete_files</code></strong></dt>
-<dd>Enable/disable deleting temporary files when finished</dd>
-<dt><strong><code>gmsh_on_path</code></strong></dt>
-<dd>Enable/disable using system gmsh rather than bundled gmsh</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Mesh data (points, tris, and tets)</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name with extension
+:param delete_files: Enable/disable deleting temporary files when finished
+:param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
+:return: Mesh data (points, tris, and tets)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -2972,15 +2950,9 @@ def findFilledVoxels(a, b):
 </code></dt>
 <dd>
 <div class="desc"><p>Generate a spherical structuring element.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Radius of structuring element in voxels</dd>
-<dt><strong><code>plane</code></strong></dt>
-<dd>Structuring element directions, set using Axes class</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Structuring element array</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param radius: Radius of structuring element in voxels
+:param plane: Structuring element directions, set using Axes class
+:return: Structuring element array</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3028,15 +3000,9 @@ def findFilledVoxels(a, b):
 <p>0,0,0 | 0,1,0 | 1,1,1</p>
 <p>0,1,0 | 1,1,1 | 1,1,1</p>
 <p>0,0,0 | 0,1,0 | 1,1,1</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>connectivity</code></strong></dt>
-<dd>Connectivity of structuring element (1-3)</dd>
-<dt><strong><code>plane</code></strong></dt>
-<dd>Structuring element directions, set using Axes class</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Structuring element array</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param connectivity: Connectivity of structuring element (1-3)
+:param plane: Structuring element directions, set using Axes class
+:return: Structuring element array</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3078,17 +3044,10 @@ def findFilledVoxels(a, b):
 full material mixtures at every voxel.</p>
 <p>This representation requires much more memory, but is
 needed for some operations. Also see toIndexedMaterials().</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>voxels</code></strong></dt>
-<dd>VoxelModel.voxels</dd>
-<dt><strong><code>materials</code></strong></dt>
-<dd>VoxelModel.materials</dd>
-<dt><strong><code>n_materials</code></strong></dt>
-<dd>Number of materials in the material properties table</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Model data array</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param voxels: VoxelModel.voxels
+:param materials: VoxelModel.materials
+:param n_materials: Number of materials in the material properties table
+:return: Model data array</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3129,15 +3088,10 @@ def toFullMaterials(voxels, materials, n_materials):
 <div class="desc"><p>Convert from storing full material mixtures at every voxel
 to index-based material mixture storage.</p>
 <p>Also see toFullMaterials().</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>voxels</code></strong></dt>
-<dd>Model data array</dd>
-<dt><strong><code>model</code></strong></dt>
-<dd>Reference VoxelModel for size and coords</dd>
-</dl>
-<p>resolution:
-Returns:</p></div>
+<p>:param voxels: Model data array
+:param model: Reference VoxelModel for size and coords
+:param resolution:
+:return:</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3177,21 +3131,14 @@ Returns:</p></div>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.writeClos"><code class="name flex">
-<span>def <span class="ident">writeClos</span></span>(<span>f: <class 'TextIO'>, name: str, tab_level: int = 0)</span>
+<span>def <span class="ident">writeClos</span></span>(<span>f: TextIO, name: str, tab_level: int = 0)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write a closing tag.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>f</code></strong></dt>
-<dd>File object</dd>
-<dt><strong><code>name</code></strong></dt>
-<dd>Tag name</dd>
-<dt><strong><code>tab_level</code></strong></dt>
-<dd>Number of tabs (2 spaces) before start of line</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param f: File object
+:param name: Tag name
+:param tab_level: Number of tabs (2 spaces) before start of line
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3211,23 +3158,15 @@ Returns:</p></div>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.writeData"><code class="name flex">
-<span>def <span class="ident">writeData</span></span>(<span>f: <class 'TextIO'>, name: str, value, tab_level: int = 0)</span>
+<span>def <span class="ident">writeData</span></span>(<span>f: TextIO, name: str, value, tab_level: int = 0)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write a data element and the surrounding tags.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>f</code></strong></dt>
-<dd>File object</dd>
-<dt><strong><code>name</code></strong></dt>
-<dd>Tag name</dd>
-<dt><strong><code>value</code></strong></dt>
-<dd>Data value</dd>
-<dt><strong><code>tab_level</code></strong></dt>
-<dd>Number of tabs (2 spaces) before start of line</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param f: File object
+:param name: Tag name
+:param value: Data value
+:param tab_level: Number of tabs (2 spaces) before start of line
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3250,21 +3189,14 @@ Returns:</p></div>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.writeHeader"><code class="name flex">
-<span>def <span class="ident">writeHeader</span></span>(<span>f: <class 'TextIO'>, version: str, encoding: str)</span>
+<span>def <span class="ident">writeHeader</span></span>(<span>f: TextIO, version: str, encoding: str)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write XML file header</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>f</code></strong></dt>
-<dd>File object</dd>
-<dt><strong><code>version</code></strong></dt>
-<dd>XML version number</dd>
-<dt><strong><code>encoding</code></strong></dt>
-<dd>Encoding type</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param f: File object
+:param version: XML version number
+:param encoding: Encoding type
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3282,21 +3214,14 @@ Returns:</p></div>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.writeOpen"><code class="name flex">
-<span>def <span class="ident">writeOpen</span></span>(<span>f: <class 'TextIO'>, name: str, tab_level: int = 0)</span>
+<span>def <span class="ident">writeOpen</span></span>(<span>f: TextIO, name: str, tab_level: int = 0)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write an opening tag.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>f</code></strong></dt>
-<dd>File object</dd>
-<dt><strong><code>name</code></strong></dt>
-<dd>Tag name</dd>
-<dt><strong><code>tab_level</code></strong></dt>
-<dd>Number of tabs (2 spaces) before start of line</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param f: File object
+:param name: Tag name
+:param tab_level: Number of tabs (2 spaces) before start of line
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3511,7 +3436,7 @@ apply them. Changes will only persist for the current python session.</p>
 <dd>
 <div class="desc"><p>Apply GPU settings as overrides.</p>
 <p>These changes will only persist for the current python session.</p>
-<p>Returns: None</p></div>
+<p>:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3533,15 +3458,9 @@ apply them. Changes will only persist for the current python session.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set overrides for CUDA settings.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>CUDA_enable</code></strong></dt>
-<dd>Enable/disable CUDA acceleration</dd>
-<dt><strong><code>CUDA_device</code></strong></dt>
-<dd>Select CUDA device</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param CUDA_enable: Enable/disable CUDA acceleration
+:param CUDA_device: Select CUDA device
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -3643,22 +3562,15 @@ apply them. Changes will only persist for the current python session.</p>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel"><code class="flex name class">
 <span>class <span class="ident">VoxelModel</span></span>
-<span>(</span><span>voxels, materials, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1)</span>
+<span>(</span><span>voxels, materials, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>VoxelModel object that stores geometry, position, and material information.</p>
 <p>Initialize a VoxelModel object.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>voxels</code></strong></dt>
-<dd>Array storing the index of the material present at each voxel</dd>
-<dt><strong><code>materials</code></strong></dt>
-<dd>Array of all material mixtures present in model, material format: (a, m0, m1, &hellip; mn)</dd>
-<dt><strong><code>coords</code></strong></dt>
-<dd>Model origin coordinates</dd>
-<dt><strong><code>resolution</code></strong></dt>
-<dd>Number of voxels per mm (higher number = finer resolution)</dd>
-</dl></div>
+<p>:param voxels: Array storing the index of the material present at each voxel
+:param materials: Array of all material mixtures present in model, material format: (a, m0, m1, &hellip; mn)
+:param coords: Model origin coordinates
+:param resolution: Number of voxels per mm (higher number = finer resolution)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -5761,13 +5673,8 @@ apply them. Changes will only persist for the current python session.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Initialize an VoxelModel that is a copy of another model.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>voxel_model</code></strong></dt>
-<dd>Reference VoxelModel object</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param voxel_model: Reference VoxelModel object
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -5791,17 +5698,10 @@ def copy(cls, voxel_model):
 </code></dt>
 <dd>
 <div class="desc"><p>Initialize an empty VoxelModel.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>size</code></strong></dt>
-<dd>Size of the empty model in voxels</dd>
-<dt><strong><code>resolution</code></strong></dt>
-<dd>Number of voxels per mm</dd>
-<dt><strong><code>num_materials</code></strong></dt>
-<dd>Number of material types in materials vector</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param size: Size of the empty model in voxels
+:param resolution: Number of voxels per mm
+:param num_materials: Number of material types in materials vector
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -5827,13 +5727,8 @@ def empty(cls, size: Tuple[int, int, int], resolution: float = 1, num_materials:
 </code></dt>
 <dd>
 <div class="desc"><p>Initialize an empty VoxelModel with the same size, coords, and resolution as another model.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>voxel_model</code></strong></dt>
-<dd>Reference VoxelModel object</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param voxel_model: Reference VoxelModel object
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -5851,7 +5746,7 @@ def emptyLike(cls, voxel_model):
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.fromMeshFile"><code class="name flex">
-<span>def <span class="ident">fromMeshFile</span></span>(<span>filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1, gmsh_on_path: bool = False)</span>
+<span>def <span class="ident">fromMeshFile</span></span>(<span>filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1, gmsh_on_path: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create a VoxelModel from an imported mesh file.</p>
@@ -5859,21 +5754,12 @@ def emptyLike(cls, voxel_model):
 <p>Example:</p>
 <p><code>model1 = VoxelModel.fromMeshFile('center.stl', (67, 3, 0), 2, 1)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name with extension</dd>
-<dt><strong><code>coords</code></strong></dt>
-<dd>Model origin coordinates</dd>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index corresponding to materials.py</dd>
-<dt><strong><code>resolution</code></strong></dt>
-<dd>Number of voxels per mm</dd>
-<dt><strong><code>gmsh_on_path</code></strong></dt>
-<dd>Enable/disable using system gmsh rather than bundled gmsh</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name with extension
+:param coords: Model origin coordinates
+:param material: Material index corresponding to materials.py
+:param resolution: Number of voxels per mm
+:param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -5961,7 +5847,7 @@ def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), m
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.fromVoxFile"><code class="name flex">
-<span>def <span class="ident">fromVoxFile</span></span>(<span>filename: str, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1)</span>
+<span>def <span class="ident">fromVoxFile</span></span>(<span>filename: str, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create a VoxelModel from an imported .vox file.</p>
@@ -5969,17 +5855,10 @@ def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), m
 <p>Example:</p>
 <p><code>model1 = VoxelModel.fromVoxFile('cylinder-red.vox', (0, 5, 0), 1)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name with extension</dd>
-<dt><strong><code>coords</code></strong></dt>
-<dd>Model origin coordinates</dd>
-<dt><strong><code>resolution</code></strong></dt>
-<dd>Number of voxels per mm</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name with extension
+:param coords: Model origin coordinates
+:param resolution: Number of voxels per mm
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6036,13 +5915,8 @@ this file must be used when saving and opening models.</p>
 <p>Example:</p>
 <p><code>model1.openVF("test-file")</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6172,13 +6046,8 @@ def openVF(cls, filename: str):
 <p><code>model3 = model1.add(model2)</code></p>
 <p><code>model3 = model1 + model2</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>model_to_add</code></strong></dt>
-<dd>VoxelModel to add to self</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param model_to_add: VoxelModel to add to self
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6254,13 +6123,8 @@ to voxels that were occupied by material in the input model.</p>
 <p>Example:</p>
 <p><code>model2 = model1.blur(2)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Blur radius in voxels</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param radius: Blur radius in voxels
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6312,15 +6176,9 @@ and the material of the region model is ignored.</p>
 <p>Example:</p>
 <p><code>model2 = model1.blurRegion(3, regionModel)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Blur radius in voxels</dd>
-<dt><strong><code>region</code></strong></dt>
-<dd>VoxelModel defining the target blur region</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param radius: Blur radius in voxels
+:param region: VoxelModel defining the target blur region
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6357,7 +6215,7 @@ and the material of the region model is ignored.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set all null material percentages to zero.</p>
-<p>Returns: VoxelModel</p></div>
+<p>:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6386,15 +6244,9 @@ of another model.</p>
 <p>Example:</p>
 <p><code>modelResult = model1.clearance(Process.PRINT)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>method</code></strong></dt>
-<dd>Target manufacturing method, set using Process class</dd>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index corresponding to materials.py</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param method: Target manufacturing method, set using Process class
+:param material: Material index corresponding to materials.py
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6439,19 +6291,12 @@ of another model.</p>
 <p>This algorithm consists of dilation followed by erosion and will remove small holes.
 Depending on the structuring element used, this will apply a chamfer or fillet effect
 to inside corners.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Radius for dilation/erosion in voxels</dd>
-<dt><strong><code>plane</code></strong></dt>
-<dd>Dilation/erosion directions, set using Axes class</dd>
-<dt><strong><code>structType</code></strong></dt>
-<dd>Shape of structuring element, set using Struct class</dd>
-<dt><strong><code>connectivity</code></strong></dt>
-<dd>connectivity of structuring element (1-3)</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param radius: Radius for dilation/erosion in voxels
+:param plane:
+Dilation/erosion directions, set using Axes class
+:param structType: Shape of structuring element, set using Struct class
+:param connectivity: connectivity of structuring element (1-3)
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6485,13 +6330,8 @@ to inside corners.</p>
 <p>Example:</p>
 <p><code>model3 = model1.difference(model2)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>model_to_sub</code></strong></dt>
-<dd>VoxelModel to subtract from self</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param model_to_sub: VoxelModel to subtract from self
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6528,19 +6368,11 @@ to inside corners.</p>
 <p><code>model2 = model1.dilate(3)</code></p>
 <p><code>model4 = model3.dilate(1, Axes.XY, Struct.SPHERE, 2)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Dilation radius in voxels</dd>
-<dt><strong><code>plane</code></strong></dt>
-<dd>Dilation directions, set using Axes class</dd>
-<dt><strong><code>structType</code></strong></dt>
-<dd>Shape of structuring element, set using Struct class</dd>
-<dt><strong><code>connectivity</code></strong></dt>
-<dd>Connectivity of structuring element (1-3)</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param radius: Dilation radius in voxels
+:param plane: Dilation directions, set using Axes class
+:param structType: Shape of structuring element, set using Struct class
+:param connectivity: Connectivity of structuring element (1-3)
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6591,19 +6423,11 @@ to inside corners.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Dilate a model along the specified axes without increasing the size of its bounding box.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Dilation radius in voxels</dd>
-<dt><strong><code>plane</code></strong></dt>
-<dd>Dilation directions, set using Axes class</dd>
-<dt><strong><code>structType</code></strong></dt>
-<dd>Shape of structuring element, set using Struct class</dd>
-<dt><strong><code>connectivity</code></strong></dt>
-<dd>Connectivity of structuring element (1-3)</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param radius: Dilation radius in voxels
+:param plane: Dilation directions, set using Axes class
+:param structType: Shape of structuring element, set using Struct class
+:param connectivity: Connectivity of structuring element (1-3)
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6642,25 +6466,15 @@ to inside corners.</p>
 <p>Applying dithering will modify the model so that each voxel contains material in only a single material channel.
 Regions of the model which contained mixtures of materials will be converted to distributions of adjacent single
 material voxels.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>use_full</code></strong></dt>
-<dd>Enabling will use a Stucki error diffusion filter. Disabling will use the provided values for x, y, and z error</dd>
-<dt><strong><code>x_error</code></strong></dt>
-<dd>Percentage of error to spread in X</dd>
-<dt><strong><code>y_error</code></strong></dt>
-<dd>Percentage of error to spread in Y</dd>
-<dt><strong><code>z_error</code></strong></dt>
-<dd>Percentage of error to spread in Z</dd>
-<dt><strong><code>error_spread_threshold</code></strong></dt>
-<dd>If a voxel contains a material channel that accounts for more than this percentage of the voxel, no additional error will be spread to it</dd>
-<dt><strong><code>blur</code></strong></dt>
-<dd>Enable/disable applying a blur operation before the dither operation</dd>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Radius value for the optional blur operation</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param use_full: Enabling will use a Stucki error diffusion filter. Disabling will use the provided values for x, y, and z error
+:param x_error: Percentage of error to spread in X
+:param y_error: Percentage of error to spread in Y
+:param z_error:
+Percentage of error to spread in Z
+:param error_spread_threshold: If a voxel contains a material channel that accounts for more than this percentage of the voxel, no additional error will be spread to it
+:param blur: Enable/disable applying a blur operation before the dither operation
+:param radius: Radius value for the optional blur operation
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6712,13 +6526,8 @@ division by a scalar.</p>
 <p><code>model3 = model1 / model2</code></p>
 <p><code>model5 = model4 / 3</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>other</code></strong></dt>
-<dd>VoxelModel to divide self by</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param other: VoxelModel to divide self by
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6799,19 +6608,11 @@ division by a scalar.</p>
 <p><code>model2 = model1.erode(5, connectivity=2)</code></p>
 <p><code>model4 = model3.erode(2, Axes.X, Struct.SPHERE, 1)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Erosion radius in voxels</dd>
-<dt><strong><code>plane</code></strong></dt>
-<dd>Erosion directions, set using Axes class</dd>
-<dt><strong><code>structType</code></strong></dt>
-<dd>Shape of structuring element, set using Struct class</dd>
-<dt><strong><code>connectivity</code></strong></dt>
-<dd>Connectivity of structuring element (1-3)</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param radius: Erosion radius in voxels
+:param plane: Erosion directions, set using Axes class
+:param structType: Shape of structuring element, set using Struct class
+:param connectivity: Connectivity of structuring element (1-3)
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6861,7 +6662,7 @@ division by a scalar.</p>
 <div class="desc"><p>Remove excess empty space from a model.</p>
 <p>Resize the workspace around a model to remove excess empty space.
 Model coordinates are updated to reflect the change.</p>
-<p>Returns: VoxelModel</p></div>
+<p>:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6939,7 +6740,7 @@ Model coordinates are updated to reflect the change.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get all voxels contained in the bounding box of the input model.</p>
-<p>Returns: VoxelModel</p></div>
+<p>:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6963,7 +6764,7 @@ Model coordinates are updated to reflect the change.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Find the coordinates of the center of a model.</p>
-<p>Returns: Center coordinates in voxels</p></div>
+<p>:return: Center coordinates in voxels</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -6992,13 +6793,8 @@ Model coordinates are updated to reflect the change.</p>
 <p>This function uses a disconnected components algorithm and assumes that adjacent
 voxels with different materials are connected. Connectivity can be set to 1-3
 and defines the shape of the structuring element.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>connectivity</code></strong></dt>
-<dd>Connectivity of structuring element (1-3)</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param connectivity: Connectivity of structuring element (1-3)
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7027,13 +6823,8 @@ and defines the shape of the structuring element.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the average material properties of a row in a model's material array.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Dictionary</code> of <code>material properties</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param material: Material index
+:return: Dictionary of material properties</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7072,7 +6863,7 @@ and defines the shape of the structuring element.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get all voxels occupied by the input model.</p>
-<p>Returns: VoxelModel</p></div>
+<p>:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7094,13 +6885,8 @@ and defines the shape of the structuring element.</p>
 <div class="desc"><p>Get the stress-strain data for a row in a model's material array.</p>
 <p>This is currently returned based on the material present in the highest percentage.</p>
 <p>TODO: Make this average multiple stress-strain curves</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Dictionary</code> of <code>material properties</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param material: Material index
+:return: Dictionary of material properties</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7138,7 +6924,7 @@ and defines the shape of the structuring element.</p>
 <p><code>model2 = model1.getUnoccupied()</code></p>
 <p><code>model2 = ~model1</code></p>
 <hr>
-<p>Returns: VoxelModel</p></div>
+<p>:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7170,15 +6956,9 @@ and defines the shape of the structuring element.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the volume of a model or model component.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>component</code></strong></dt>
-<dd>Component label to measure, set to 0 for all components</dd>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index to measure, set to 0 for all materials</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Volume in voxels, volume in mm^3</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param component: Component label to measure, set to 0 for all components
+:param material: Material index to measure, set to 0 for all materials
+:return: Volume in voxels, volume in mm^3</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7206,7 +6986,7 @@ and defines the shape of the structuring element.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the side dimension of a voxel in mm.</p>
-<p>Returns: Float</p></div>
+<p>:return: Float</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7226,13 +7006,8 @@ and defines the shape of the structuring element.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the average material properties of a specific voxel.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>coords</code></strong></dt>
-<dd>Voxel coordinates</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Dictionary</code> of <code>material properties</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param coords: Voxel coordinates
+:return: Dictionary of material properties</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7259,13 +7034,8 @@ This operation can also be applied using the AND operator (&amp;)</p>
 <p><code>model3 = model1.intersection(model2)</code></p>
 <p><code>model3 = model1 &amp; model2</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>model_2</code></strong></dt>
-<dd>VoxelModel to intersect with self</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param model_2: VoxelModel to intersect with self
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7309,13 +7079,8 @@ This operation can also be applied using the AND operator (&amp;)</p>
 <div class="desc"><p>Isolate a component by its component label.</p>
 <p>Component labels must first be updated with getComponents.
 Unrecognized component labels will return an empty object.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>component</code></strong></dt>
-<dd>Component label to isolate</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param component: Component label to isolate
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7344,13 +7109,8 @@ Unrecognized component labels will return an empty object.</p>
 <p>Example:</p>
 <p><code>model2 = model1.isolateLayer(8)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>layer</code></strong></dt>
-<dd>Voxel layer to isolate</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param layer: Voxel layer to isolate
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7384,13 +7144,8 @@ Unrecognized component labels will return an empty object.</p>
 <p>Example:</p>
 <p><code>model2 = model1.isolateMaterial(4)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index corresponding to the materials array for the model</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param material: Material index corresponding to the materials array for the model
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7431,15 +7186,9 @@ no keep-out region because they deposit material from the bottom up.</p>
 <p>Example:</p>
 <p><code>modelResult = model1.keepout(Process.MILL)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>method</code></strong></dt>
-<dd>Target manufacturing method, set using Process class</dd>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index corresponding to materials.py</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param method: Target manufacturing method, set using Process class
+:param material: Material index corresponding to materials.py
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7492,13 +7241,8 @@ for each voxel. This function also supports multiplication by a scalar.</p>
 <p><code>model3 = model1 * model2</code></p>
 <p><code>model5 = model4 * 3</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>other</code></strong></dt>
-<dd>VoxelModel to multiply with self</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param other: VoxelModel to multiply with self
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7572,19 +7316,12 @@ for each voxel. This function also supports multiplication by a scalar.</p>
 <p>This algorithm consists of erosion followed by dilation and will remove small features.
 Depending on the structuring element used, this will apply a chamfer or fillet effect
 to outside corners.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>radius</code></strong></dt>
-<dd>Radius for dilation/erosion in voxels</dd>
-<dt><strong><code>plane</code></strong></dt>
-<dd>Dilation/erosion directions, set using Axes class</dd>
-<dt><strong><code>structType</code></strong></dt>
-<dd>Shape of structuring element, set using Struct class</dd>
-<dt><strong><code>connectivity</code></strong></dt>
-<dd>Connectivity of structuring element (1-3)</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param radius: Radius for dilation/erosion in voxels
+:param plane:
+Dilation/erosion directions, set using Axes class
+:param structType: Shape of structuring element, set using Struct class
+:param connectivity: Connectivity of structuring element (1-3)
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7632,15 +7369,9 @@ that contains material.</p>
 <p>Example:</p>
 <p><code>modelResult = model1.projection(Dir.DOWN)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>direction</code></strong></dt>
-<dd>Projection direction, set using Dir class</dd>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index corresponding to materials.py</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param direction: Projection direction, set using Dir class
+:param material: Material index corresponding to materials.py
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7704,7 +7435,7 @@ that contains material.</p>
 <div class="desc"><p>Remove duplicate rows from a model's material array.</p>
 <p>This function can be greatly accelerated using CUDA. For more information on how to enable CUDA in VoxelFuse,
 see the GpuSettings class.</p>
-<p>Returns: VoxelModel</p></div>
+<p>:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7763,7 +7494,7 @@ see the GpuSettings class.</p>
 <p>Example:</p>
 <p><code>model2 = model1.removeNegatives()</code></p>
 <hr>
-<p>Returns: VoxelModel</p></div>
+<p>:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7797,15 +7528,9 @@ see the GpuSettings class.</p>
 <div class="desc"><p>Rotate a model about its center.</p>
 <p>Floating point errors may slightly affect the angle of the resulting model.
 To rotate a model in precise 90 degree increments, use rotate90().</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>angle</code></strong></dt>
-<dd>Angle of rotation in degrees</dd>
-<dt><strong><code>axis</code></strong></dt>
-<dd>Axis of rotation, set using Axes class</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param angle: Angle of rotation in degrees
+:param axis: Axis of rotation, set using Axes class
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7841,15 +7566,9 @@ To rotate a model in precise 90 degree increments, use rotate90().</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Rotate a model about its center in increments of 90 degrees.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>times</code></strong></dt>
-<dd>Number of 90 degree increments to rotate model</dd>
-<dt><strong><code>axis</code></strong></dt>
-<dd>Axis of rotation, set using Axes class</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param times: Number of 90 degree increments to rotate model
+:param axis: Axis of rotation, set using Axes class
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7882,13 +7601,8 @@ To rotate a model in precise 90 degree increments, use rotate90().</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Round material percentages to nearest multiple of an input value.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>toNearest</code></strong></dt>
-<dd>Value to round to</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param toNearest: Value to round to
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -7928,13 +7642,8 @@ by a VoxelFuse script.</p>
 <p>Example:</p>
 <p><code>modelResult.saveVF("test-file")</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8033,15 +7742,9 @@ cannot currently be reopened by a VoxelFuse script.</p>
 <p>Example:</p>
 <p><code>modelResult.saveVXC("test-file", compression=False)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong></dt>
-<dd>File name</dd>
-<dt><strong><code>compression</code></strong></dt>
-<dd>Enable/disable voxel data compression</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param filename: File name
+:param compression: Enable/disable voxel data compression
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8094,15 +7797,9 @@ cannot currently be reopened by a VoxelFuse script.</p>
 also be multiplied by the scaling factor.
 Enable adjustResolution if using this operation to change the resolution of a model.
 Disable adjustResolution if using this operation to change the size of a model.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>factor</code></strong></dt>
-<dd>Scale factor</dd>
-<dt><strong><code>adjustResolution</code></strong></dt>
-<dd>Enable/disable automatic resolution adjustment</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param factor: Scale factor
+:param adjustResolution: Enable/disable automatic resolution adjustment
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8156,7 +7853,7 @@ will be scaled using scaleValues().</p>
 <p>Example:</p>
 <p><code>model2 = model1.scaleNull()</code></p>
 <hr>
-<p>Returns: VoxelModel</p></div>
+<p>:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8193,13 +7890,8 @@ will be scaled using scaleValues().</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Scale a model to fit the given dimensions.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>size</code></strong></dt>
-<dd>Target dimensions in voxels</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param size: Target dimensions in voxels
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8238,7 +7930,7 @@ maintaining the ratio between materials.</p>
 <p>Example:</p>
 <p><code>model2 = model1.scaleValues()</code></p>
 <hr>
-<p>Returns: VoxelModel</p></div>
+<p>:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8271,13 +7963,8 @@ maintaining the ratio between materials.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set the center of a model to the specified coordinates.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>coords</code></strong></dt>
-<dd>Target coordinates in voxels</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param coords: Target coordinates in voxels
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8304,13 +7991,8 @@ maintaining the ratio between materials.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set the origin of a model to the specified coordinates.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>coords</code></strong></dt>
-<dd>Target coordinates in voxels</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param coords: Target coordinates in voxels
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8332,13 +8014,8 @@ maintaining the ratio between materials.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Set the density of all voxels.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>density</code></strong></dt>
-<dd>Target density value</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param density: Target density value
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8368,13 +8045,8 @@ maintaining the ratio between materials.</p>
 <p><code>model2 = model1.getBoundingBox()</code></p>
 <p><code>model3 = model2.setMaterial(2)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index corresponding to materials.py</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param material: Material index corresponding to materials.py
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8419,13 +8091,8 @@ maintaining the ratio between materials.</p>
 <p><code>material_vector[4] = 0.7 # Set material 4 to 70%</code></p>
 <p><code>model2 = model1.setMaterialVector(material_vector)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>material_vector</code></strong></dt>
-<dd>Material mixture vector, format: (a, m0, m1, &hellip; mn)</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>VoxelMode</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param material_vector: Material mixture vector, format: (a, m0, m1, &hellip; mn)
+:return: VoxelMode</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8483,13 +8150,8 @@ addition example:</p>
 <p><code>model3 = model1.subtract(model2)</code></p>
 <p><code>model3 = model1 - model2</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>model_to_sub</code></strong></dt>
-<dd>VoxelModel to subtract from self</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param model_to_sub: VoxelModel to subtract from self
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8565,22 +8227,13 @@ object as characterized by the process that is used to remove the supports.</p>
 <p>Example:</p>
 <p><code>modelResult = model1.support(Process.LASER)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>method</code></strong></dt>
-<dd>Target support removal method, set using Process class</dd>
-<dt><strong><code>r1</code></strong></dt>
-<dd>Parameter used to determine areas where support is ineffective
-based on proximity to empty regions that are inaccessible to the removal process</dd>
-<dt><strong><code>r2</code></strong></dt>
-<dd>Desired thickness of the support material</dd>
-<dt><strong><code>plane</code></strong></dt>
-<dd>Directions in which to add support material, set using Axes class</dd>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index corresponding to materials.py</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param method: Target support removal method, set using Process class
+:param r1: Parameter used to determine areas where support is ineffective
+based on proximity to empty regions that are inaccessible to the removal process
+:param r2: Desired thickness of the support material
+:param plane: Directions in which to add support material, set using Axes class
+:param material: Material index corresponding to materials.py
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8617,13 +8270,8 @@ based on proximity to empty regions that are inaccessible to the removal process
 </code></dt>
 <dd>
 <div class="desc"><p>Translate a model by the specified vector.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>vector</code></strong></dt>
-<dd>Translation vector in voxels</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param vector: Translation vector in voxels
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8646,13 +8294,8 @@ based on proximity to empty regions that are inaccessible to the removal process
 </code></dt>
 <dd>
 <div class="desc"><p>Translate a model by the specified vector.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>vector</code></strong></dt>
-<dd>Translation vector in mm</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param vector: Translation vector in mm
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8685,13 +8328,8 @@ the OR operator (|)</p>
 <p><code>model3 = model1.union(model2)</code></p>
 <p><code>model3 = model1 | model2</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>model_to_add</code></strong></dt>
-<dd>VoxelModel to union with self</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param model_to_add: VoxelModel to union with self
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8743,24 +8381,14 @@ the OR operator (|)</p>
 <p>Example:</p>
 <p><code>modelResult = model1.userSupport(model2, Process.LASER)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>support_model</code></strong></dt>
-<dd>User provided support model</dd>
-<dt><strong><code>method</code></strong></dt>
-<dd>Target support removal method, set using Process class</dd>
-<dt><strong><code>r1</code></strong></dt>
-<dd>Parameter used to determine areas where support is ineffective
-based on proximity to empty regions that are inaccessible to the removal process</dd>
-<dt><strong><code>r2</code></strong></dt>
-<dd>Desired thickness of the support material</dd>
-<dt><strong><code>plane</code></strong></dt>
-<dd>Directions in which to add support material, set using Axes class</dd>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index corresponding to materials.py, set to -1 to use support model material</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param support_model: User provided support model
+:param method: Target support removal method, set using Process class
+:param r1: Parameter used to determine areas where support is ineffective
+based on proximity to empty regions that are inaccessible to the removal process
+:param r2: Desired thickness of the support material
+:param plane: Directions in which to add support material, set using Axes class
+:param material: Material index corresponding to materials.py, set to -1 to use support model material
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8805,21 +8433,12 @@ based on proximity to empty regions that are inaccessible to the removal process
 <p>Example:</p>
 <p><code>modelResult = model1.web(Process.LASER, 1, 5)</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>method</code></strong></dt>
-<dd>Target web removal method, set using Process class</dd>
-<dt><strong><code>r1</code></strong></dt>
-<dd>Distance from surface of part to inside of web in voxels</dd>
-<dt><strong><code>r2</code></strong></dt>
-<dd>Width of web in voxels</dd>
-<dt><strong><code>layer</code></strong></dt>
-<dd>Voxel layer at which to generate web, set to -1 to generate for all layers</dd>
-<dt><strong><code>material</code></strong></dt>
-<dd>Material index corresponding to materials.py</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param method: Target web removal method, set using Process class
+:param r1: Distance from surface of part to inside of web in voxels
+:param r2: Width of web in voxels
+:param layer: Voxel layer at which to generate web, set to -1 to generate for all layers
+:param material: Material index corresponding to materials.py
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -8854,21 +8473,16 @@ based on proximity to empty regions that are inaccessible to the removal process
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.writeVXCData"><code class="name flex">
-<span>def <span class="ident">writeVXCData</span></span>(<span>self, f: <class 'TextIO'>, compression: bool = False)</span>
+<span>def <span class="ident">writeVXCData</span></span>(<span>self, f: TextIO, compression: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Write geometry and material data to a text file using the .vxc format.</p>
 <p>The VXC/VXA format stores geometry as a 3D grid of single-digit decimal numbers. As such, it is limited to 9
 distinct materials.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>f</code></strong></dt>
-<dd>File to write to</dd>
-<dt><strong><code>compression</code></strong></dt>
-<dd>Enable/disable voxel data compression</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>None</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param f: File to write to
+:param compression:
+Enable/disable voxel data compression
+:return: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -9010,13 +8624,8 @@ distinct materials.</p>
 <p><code>model3 = model1.xor(model2)</code></p>
 <p><code>model3 = model1 ^ model2</code></p>
 <hr>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>model_2</code></strong></dt>
-<dd>VoxelModel to xor with self</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code><a title="voxelfuse.voxel_model.VoxelModel" href="#voxelfuse.voxel_model.VoxelModel">VoxelModel</a></code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
+<p>:param model_2: VoxelModel to xor with self
+:return: VoxelModel</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -9210,9 +8819,7 @@ distinct materials.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.2.dev6+g840cf93</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
-<script>hljs.initHighlightingOnLoad()</script>
 </body>
 </html>
