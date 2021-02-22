@@ -34,7 +34,61 @@
 </Simulator>
 <Environment>
   <Boundary_Conditions>
-    <NumBCs>0</NumBCs>
+    <NumBCs>2</NumBCs>
+    <FRegion>
+      <PrimType>0</PrimType>
+      <X>0.0</X>
+      <Y>0.0</Y>
+      <Z>0.0</Z>
+      <dX>1.0</dX>
+      <dY>1.0</dY>
+      <dZ>0.01</dZ>
+      <Radius>0</Radius>
+      <R>0.6</R>
+      <G>0.4</G>
+      <B>0.4</B>
+      <alpha>0.5</alpha>
+      <DofFixed>63</DofFixed>
+      <ForceX>0</ForceX>
+      <ForceY>0</ForceY>
+      <ForceZ>0</ForceZ>
+      <TorqueX>0</TorqueX>
+      <TorqueY>0</TorqueY>
+      <TorqueZ>0</TorqueZ>
+      <DisplaceX>0.0</DisplaceX>
+      <DisplaceY>0.0</DisplaceY>
+      <DisplaceZ>0.0</DisplaceZ>
+      <AngDisplaceX>0</AngDisplaceX>
+      <AngDisplaceY>0</AngDisplaceY>
+      <AngDisplaceZ>0</AngDisplaceZ>
+    </FRegion>
+    <FRegion>
+      <PrimType>0</PrimType>
+      <X>0.99</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <dX>1.0</dX>
+      <dY>1.0</dY>
+      <dZ>0.01</dZ>
+      <Radius>0</Radius>
+      <R>0.6</R>
+      <G>0.4</G>
+      <B>0.4</B>
+      <alpha>0.5</alpha>
+      <DofFixed>63</DofFixed>
+      <ForceX>0</ForceX>
+      <ForceY>0</ForceY>
+      <ForceZ>0</ForceZ>
+      <TorqueX>0</TorqueX>
+      <TorqueY>0</TorqueY>
+      <TorqueZ>0</TorqueZ>
+      <DisplaceX>0.0</DisplaceX>
+      <DisplaceY>0.0</DisplaceY>
+      <DisplaceZ>0.0</DisplaceZ>
+      <AngDisplaceX>0</AngDisplaceX>
+      <AngDisplaceY>0</AngDisplaceY>
+      <AngDisplaceZ>0</AngDisplaceZ>
+    </FRegion>
   </Boundary_Conditions>
   <Gravity>
     <GravEnabled>1</GravEnabled>
@@ -47,12 +101,25 @@
     <TempBase>25.0</TempBase>
     <VaryTempEnabled>0</VaryTempEnabled>
     <TempPeriod>0.0</TempPeriod>
+    <TempOffset>0.0</TempOffset>
   </Thermal>
+  <GrowthAmplitude>0.0</GrowthAmplitude>
 </Environment>
 <Sensors>
+  <Sensor>
+    <Location>3 9 16</Location>
+    <Axis>-1</Axis>
+  </Sensor>
+  <Sensor>
+    <Location>4 10 12</Location>
+    <Axis>-1</Axis>
+  </Sensor>
 </Sensors>
+<EnableHydrogelModel>0</EnableHydrogelModel>
 <TempControls>
 </TempControls>
+<Disconnections>
+</Disconnections>
 <VXC Version="0.94">
   <Lattice>
     <Lattice_Dim>0.001</Lattice_Dim>
@@ -73,56 +140,6 @@
   <Palette>
     <Material ID="1">
       <MatType>0</MatType>
-      <Name>Y H-Gel Hot</Name>
-      <Display>
-        <Red>1.0</Red>
-        <Green>1.0</Green>
-        <Blue>0.0</Blue>
-        <Alpha>1</Alpha>
-      </Display>
-      <Mechanical>
-        <MatModel>0</MatModel>
-        <Elastic_Mod>30000000.0</Elastic_Mod>
-        <Plastic_Mod>0.0</Plastic_Mod>
-        <Yield_Stress>0.0</Yield_Stress>
-        <FailModel>0</FailModel>
-        <Fail_Stress>0.0</Fail_Stress>
-        <Fail_Strain>0.0</Fail_Strain>
-        <Density>1000.0</Density>
-        <Poissons_Ratio>0.4</Poissons_Ratio>
-        <CTE>-0.02</CTE>
-        <MaterialTempPhase>0.0</MaterialTempPhase>
-        <uStatic>0.9</uStatic>
-        <uDynamic>0.8</uDynamic>
-      </Mechanical>
-    </Material>
-    <Material ID="2">
-      <MatType>0</MatType>
-      <Name>M H-Gel Hot</Name>
-      <Display>
-        <Red>1.0</Red>
-        <Green>0.0</Green>
-        <Blue>1.0</Blue>
-        <Alpha>1</Alpha>
-      </Display>
-      <Mechanical>
-        <MatModel>0</MatModel>
-        <Elastic_Mod>30000000.0</Elastic_Mod>
-        <Plastic_Mod>0.0</Plastic_Mod>
-        <Yield_Stress>0.0</Yield_Stress>
-        <FailModel>0</FailModel>
-        <Fail_Stress>0.0</Fail_Stress>
-        <Fail_Strain>0.0</Fail_Strain>
-        <Density>1000.0</Density>
-        <Poissons_Ratio>0.4</Poissons_Ratio>
-        <CTE>-0.02</CTE>
-        <MaterialTempPhase>0.0</MaterialTempPhase>
-        <uStatic>0.9</uStatic>
-        <uDynamic>0.8</uDynamic>
-      </Mechanical>
-    </Material>
-    <Material ID="3">
-      <MatType>0</MatType>
       <Name>C H-Gel Hot</Name>
       <Display>
         <Red>0.0</Red>
@@ -132,21 +149,21 @@
       </Display>
       <Mechanical>
         <MatModel>0</MatModel>
-        <Elastic_Mod>30000000.0</Elastic_Mod>
+        <Elastic_Mod>30000.0</Elastic_Mod>
         <Plastic_Mod>0.0</Plastic_Mod>
-        <Yield_Stress>0.0</Yield_Stress>
+        <Yield_Stress>1400000.0</Yield_Stress>
         <FailModel>0</FailModel>
-        <Fail_Stress>0.0</Fail_Stress>
-        <Fail_Strain>0.0</Fail_Strain>
+        <Fail_Stress>1301000.0</Fail_Stress>
+        <Fail_Strain>0.6776</Fail_Strain>
         <Density>1000.0</Density>
         <Poissons_Ratio>0.4</Poissons_Ratio>
-        <CTE>-0.02</CTE>
+        <CTE>-0.027</CTE>
         <MaterialTempPhase>0.0</MaterialTempPhase>
         <uStatic>0.9</uStatic>
         <uDynamic>0.8</uDynamic>
       </Mechanical>
     </Material>
-    <Material ID="4">
+    <Material ID="2">
       <MatType>0</MatType>
       <Name>Y H-Gel Cold</Name>
       <Display>
@@ -157,21 +174,21 @@
       </Display>
       <Mechanical>
         <MatModel>0</MatModel>
-        <Elastic_Mod>5000000.0</Elastic_Mod>
+        <Elastic_Mod>5000.0</Elastic_Mod>
         <Plastic_Mod>0.0</Plastic_Mod>
-        <Yield_Stress>0.0</Yield_Stress>
+        <Yield_Stress>1400000.0</Yield_Stress>
         <FailModel>0</FailModel>
-        <Fail_Stress>0.0</Fail_Stress>
-        <Fail_Strain>0.0</Fail_Strain>
+        <Fail_Stress>1301000.0</Fail_Stress>
+        <Fail_Strain>0.6776</Fail_Strain>
         <Density>1000.0</Density>
         <Poissons_Ratio>0.4</Poissons_Ratio>
-        <CTE>-0.02</CTE>
+        <CTE>-0.016</CTE>
         <MaterialTempPhase>0.0</MaterialTempPhase>
         <uStatic>0.9</uStatic>
         <uDynamic>0.8</uDynamic>
       </Mechanical>
     </Material>
-    <Material ID="5">
+    <Material ID="3">
       <MatType>0</MatType>
       <Name>M H-Gel Cold</Name>
       <Display>
@@ -182,21 +199,21 @@
       </Display>
       <Mechanical>
         <MatModel>0</MatModel>
-        <Elastic_Mod>5000000.0</Elastic_Mod>
+        <Elastic_Mod>5000.0</Elastic_Mod>
         <Plastic_Mod>0.0</Plastic_Mod>
-        <Yield_Stress>0.0</Yield_Stress>
+        <Yield_Stress>1400000.0</Yield_Stress>
         <FailModel>0</FailModel>
-        <Fail_Stress>0.0</Fail_Stress>
-        <Fail_Strain>0.0</Fail_Strain>
+        <Fail_Stress>1301000.0</Fail_Stress>
+        <Fail_Strain>0.6776</Fail_Strain>
         <Density>1000.0</Density>
         <Poissons_Ratio>0.4</Poissons_Ratio>
-        <CTE>-0.02</CTE>
+        <CTE>-0.016</CTE>
         <MaterialTempPhase>0.0</MaterialTempPhase>
         <uStatic>0.9</uStatic>
         <uDynamic>0.8</uDynamic>
       </Mechanical>
     </Material>
-    <Material ID="6">
+    <Material ID="4">
       <MatType>0</MatType>
       <Name>C H-Gel Cold</Name>
       <Display>
@@ -207,21 +224,21 @@
       </Display>
       <Mechanical>
         <MatModel>0</MatModel>
-        <Elastic_Mod>5000000.0</Elastic_Mod>
+        <Elastic_Mod>5000.0</Elastic_Mod>
         <Plastic_Mod>0.0</Plastic_Mod>
-        <Yield_Stress>0.0</Yield_Stress>
+        <Yield_Stress>1400000.0</Yield_Stress>
         <FailModel>0</FailModel>
-        <Fail_Stress>0.0</Fail_Stress>
-        <Fail_Strain>0.0</Fail_Strain>
+        <Fail_Stress>1301000.0</Fail_Stress>
+        <Fail_Strain>0.6776</Fail_Strain>
         <Density>1000.0</Density>
         <Poissons_Ratio>0.4</Poissons_Ratio>
-        <CTE>-0.02</CTE>
+        <CTE>-0.016</CTE>
         <MaterialTempPhase>0.0</MaterialTempPhase>
         <uStatic>0.9</uStatic>
         <uDynamic>0.8</uDynamic>
       </Mechanical>
     </Material>
-    <Material ID="7">
+    <Material ID="5">
       <MatType>0</MatType>
       <Name>Rubber</Name>
       <Display>
@@ -231,8 +248,39 @@
         <Alpha>1</Alpha>
       </Display>
       <Mechanical>
-        <MatModel>0</MatModel>
-        <Elastic_Mod>518000.0</Elastic_Mod>
+        <MatModel>3</MatModel>
+        <SSData>
+          <NumDataPts>12</NumDataPts>
+          <StrainData>
+            <Strain>0</Strain>
+            <Strain>0.1004</Strain>
+            <Strain>0.2009</Strain>
+            <Strain>0.3026</Strain>
+            <Strain>0.4</Strain>
+            <Strain>0.4988</Strain>
+            <Strain>0.6015</Strain>
+            <Strain>0.7001</Strain>
+            <Strain>0.801</Strain>
+            <Strain>0.9035</Strain>
+            <Strain>0.9991</Strain>
+            <Strain>1.025</Strain>
+          </StrainData>
+          <StressData>
+            <Stress>0</Stress>
+            <Stress>388400.0</Stress>
+            <Stress>575300.0</Stress>
+            <Stress>775700.0</Stress>
+            <Stress>961200.0</Stress>
+            <Stress>1171000.0</Stress>
+            <Stress>1450000.0</Stress>
+            <Stress>1756000.0</Stress>
+            <Stress>2130000.0</Stress>
+            <Stress>2560000.0</Stress>
+            <Stress>3082000.0</Stress>
+            <Stress>3223000.0</Stress>
+          </StressData>
+        </SSData>
+        <Elastic_Mod>1818000.0</Elastic_Mod>
         <Plastic_Mod>0.0</Plastic_Mod>
         <Yield_Stress>3223000.0</Yield_Stress>
         <FailModel>1</FailModel>
@@ -246,7 +294,7 @@
         <uDynamic>0.8</uDynamic>
       </Mechanical>
     </Material>
-    <Material ID="8">
+    <Material ID="6">
       <MatType>0</MatType>
       <Name>Aluminum</Name>
       <Display>
@@ -271,7 +319,7 @@
         <uDynamic>0.47</uDynamic>
       </Mechanical>
     </Material>
-    <Material ID="9">
+    <Material ID="7">
       <MatType>0</MatType>
       <Name>B PLA</Name>
       <Display>
@@ -296,7 +344,7 @@
         <uDynamic>0.4</uDynamic>
       </Mechanical>
     </Material>
-    <Material ID="10">
+    <Material ID="8">
       <MatType>0</MatType>
       <Name>G PLA</Name>
       <Display>
@@ -321,7 +369,7 @@
         <uDynamic>0.4</uDynamic>
       </Mechanical>
     </Material>
-    <Material ID="11">
+    <Material ID="9">
       <MatType>0</MatType>
       <Name>R PLA</Name>
       <Display>
@@ -357,29 +405,29 @@
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
-      <Layer><![CDATA[101010001111110000101010001111110000101010001111110000000000000000000000000000555006660000555006660000555006660000000000000000000000000000000000000000000000000000]]></Layer>
-      <Layer><![CDATA[101010001111110000101010001111110000101010001111110000000000000000000000000000555006660000555006660000555006660000000000000000000000000000000000000000000000000000]]></Layer>
-      <Layer><![CDATA[101010001111110000101010001111110000101010001111110000000000000000000000000000555006660000555006660000555006660000000000000000000000000000000000000000000000000000]]></Layer>
+      <Layer><![CDATA[999008880000999008880000999008880000000000000000000000000000444003330000444003330000444003330000000000000000000000000000000000000000000000000000]]></Layer>
+      <Layer><![CDATA[999008880000999008880000999008880000000000000000000000000000444003330000444003330000444003330000000000000000000000000000000000000000000000000000]]></Layer>
+      <Layer><![CDATA[999008880000999008880000999008880000000000000000000000000000444003330000444003330000444003330000000000000000000000000000000000000000000000000000]]></Layer>
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
-      <Layer><![CDATA[000000000000099900101010000099900101010000099900101010000000000000000000000000000044400555000044400555000044400555000000000000000000000000000000000000000]]></Layer>
-      <Layer><![CDATA[000000000000099900101010000099900101010000099900101010000000000000000000000000000044400555000044400555000044400555000000000000000000000000000000000000000]]></Layer>
-      <Layer><![CDATA[000000000000099900101010000099900101010000099900101010000000000000000000000000000044400555000044400555000044400555000000000000000000000000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000088800777000088800777000088800777000000000000000000000000000033300222000033300222000033300222000000000000000000000000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000088800777000088800777000088800777000000000000000000000000000033300222000033300222000033300222000000000000000000000000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000088800777000088800777000088800777000000000000000000000000000033300222000033300222000033300222000000000000000000000000000000000000000]]></Layer>
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
-      <Layer><![CDATA[000000000000000000000000008880099900008880099900008880099900000000000000000000000000003330044400003330044400003330044400000000000000000000000000]]></Layer>
-      <Layer><![CDATA[000000000000000000000000008880099900008880099900008880099900000000000000000000000000003330044400003330044400003330044400000000000000000000000000]]></Layer>
-      <Layer><![CDATA[000000000000000000000000008880099900008880099900008880099900000000000000000000000000003330044400003330044400003330044400000000000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000000000007770066600007770066600007770066600000000000000000000000000002220011100002220011100002220011100000000000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000000000007770066600007770066600007770066600000000000000000000000000002220011100002220011100002220011100000000000000000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000000000007770066600007770066600007770066600000000000000000000000000002220011100002220011100002220011100000000000000000000000000]]></Layer>
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
-      <Layer><![CDATA[000000000000000000000000000000000000000777008880000777008880000777008880000000000000000000000000000222003330000222003330000222003330000000000000]]></Layer>
-      <Layer><![CDATA[000000000000000000000000000000000000000777008880000777008880000777008880000000000000000000000000000222003330000222003330000222003330000000000000]]></Layer>
-      <Layer><![CDATA[000000000000000000000000000000000000000777008880000777008880000777008880000000000000000000000000000222003330000222003330000222003330000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000000000000000000000000666005550000666005550000666005550000000000000000000000000000111009990000111009990000111009990000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000000000000000000000000666005550000666005550000666005550000000000000000000000000000111009990000111009990000111009990000000000000]]></Layer>
+      <Layer><![CDATA[000000000000000000000000000000000000000666005550000666005550000666005550000000000000000000000000000111009990000111009990000111009990000000000000]]></Layer>
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
       <Layer><![CDATA[000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]]></Layer>
-      <Layer><![CDATA[000000000000000000000000000000000000000000000000000066600777000066600777000066600777000000000000000000000000000011100222000011100222000011100222]]></Layer>
-      <Layer><![CDATA[000000000000000000000000000000000000000000000000000066600777000066600777000066600777000000000000000000000000000011100222000011100222000011100222]]></Layer>
-      <Layer><![CDATA[000000000000000000000000000000000000000000000000000066600777000066600777000066600777000000000000000000000000000011100222000011100222000011100222]]></Layer>
+      <Layer><![CDATA[000000000000000000000000000000000000000000000000000055500444000055500444000055500444000000000000000000000000000099900888000099900888000099900888]]></Layer>
+      <Layer><![CDATA[000000000000000000000000000000000000000000000000000055500444000055500444000055500444000000000000000000000000000099900888000099900888000099900888]]></Layer>
+      <Layer><![CDATA[000000000000000000000000000000000000000000000000000055500444000055500444000055500444000000000000000000000000000099900888000099900888000099900888]]></Layer>
     </Data>
   </Structure>
 </VXC>

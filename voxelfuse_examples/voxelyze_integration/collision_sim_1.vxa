@@ -47,13 +47,18 @@
     <TempBase>25.0</TempBase>
     <VaryTempEnabled>0</VaryTempEnabled>
     <TempPeriod>0.0</TempPeriod>
+    <TempOffset>0.0</TempOffset>
   </Thermal>
+  <GrowthAmplitude>0.0</GrowthAmplitude>
 </Environment>
 <Sensors>
 </Sensors>
+<EnableHydrogelModel>0</EnableHydrogelModel>
 <TempControls>
 </TempControls>
-<VXC Version="0.94">
+<Disconnections>
+</Disconnections>
+  <VXC Version="0.94">
   <Lattice>
     <Lattice_Dim>0.001</Lattice_Dim>
     <X_Dim_Adj>1</X_Dim_Adj>
@@ -81,8 +86,39 @@
         <Alpha>1</Alpha>
       </Display>
       <Mechanical>
-        <MatModel>0</MatModel>
-        <Elastic_Mod>518000.0</Elastic_Mod>
+        <MatModel>3</MatModel>
+        <SSData>
+          <NumDataPts>12</NumDataPts>
+          <StrainData>
+            <Strain>0</Strain>
+            <Strain>0.1004</Strain>
+            <Strain>0.2009</Strain>
+            <Strain>0.3026</Strain>
+            <Strain>0.4</Strain>
+            <Strain>0.4988</Strain>
+            <Strain>0.6015</Strain>
+            <Strain>0.7001</Strain>
+            <Strain>0.801</Strain>
+            <Strain>0.9035</Strain>
+            <Strain>0.9991</Strain>
+            <Strain>1.025</Strain>
+          </StrainData>
+          <StressData>
+            <Stress>0</Stress>
+            <Stress>388400.0</Stress>
+            <Stress>575300.0</Stress>
+            <Stress>775700.0</Stress>
+            <Stress>961200.0</Stress>
+            <Stress>1171000.0</Stress>
+            <Stress>1450000.0</Stress>
+            <Stress>1756000.0</Stress>
+            <Stress>2130000.0</Stress>
+            <Stress>2560000.0</Stress>
+            <Stress>3082000.0</Stress>
+            <Stress>3223000.0</Stress>
+          </StressData>
+        </SSData>
+        <Elastic_Mod>1818000.0</Elastic_Mod>
         <Plastic_Mod>0.0</Plastic_Mod>
         <Yield_Stress>3223000.0</Yield_Stress>
         <FailModel>1</FailModel>
@@ -119,5 +155,5 @@
       <Layer><![CDATA[000000000000000000001111100001111100001111100001111100001111100000000000000000000]]></Layer>
     </Data>
   </Structure>
-</VXC>
+  </VXC>
 </VXA>

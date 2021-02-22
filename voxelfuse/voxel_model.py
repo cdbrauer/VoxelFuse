@@ -3,7 +3,7 @@ VoxelModel Class
 
 ----
 
-Copyright 2020 - Cole Brauer, Dan Aukes
+Copyright 2021 - Cole Brauer, Dan Aukes
 """
 
 import os
@@ -12,13 +12,13 @@ import meshio
 import numpy as np
 import zlib
 import base64
+from scipy import ndimage
+from numba import njit, prange, cuda
+from tqdm import tqdm
 from enum import Enum
 from typing import Tuple, TextIO
 from pyvox.parser import VoxParser
-from voxelfuse.materials import material_properties
-from scipy import ndimage
-from numba import njit, prange
-from tqdm import tqdm
+from voxelfuse.materials import *
 
 # Floating point error threshold for rounding to zero
 FLOATING_ERROR = 0.0000000001
@@ -202,16 +202,17 @@ class VoxelModel:
         return new_model
 
     @classmethod
-    def empty(cls, size: Tuple[int, int, int], resolution: float = 1):
+    def empty(cls, size: Tuple[int, int, int], resolution: float = 1, num_materials: int = len(material_properties)):
         """
         Initialize an empty VoxelModel.
 
         :param size: Size of the empty model in voxels
         :param resolution: Number of voxels per mm
+        :param num_materials: Number of material types in materials vector
         :return: VoxelModel
         """
         modelData = np.zeros(size, dtype=np.uint16)
-        materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+        materials = np.zeros((1, num_materials + 1), dtype=np.float)
         new_model = cls(modelData, materials, resolution=resolution)
         return new_model
 
@@ -312,23 +313,43 @@ class VoxelModel:
         """
         Remove duplicate rows from a model's material array.
 
+        This function can be greatly accelerated using CUDA. For more information on how to enable CUDA in VoxelFuse,
+        see the GpuSettings class.
+
         :return: VoxelModel
         """
+        new_voxels = np.copy(self.voxels)
         new_materials = np.unique(self.materials, axis=0)
 
-        x_len = self.voxels.shape[0]
-        y_len = self.voxels.shape[1]
-        z_len = self.voxels.shape[2]
+        # Get CUDA settings
+        try:
+            CUDA_enable = bool(os.environ.get('VF_CUDA_ENABLE'))
+            CUDA_device = int(os.environ.get('VF_CUDA_DEVICE'))
+        except TypeError:
+            print('CUDA environment variables not found, defaulting to CUDA disabled')
+            CUDA_enable = False
+            CUDA_device = 0
 
-        new_voxels = np.zeros_like(self.voxels, dtype=np.uint16)
+        if CUDA_enable:
+            # Select GPU
+            cuda.select_device(CUDA_device)
 
-        for x in tqdm(range(x_len), desc='Removing duplicate materials'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    i = self.voxels[x, y, z]
-                    m = self.materials[i]
-                    ni = np.where(np.equal(new_materials, m).all(1))[0][0]
-                    new_voxels[x, y, z] = ni
+            # CUDA blocks
+            blockdim = (8, 8, 8) # 512 threads (1024 threads max)
+            griddim = (new_voxels.shape[0] // blockdim[0] + 1, new_voxels.shape[1] // blockdim[1] + 1, new_voxels.shape[2] // blockdim[2] + 1)
+
+            # Update material indices
+            updateMatIndices[griddim, blockdim](new_voxels, self.materials, new_materials)
+
+        else:
+            x_len, y_len, z_len = self.voxels.shape
+            for x in tqdm(range(x_len), desc='Removing duplicate materials'):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        i = self.voxels[x, y, z]
+                        m = self.materials[i]
+                        ni = np.where(np.equal(new_materials, m).all(1))[0][0]
+                        new_voxels[x, y, z] = ni
 
         return VoxelModel(new_voxels, new_materials, self.coords, self.resolution)
 
@@ -370,7 +391,7 @@ class VoxelModel:
         :return: VoxelModel
         """
         mask = np.array(self.voxels == material, dtype=np.bool)
-        materials = np.zeros((2, len(material_properties)+1), dtype=np.float32)
+        materials = np.zeros((2, self.materials.shape[1]), dtype=np.float32)
         materials[1] = self.materials[material]
         return VoxelModel(mask.astype(int), materials, self.coords, self.resolution)
 
@@ -481,10 +502,10 @@ class VoxelModel:
         :return: VoxelModel
         """
         new_voxels = self.getOccupied().voxels # Converts input model to a mask, no effect if input is already a mask
-        material_vector = np.zeros(len(material_properties)+1, dtype=np.float32)
+        material_vector = np.zeros(self.materials.shape[1], dtype=np.float32)
         material_vector[0] = 1
         material_vector[material+1] = 1
-        a = np.zeros(len(material_properties)+1, dtype=np.float32)
+        a = np.zeros(self.materials.shape[1], dtype=np.float32)
         b = material_vector
         m = np.vstack((a, b))
         return VoxelModel(new_voxels, m, self.coords, self.resolution)
@@ -513,7 +534,7 @@ class VoxelModel:
         :return: VoxelMode
         """
         new_voxels = self.getOccupied().voxels  # Converts input model to a mask, no effect if input is already a mask
-        a = np.zeros(len(material_properties)+1, dtype=np.float32)
+        a = np.zeros(len(material_vector), dtype=np.float32)
         b = material_vector
         materials = np.vstack((a, b))
         return VoxelModel(new_voxels, materials, self.coords, self.resolution)
@@ -714,7 +735,7 @@ class VoxelModel:
         z_len = a.shape[2]
 
         new_voxels = np.zeros_like(a, dtype=np.uint16)
-        new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float32)
+        new_materials = np.zeros((1, len(self.materials[0])), dtype=np.float32)
 
         for x in range(x_len):
             for y in range(y_len):
@@ -786,7 +807,7 @@ class VoxelModel:
         z_len = a.shape[2]
 
         new_voxels = np.zeros_like(a, dtype=np.uint16)
-        new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
+        new_materials = np.zeros((1, len(self.materials[0])), dtype=np.float32)
 
         for x in range(x_len):
             for y in range(y_len):
@@ -852,7 +873,7 @@ class VoxelModel:
             z_len = a.shape[2]
 
             new_voxels = np.zeros_like(a, dtype=np.uint16)
-            new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float32)
+            new_materials = np.zeros((1, len(self.materials[0])), dtype=np.float32)
 
             for x in range(x_len):
                 for y in range(y_len):
@@ -924,7 +945,7 @@ class VoxelModel:
             z_len = a.shape[2]
 
             new_voxels = np.zeros_like(a, dtype=np.uint16)
-            new_materials = np.zeros((1, len(material_properties)+1), dtype=np.float32)
+            new_materials = np.zeros((1, len(self.materials[0])), dtype=np.float32)
 
             for x in range(x_len):
                 for y in range(y_len):
@@ -1081,7 +1102,7 @@ class VoxelModel:
         :param radius: Radius for dilation/erosion in voxels
         :param plane:  Dilation/erosion directions, set using Axes class
         :param structType: Shape of structuring element, set using Struct class
-        :param connectivity: onnectivity of structuring element (1-3)
+        :param connectivity: connectivity of structuring element (1-3)
         :return: VoxelModel
         """
         if radius == 0:
@@ -1144,13 +1165,13 @@ class VoxelModel:
         if radius == 0:
             return VoxelModel.copy(self)
 
-        full_model = toFullMaterials(self.voxels, self.materials, len(material_properties)+1)
+        full_model = toFullMaterials(self.voxels, self.materials, len(self.materials[0]))
 
-        for m in tqdm(range(len(material_properties)), desc='Blur - applying gaussian filter'):
+        for m in tqdm(range(len(self.materials[0])-1), desc='Blur - applying gaussian filter'):
             full_model[:, :, :, m+1] = ndimage.gaussian_filter(full_model[:, :, :, m+1], sigma=radius/2)
 
         mask = full_model[:, :, :, 0]
-        mask = np.repeat(mask[..., None], len(material_properties)+1, axis=3)
+        mask = np.repeat(mask[..., None], len(self.materials[0]), axis=3)
         full_model = np.multiply(full_model, mask)
 
         return toIndexedMaterials(full_model, self, self.resolution)
@@ -1181,15 +1202,31 @@ class VoxelModel:
         new_model = new_model.union(self)
         return new_model
 
-    def dither(self, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=True):
-        if radius == 0:
-            return VoxelModel.copy(self)
+    def dither(self, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=False, radius=1):
+        """
+        Apply material-wise dithering to a model.
 
-        if blur:
+        Applying dithering will modify the model so that each voxel contains material in only a single material channel.
+        Regions of the model which contained mixtures of materials will be converted to distributions of adjacent single
+        material voxels.
+
+        :param use_full: Enabling will use a Stucki error diffusion filter. Disabling will use the provided values for x, y, and z error
+        :param x_error: Percentage of error to spread in X
+        :param y_error: Percentage of error to spread in Y
+        :param z_error:  Percentage of error to spread in Z
+        :param error_spread_threshold: If a voxel contains a material channel that accounts for more than this percentage of the voxel, no additional error will be spread to it
+        :param blur: Enable/disable applying a blur operation before the dither operation
+        :param radius: Radius value for the optional blur operation
+        :return: VoxelModel
+        """
+
+        if blur and (radius > 0):
             new_model = self.blur(radius)
             new_model = new_model.scaleValues()
         else:
             new_model = self.scaleValues()
+
+        new_model.voxels = new_model.voxels.astype(dtype=np.uint16)
 
         full_model = toFullMaterials(new_model.voxels, new_model.materials, len(material_properties) + 1)
         full_model = ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold)
@@ -1237,7 +1274,7 @@ class VoxelModel:
         new_model = self.removeNegatives()
         material_sums = np.sum(new_model.materials[:, 1:], 1)
         material_sums[material_sums == 0] = 1
-        material_sums = np.repeat(material_sums[..., None], len(material_properties), axis=1)
+        material_sums = np.repeat(material_sums[..., None], len(self.materials[0])-1, axis=1)
         new_model.materials[:,1:] = np.divide(new_model.materials[:,1:], material_sums)
         return new_model
 
@@ -1336,8 +1373,7 @@ class VoxelModel:
         xV = int(round(vector[0] * self.resolution))
         yV = int(round(vector[1] * self.resolution))
         zV = int(round(vector[2] * self.resolution))
-        vector_voxels = (xV, yV, zV)
-        new_model = self.translate(vector_voxels)
+        new_model = self.translate((xV, yV, zV))
         return new_model
 
     def rotate(self, angle: float, axis: Axes = Axes.Z):
@@ -1490,6 +1526,15 @@ class VoxelModel:
 
     # Model Info ##############################
 
+    def getVoxelDim(self):
+        """
+        Get the side dimension of a voxel in mm.
+
+        :return: Float
+        """
+        res = self.resolution
+        return (1.0/res) * 0.001
+
     def getVolume(self, component: int = 0, material: int = 0):
         """
         Get the volume of a model or model component.
@@ -1518,22 +1563,43 @@ class VoxelModel:
         for key in material_properties[0]:
             if key == 'name' or key == 'process':
                 string = ''
-                for i in range(len(material_properties)):
+                for i in range(len(self.materials[0])-1):
                     if self.materials[material][i + 1] > 0:
                         string = string + material_properties[i][key] + ' '
                 avgProps.update({key: string})
             elif key == 'MM' or key == 'FM':
                 var = 0
-                for i in range(len(material_properties)):
+                for i in range(len(self.materials[0])-1):
                     if self.materials[material][i + 1] > 0:
                         var = max(var, material_properties[i][key])
                 avgProps.update({key: var})
             else:
                 var = 0
-                for i in range(len(material_properties)):
+                for i in range(len(self.materials[0])-1):
                     var = var + self.materials[material][i + 1] * material_properties[i][key]
                 avgProps.update({key: var})
         return avgProps
+
+    def getSSData(self, material):
+        """
+        Get the stress-strain data for a row in a model's material array.
+
+        This is currently returned based on the material present in the highest percentage.
+
+        TODO: Make this average multiple stress-strain curves
+
+        :param material: Material index
+        :return: Dictionary of material properties
+        """
+        materialIndex = self.materials[material][1:].argmax()
+
+        try:
+            SSData = {'stress':ss_data[materialIndex]['stress'], 'strain':ss_data[materialIndex]['strain']}
+        except KeyError:
+            print('Stress-strain data not available for ' + ss_data[materialIndex]['name'])
+            SSData = None
+
+        return SSData
 
     def getVoxelProperties(self, coords: Tuple[int, int, int]):
         """
@@ -1774,43 +1840,51 @@ class VoxelModel:
         y_coord = self.coords[1]
         z_coord = self.coords[2]
 
-        f.write('<coords>\n' + str(x_coord) + ',' + str(y_coord) + ',' + str(z_coord) + ',\n</coords>\n')
+        writeOpen(f, 'coords')
+        f.write(str(x_coord) + ',' + str(y_coord) + ',' + str(z_coord) + ',\n')
+        writeClos(f, 'coords')
 
-        f.write('<resolution>\n' + str(self.resolution) + '\n</resolution>\n')
+        writeOpen(f, 'resolution')
+        f.write(str(self.resolution) + '\n')
+        writeClos(f, 'resolution')
 
-        f.write('<materials>\n')
-        for r in tqdm(range(len(self.materials[:,0])), desc='Writing materials'):
+        writeOpen(f, 'materials')
+        for r in range(len(self.materials[:,0])): # tqdm(range(len(self.materials[:,0])), desc='Writing materials'):
             for c in range(len(self.materials[0,:])):
                 f.write(str(self.materials[r,c]) + ',')
             f.write('\n')
-        f.write('</materials>\n')
+        writeClos(f, 'materials')
 
         x_len = self.voxels.shape[0]
         y_len = self.voxels.shape[1]
         z_len = self.voxels.shape[2]
 
-        f.write('<size>\n' + str(x_len) + ',' + str(y_len) + ',' + str(z_len) + ',\n</size>\n')
+        writeOpen(f, 'size')
+        f.write(str(x_len) + ',' + str(y_len) + ',' + str(z_len) + ',\n')
+        writeClos(f, 'size')
 
-        f.write('<voxels>\n')
-        for x in tqdm(range(x_len), desc='Writing voxels'):
+        writeOpen(f, 'voxels')
+        for x in range(x_len): # tqdm(range(x_len), desc='Writing voxels'):
             for z in range(z_len):
                 for y in range(y_len):
                     f.write(str(int(self.voxels[x,y,z])) + ',')
                 f.write(';')
             f.write('\n')
-        f.write('</voxels>\n')
+        writeClos(f, 'voxels')
 
-        f.write('<components>\n' + str(self.numComponents) + '\n</components>\n')
+        writeOpen(f, 'components')
+        f.write(str(self.numComponents) + '\n')
+        writeClos(f, 'components')
 
         if self.numComponents > 0:
-            f.write('<labels>\n')
-            for x in tqdm(range(x_len), desc='Writing components'):
+            writeOpen(f, 'labels')
+            for x in range(x_len): # tqdm(range(x_len), desc='Writing components'):
                 for z in range(z_len):
                     for y in range(y_len):
                         f.write(str(int(self.components[x,y,z])) + ',')
                     f.write(';')
                 f.write('\n')
-            f.write('</labels>\n')
+            writeClos(f, 'labels')
 
         f.close()
 
@@ -1844,7 +1918,7 @@ class VoxelModel:
         loc = np.ones((7,2), dtype=np.uint16)
         loc = np.multiply(loc, -1)
 
-        for i in tqdm(range(len(data)), desc='Finding tags'):
+        for i in range(len(data)): # tqdm(range(len(data)), desc='Finding tags'):
             if data[i][:-1] == '<coords>':
                 loc[0,0] = i+1
             if data[i][:-1] == '</coords>':
@@ -1877,18 +1951,18 @@ class VoxelModel:
         coords = np.array(data[loc[0,0]][:-2].split(","), dtype=np.int16)
 
         if loc[6,0] > -1:
-            resolution = int(data[loc[6,0]][:-1])
+            resolution = float(data[loc[6,0]][:-1])
         else:
             resolution = 1
 
         materials = np.array(data[loc[1,0]][:-2].split(","), dtype=np.float32)
-        for i in tqdm(range(loc[1,0]+1, loc[1,1]), desc='Reading materials'):
+        for i in range(loc[1,0]+1, loc[1,1]): # tqdm(range(loc[1,0]+1, loc[1,1]), desc='Reading materials'):
             materials = np.vstack((materials, np.array(data[i][:-2].split(","), dtype=np.float32)))
 
         size = tuple(np.array(data[loc[2,0]][:-2].split(","), dtype=np.uint16))
 
         voxels = np.zeros(size, dtype=np.uint16)
-        for i in tqdm(range(loc[3,0], loc[3,1]), desc='Reading voxels'):
+        for i in range(loc[3,0], loc[3,1]): # tqdm(range(loc[3,0], loc[3,1]), desc='Reading voxels'):
             x = i - loc[3,0]
             yz = data[i][:-2].split(";")
             for z in range(len(yz)):
@@ -1899,7 +1973,7 @@ class VoxelModel:
 
         components = np.zeros(size, dtype=np.uint8)
         if numComponents > 0:
-            for i in tqdm(range(loc[5,0], loc[5,1]), desc='Reading components'):
+            for i in range(loc[5,0], loc[5,1]): # tqdm(range(loc[5,0], loc[5,1]), desc='Reading components'):
                 x = i - loc[5, 0]
                 yz = data[i][:-2].split(";")
                 for z in range(len(yz)):
@@ -1948,89 +2022,115 @@ class VoxelModel:
         export_model = (VoxelModel.copy(self).fitWorkspace()) | empty_model  # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
         export_model.coords = (0, 0, 0)  # Set coords to zero to move object to origin if it is at negative coordinates
 
-        f.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
+        writeHeader(f, '1.0', 'ISO-8859-1')
         export_model.writeVXCData(f, compression)
-
         f.close()
 
     def writeVXCData(self, f: TextIO, compression: bool = False):
         """
         Write geometry and material data to a text file using the .vxc format.
 
+        The VXC/VXA format stores geometry as a 3D grid of single-digit decimal numbers. As such, it is limited to 9
+        distinct materials.
+
         :param f: File to write to
         :param compression:  Enable/disable voxel data compression
         :return: None
         """
-        f.write('<VXC Version="' + str(0.94) + '">\n')
+        if len(self.materials[:, 0]) > 10:
+            f.close()
+            os.remove(f.name)
+            raise ValueError('The VXC/VXA file format supports a maximum of 9 distinct materials')
+
+        writeOpen(f, 'VXC Version="' + str(0.94) + '"', 0)
 
         # Lattice settings
-        f.write('  <Lattice>\n')
-        f.write('    <Lattice_Dim>' + str((1/self.resolution) * 0.001) + '</Lattice_Dim>\n')
-        f.write('    <X_Dim_Adj>' + str(1) + '</X_Dim_Adj>\n')
-        f.write('    <Y_Dim_Adj>' + str(1) + '</Y_Dim_Adj>\n')
-        f.write('    <Z_Dim_Adj>' + str(1) + '</Z_Dim_Adj>\n')
-        f.write('    <X_Line_Offset>' + str(0) + '</X_Line_Offset>\n')
-        f.write('    <Y_Line_Offset>' + str(0) + '</Y_Line_Offset>\n')
-        f.write('    <X_Layer_Offset>' + str(0) + '</X_Layer_Offset>\n')
-        f.write('    <Y_Layer_Offset>' + str(0) + '</Y_Layer_Offset>\n')
-        f.write('  </Lattice>\n')
+        writeOpen(f, 'Lattice', 1)
+        writeData(f, 'Lattice_Dim', (1 / self.resolution) * 0.001, 2)
+        writeData(f, 'X_Dim_Adj', 1, 2)
+        writeData(f, 'Y_Dim_Adj', 1, 2)
+        writeData(f, 'Z_Dim_Adj', 1, 2)
+        writeData(f, 'X_Line_Offset', 0, 2)
+        writeData(f, 'Y_Line_Offset', 0, 2)
+        writeData(f, 'X_Layer_Offset', 0, 2)
+        writeData(f, 'Y_Layer_Offset', 0, 2)
+        writeClos(f, 'Lattice', 1)
 
         # Voxel settings
-        f.write('  <Voxel>\n')
-        f.write('    <Vox_Name>BOX</Vox_Name>\n')
-        f.write('    <X_Squeeze>' + str(1) + '</X_Squeeze>\n')
-        f.write('    <Y_Squeeze>' + str(1) + '</Y_Squeeze>\n')
-        f.write('    <Z_Squeeze>' + str(1) + '</Z_Squeeze>\n')
-        f.write('  </Voxel>\n')
+        writeOpen(f, 'Voxel', 1)
+        writeData(f, 'Vox_Name', 'BOX', 2)
+        writeData(f, 'X_Squeeze', 1, 2)
+        writeData(f, 'Y_Squeeze', 1, 2)
+        writeData(f, 'Z_Squeeze', 1, 2)
+        writeClos(f, 'Voxel', 1)
 
         # Materials
-        f.write('  <Palette>\n')
-        for row in tqdm(range(1, len(self.materials[:, 0])), desc='Writing materials'):
+        writeOpen(f, 'Palette', 1)
+        for row in range(1, len(self.materials[:, 0])): # tqdm(range(1, len(self.materials[:, 0])), desc='Writing materials'):
             avgProps = self.getMaterialProperties(row)
+            writeOpen(f, 'Material ID="' + str(row) + '"', 2)
+            writeData(f, 'MatType', 0, 3)
+            writeData(f, 'Name', avgProps['name'][0:-1], 3)
 
-            f.write('    <Material ID="' + str(row) + '">\n')
-            f.write('      <MatType>' + str(0) + '</MatType>\n')
-            f.write('      <Name>' + avgProps['name'][0:-1] + '</Name>\n')
-            f.write('      <Display>\n')
-            f.write('        <Red>' + str(avgProps['r']) + '</Red>\n')
-            f.write('        <Green>' + str(avgProps['g']) + '</Green>\n')
-            f.write('        <Blue>' + str(avgProps['b']) + '</Blue>\n')
-            f.write('        <Alpha>' + str(1) + '</Alpha>\n')
-            f.write('      </Display>\n')
-            f.write('      <Mechanical>\n')
-            f.write('        <MatModel>' + str(int(avgProps['MM'])) + '</MatModel>\n')
-            f.write('        <Elastic_Mod>' + str(avgProps['E']) + '</Elastic_Mod>\n')
-            f.write('        <Plastic_Mod>' + str(avgProps['Z']) + '</Plastic_Mod>\n')
-            f.write('        <Yield_Stress>' + str(avgProps['eY']) + '</Yield_Stress>\n')
-            f.write('        <FailModel>' + str(int(avgProps['FM'])) + '</FailModel>\n')
-            f.write('        <Fail_Stress>' + str(avgProps['eF']) + '</Fail_Stress>\n')
-            f.write('        <Fail_Strain>' + str(avgProps['SF']) + '</Fail_Strain>\n')
-            f.write('        <Density>' + str(avgProps['p'] * 1e3) + '</Density>\n') # Convert g/cm^3 to kg/m^3
-            f.write('        <Poissons_Ratio>' + str(avgProps['v']) + '</Poissons_Ratio>\n')
-            f.write('        <CTE>' + str(avgProps['CTE']) + '</CTE>\n')
-            f.write('        <MaterialTempPhase>' + str(avgProps['TP']) + '</MaterialTempPhase>\n')
-            f.write('        <uStatic>' + str(avgProps['uS']) + '</uStatic>\n')
-            f.write('        <uDynamic>' + str(avgProps['uD']) + '</uDynamic>\n')
-            f.write('      </Mechanical>\n')
-            f.write('    </Material>\n')
-        f.write('  </Palette>\n')
+            writeOpen(f, 'Display', 3)
+            writeData(f, 'Red', avgProps['r'], 4)
+            writeData(f, 'Green', avgProps['g'], 4)
+            writeData(f, 'Blue', avgProps['b'], 4)
+            writeData(f, 'Alpha', 1, 4)
+            writeClos(f, 'Display', 3)
+
+            writeOpen(f, 'Mechanical', 3)
+            writeData(f, 'MatModel', int(avgProps['MM']), 4)
+            if int(avgProps['MM']) == 3:
+                SSData = self.getSSData(row)
+                writeOpen(f, 'SSData', 4)
+                writeData(f, 'NumDataPts', len(SSData['strain']), 5)
+
+                writeOpen(f, 'StrainData', 5)
+                for point in range(len(SSData['strain'])):
+                    writeData(f, 'Strain', SSData['strain'][point], 6)
+                writeClos(f, 'StrainData', 5)
+
+                writeOpen(f, 'StressData', 5)
+                for point in range(len(SSData['stress'])):
+                    writeData(f, 'Stress', SSData['stress'][point], 6)
+                writeClos(f, 'StressData', 5)
+                writeClos(f, 'SSData', 4)
+
+            writeData(f, 'Elastic_Mod', avgProps['E'], 4)
+            writeData(f, 'Plastic_Mod', avgProps['Z'], 4)
+            writeData(f, 'Yield_Stress', avgProps['eY'], 4)
+            writeData(f, 'FailModel', int(avgProps['FM']), 4)
+            writeData(f, 'Fail_Stress', avgProps['eF'], 4)
+            writeData(f, 'Fail_Strain', avgProps['SF'], 4)
+            writeData(f, 'Density', avgProps['p'] * 1e3, 4)
+            writeData(f, 'Poissons_Ratio', avgProps['v'], 4)
+            writeData(f, 'CTE', avgProps['CTE'], 4)
+            writeData(f, 'MaterialTempPhase', avgProps['TP'], 4)
+            writeData(f, 'uStatic', avgProps['uS'], 4)
+            writeData(f, 'uDynamic', avgProps['uD'], 4)
+
+            writeClos(f, 'Mechanical', 3)
+            writeClos(f, 'Material', 2)
+        writeClos(f, 'Palette', 1)
 
         # Structure
         if compression:
-            f.write('  <Structure Compression="ZLIB">\n')
+            writeOpen(f, 'Structure Compression="ZLIB"', 1)
         else:
-            f.write('  <Structure Compression="ASCII_READABLE">\n')
+            writeOpen(f, 'Structure Compression="ASCII_READABLE"', 1)
 
         x_len = self.voxels.shape[0]
         y_len = self.voxels.shape[1]
         z_len = self.voxels.shape[2]
 
-        f.write('    <X_Voxels>' + str(x_len) + '</X_Voxels>\n')
-        f.write('    <Y_Voxels>' + str(y_len) + '</Y_Voxels>\n')
-        f.write('    <Z_Voxels>' + str(z_len) + '</Z_Voxels>\n')
-        f.write('    <Data>\n')
+        writeData(f, 'X_Voxels', x_len, 2)
+        writeData(f, 'Y_Voxels', y_len, 2)
+        writeData(f, 'Z_Voxels', z_len, 2)
 
-        for z in tqdm(range(z_len), desc='Writing voxels'):
+        writeOpen(f, 'Data', 2)
+
+        for z in range(z_len): # tqdm(range(z_len), desc='Writing voxels'):
             layer = np.copy(self.voxels[:, :, z])
             layer = layer.transpose()
             layerData = layer.flatten()
@@ -2045,11 +2145,76 @@ class VoxelModel:
                 for vox in layerData:
                     layerDataStr = layerDataStr + str(vox)
 
-            f.write('      <Layer><![CDATA[' + layerDataStr + ']]></Layer>\n')
+            writeData(f, 'Layer', '<![CDATA[' + layerDataStr + ']]>', 3)
 
-        f.write('    </Data>\n')
-        f.write('  </Structure>\n')
-        f.write('</VXC>\n')
+        writeClos(f, 'Data', 2)
+        writeClos(f, 'Structure', 1)
+        writeClos(f, 'VXC', 0)
+
+class GpuSettings:
+    """
+    Object to store GPU settings.
+
+    After initializing and configuring the GPU settings, use applySettings() to
+    apply them. Changes will only persist for the current python session.
+
+    For persistent GPU settings, configure these environment variables:
+
+    ``VF_CUDA_ENABLE = 1`` 
+
+    ``VF_CUDA_DEVICE = <desired GPU ID>``
+
+    ----
+
+    Example:
+
+    ``gpu = GpuSettings()``
+
+    ``print('Default CUDA settings:') + str(gpu.CUDA_enable) + ', ' + str(gpu.CUDA_device))``
+
+    ``gpu.setCUDA(True, 1)``
+
+    ``gpu.applySettings()``
+
+    ----
+    """
+    def __init__(self):
+        """
+        Initialize a GpuSettings object.
+        """
+        # Get CUDA settings from environment variables
+        try:
+            CUDA_enable = bool(os.environ.get('VF_CUDA_ENABLE'))
+            CUDA_device = int(os.environ.get('VF_CUDA_DEVICE'))
+        except TypeError:
+            print('CUDA environment variables not found')
+            CUDA_enable = False
+            CUDA_device = 0
+
+        self.CUDA_enable = CUDA_enable
+        self.CUDA_device = CUDA_device
+
+    def setCUDA(self, CUDA_enable: bool = True, CUDA_device: int = 0):
+        """
+        Set overrides for CUDA settings.
+
+        :param CUDA_enable: Enable/disable CUDA acceleration
+        :param CUDA_device: Select CUDA device
+        :return: None
+        """
+        self.CUDA_enable = CUDA_enable
+        self.CUDA_device = CUDA_device
+
+    def applySettings(self):
+        """
+        Apply GPU settings as overrides.
+
+        These changes will only persist for the current python session.
+
+        :return: None
+        """
+        os.environ['VF_CUDA_ENABLE'] = str(int(self.CUDA_enable))
+        os.environ['VF_CUDA_DEVICE'] = str(self.CUDA_device)
 
 # Helper functions ##############################################################
 def makeMesh(filename: str, delete_files: bool = True, gmsh_on_path: bool = False):
@@ -2301,7 +2466,7 @@ def toIndexedMaterials(voxels, model, resolution):
     z_len = model.voxels.shape[2]
 
     new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
-    new_materials = np.zeros((1, len(material_properties) + 1), dtype=np.float32)
+    new_materials = np.zeros((1, len(model.materials[0])), dtype=np.float32)
 
     for x in range(x_len): # tqdm(range(x_len), desc='Converting to indexed materials'):
         for y in range(y_len):
@@ -2371,3 +2536,91 @@ def ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_sprea
                                 addError(full_model, error, z_error, i, x, y, z+1, x_len, y_len, z_len, error_spread_threshold)
 
     return full_model
+
+
+@cuda.jit
+def updateMatIndices(voxels, old_materials, new_materials):
+    # Get current voxel coordinates
+    x, y, z = cuda.grid(3)
+    x_max, y_max, z_max = voxels.shape
+
+    # Ignore coordinates outside of model
+    if (x >= x_max) or (y >= y_max) or (z >= z_max):
+        return
+
+    # Get target material
+    target_mat_index = voxels[x, y, z]
+    target_mat = old_materials[target_mat_index, :]
+
+    # Search for material
+    for m in range(new_materials.shape[0]):
+        # If all material channels match...
+        match = True
+        for c in range(new_materials.shape[1]):
+            error = abs(new_materials[m, c] - target_mat[c])
+            if error > FLOATING_ERROR:
+                match = False
+                break
+
+        # ...save the current index and end search
+        if match:
+            voxels[x, y, z] = m
+            break
+        else:
+            voxels[x, y, z] = -1
+
+'''
+Functions for writing to xml files
+'''
+def writeHeader(f: TextIO, version: str, encoding: str):
+    """
+    Write XML file header
+
+    :param f: File object
+    :param version: XML version number
+    :param encoding: Encoding type
+    :return: None
+    """
+    f.write('<?xml version="' + version + '" encoding="' + encoding + '"?>\n')
+
+def writeData(f: TextIO, name: str, value, tab_level: int = 0):
+    """
+    Write a data element and the surrounding tags.
+
+    :param f: File object
+    :param name: Tag name
+    :param value: Data value
+    :param tab_level: Number of tabs (2 spaces) before start of line
+    :return: None
+    """
+    for i in range(tab_level):
+        f.write('  ')
+    f.write('<' + name + '>')
+    f.write(str(value))
+    f.write('</' + name + '>\n')
+
+def writeOpen(f: TextIO, name: str, tab_level: int = 0):
+    """
+    Write an opening tag.
+
+    :param f: File object
+    :param name: Tag name
+    :param tab_level: Number of tabs (2 spaces) before start of line
+    :return: None
+    """
+    for i in range(tab_level):
+        f.write('  ')
+    f.write('<' + name + '>\n')
+
+def writeClos(f: TextIO, name: str, tab_level: int = 0):
+    """
+    Write a closing tag.
+
+    :param f: File object
+    :param name: Tag name
+    :param tab_level: Number of tabs (2 spaces) before start of line
+    :return: None
+    """
+    for i in range(tab_level):
+        f.write('  ')
+    f.write('</' + name + '>\n')

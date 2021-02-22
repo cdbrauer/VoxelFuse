@@ -8,20 +8,21 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 
 import numpy as np
 from typing import Tuple
-from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.voxel_model import VoxelModel, generateMaterials
 from voxelfuse.materials import material_properties
 
 # Basic primitives
-def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
+def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1, num_materials: int = len(material_properties)):
     """
     Create a VoxelModel containing a single empty voxel at the specified coordinates.
 
     :param coords: Model origin coordinates
     :param resolution: Number of voxels per mm
+    :param num_materials: Number of material types in materials vector
     :return: VoxelModel
     """
     model_data = np.zeros((1, 1, 1), dtype=np.uint16)
-    materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+    materials = np.zeros((1, num_materials + 1), dtype=np.float)
     model = VoxelModel(model_data, materials, coords=coords, resolution=resolution)
     return model
 
@@ -163,18 +164,3 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
     return model
-
-# Helper functions ##############################################################
-def generateMaterials(m: int):
-    """
-    Generate the materials table for a single-material VoxelModel.
-
-    :param m: Material index corresponding to materials.py
-    :return: Array containing the specified material and the empty material
-    """
-    materials = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector[0] = 1
-    material_vector[m+1] = 1
-    materials = np.vstack((materials, material_vector))
-    return materials

@@ -98,7 +98,7 @@ class Mesh:
             g = 0
             b = 0
 
-            for i in range(len(material_properties)):
+            for i in range(voxel_model.materials.shape[1]-1):
                 r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['r']
                 g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['g']
                 b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['b']

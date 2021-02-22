@@ -11,7 +11,7 @@ from voxelfuse.primitives import cube, cuboid
 from voxelfuse.simulation import Simulation, StopCondition
 
 if __name__=='__main__':
-    cubeModel = cube(5, (0, 0, 10), material=5)
+    cubeModel = cube(5, (0, 0, 10), material=5) # Rubber
     planeModel = cuboid((9, 9, 1), (-2, -2, 0), material=5)
 
     modelResult = planeModel | cubeModel

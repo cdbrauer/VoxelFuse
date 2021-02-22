@@ -9,18 +9,30 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import os
+import time
 import subprocess
+import multiprocessing
+
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from enum import Enum
-from typing import Tuple, TextIO
+from typing import List, Tuple, TextIO
 from tqdm import tqdm
 import numpy as np
-from voxelfuse.voxel_model import VoxelModel
-from voxelfuse.primitives import empty, cuboid, sphere, cylinder
+from voxelfuse.voxel_model import VoxelModel, writeHeader, writeData, writeOpen, writeClos
+from voxelfuse.primitives import empty #, cuboid, sphere, cylinder # Formerly needed for finding bcVoxels
 
 # Floating point error threshold for rounding to zero
 FLOATING_ERROR = 0.0000000001
+
+class Axis(Enum):
+    """
+    Options for axes and planes.
+    """
+    NONE = -1
+    X = 0
+    Y = 1
+    Z = 2
 
 class StopCondition(Enum):
     """
@@ -47,7 +59,7 @@ class Simulation:
     Simulation object that stores a VoxelModel and its associated simulation settings.
     """
 
-    def __init__(self, voxel_model):
+    def __init__(self, voxel_model, id_number: int = 0):
         """
         Initialize a Simulation object with default settings.
 
@@ -58,7 +70,8 @@ class Simulation:
         :param voxel_model: VoxelModel
         """
         # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
-        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty()
+        self.id = id_number
+        self.__model = ((VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1), resolution=voxel_model.resolution)).removeDuplicateMaterials()
 
         # Simulator ##############
         # Integration
@@ -83,6 +96,7 @@ class Simulation:
         self.__blendingModel = 0
         self.__polyExp = 1
         self.__volumeEffectsEnable = False
+        self.__hydrogelModelEnable = False
 
         # Stop conditions
         self.__stopConditionType = StopCondition.NONE
@@ -94,7 +108,7 @@ class Simulation:
         # Environment ############
         # Boundary conditions
         self.__bcRegions = []
-        self.__bcVoxels = []
+        # self.__bcVoxels = [] # This data is not needed by the Voxelyze engine, and was disabled
 
         # Gravity
         self.__gravityEnable = True
@@ -107,12 +121,17 @@ class Simulation:
         self.__temperatureVaryEnable = False
         self.__temperatureVaryAmplitude = 0.0
         self.__temperatureVaryPeriod = 0.0
+        self.__temperatureVaryOffset = 0.0
+        self.__growthAmplitude = 0.0
 
         # Sensors #######
         self.__sensors = []
 
         # Temperature Controls #######
         self.__tempControls = []
+
+        # Disconnected Bonds #######
+        self.__disconnections = []
 
         # Results ################
         self.results = []
@@ -132,8 +151,11 @@ class Simulation:
 
         # Make lists copies instead of references
         new_simulation.__bcRegions = simulation.__bcRegions.copy()
-        new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
+        # new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
         new_simulation.__sensors = simulation.__sensors.copy()
+        new_simulation.__tempControls = simulation.__tempControls.copy()
+        new_simulation.results = simulation.results.copy()
+        new_simulation.valueMap = simulation.valueMap.copy()
 
         return new_simulation
 
@@ -150,7 +172,7 @@ class Simulation:
         :return: None
         """
         # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
-        self.__model = (VoxelModel.copy(voxel_model).fitWorkspace()) | empty()
+        self.__model = ((VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1))).removeDuplicateMaterials()
 
     def setDamping(self, bond: float = 1.0, environment: float = 0.0001):
         """
@@ -179,6 +201,15 @@ class Simulation:
         """
         self.__collisionEnable = enable
         self.__collisionDamping = damping
+
+    def setHydrogelModel(self, enable: bool = True):
+        """
+        Set hydrogel model parameters.
+
+        :param enable: Enable/disable hydrogel model
+        :return: None
+        """
+        self.__hydrogelModelEnable = enable
 
     def setStopCondition(self, condition: StopCondition = StopCondition.NONE, value: float = 0):
         """
@@ -213,26 +244,31 @@ class Simulation:
         self.__gravityValue = value
         self.__floorEnable = enable_floor
 
-    def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0):
+    def setFixedThermal(self, enable: bool = True, base_temp: float = 25.0, growth_amplitude: float = 0.0):
         """
         Set a fixed environment temperature.
 
         :param enable: Enable/disable temperature
         :param base_temp: Temperature in degrees C
+        :param growth_amplitude: Set to 1 to enable expansion from base size
         :return: None
         """
         self.__temperatureEnable = enable
         self.__temperatureBaseValue = base_temp
         self.__temperatureVaryEnable = False
+        self.__growthAmplitude = growth_amplitude
 
-    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0):
+    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0, offset: float = 0.0, growth_amplitude: float = 1.0):
         """
         Set a varying environment temperature.
+
 
         :param enable: Enable/disable temperature
         :param base_temp: Base temperature in degrees C
         :param amplitude: Temperature fluctuation amplitude
         :param period: Temperature fluctuation period
+        :param offset: Temperature offset (not currently supported)
+        :param growth_amplitude: Set to 1 to enable expansion from base size
         :return: None
         """
         self.__temperatureEnable = enable
@@ -240,6 +276,8 @@ class Simulation:
         self.__temperatureVaryEnable = enable
         self.__temperatureVaryAmplitude = amplitude
         self.__temperatureVaryPeriod = period
+        self.__temperatureVaryOffset = offset
+        self.__growthAmplitude = growth_amplitude
 
     # Read settings ##################################
     def getModel(self):
@@ -249,6 +287,15 @@ class Simulation:
         :return: VoxelModel
         """
         return self.__model
+
+    def getVoxelDim(self):
+        """
+        Get the side dimension of a voxel in mm.
+
+        :return: Float
+        """
+        res = self.__model.resolution
+        return (1.0/res) * 0.001
 
     def getDamping(self):
         """
@@ -265,6 +312,14 @@ class Simulation:
         :return: Enable/disable collisions, Collision damping
         """
         return self.__collisionEnable, self.__collisionDamping
+
+    def getHydrogelModel(self):
+        """
+        Get hydrogel model parameters.
+
+        :return: Enable/disable hydrogel model
+        """
+        return self.__hydrogelModelEnable
 
     def getStopCondition(self):
         """
@@ -294,9 +349,9 @@ class Simulation:
         """
         Get simulation temperature parameters.
 
-        :return: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period
+        :return: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period, Temperature offset
         """
-        return self.__temperatureEnable, self.__temperatureBaseValue, self.__temperatureVaryEnable, self.__temperatureVaryAmplitude, self.__temperatureVaryPeriod
+        return self.__temperatureEnable, self.__temperatureBaseValue, self.__temperatureVaryEnable, self.__temperatureVaryAmplitude, self.__temperatureVaryPeriod, self.__temperatureVaryOffset
 
     # Add forces, constraints, and sensors ##################################
     # Boundary condition sizes and positions are expressed as percentages of the overall model size
@@ -313,7 +368,7 @@ class Simulation:
         :return: None
         """
         self.__bcRegions = []
-        self.__bcVoxels = []
+        # self.__bcVoxels = []
 
     # Default box boundary condition is a fixed constraint in the YZ plane
     def addBoundaryConditionVoxel(self, position: Tuple[int, int, int] = (0, 0, 0),
@@ -350,7 +405,7 @@ class Simulation:
         radius = 0.49/x_len
 
         self.__bcRegions.append([BCShape.SPHERE, pos, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-        self.__bcVoxels.append([x, y, z])
+        # self.__bcVoxels.append([x, y, z])
 
     # Default box boundary condition is a fixed constraint in the XY plane (bottom layer)
     def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0),
@@ -381,26 +436,26 @@ class Simulation:
         """
         self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
 
-        x_len = int(self.__model.voxels.shape[0])
-        y_len = int(self.__model.voxels.shape[1])
-        z_len = int(self.__model.voxels.shape[2])
+        # x_len = int(self.__model.voxels.shape[0])
+        # y_len = int(self.__model.voxels.shape[1])
+        # z_len = int(self.__model.voxels.shape[2])
 
-        regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
-        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        bcRegion = cuboid(regionSize, regionPosition) & self.__model
+        # regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
+        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        # bcRegion = cuboid(regionSize, regionPosition, resolution=self.__model.resolution) & self.__model
 
-        x_offset = int(bcRegion.coords[0])
-        y_offset = int(bcRegion.coords[1])
-        z_offset = int(bcRegion.coords[2])
+        # x_offset = int(bcRegion.coords[0])
+        # y_offset = int(bcRegion.coords[1])
+        # z_offset = int(bcRegion.coords[2])
 
-        bcVoxels = []
-        for x in tqdm(range(x_len), desc='Finding constrained voxels'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    if bcRegion.voxels[x, y, z] != 0:
-                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+        # bcVoxels = []
+        # for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
+        #     for y in range(y_len):
+        #         for z in range(z_len):
+        #             if bcRegion.voxels[x, y, z] != 0:
+        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
 
-        self.__bcVoxels.append(bcVoxels)
+        # self.__bcVoxels.append(bcVoxels)
 
     # Default sphere boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5),
@@ -431,26 +486,26 @@ class Simulation:
         """
         self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
 
-        x_len = int(self.__model.voxels.shape[0])
-        y_len = int(self.__model.voxels.shape[1])
-        z_len = int(self.__model.voxels.shape[2])
-
-        regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
-        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        bcRegion = sphere(regionRadius, regionPosition) & self.__model
-
-        x_offset = int(bcRegion.coords[0])
-        y_offset = int(bcRegion.coords[1])
-        z_offset = int(bcRegion.coords[2])
-
-        bcVoxels = []
-        for x in tqdm(range(x_len), desc='Finding constrained voxels'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    if bcRegion.voxels[x, y, z] != 0:
-                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
-
-        self.__bcVoxels.append(bcVoxels)
+        # x_len = int(self.__model.voxels.shape[0])
+        # y_len = int(self.__model.voxels.shape[1])
+        # z_len = int(self.__model.voxels.shape[2])
+        #
+        # regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        # bcRegion = sphere(regionRadius, regionPosition, resolution=self.__model.resolution) & self.__model
+        #
+        # x_offset = int(bcRegion.coords[0])
+        # y_offset = int(bcRegion.coords[1])
+        # z_offset = int(bcRegion.coords[2])
+        #
+        # bcVoxels = []
+        # for x in  range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
+        #     for y in range(y_len):
+        #         for z in range(z_len):
+        #             if bcRegion.voxels[x, y, z] != 0:
+        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+        #
+        # self.__bcVoxels.append(bcVoxels)
 
     # Default cylinder boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0,
@@ -486,34 +541,34 @@ class Simulation:
         size[axis] = height
         self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
 
-        x_len = int(self.__model.voxels.shape[0])
-        y_len = int(self.__model.voxels.shape[1])
-        z_len = int(self.__model.voxels.shape[2])
-
-        regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
-        regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
-        regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        bcRegion = cylinder(regionRadius, regionHeight, regionPosition)
-
-        if axis == 0:
-            bcRegion = bcRegion.rotate90(axis=1)
-        elif axis == 1:
-            bcRegion = bcRegion.rotate90(axis=0)
-
-        bcRegion = bcRegion & self.__model
-
-        x_offset = int(bcRegion.coords[0])
-        y_offset = int(bcRegion.coords[1])
-        z_offset = int(bcRegion.coords[2])
-
-        bcVoxels = []
-        for x in tqdm(range(x_len), desc='Finding constrained voxels'):
-            for y in range(y_len):
-                for z in range(z_len):
-                    if bcRegion.voxels[x, y, z] != 0:
-                        bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
-
-        self.__bcVoxels.append(bcVoxels)
+        # x_len = int(self.__model.voxels.shape[0])
+        # y_len = int(self.__model.voxels.shape[1])
+        # z_len = int(self.__model.voxels.shape[2])
+        #
+        # regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
+        # regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
+        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
+        # bcRegion = cylinder(regionRadius, regionHeight, regionPosition, resolution=self.__model.resolution)
+        #
+        # if axis == 0:
+        #     bcRegion = bcRegion.rotate90(axis=1)
+        # elif axis == 1:
+        #     bcRegion = bcRegion.rotate90(axis=0)
+        #
+        # bcRegion = bcRegion & self.__model
+        #
+        # x_offset = int(bcRegion.coords[0])
+        # y_offset = int(bcRegion.coords[1])
+        # z_offset = int(bcRegion.coords[2])
+        #
+        # bcVoxels = []
+        # for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
+        #     for y in range(y_len):
+        #         for z in range(z_len):
+        #             if bcRegion.voxels[x, y, z] != 0:
+        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
+        #
+        # self.__bcVoxels.append(bcVoxels)
 
     def clearSensors(self):
         """
@@ -523,21 +578,40 @@ class Simulation:
         """
         self.__sensors = []
 
-    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0)):
+    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0), axis: Axis = Axis.NONE): # TODO: Make Voxelyze use axis parameter
         """
         Add a sensor to a voxel.
 
         This feature is not currently supported by VoxCad
 
         :param location: Sensor location in voxels
+        :param axis: Sensor measurement axis
         :return: None
         """
         x = location[0] - self.__model.coords[0]
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        sensor = [x, y, z]
+        sensor = [x, y, z, axis.value]
         self.__sensors.append(sensor)
+
+    def clearDisconnections(self):
+        """
+        Clear all disconnected voxel bonds.
+
+        :return: None
+        """
+        self.__disconnections = []
+
+    def addDisconnection(self, voxel_1: Tuple[int, int, int], voxel_2: Tuple[int, int, int]):
+        """
+        Specify a pair of voxels which should be disconnected
+
+        :param voxel_1: Coordinates in voxels
+        :param voxel_2: Coordinates in voxels
+        :return:
+        """
+        self.__disconnections.append([voxel_1[0], voxel_1[1], voxel_1[2], voxel_2[0], voxel_2[1], voxel_2[2]])
 
     def clearTempControls(self):
         """
@@ -547,28 +621,41 @@ class Simulation:
         """
         self.__tempControls = []
 
-    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), temperature: float = 0):
+    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), amplitude1: float = 0, amplitude2: float = 0, changeX: float = 0.5,
+                       phase_offset: float = 0, temp_offset: float = 0, const_temp: bool = False, square_wave: bool = False):
         """
         Add a temperature control element to a voxel.
 
         This feature is not currently supported by VoxCad
 
         :param location: Control element location in voxels
-        :param temperature: Control element temperature
+        :param amplitude1: Control element positive temperature amplitude (deg C)
+        :param amplitude2: Control element negative temperature amplitude (deg C)
+        :param changeX: Percent of period spanned by positive temperature amplitude (0-1)
+        :param phase_offset: Control element phase offset for time-varying thermal (rad)
+        :param temp_offset: Control element temperature offset for time-varying thermal (deg C)
+        :param const_temp: Enable/disable setting a constant target temperature that respects heating/cooling rates
+        :param square_wave: Enable/disable converting signal to a square wave (positive -> a = amplitude1, negative -> a = 0)
         :return: None
         """
         x = location[0] - self.__model.coords[0]
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        element = [x, y, z, temperature]
+        element = [x, y, z, amplitude1, amplitude2, changeX, phase_offset, temp_offset, const_temp, square_wave]
         self.__tempControls.append(element)
 
-    def applyTempMap(self, valueMap):
+    def applyTempMap(self, amp1_map, amp2_map=None, changeX_map=None, phase_map=None, offset_map=None, const_temp_map=None, square_wave_map=None):
         """
-        Set the simulation temperature control elements based on a value map of target temperatures.
+        Set the simulation temperature control elements based on a value maps of target temperature settings.
 
-        :param valueMap: Array of target temperatures for each voxel
+        :param amp1_map: Array of target positive temperature amplitudes for each voxel (deg C)
+        :param amp2_map: Array of target negative temperature amplitudes for each voxel (deg C)
+        :param changeX_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
+        :param phase_map: Array of phase offsets for each voxel (rad)
+        :param offset_map: Array of temperature offsets for each voxel (deg C)
+        :param const_temp_map: Array of boolean values to enable/disable constant temperature mode
+        :param square_wave_map:  Array of boolean values to enable/disable square wave mode
         :return:
         """
 
@@ -576,62 +663,48 @@ class Simulation:
         self.clearTempControls()
 
         # Get map size
-        x_len = valueMap.shape[0]
-        y_len = valueMap.shape[1]
-        z_len = valueMap.shape[2]
+        x_len = amp1_map.shape[0]
+        y_len = amp1_map.shape[1]
+        z_len = amp1_map.shape[2]
 
         # Find required temperature change at each voxel
         for x in range(x_len):
             for y in range(y_len):
                 for z in range(z_len):
-                    if abs(valueMap[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
-                        self.addTempControl((x, y, z), valueMap[x, y, z])
+                    if abs(amp1_map[x, y, z]) > FLOATING_ERROR or ((amp2_map is not None) and (abs(amp2_map[x, y, z]) > FLOATING_ERROR)):  # If voxel is not empty
+                        element = [x, y, z, amp1_map[x, y, z]]
 
-    def applyVolumeMap(self, valueMap = None):
-        """
-        Set the simulation temperature control elements based on a value map of target volumes.
+                        if amp2_map is None:
+                            element.append(amp1_map[x, y, z])
+                        else:
+                            element.append(amp2_map[x, y, z])
 
-        If a valueMap is not specified, the Simulation object's value map attribute will
-        be used. To update this attribute, first use ``runSim(value_map=10)`` to get the
-        result volumes from running the simulation with any previous settings.
+                        if changeX_map is None:
+                            element.append(0.5)
+                        else:
+                            element.append(changeX_map[x, y, z])
 
-        :param valueMap: Array of target volumes for each voxel
-        :return:
-        """
-        if valueMap is None:
-            valueMap = self.valueMap
+                        if phase_map is None:
+                            element.append(0)
+                        else:
+                            element.append(phase_map[x, y, z])
 
-        # Clear any existing temp controls
-        self.clearTempControls()
+                        if offset_map is None:
+                            element.append(0)
+                        else:
+                            element.append(offset_map[x, y, z])
 
-        # Get map size
-        x_len = valueMap.shape[0]
-        y_len = valueMap.shape[1]
-        z_len = valueMap.shape[2]
+                        if const_temp_map is None:
+                            element.append(False)
+                        else:
+                            element.append(const_temp_map[x, y, z])
 
-        # Get initial volume
-        v0 = (1 / self.__model.resolution) ** 3
+                        if square_wave_map is None:
+                            element.append(False)
+                        else:
+                            element.append(square_wave_map[x, y, z])
 
-        # Find required temperature change at each voxel
-        for x in range(x_len):
-            for y in range(y_len):
-                for z in range(z_len):
-                    if abs(valueMap[x, y, z]) > FLOATING_ERROR:  # If voxel is not empty
-                        # Get volume change
-                        vol_delta = valueMap[x, y, z] - v0
-
-                        # Get CTE value
-                        avgProps = self.__model.getVoxelProperties((x, y, z))
-                        cte = avgProps['CTE']
-
-                        # Get required temperature change relative to base temperature
-                        temp_delta = (vol_delta / (v0 * cte))
-
-                        # Get base temperature
-                        temp_base = (self.getThermal())[1]
-
-                        # Add a temperature control element
-                        self.addTempControl((x, y, z), temp_base+temp_delta)
+                        self.__tempControls.append(element)
 
     def saveTempControls(self, filename: str, figure: bool = False):
         """
@@ -643,7 +716,7 @@ class Simulation:
         """
         f = open(filename + '.csv', 'w+')
         print('Saving file: ' + f.name)
-        f.write('X,Y,Z,Temperature (deg C)\n')
+        f.write('X,Y,Z,Amplitude 1 (deg C),Amplitude 2 (deg C),Change X,Phase Offset (rad),Temperature Offset (deg C),Constant Temperature Enabled,Square Wave Enabled\n')
         for i in range(len(self.__tempControls)):
             f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
         f.close()
@@ -696,15 +769,15 @@ class Simulation:
         f = open(filename + '.vxa', 'w+')
         print('Saving file: ' + f.name)
 
-        f.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
-        f.write('<VXA Version="' + str(1.1) + '">\n')
+        writeHeader(f, '1.0', 'ISO-8859-1')
+        writeOpen(f, 'VXA Version="' + str(1.1) + '"', 0)
         self.writeSimData(f)
         self.writeEnvironmentData(f)
         self.writeSensors(f)
         self.writeTempControls(f)
+        self.writeDisconnections(f)
         self.__model.writeVXCData(f, compression)
-        f.write('</VXA>\n')
-
+        writeClos(f, 'VXA', 0)
         f.close()
 
     # Write simulator settings to file
@@ -716,38 +789,43 @@ class Simulation:
         :return: None
         """
         # Simulator settings
-        f.write('<Simulator>\n')
-        f.write('  <Integration>\n')
-        f.write('    <Integrator>' + str(self.__integrator) + '</Integrator>\n')
-        f.write('    <DtFrac>' + str(self.__dtFraction) + '</DtFrac>\n')
-        f.write('  </Integration>\n')
-        f.write('  <Damping>\n')
-        f.write('    <BondDampingZ>' + str(self.__dampingBond) + '</BondDampingZ>\n')
-        f.write('    <ColDampingZ>' + str(self.__collisionDamping) + '</ColDampingZ>\n')
-        f.write('    <SlowDampingZ>' + str(self.__dampingEnvironment) + '</SlowDampingZ>\n')
-        f.write('  </Damping>\n')
-        f.write('  <Collisions>\n')
-        f.write('    <SelfColEnabled>' + str(int(self.__collisionEnable)) + '</SelfColEnabled>\n')
-        f.write('    <ColSystem>' + str(self.__collisionSystem) + '</ColSystem>\n')
-        f.write('    <CollisionHorizon>' + str(self.__collisionHorizon) + '</CollisionHorizon>\n')
-        f.write('  </Collisions>\n')
-        f.write('  <Features>\n')
-        f.write('    <BlendingEnabled>' + str(int(self.__blendingEnable)) + '</BlendingEnabled>\n')
-        f.write('    <XMixRadius>' + str(self.__xMixRadius) + '</XMixRadius>\n')
-        f.write('    <YMixRadius>' + str(self.__yMixRadius) + '</YMixRadius>\n')
-        f.write('    <ZMixRadius>' + str(self.__zMixRadius) + '</ZMixRadius>\n')
-        f.write('    <BlendModel>' + str(self.__blendingModel) + '</BlendModel>\n')
-        f.write('    <PolyExp>' + str(self.__polyExp) + '</PolyExp>\n')
-        f.write('    <VolumeEffectsEnabled>' + str(int(self.__volumeEffectsEnable)) + '</VolumeEffectsEnabled>\n')
-        f.write('  </Features>\n')
-        f.write('  <StopCondition>\n')
-        f.write('    <StopConditionType>' + str(self.__stopConditionType.value) + '</StopConditionType>\n')
-        f.write('    <StopConditionValue>' + str(self.__stopConditionValue) + '</StopConditionValue>\n')
-        f.write('  </StopCondition>\n')
-        f.write('  <EquilibriumMode>\n')
-        f.write('    <EquilibriumModeEnabled>' + str(int(self.__equilibriumModeEnable)) + '</EquilibriumModeEnabled>\n')
-        f.write('  </EquilibriumMode>\n')
-        f.write('</Simulator>\n')
+        writeOpen(f, 'Simulator', 0)
+        writeOpen(f, 'Integration', 1)
+        writeData(f, 'Integrator', self.__integrator, 2)
+        writeData(f, 'DtFrac', self.__dtFraction, 2)
+        writeClos(f, 'Integration', 1)
+
+        writeOpen(f, 'Damping', 1)
+        writeData(f, 'BondDampingZ', self.__dampingBond, 2)
+        writeData(f, 'ColDampingZ', self.__collisionDamping, 2)
+        writeData(f, 'SlowDampingZ', self.__dampingEnvironment, 2)
+        writeClos(f, 'Damping', 1)
+
+        writeOpen(f, 'Collisions', 1)
+        writeData(f, 'SelfColEnabled', int(self.__collisionEnable), 2)
+        writeData(f, 'ColSystem', self.__collisionSystem, 2)
+        writeData(f, 'CollisionHorizon', self.__collisionHorizon, 2)
+        writeClos(f, 'Collisions', 1)
+
+        writeOpen(f, 'Features', 1)
+        writeData(f, 'BlendingEnabled', int(self.__blendingEnable), 2)
+        writeData(f, 'XMixRadius', self.__xMixRadius, 2)
+        writeData(f, 'YMixRadius', self.__yMixRadius, 2)
+        writeData(f, 'ZMixRadius', self.__zMixRadius, 2)
+        writeData(f, 'BlendModel', self.__blendingModel, 2)
+        writeData(f, 'PolyExp', self.__polyExp, 2)
+        writeData(f, 'VolumeEffectsEnabled', int(self.__volumeEffectsEnable), 2)
+        writeClos(f, 'Features', 1)
+
+        writeOpen(f, 'StopCondition', 1)
+        writeData(f, 'StopConditionType', self.__stopConditionType.value, 2)
+        writeData(f, 'StopConditionValue', self.__stopConditionValue, 2)
+        writeClos(f, 'StopCondition', 1)
+
+        writeOpen(f, 'EquilibriumMode', 1)
+        writeData(f, 'EquilibriumModeEnabled', int(self.__equilibriumModeEnable), 2)
+        writeClos(f, 'EquilibriumMode', 1)
+        writeClos(f, 'Simulator', 0)
 
     # Write environment settings to file
     def writeEnvironmentData(self, f: TextIO):
@@ -758,59 +836,56 @@ class Simulation:
         :return: None
         """
         # Environment settings
-        f.write('<Environment>\n')
-        f.write('  <Boundary_Conditions>\n')
-        f.write('    <NumBCs>' + str(len(self.__bcRegions)) + '</NumBCs>\n')
+        writeOpen(f, 'Environment', 0)
+        writeOpen(f, 'Boundary_Conditions', 1)
+        writeData(f, 'NumBCs', len(self.__bcRegions), 2)
+        for r in range(len(self.__bcRegions)): # tqdm(range(len(self.__bcRegions)), desc='Writing boundary conditions'):
+            writeOpen(f, 'FRegion', 2)
+            writeData(f, 'PrimType', int(self.__bcRegions[r][0].value), 3)
+            writeData(f, 'X', self.__bcRegions[r][1][0], 3)
+            writeData(f, 'Y', self.__bcRegions[r][1][1], 3)
+            writeData(f, 'Z', self.__bcRegions[r][1][2], 3)
+            writeData(f, 'dX', self.__bcRegions[r][2][0], 3)
+            writeData(f, 'dY', self.__bcRegions[r][2][1], 3)
+            writeData(f, 'dZ', self.__bcRegions[r][2][2], 3)
+            writeData(f, 'Radius', self.__bcRegions[r][3], 3)
+            writeData(f, 'R', self.__bcRegions[r][4][0], 3)
+            writeData(f, 'G', self.__bcRegions[r][4][1], 3)
+            writeData(f, 'B', self.__bcRegions[r][4][2], 3)
+            writeData(f, 'alpha', self.__bcRegions[r][4][3], 3)
+            writeData(f, 'DofFixed', self.__bcRegions[r][5], 3)
+            writeData(f, 'ForceX', self.__bcRegions[r][6][0], 3)
+            writeData(f, 'ForceY', self.__bcRegions[r][6][1], 3)
+            writeData(f, 'ForceZ', self.__bcRegions[r][6][2], 3)
+            writeData(f, 'TorqueX', self.__bcRegions[r][7][0], 3)
+            writeData(f, 'TorqueY', self.__bcRegions[r][7][1], 3)
+            writeData(f, 'TorqueZ', self.__bcRegions[r][7][2], 3)
+            writeData(f, 'DisplaceX', self.__bcRegions[r][8][0] * 1e-3, 3)
+            writeData(f, 'DisplaceY', self.__bcRegions[r][8][1] * 1e-3, 3)
+            writeData(f, 'DisplaceZ', self.__bcRegions[r][8][2] * 1e-3, 3)
+            writeData(f, 'AngDisplaceX', self.__bcRegions[r][9][0], 3)
+            writeData(f, 'AngDisplaceY', self.__bcRegions[r][9][1], 3)
+            writeData(f, 'AngDisplaceZ', self.__bcRegions[r][9][2], 3)
+            writeClos(f, 'FRegion', 2)
+        writeClos(f, 'Boundary_Conditions', 1)
 
-        for r in tqdm(range(len(self.__bcRegions)), desc='Writing boundary conditions'):
-            f.write('    <FRegion>\n')
-            f.write('      <PrimType>' + str(int(self.__bcRegions[r][0].value)) + '</PrimType>\n')
-            f.write('      <X>' + str(self.__bcRegions[r][1][0]) + '</X>\n')
-            f.write('      <Y>' + str(self.__bcRegions[r][1][1]) + '</Y>\n')
-            f.write('      <Z>' + str(self.__bcRegions[r][1][2]) + '</Z>\n')
-            f.write('      <dX>' + str(self.__bcRegions[r][2][0]) + '</dX>\n')
-            f.write('      <dY>' + str(self.__bcRegions[r][2][1]) + '</dY>\n')
-            f.write('      <dZ>' + str(self.__bcRegions[r][2][2]) + '</dZ>\n')
-            f.write('      <Radius>' + str(self.__bcRegions[r][3]) + '</Radius>\n')
-            f.write('      <R>' + str(self.__bcRegions[r][4][0]) + '</R>\n')
-            f.write('      <G>' + str(self.__bcRegions[r][4][1]) + '</G>\n')
-            f.write('      <B>' + str(self.__bcRegions[r][4][2]) + '</B>\n')
-            f.write('      <alpha>' + str(self.__bcRegions[r][4][3]) + '</alpha>\n')
-            f.write('      <DofFixed>' + str(self.__bcRegions[r][5]) + '</DofFixed>\n')
-            f.write('      <ForceX>' + str(self.__bcRegions[r][6][0]) + '</ForceX>\n')
-            f.write('      <ForceY>' + str(self.__bcRegions[r][6][1]) + '</ForceY>\n')
-            f.write('      <ForceZ>' + str(self.__bcRegions[r][6][2]) + '</ForceZ>\n')
-            f.write('      <TorqueX>' + str(self.__bcRegions[r][7][0]) + '</TorqueX>\n')
-            f.write('      <TorqueY>' + str(self.__bcRegions[r][7][1]) + '</TorqueY>\n')
-            f.write('      <TorqueZ>' + str(self.__bcRegions[r][7][2]) + '</TorqueZ>\n')
-            f.write('      <DisplaceX>' + str(self.__bcRegions[r][8][0] * 1e-3) + '</DisplaceX>\n')
-            f.write('      <DisplaceY>' + str(self.__bcRegions[r][8][1] * 1e-3) + '</DisplaceY>\n')
-            f.write('      <DisplaceZ>' + str(self.__bcRegions[r][8][2] * 1e-3) + '</DisplaceZ>\n')
-            f.write('      <AngDisplaceX>' + str(self.__bcRegions[r][9][0]) + '</AngDisplaceX>\n')
-            f.write('      <AngDisplaceY>' + str(self.__bcRegions[r][9][1]) + '</AngDisplaceY>\n')
-            f.write('      <AngDisplaceZ>' + str(self.__bcRegions[r][9][2]) + '</AngDisplaceZ>\n')
-            f.write('      <IntersectedVoxels>\n')
+        writeOpen(f, 'Gravity', 1)
+        writeData(f, 'GravEnabled', int(self.__gravityEnable), 2)
+        writeData(f, 'GravAcc', self.__gravityValue, 2)
+        writeData(f, 'FloorEnabled', int(self.__floorEnable), 2)
+        writeClos(f, 'Gravity', 1)
 
-            for v in self.__bcVoxels[r]:
-                f.write('        <Voxel>' + str(v).replace('[', '').replace(',', '').replace(']', '') + '</Voxel>\n')
+        writeOpen(f, 'Thermal', 1)
+        writeData(f, 'TempEnabled', int(self.__temperatureEnable), 2)
+        writeData(f, 'TempAmplitude', self.__temperatureVaryAmplitude, 2)
+        writeData(f, 'TempBase', self.__temperatureBaseValue, 2)
+        writeData(f, 'VaryTempEnabled', int(self.__temperatureVaryEnable), 2)
+        writeData(f, 'TempPeriod', self.__temperatureVaryPeriod, 2)
+        writeData(f, 'TempOffset', self.__temperatureVaryOffset, 2)
+        writeClos(f, 'Thermal', 1)
 
-            f.write('      </IntersectedVoxels>\n')
-            f.write('    </FRegion>\n')
-
-        f.write('  </Boundary_Conditions>\n')
-        f.write('  <Gravity>\n')
-        f.write('    <GravEnabled>' + str(int(self.__gravityEnable)) + '</GravEnabled>\n')
-        f.write('    <GravAcc>' + str(self.__gravityValue) + '</GravAcc>\n')
-        f.write('    <FloorEnabled>' + str(int(self.__floorEnable)) + '</FloorEnabled>\n')
-        f.write('  </Gravity>\n')
-        f.write('  <Thermal>\n')
-        f.write('    <TempEnabled>' + str(int(self.__temperatureEnable)) + '</TempEnabled>\n')
-        f.write('    <TempAmplitude>' + str(self.__temperatureVaryAmplitude) + '</TempAmplitude>\n')
-        f.write('    <TempBase>' + str(self.__temperatureBaseValue) + '</TempBase>\n')
-        f.write('    <VaryTempEnabled>' + str(int(self.__temperatureVaryEnable)) + '</VaryTempEnabled>\n')
-        f.write('    <TempPeriod>' + str(self.__temperatureVaryPeriod) + '</TempPeriod>\n')
-        f.write('  </Thermal>\n')
-        f.write('</Environment>\n')
+        writeData(f, 'GrowthAmplitude', self.__growthAmplitude, 1)
+        writeClos(f, 'Environment', 0)
 
     def writeSensors(self, f: TextIO):
         """
@@ -819,12 +894,13 @@ class Simulation:
         :param f: File to write to
         :return: None
         """
-        f.write('<Sensors>\n')
+        writeOpen(f, 'Sensors', 0)
         for sensor in self.__sensors:
-            f.write('  <Sensor>\n')
-            f.write('    <Location>' + str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
-            f.write('  </Sensor>\n')
-        f.write('</Sensors>\n')
+            writeOpen(f, 'Sensor', 1)
+            writeData(f, 'Location', str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Axis', sensor[3], 2)
+            writeClos(f, 'Sensor', 1)
+        writeClos(f, 'Sensors', 0)
 
     def writeTempControls(self, f: TextIO):
         """
@@ -833,15 +909,38 @@ class Simulation:
         :param f: File to write to
         :return: None
         """
-        f.write('<TempControls>\n')
-        for element in self.__tempControls:
-            f.write('  <Element>\n')
-            f.write('    <Location>' + str(element[0:3]).replace('[', '').replace(',', '').replace(']', '') + '</Location>\n')
-            f.write('    <Temperature>' + str(element[3]).replace('[', '').replace(',', '').replace(']', '') + '</Temperature>\n')
-            f.write('  </Element>\n')
-        f.write('</TempControls>\n')
+        writeData(f, 'EnableHydrogelModel', int(self.__hydrogelModelEnable), 0)
 
-    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, export_stl: bool = False, voxelyze_on_path: bool = False):
+        writeOpen(f, 'TempControls', 0)
+        for element in self.__tempControls:
+            writeOpen(f, 'Element', 1)
+            writeData(f, 'Location', str(element[0:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Temperature', str(element[3]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Amplitude2', str(element[4]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'ChangeX', str(element[5]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'PhaseOffset', str(element[6]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Offset', str(element[7]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'ConstantTemp', str(int(element[8])).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'SquareWave', str(int(element[9])).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeClos(f, 'Element', 1)
+        writeClos(f, 'TempControls', 0)
+
+    def writeDisconnections(self, f: TextIO):
+        """
+        Write bond disconnections to a text file using the .vxa format.
+
+        :param f: File to write to
+        :return: None
+        """
+        writeOpen(f, 'Disconnections', 0)
+        for element in self.__disconnections:
+            writeOpen(f, 'Break', 1)
+            writeData(f, 'Voxel1', str(element[:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Voxel2', str(element[3:]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeClos(f, 'Break', 1)
+        writeClos(f, 'Disconnections', 0)
+
+    def runSim(self, filename: str = 'temp', value_map: int = 0, delete_files: bool = True, log_interval: int = -1, history_interval: int = -1, voxelyze_on_path: bool = False, wsl: bool = False):
         """
         Run a Simulation object using Voxelyze.
 
@@ -851,37 +950,47 @@ class Simulation:
 
         :param filename: File name for .vxa and .xml files
         :param value_map: Index of the desired value map type
-        :param export_stl: Enable/disable exporting an stl file of the result
+        :param log_interval: Set the step interval at which sensor log entries should be recorded, -1 to disable log
+        :param history_interval: Set the step interval at which history file entries should be recorded, -1 for default interval
         :param delete_files: Enable/disable deleting simulation file when process is complete
         :param voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
+        :param wsl: Enable/disable using Windows Subsystem for Linux with bundled Voxelyze
         :return: None
         """
+        # Create results directory
+        if not os.path.exists('sim_results'):
+            os.makedirs('sim_results')
+
         # Create simulation file
-        self.saveVXA(filename)
+        self.saveVXA('sim_results/' + filename)
 
         if voxelyze_on_path:
-            command_string = 'voxelyze '
+            command_string = 'voxelyze'
         else:
             # Check OS type
-            if os.name.startswith('nt'):
-                # Windows - run Voxelyze with WSL
-                command_string = 'wsl ' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze'
-            else:
-                # Linux - run Voxelyze directly
-                command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/voxelyze'
+            if os.name.startswith('nt'): # Windows
+                if wsl:
+                    command_string = 'wsl "' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/voxelyze"'
+                else:
+                    command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\voxelyze.exe"'
+            else: # Linux
+                command_string = f'"{os.path.dirname(os.path.realpath(__file__))}/utils/voxelyze"'
 
-        command_string = command_string + ' -f ' + filename + '.vxa -o ' + filename + '.xml -vm ' + str(value_map) + ' -p'
+        command_string = command_string + ' -f sim_results/' + filename + '.vxa -o sim_results/' + filename + ' -vm ' + str(value_map) + ' -p'
 
-        if export_stl:
-            command_string = command_string + ' -stl ' + filename + '.stl'
+        if log_interval > 0:
+            command_string = command_string + ' -log-interval ' + str(log_interval)
+
+        if history_interval > 0:
+            command_string = command_string + ' -history-interval ' + str(history_interval)
 
         print('Launching Voxelyze using: ' + command_string)
         p = subprocess.Popen(command_string, shell=True)
         p.wait()
 
         # Open simulation results
-        f = open(filename + '.xml', 'r')
-        print('Opening file: ' + f.name)
+        f = open('sim_results/' + filename + '.xml', 'r')
+        #print('Opening file: ' + f.name)
         data = f.readlines()
         f.close()
 
@@ -891,7 +1000,7 @@ class Simulation:
         # Find start and end locations for individual sensors
         startLoc = []
         endLoc = []
-        for row in tqdm(range(len(data)), desc='Finding sensor tags'):
+        for row in range(len(data)): # tqdm(range(len(data)), desc='Finding sensor tags'):
             data[row] = data[row].replace('\t', '')
             if data[row][:-1] == '<Sensor>':
                 startLoc.append(row)
@@ -899,7 +1008,7 @@ class Simulation:
                 endLoc.append(row)
 
         # Read the data from each sensor
-        for sensor in tqdm(range(len(startLoc)), desc='Reading sensor results'):
+        for sensor in range(len(startLoc)): # tqdm(range(len(startLoc)), desc='Reading sensor results'):
             # Create a dictionary to hold the current sensor results
             sensorResults = {}
 
@@ -949,23 +1058,20 @@ class Simulation:
             y_len = self.valueMap.shape[1]
             z_len = self.valueMap.shape[2]
 
-            for z in tqdm(range(z_len), desc='Loading layers'):
+            for z in range(z_len): # tqdm(range(z_len), desc='Loading layers'):
                 vals = np.array(data[z][:-2].split(","), dtype=np.float32)
                 for y in range(y_len):
                     self.valueMap[:, y, z] = vals[y*x_len:(y+1)*x_len]
 
         # Remove temporary files
         if delete_files:
-            print('Removing file: ' + filename + '.vxa')
-            os.remove(filename + '.vxa')
-            print('Removing file: ' + filename + '.xml')
-            os.remove(filename + '.xml')
+            os.remove('sim_results/' + filename + '.vxa')
+            os.remove('sim_results/' + filename + '.xml')
 
-            if os.path.exists('value_map.txt'):
-                print('Removing file: value_map.txt')
-                os.remove('value_map.txt')
+            if os.path.exists('sim_results/value_map.txt'):
+                os.remove('sim_results/value_map.txt')
 
-    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False):
+    def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, wsl: bool = False):
         """
         Run a Simulation object using the VoxCad GUI.
 
@@ -986,20 +1092,23 @@ class Simulation:
         :param filename: File name
         :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
         :param voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
+        :param wsl: Enable/disable using Windows Subsystem for Linux with bundled VoxCad
         :return: None
         """
+        # Create simulation file
         self.saveVXA(filename)
 
         if voxcad_on_path:
             command_string = 'voxcad '
         else:
             # Check OS type
-            if os.name.startswith('nt'):
-                # Windows
-                command_string = os.path.dirname(os.path.realpath(__file__)) + '\\utils\\VoxCad.exe '
-            else:
-                # Linux
-                command_string = os.path.dirname(os.path.realpath(__file__)) + '/utils/VoxCad '
+            if os.name.startswith('nt'): # Windows
+                if wsl:
+                    command_string = 'wsl "' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/VoxCad" '
+                else:
+                    command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\VoxCad.exe" '
+            else: # Linux
+                command_string =  f'"{os.path.dirname(os.path.realpath(__file__))}/utils/VoxCad" '
 
         command_string = command_string + filename + '.vxa'
 
@@ -1010,3 +1119,239 @@ class Simulation:
         if delete_files:
             print('Removing file: ' + filename + '.vxa')
             os.remove(filename + '.vxa')
+
+    def saveResults(self, filename):
+        """
+        Saves a simulation's results dictionary to a .csv file.
+
+        :param filename: Name of output file
+        :return:
+        """
+        # Get result table keys and size
+        keys = list(self.results[0].keys())
+        rows = len(self.results)
+        cols = len(keys)
+
+        # Create results file
+        f = open(filename + '.csv', 'w+')
+        print('Saving file: ' + f.name)
+
+        # Write headings
+        f.write('Sensor')
+        for c in range(cols):
+            f.write(',' + str(keys[c]))
+        f.write('\n')
+
+        # Write values
+        for r in range(rows):
+            f.write(str(r))
+            vals = list(self.results[r].values())
+            for c in range(cols):
+                f.write(',' + str(vals[c]).replace(',', ' '))
+            f.write('\n')
+
+        # Close file
+        f.close()
+
+class MultiSimulation:
+    """
+    MultiSimulation object that holds settings for generating a simulation and running multiple parallel trials of it using different parameters.
+    """
+
+    def __init__(self, setup_fcn, setup_params: List[Tuple], thread_count):
+        """
+        Initialize a MultiSimulation object.
+
+        :param setup_fcn: Function to use for initializing Simulation objects. Should take a single tuple as an input and return a single Simulation object.
+        :param setup_params: List containing the desired input tuples for setup_fcn
+        :param thread_count: Maximum number of CPU threads
+        """
+        self.__setup_fcn = setup_fcn
+        self.__setup_params = setup_params
+        self.__thread_count = thread_count
+
+        # Initialize result arrays
+        self.total_time = 0
+        self.displacement_result = multiprocessing.Array('d', len(setup_params))
+        self.time_result = multiprocessing.Array('d', len(setup_params))
+
+    def getParams(self):
+        """
+        Get the current simulation setup parameters.
+
+        :return: List containing the current input tuples for setup_fcn
+        """
+        return self.__setup_params
+
+    def setParams(self, setup_params: List[Tuple]):
+        """
+        Update the simulation setup parameters.
+
+        :param setup_params: List containing the desired input tuples for setup_fcn
+        :return: None
+        """
+        self.__setup_params = setup_params
+        self.displacement_result = multiprocessing.Array('d', len(setup_params))
+        self.time_result = multiprocessing.Array('d', len(setup_params))
+
+    def confirmSimCount(self):
+        """
+        Print the number of simulations to be run and confirm that the user would like to continue.
+
+        :return: None
+        """
+        print("Trials to run: " + str(len(self.__setup_params)))
+        input("Press Enter to continue...")
+
+    def run(self, enable_log : bool = False):
+        """
+        Run all simulation configurations and save the results.
+
+        :return: None
+        """
+        # Save start time
+        time_started = time.time()
+
+        # Set up simulations
+        sim_id = 0
+        sim_array = []
+        for config in tqdm(self.__setup_params, desc='Initializing simulations'):
+            sim = self.__setup_fcn(config)
+
+            # Use automatic sim id if one is not already set
+            if sim.id == 0:
+                sim.id = sim_id
+                sim_id = sim_id + 1
+
+            sim_array.append(sim)
+
+        # Initialize processing pool
+        p = multiprocessing.Pool(self.__thread_count, initializer=poolInit, initargs=(self.displacement_result, self.time_result))
+        if enable_log:
+            p.map(simProcessLog, sim_array)
+        else:
+            p.map(simProcess, sim_array)
+
+        # Get elapsed time
+        time_finished = time.time()
+        self.total_time = time_finished - time_started
+
+    def export(self, filename: str, labels: List[str]):
+        """
+        Export a CSV file containing simulation setup parameters and the corresponding simulation results.
+
+        :param filename: File name
+        :param labels: Column headers for simulation setup parameters
+        :return: None
+        """
+        # Add labels for results
+        labels.append('Displacement (m)')
+        labels.append('Simulation Time (s)')
+
+        # Get result table size
+        rows = len(self.__setup_params)
+        cols = len(labels)
+
+        # Create results file
+        f = open(filename + '.csv', 'w+')
+        print('Saving file: ' + f.name)
+
+        # Write sim info
+        f.write('Simulation Elapsed Time (mins),' + str(self.total_time / 60.0) + '\n')
+        f.write('Trial Count,' + str(rows) + '\n')
+        f.write('Max Thread Count,' + str(self.__thread_count) + '\n')
+        f.write('\n')
+
+        # Write headings
+        for c in range(cols):
+            f.write(labels[c] + ',')
+        f.write('\n')
+
+        # Write values
+        for r in range(rows):
+            for c in range(cols - 2):
+                f.write(str(self.__setup_params[r][c]) + ',')
+            f.write(str(self.displacement_result[r]) + ',')
+            f.write(str(self.time_result[r]))
+            f.write('\n')
+
+        # Close file
+        f.close()
+
+    def exportVXA(self, filename: str, config_number: int = -1):
+        """
+        Export VXA files for all or specified simulation configurations.
+
+        :param filename: File name
+        :param config_number: Config to export, -1 to export all configs
+        :return: None
+        """
+        if config_number == -1:
+            for config in tqdm(self.__setup_params, desc='Saving simulations'):
+                sim = self.__setup_fcn(config)
+                sim.saveVXA(filename + '_' + str(config[0]))
+        else:
+            config = self.__setup_params[config_number]
+            sim = self.__setup_fcn(config)
+            sim.saveVXA(filename)
+
+# Helper functions
+def poolInit(disp_result_array, t_result_array):
+    """
+    Initialize shared result variables.
+
+    :param disp_result_array: Multiprocessing array to hold displacement results
+    :param t_result_array: Multiprocessing array to hold time results
+    :return: None
+    """
+    global disp_result, t_result
+    disp_result = disp_result_array
+    t_result = t_result_array
+
+def simProcess(simulation: Simulation):
+    """
+    Simulation process.
+
+    :param simulation: Simulation object to run
+    :return: None
+    """
+    print('\nProcess ' + str(simulation.id) + ' started')
+
+    # Run simulation
+    time_process_started = time.time()
+    simulation.runSim('sim_' + str(simulation.id), log_interval=-1, history_interval=100000, wsl=True)
+    time_process_finished = time.time()
+
+    # Read results
+    disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
+    disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
+    disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+    disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
+    t_result[simulation.id] = time_process_finished - time_process_started
+
+    # Finished
+    print('\nProcess ' + str(simulation.id) + ' finished')
+
+def simProcessLog(simulation: Simulation):
+    """
+    Simulation process.
+
+    :param simulation: Simulation object to run
+    :return: None
+    """
+    print('\nProcess ' + str(simulation.id) + ' started')
+
+    # Run simulation
+    time_process_started = time.time()
+    simulation.runSim('sim_' + str(simulation.id), log_interval=100000, history_interval=100000, wsl=True)
+    time_process_finished = time.time()
+
+    # Read results
+    disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
+    disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
+    disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+    disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
+    t_result[simulation.id] = time_process_finished - time_process_started
+
+    # Finished
+    print('\nProcess ' + str(simulation.id) + ' finished')

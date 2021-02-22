@@ -100,8 +100,6 @@ Using MagicaVoxel and the .vox format will limit you to using distinct voxel mat
 
 See [cdbrauer.github.io/VoxelFuse](https://cdbrauer.github.io/VoxelFuse/) for library documentation.
 
-See [cdbrauer.github.io/VoxelFuse/voxelfuse_examples](https://cdbrauer.github.io/VoxelFuse/voxelfuse_examples/) for a list of the example scripts.
-
 <br/><br/>
 
 <a href="http://idealab.asu.edu/" target="_blank">![IDEAlab](../master/images/footer.png?raw=true)</a>

@@ -9,7 +9,7 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 import math
 import numpy as np
 from typing import Tuple
-from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.voxel_model import VoxelModel, generateMaterials
 from voxelfuse.materials import material_properties
 from tqdm import tqdm
 
@@ -166,18 +166,3 @@ def FRD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tupl
                     surface_model_outer.voxels[x, y, z] = 1
 
     return surface_model_inner, surface_model_outer
-
-# Helper functions ##############################################################
-def generateMaterials(m: int):
-    """
-    Generate the materials table for a single-material VoxelModel.
-
-    :param m: Material index corresponding to materials.py
-    :return: Array containing the specified material and the empty material
-    """
-    materials = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector[0] = 1
-    material_vector[m+1] = 1
-    materials = np.vstack((materials, material_vector))
-    return materials

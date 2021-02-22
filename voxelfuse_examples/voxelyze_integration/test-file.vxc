@@ -38,55 +38,55 @@
         <Poissons_Ratio>0.36</Poissons_Ratio>
         <CTE>4.1e-05</CTE>
         <MaterialTempPhase>0.0</MaterialTempPhase>
-        <uStatic>0.0</uStatic>
-        <uDynamic>0.0</uDynamic>
+        <uStatic>0.5</uStatic>
+        <uDynamic>0.4</uDynamic>
       </Mechanical>
     </Material>
     <Material ID="2">
       <MatType>0</MatType>
-      <Name>R PLA Rubber</Name>
+      <Name>R PLA Y H-Gel Cold</Name>
       <Display>
-        <Red>0.6</Red>
-        <Green>0.1</Green>
-        <Blue>0.1</Blue>
+        <Red>0.8</Red>
+        <Green>0.3</Green>
+        <Blue>0.0</Blue>
         <Alpha>1</Alpha>
       </Display>
       <Mechanical>
         <MatModel>0</MatModel>
-        <Elastic_Mod>1800000000.0</Elastic_Mod>
+        <Elastic_Mod>1750002500.0</Elastic_Mod>
         <Plastic_Mod>0.0</Plastic_Mod>
-        <Yield_Stress>35000000.0</Yield_Stress>
-        <FailModel>1</FailModel>
-        <Fail_Stress>36500000.0</Fail_Stress>
-        <Fail_Strain>3.52</Fail_Strain>
-        <Density>1085.0</Density>
-        <Poissons_Ratio>0.43</Poissons_Ratio>
-        <CTE>2.055e-05</CTE>
+        <Yield_Stress>35700000.0</Yield_Stress>
+        <FailModel>0</FailModel>
+        <Fail_Stress>37150500.0</Fail_Stress>
+        <Fail_Strain>0.3588</Fail_Strain>
+        <Density>1120.0</Density>
+        <Poissons_Ratio>0.38</Poissons_Ratio>
+        <CTE>-0.0079795</CTE>
         <MaterialTempPhase>0.0</MaterialTempPhase>
-        <uStatic>0.45</uStatic>
-        <uDynamic>0.4</uDynamic>
+        <uStatic>0.7</uStatic>
+        <uDynamic>0.6000000000000001</uDynamic>
       </Mechanical>
     </Material>
     <Material ID="3">
       <MatType>0</MatType>
-      <Name>Rubber</Name>
+      <Name>Y H-Gel Cold</Name>
       <Display>
-        <Red>0.2</Red>
-        <Green>0.2</Green>
-        <Blue>0.2</Blue>
+        <Red>0.6</Red>
+        <Green>0.6</Green>
+        <Blue>0.0</Blue>
         <Alpha>1</Alpha>
       </Display>
       <Mechanical>
         <MatModel>0</MatModel>
-        <Elastic_Mod>100000000.0</Elastic_Mod>
+        <Elastic_Mod>5000.0</Elastic_Mod>
         <Plastic_Mod>0.0</Plastic_Mod>
-        <Yield_Stress>0.0</Yield_Stress>
-        <FailModel>1</FailModel>
-        <Fail_Stress>0.0</Fail_Stress>
-        <Fail_Strain>7.0</Fail_Strain>
-        <Density>930.0</Density>
-        <Poissons_Ratio>0.5</Poissons_Ratio>
-        <CTE>1e-07</CTE>
+        <Yield_Stress>1400000.0</Yield_Stress>
+        <FailModel>0</FailModel>
+        <Fail_Stress>1301000.0</Fail_Stress>
+        <Fail_Strain>0.6776</Fail_Strain>
+        <Density>1000.0</Density>
+        <Poissons_Ratio>0.4</Poissons_Ratio>
+        <CTE>-0.016</CTE>
         <MaterialTempPhase>0.0</MaterialTempPhase>
         <uStatic>0.9</uStatic>
         <uDynamic>0.8</uDynamic>
@@ -113,8 +113,8 @@
         <Poissons_Ratio>0.36</Poissons_Ratio>
         <CTE>4.1e-05</CTE>
         <MaterialTempPhase>0.0</MaterialTempPhase>
-        <uStatic>0.0</uStatic>
-        <uDynamic>0.0</uDynamic>
+        <uStatic>0.5</uStatic>
+        <uDynamic>0.4</uDynamic>
       </Mechanical>
     </Material>
   </Palette>
