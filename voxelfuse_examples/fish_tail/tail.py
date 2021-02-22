@@ -20,7 +20,7 @@ if __name__=='__main__':
 
     # User preferences
     modelName = 'tail-20.vox'
-    blur = [1, 2] # materials to blur
+    blurMaterials = [1, 2] # materials to blur
     blurRadius = 5
 
     # Import model
@@ -31,8 +31,8 @@ if __name__=='__main__':
 
     # Isolate materials with blurring requested
     modelBlur = VoxelModel.emptyLike(modelIn)
-    for i in blur:
-        modelBlur = modelBlur.union(modelIn.isolateMaterial(i))
+    for m in blurMaterials:
+        modelBlur = modelBlur.union(modelIn.isolateMaterial(m))
 
     # Blur compatible materials
     modelBlur = modelBlur.blur(blurRadius)
@@ -42,24 +42,26 @@ if __name__=='__main__':
 
     # Clean up result
     modelResult = modelResult.scaleValues()
+    modelResult = modelResult.round() # "posterize" result
+    modelResult = modelResult.removeDuplicateMaterials()
 
-    # TODO: Create list of all materials present in model
-
-    # TODO: Sort by material percentages (posterize)
+    # Create mesh files
+    for m in range(1, len(modelResult.materials)):
+        currentMaterial = modelResult.isolateMaterial(m)
+        currentMesh = Mesh.fromVoxelModel(currentMaterial)
+        currentMesh.export('output_' + str(m) + '.stl')
 
     # Create mesh data
     mesh1 = Mesh.fromVoxelModel(modelIn)
     mesh2 = Mesh.fromVoxelModel(modelResult)
 
-    # TODO: Export .stl file for each material
-
     # Create plots
-    plot1 = Plot(mesh1)
+    plot1 = Plot(mesh1, name='Input')
     plot1.show()
     app1.processEvents()
     #plot1.export('input.png')
 
-    plot2 = Plot(mesh2)
+    plot2 = Plot(mesh2, name='Output')
     plot2.show()
     app1.processEvents()
     #plot2.export('output.png')

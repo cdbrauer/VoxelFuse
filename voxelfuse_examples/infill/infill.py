@@ -30,10 +30,10 @@ if __name__=='__main__':
     volume = volume.setCoords((0,0,0))
 
     # Display
-    # mesh1 = Mesh.fromVoxelModel(volume)
-    # plot1 = Plot(mesh1, name='Input Model')
-    # plot1.show()
-    # app1.processEvents()
+    mesh1 = Mesh.fromVoxelModel(volume)
+    plot1 = Plot(mesh1, name='Input Model')
+    plot1.show()
+    app1.processEvents()
 
     # Create infill structure
     infillN, infillP = gyroid(size=(modelRadius*2, modelRadius*2, modelRadius*2), scale=infillScale, material1=2, material2=2)
@@ -42,16 +42,16 @@ if __name__=='__main__':
     infill = infillN & infillP
 
     # Display
-    # mesh2 = Mesh.fromVoxelModel(infillN.setMaterial(3) | infillP)
-    # plot2 = Plot(mesh2, name='Infill Volume Halves')
-    # plot2.show()
-    # app1.processEvents()
+    mesh2 = Mesh.fromVoxelModel(infillN.setMaterial(3) | infillP)
+    plot2 = Plot(mesh2, name='Infill Volume Halves')
+    plot2.show()
+    app1.processEvents()
 
     # Display
-    # mesh3 = Mesh.fromVoxelModel(infill)
-    # plot3 = Plot(mesh3, name='Infill Surface')
-    # plot3.show()
-    # app1.processEvents()
+    mesh3 = Mesh.fromVoxelModel(infill)
+    plot3 = Plot(mesh3, name='Infill Surface')
+    plot3.show()
+    app1.processEvents()
 
     # Hollow out volume model
     hollow = volume.erode(shellThickness)
@@ -61,10 +61,10 @@ if __name__=='__main__':
     infill = infill & hollow
 
     # Display
-    # mesh4 = Mesh.fromVoxelModel(infill)
-    # plot4 = Plot(mesh4, name='Trimmed Infill')
-    # plot4.show()
-    # app1.processEvents()
+    mesh4 = Mesh.fromVoxelModel(infill)
+    plot4 = Plot(mesh4, name='Trimmed Infill')
+    plot4.show()
+    app1.processEvents()
 
     # Combine infill and shell
     result = shell | infill
@@ -75,4 +75,4 @@ if __name__=='__main__':
         currentMesh = Mesh.fromVoxelModel(currentMaterial)
         currentMesh.export('output_' + str(m) + '.stl')
 
-    # app1.exec_()
+    app1.exec_()

@@ -22,7 +22,7 @@ if __name__=='__main__':
     stl = True
     highRes = False
 
-    blur = False
+    blur = True
     blurRadius = 2
 
     mold = True
@@ -60,6 +60,8 @@ if __name__=='__main__':
         print('Blurring')
         coupon = coupon.blur(blurRadius)
         coupon = coupon.scaleValues()
+        coupon = coupon.round()
+        coupon = coupon.removeDuplicateMaterials()
 
     if mold: # Generate mold feature around material 2
         print('Generating Mold')

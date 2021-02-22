@@ -105,12 +105,12 @@ if __name__=='__main__':
     print("Meshing time = %s" % meshingTime)
 
     # Create plots
-    plot1 = Plot(mesh1)
+    plot1 = Plot(mesh1, name='Input')
     plot1.show()
     app1.processEvents()
     #plot1.export('input.png')
 
-    plot2 = Plot(mesh2)
+    plot2 = Plot(mesh2, name='Output')
     plot2.show()
     app1.processEvents()
     #plot2.export('output.png')

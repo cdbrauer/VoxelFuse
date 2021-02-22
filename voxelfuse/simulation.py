@@ -777,7 +777,7 @@ class Simulation:
         self.writeTempControls(f)
         self.writeDisconnections(f)
         self.__model.writeVXCData(f, compression)
-        writeClos(f, 'VXA')
+        writeClos(f, 'VXA', 0)
         f.close()
 
     # Write simulator settings to file
@@ -1104,9 +1104,9 @@ class Simulation:
             # Check OS type
             if os.name.startswith('nt'): # Windows
                 if wsl:
-                    command_string = 'wsl "' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/VoxCad"'
+                    command_string = 'wsl "' + os.path.dirname(os.path.realpath(__file__)).replace('C:', '/mnt/c').replace('\\', '/') + '/utils/VoxCad" '
                 else:
-                    command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\VoxCad.exe"'
+                    command_string = f'"{os.path.dirname(os.path.realpath(__file__))}\\utils\\VoxCad.exe" '
             else: # Linux
                 command_string =  f'"{os.path.dirname(os.path.realpath(__file__))}/utils/VoxCad" '
 

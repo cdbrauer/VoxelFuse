@@ -24,7 +24,7 @@ if __name__=='__main__':
     # User preferences
     modelName = 'boxes.vox'
     #modelName = 'joint2.1.vox'
-    blur = [1, 2] # materials to blur
+    blurMaterials = [1, 2] # materials to blur
     blurRadius = 3
 
     # Import model
@@ -32,8 +32,8 @@ if __name__=='__main__':
 
     # Isolate materials with blurring requested
     modelBlur = VoxelModel.emptyLike(modelIn)
-    for i in blur:
-        modelBlur = modelBlur + modelIn.isolateMaterial(i)
+    for m in blurMaterials:
+        modelBlur = modelBlur + modelIn.isolateMaterial(m)
 
     # Blur compatible materials
     # modelBlur = modelBlur.dither(blurRadius)
@@ -50,12 +50,12 @@ if __name__=='__main__':
     mesh2 = Mesh.fromVoxelModel(modelResult)
 
     # Create plots
-    plot1 = Plot(mesh1)
+    plot1 = Plot(mesh1, name='Input')
     plot1.show()
     app1.processEvents()
     #plot1.export('input.png')
 
-    plot2 = Plot(mesh2)
+    plot2 = Plot(mesh2, name='Output')
     plot2.show()
     app1.processEvents()
     #plot2.export('output.png')

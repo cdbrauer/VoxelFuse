@@ -2024,18 +2024,25 @@ class VoxelModel:
 
         writeHeader(f, '1.0', 'ISO-8859-1')
         export_model.writeVXCData(f, compression)
-
         f.close()
 
     def writeVXCData(self, f: TextIO, compression: bool = False):
         """
         Write geometry and material data to a text file using the .vxc format.
 
+        The VXC/VXA format stores geometry as a 3D grid of single-digit decimal numbers. As such, it is limited to 9
+        distinct materials.
+
         :param f: File to write to
         :param compression:  Enable/disable voxel data compression
         :return: None
         """
-        writeOpen(f, 'VXC Version="' + str(0.94) + '"', 1)
+        if len(self.materials[:, 0]) > 10:
+            f.close()
+            os.remove(f.name)
+            raise ValueError('The VXC/VXA file format supports a maximum of 9 distinct materials')
+
+        writeOpen(f, 'VXC Version="' + str(0.94) + '"', 0)
 
         # Lattice settings
         writeOpen(f, 'Lattice', 1)
@@ -2142,7 +2149,7 @@ class VoxelModel:
 
         writeClos(f, 'Data', 2)
         writeClos(f, 'Structure', 1)
-        writeClos(f, 'VXC', 1)
+        writeClos(f, 'VXC', 0)
 
 class GpuSettings:
     """
