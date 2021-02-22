@@ -22,11 +22,14 @@ jobs:
       - run: python3 -m pip install -r requirements.txt
 
       # Install pdoc with reST tag support
-      - run: mkdir pdoc_reST
-      - run: cd pdoc_reST
+      - run: cd ../
       - run: git clone -b reST_style_docstrings_support https://github.com/muecelee/pdoc.git
+      - run: ls
       - run: cd pdoc
+      - run: ls
       - run: python3 -m pip install .
+      - run: cd ../VoxelFuse
+      - run: ls
 
       # Verify python packages installed properly
       - run: python3 -m pip list
