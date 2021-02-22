@@ -16,6 +16,7 @@ jobs:
       - uses: actions/checkout@v2
 
       # Install pdoc3
+      - run: export SETUPTOOLS_USE_DISTUTILS=stdlib
       - run: pip3 install pdoc3
       
       # Generate documentation for each package
