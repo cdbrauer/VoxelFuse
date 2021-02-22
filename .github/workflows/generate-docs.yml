@@ -15,9 +15,11 @@ jobs:
       # Check-out repository
       - uses: actions/checkout@v2
 
-      # Install pdoc3
-      - run: export SETUPTOOLS_USE_DISTUTILS=stdlib
-      - run: pip3 install pdoc3
+      # Set up Python build environment and install pdoc3
+      - name: Install Python dependencies
+        uses: py-actions/py-dependency-install@v2
+        with:
+          path: ".github/workflows/requirements.txt"
       
       # Generate documentation for each package
       - run: pdoc --html -o docs -f voxelfuse
