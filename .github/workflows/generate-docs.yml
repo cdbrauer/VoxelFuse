@@ -16,10 +16,11 @@ jobs:
       - uses: actions/checkout@v2
 
       # Set up Python build environment and install pdoc3
-      - name: Install Python dependencies
-        uses: py-actions/py-dependency-install@v2
-        with:
-          path: ".github/workflows/requirements.txt"
+      - run: python3 -m pip install --upgrade wheel
+      - run: python3 -m pip install --upgrade setuptools
+      - run: python3 -m pip install --upgrade pip
+      - run: python3 -m pip install pdoc3
+      - run: python3 -m pip list
       
       # Generate documentation for each package
       - run: pdoc --html -o docs -f voxelfuse
