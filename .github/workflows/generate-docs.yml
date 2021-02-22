@@ -20,6 +20,7 @@ jobs:
       - run: python3 -m pip install --upgrade setuptools
       - run: python3 -m pip install --upgrade pip
       - run: python3 -m pip install pdoc3
+      - run: python3 -m pip install -r requirements.txt
       - run: python3 -m pip list
       
       # Add python packages directory to PATH
