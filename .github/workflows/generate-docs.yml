@@ -23,7 +23,7 @@ jobs:
       - run: python3 -m pip list
       
       # Add python packages directory to PATH
-      - run: export PATH=/home/runner/.local/bin:$PATH
+      - run: echo "$HOME/.local/bin" >> $GITHUB_PATH
       
       # Generate documentation for each package
       - run: pdoc --html -o docs -f voxelfuse
