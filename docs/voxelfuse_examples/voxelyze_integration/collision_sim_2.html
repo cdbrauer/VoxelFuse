@@ -62,8 +62,8 @@ if __name__==&#39;__main__&#39;:
     for x in range(0,workspaceX, particleSpacing):
         for y in range(0, workspaceY, particleSpacing):
             for z in range(0, workspaceZ, particleSpacing):
-                model = model | cube(particleSize, (x+round(z/particleSpacing), y+round(z/particleSpacing), z+5), (mat % (len(material_properties) - 1)) + 1, 1) # Slightly offset x and y so stacks will fall over
-                mat = mat+1 # Increment material
+                model = model | cube(particleSize, (x+round(z/particleSpacing), y+round(z/particleSpacing), z+5), mat, 1) # Slightly offset x and y so stacks will fall over
+                mat = (mat % 9) + 1 # Increment material, note that the vxa file format is limited to 9 distinct materials.
 
     # Clean up result
     model = model.fitWorkspace() # Using this to show that Simulation correctly handles models with a coordinate offset

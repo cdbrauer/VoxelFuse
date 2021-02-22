@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
-<title>voxelfuse_examples.testing API documentation</title>
+<title>voxelfuse_examples.testing.test API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
@@ -17,26 +17,87 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Namespace <code>voxelfuse_examples.testing</code></h1>
+<h1 class="title">Module <code>voxelfuse_examples.testing.test</code></h1>
 </header>
 <section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from numba import cuda
+import numpy as np
+
+@cuda.jit
+def convolve(result, mask, image):
+    # expects a 2D grid and 2D blocks,
+    # a mask with odd numbers of rows and columns, (-1-)
+    # a grayscale image
+
+    # (-2-) 2D coordinates of the current thread:
+    i, j = cuda.grid(2)
+
+    # (-3-) if the thread coordinates are outside of the image, we ignore the thread:
+    image_rows, image_cols = image.shape
+    if (i &gt;= image_rows) or (j &gt;= image_cols):
+        return
+
+    # To compute the result at coordinates (i, j), we need to use delta_rows rows of the image
+    # before and after the i_th row,
+    # as well as delta_cols columns of the image before and after the j_th column:
+    delta_rows = mask.shape[0] // 2
+    delta_cols = mask.shape[1] // 2
+
+    # The result at coordinates (i, j) is equal to
+    # sum_{k, l} mask[k, l] * image[i - k + delta_rows, j - l + delta_cols]
+    # with k and l going through the whole mask array:
+    s = 0
+    for k in range(mask.shape[0]):
+        for l in range(mask.shape[1]):
+            i_k = i - k + delta_rows
+            j_l = j - l + delta_cols
+            # (-4-) Check if (i_k, j_k) coordinates are inside the image:
+            if (i_k &gt;= 0) and (i_k &lt; image_rows) and (j_l &gt;= 0) and (j_l &lt; image_cols):
+                s += mask[k, l] * image[i_k, j_l]
+    result[i, j] = s
+
+import skimage.data
+from skimage.color import rgb2gray
+import matplotlib.pyplot as plt
+
+full_image = rgb2gray(skimage.data.coffee()).astype(np.float32) / 255
+image = full_image[150:350, 200:400].copy() # We don&#39;t want a view but an array and therefore use copy()
+
+# We preallocate the result array:
+result = np.empty_like(image)
+
+# We choose a random mask:
+mask = np.random.rand(13, 13).astype(np.float32)
+mask /= mask.sum()  # We normalize the mask
+print(&#39;Mask shape:&#39;, mask.shape)
+print(&#39;Mask first (3, 3) elements:\n&#39;, mask[:3, :3])
+
+# We use blocks of 32x32 pixels:
+blockdim = (32, 32)
+print(&#39;Blocks dimensions:&#39;, blockdim)
+
+# We compute grid dimensions big enough to cover the whole image:
+griddim = (image.shape[0] // blockdim[0] + 1, image.shape[1] // blockdim[1] + 1)
+print(&#39;Grid dimensions:&#39;, griddim)
+
+# We apply our convolution to our image:
+convolve[griddim, blockdim](result, mask, image)
+
+# We plot the result:
+plt.figure()
+plt.imshow(image, cmap=&#39;gray&#39;)
+plt.title(&#34;Before convolution:&#34;)
+plt.figure()
+plt.imshow(result, cmap=&#39;gray&#39;)
+plt.title(&#34;After convolution:&#34;)
+plt.show()</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="voxelfuse_examples.testing.remove_duplicate_materials" href="remove_duplicate_materials.html">voxelfuse_examples.testing.remove_duplicate_materials</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.testing.test" href="test.html">voxelfuse_examples.testing.test</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.testing.test2" href="test2.html">voxelfuse_examples.testing.test2</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -53,14 +114,7 @@
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="voxelfuse_examples" href="../index.html">voxelfuse_examples</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="voxelfuse_examples.testing.remove_duplicate_materials" href="remove_duplicate_materials.html">voxelfuse_examples.testing.remove_duplicate_materials</a></code></li>
-<li><code><a title="voxelfuse_examples.testing.test" href="test.html">voxelfuse_examples.testing.test</a></code></li>
-<li><code><a title="voxelfuse_examples.testing.test2" href="test2.html">voxelfuse_examples.testing.test2</a></code></li>
+<li><code><a title="voxelfuse_examples.testing" href="index.html">voxelfuse_examples.testing</a></code></li>
 </ul>
 </li>
 </ul>

@@ -128,7 +128,7 @@ class Mesh:
             g = 0
             b = 0
 
-            for i in range(len(material_properties)):
+            for i in range(voxel_model.materials.shape[1]-1):
                 r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;r&#39;]
                 g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;g&#39;]
                 b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;b&#39;]
@@ -736,7 +736,7 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
             g = 0
             b = 0
 
-            for i in range(len(material_properties)):
+            for i in range(voxel_model.materials.shape[1]-1):
                 r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;r&#39;]
                 g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;g&#39;]
                 b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;b&#39;]
@@ -870,7 +870,7 @@ def fromVoxelModel(cls, voxel_model, resolution: float = -1):
         g = 0
         b = 0
 
-        for i in range(len(material_properties)):
+        for i in range(voxel_model.materials.shape[1]-1):
             r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;r&#39;]
             g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;g&#39;]
             b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;b&#39;]

@@ -1,0 +1,2052 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
+<title>voxelfuse.utils.onelab API documentation</title>
+<meta name="description" content="ONELAB - Copyright (C) 2011-2020 Universite de Liege - Universite catholique
+de Louvain …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>voxelfuse.utils.onelab</code></h1>
+</header>
+<section id="section-intro">
+<p>ONELAB - Copyright (C) 2011-2020 Universite de Liege - Universite catholique
+de Louvain</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, and/or sell copies of the
+Software, and to permit persons to whom the Software is furnished to do so,
+provided that the above copyright notice(s) and this permission notice appear in
+all copies of the Software and that both the above copyright notice(s) and this
+permission notice appear in supporting documentation.</p>
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT
+SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY
+CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
+CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+ONELAB - Copyright (C) 2011-2020 Universite de Liege - Universite catholique
+de Louvain
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the &#34;Software&#34;), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, and/or sell copies of the
+Software, and to permit persons to whom the Software is furnished to do so,
+provided that the above copyright notice(s) and this permission notice appear in
+all copies of the Software and that both the above copyright notice(s) and this
+permission notice appear in supporting documentation.
+
+THE SOFTWARE IS PROVIDED &#34;AS IS&#34;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT
+SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY
+CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
+CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+&#34;&#34;&#34;
+
+#!/usr/bin/env python
+
+import socket, struct, os, sys, subprocess, time
+_VERSION = &#39;1.3&#39;
+
+def path(dirname, inp):
+  # dirname is a directory, can be empty
+  # inp is an optional file or subdirectory name
+  # returns the path to &#39;inp&#39; in the same directory as &#39;ref&#39;
+  if dirname:
+    dirname = os.path.dirname(dirname + os.sep)
+  if not inp:
+    return dirname
+  if inp[0] == &#39;/&#39; or inp[0] == &#39;\\&#39; or (len(inp) &gt; 2 and inp[1] == &#39;\:&#39;):
+    return inp # do nothing, inp is an absolute path
+  if inp[0] == &#39;.&#39; :
+    inp = inp[2:] # cut off heading &#39;./&#39; or &#39;.\&#39;
+  if dirname:
+    return dirname + os.sep + inp # append inp to the path of the reference file
+  else:
+    return inp
+
+class _parameter() :
+  _membersbase = [
+    (&#39;name&#39;, &#39;string&#39;), (&#39;label&#39;, &#39;string&#39;, &#39;&#39;), (&#39;help&#39;, &#39;string&#39;, &#39;&#39;),
+    (&#39;changedValue&#39;, &#39;int&#39;, 31), (&#39;visible&#39;, &#39;int&#39;, 1), (&#39;readOnly&#39;, &#39;int&#39;, 0),
+    (&#39;attributes&#39;, (&#39;dict&#39;, &#39;string&#39;, &#39;string&#39;), {}),
+    (&#39;clients&#39;, (&#39;dict&#39;, &#39;string&#39;, &#39;int&#39;), {})
+  ]
+  _members = {
+    &#39;string&#39; : _membersbase + [
+      (&#39;values&#39;, (&#39;list&#39;, &#39;string&#39;), [&#39;&#39;]), (&#39;kind&#39;, &#39;string&#39;, &#39;generic&#39;),
+      (&#39;choices&#39;, (&#39;list&#39;, &#39;string&#39;), [])
+    ],
+    &#39;number&#39; : _membersbase + [
+      (&#39;values&#39;, (&#39;list&#39;, &#39;float&#39;), [0.]),
+      (&#39;min&#39;, &#39;float&#39;, -sys.float_info.max), (&#39;max&#39;, &#39;float&#39;, sys.float_info.max),
+      (&#39;step&#39;, &#39;float&#39;, 0.), (&#39;index&#39;, &#39;int&#39;, -1), (&#39;choices&#39;, (&#39;list&#39;, &#39;float&#39;), []),
+      (&#39;labels&#39;, (&#39;dict&#39;, &#39;float&#39;, &#39;string&#39;), {})
+    ]
+  }
+
+  def __init__(self, type, **values) :
+    self.type = type
+    for i in _parameter._members[self.type] :
+      setattr(self, i[0], values[i[0]] if i[0] in values else i[2])
+
+  def tochar(self) :
+    def tocharitem(l, t, v) :
+      if t == &#39;string&#39; : l.append(v)
+      elif t ==&#39;int&#39;: l.append(str(v))
+      elif t == &#39;float&#39; : l.append(&#39;%.16g&#39; % v)
+      elif t[0] == &#39;list&#39; :
+        l.append(str(len(v)))
+        for i in v : tocharitem(l, t[1], i)
+      elif t[0] == &#39;dict&#39; :
+        l.append(str(len(v)))
+        for i, j in v.items() :
+          tocharitem(l, t[1], i)
+          tocharitem(l, t[2], j)
+    msg = [_VERSION, self.type]
+    for i in _parameter._members[self.type] :
+      tocharitem(msg, i[1], getattr(self, i[0]))
+    return &#39;\0&#39;.join(msg)
+
+  def fromchar(self, msg) :
+    def fromcharitem(l, t) :
+      if t == &#39;string&#39; : return l.pop()
+      elif t ==&#39;int&#39;: return int(l.pop())
+      elif t == &#39;float&#39; : return float(l.pop())
+      elif t[0] == &#39;list&#39; : return [fromcharitem(l, t[1]) for i in range(int(l.pop()))]
+      elif t[0] == &#39;dict&#39; : return dict([(fromcharitem(l, t[1]),fromcharitem(l, t[2]))
+                                       for i in range(int(l.pop()))])
+    l = msg.split(&#39;\0&#39;)
+    l.reverse()
+    if l.pop() != _VERSION :
+      print(&#39;onelab version mismatch&#39;)
+    if l.pop() != self.type :
+      print(&#39;onelab parameter type mismatch&#39;)
+    for p in  _parameter._members[self.type]:
+      setattr(self, p[0], fromcharitem(l, p[1]))
+    return self
+
+  def modify(self, **param) :
+    ## updates the parameter with the content of param, attributes are merged
+    for i in _parameter._members[self.type] :
+      if i[0] in param :
+        if i[0] == &#39;attributes&#39; :
+          self.attributes.update(param[&#39;attributes&#39;])
+        else :
+          setattr(self, i[0], param[i[0]])
+
+
+class client :
+  _GMSH_START = 1
+  _GMSH_STOP = 2
+  _GMSH_INFO = 10
+  _GMSH_WARNING = 11
+  _GMSH_ERROR = 12
+  _GMSH_PROGRESS = 13
+  _GMSH_MERGE_FILE = 20
+  _GMSH_PARSE_STRING = 21
+  _GMSH_PARAMETER = 23
+  _GMSH_PARAMETER_QUERY = 24
+  _GMSH_CONNECT = 27
+  _GMSH_OLPARSE = 28
+  _GMSH_PARAMETER_NOT_FOUND = 29
+  _GMSH_PARAMETER_CLEAR = 31
+  _GMSH_PARAMETER_UPDATE = 32
+  _GMSH_OPEN_PROJECT = 33
+  _GMSH_CLIENT_CHANGED = 34
+
+  def _createSocket(self) :
+    addr = self.addr
+    if &#39;/&#39; in addr or &#39;\\&#39; in addr or &#39;:&#39; not in addr :
+      self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+      self.socket.connect(addr)
+    else :
+      self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      s = addr.split(&#39;:&#39;)
+      self.socket.connect((s[0], int(s[1])))
+
+  def _receive(self) :
+    def buffered_receive(l) :
+      msg = b&#39;&#39;
+      while len(msg) &lt; l:
+        chunk = self.socket.recv(l - len(msg))
+        if not chunk :
+          RuntimeError(&#39;onelab socket closed&#39;)
+        msg += chunk
+      return msg
+    msg = buffered_receive(struct.calcsize(&#39;ii&#39;))
+    t, l = struct.unpack(&#39;ii&#39;, msg)
+    msg = buffered_receive(l).decode(&#39;utf-8&#39;)
+    if t == self._GMSH_INFO :
+      print(&#39;onelab info : %s&#39; % msg)
+    return t, msg
+
+  def _send(self, t, msg) :
+    if not self.socket :
+      return
+    m = msg.encode(&#39;utf-8&#39;)
+    try:
+      if self.socket.send(struct.pack(&#39;ii%is&#39; %len(m), t, len(m), m)) == 0 :
+        RuntimeError(&#39;onelab socket closed&#39;)
+    except socket.error:
+      self.socket.close()
+      self._createSocket()
+      self.socket.send(struct.pack(&#39;ii%is&#39; %len(m), t, len(m), m))
+
+  def _defineParameter(self, p) :
+    if not self.socket :
+      return p.values
+    self._send(self._GMSH_PARAMETER_QUERY, p.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      self._send(self._GMSH_PARAMETER_UPDATE, p.tochar())
+      return p.fromchar(msg).values
+    elif t == self._GMSH_PARAMETER_NOT_FOUND :
+      self._send(self._GMSH_PARAMETER, p.tochar())
+      return p.values
+
+  def _getParameter(self, param, warn_if_not_found=True) :
+    if not self.socket :
+      return
+    self._send(self._GMSH_PARAMETER_QUERY, param.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      param.fromchar(msg)
+    elif t == self._GMSH_PARAMETER_NOT_FOUND and warn_if_not_found :
+      print (&#39;Unknown parameter %s&#39; %(param.name))
+
+  def defineNumber(self, name, **param):
+    if &#39;value&#39; in param :
+      param[&#34;values&#34;] = [param[&#34;value&#34;]]
+      del param[&#34;value&#34;]
+    if &#39;labels&#39; in param :
+      param[&#34;choices&#34;] = param[&#34;labels&#34;].keys()
+    p = _parameter(&#39;number&#39;, name=name, **param)
+    values = self._defineParameter(p)
+    return values[0] if len(values) else 0
+
+  def defineString(self, name, **param):
+    if &#39;value&#39; in param :
+      param[&#34;values&#34;] = [param[&#34;value&#34;]]
+      del param[&#34;value&#34;]
+    p = _parameter(&#39;string&#39;, name=name, **param)
+    values = self._defineParameter(p)
+    return values[0] if len(values) else &#39;&#39;
+
+  def setNumber(self, name, **param):
+    if not self.socket :
+      return
+    if &#39;value&#39; in param :
+      param[&#34;values&#34;] = [param[&#34;value&#34;]]
+      del param[&#34;value&#34;]
+    p = _parameter(&#39;number&#39;, name=name)
+    self._send(self._GMSH_PARAMETER_QUERY, p.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      p.fromchar(msg).modify(**param)
+    elif t == self._GMSH_PARAMETER_NOT_FOUND :
+      p.modify(**param)
+    self._send(self._GMSH_PARAMETER, p.tochar())
+
+  def setString(self, name, **param):
+    if not self.socket :
+      return
+    if &#39;value&#39; in param :
+      param[&#34;values&#34;] = [param[&#34;value&#34;]]
+      del param[&#34;value&#34;]
+    p = _parameter(&#39;string&#39;, name=name)
+    self._send(self._GMSH_PARAMETER_QUERY, p.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER : #modify an existing parameter
+      p.fromchar(msg).modify(**param)
+    elif t == self._GMSH_PARAMETER_NOT_FOUND : #create a new parameter
+      p.modify(**param)
+    self._send(self._GMSH_PARAMETER, p.tochar())
+
+  def clear(self, name) :
+    if not self.socket :
+      return
+    self._send(self._GMSH_PARAMETER_CLEAR, str(name))
+
+  def _setNumberChoices(self, name, val):
+    if not self.socket :
+      return
+    p = _parameter(&#39;number&#39;, name=name)
+    self._send(self._GMSH_PARAMETER_QUERY, p.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      if len(val) : # add new choices
+        p.fromchar(msg).values = val
+        p.choices.extend(val)
+      else : # reset choices list
+        p.fromchar(msg).choices = ()
+    elif t == self._GMSH_PARAMETER_NOT_FOUND :
+      print (&#39;Unknown parameter %s&#39; %(param.name))
+    self._send(self._GMSH_PARAMETER, p.tochar())
+
+  def resetNumberChoices(self, name):
+    self._setNumberChoices(name,[])
+
+  def addNumberChoice(self, name, value):
+    self._setNumberChoices(name,[value])
+
+  def getNumber(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;number&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.values[0] if len(param.values) else 0
+
+  def getNumbers(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;number&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.values
+
+  def getString(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;string&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.values[0] if len(param.values) else &#39;&#39;
+
+  def getStrings(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;string&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.values
+
+  def getNumberChoices(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;number&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.choices
+
+  def getStringChoices(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;string&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.choices
+
+  def getNumberRange(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;number&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return [param.values[0] if len(param.values) else 0, param.min, param.max]
+
+  def show(self, name) :
+    if not self.socket or not name:
+      return
+    param = _parameter(&#39;number&#39;, name=name)
+    self._send(self._GMSH_PARAMETER_QUERY, param.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      print (msg.replace(&#39;\0&#39;,&#39;|&#39;))
+    elif t == self._GMSH_PARAMETER_NOT_FOUND :
+      param = _parameter(&#39;string&#39;, name=name)
+      self._send(self._GMSH_PARAMETER_QUERY, param.tochar())
+      (t, msg) = self._receive()
+      if t == self._GMSH_PARAMETER :
+        print (msg.replace(&#39;\0&#39;,&#39;|&#39;))
+      elif t == self._GMSH_PARAMETER_NOT_FOUND :
+        print(&#39;Unknown parameter %s&#39; %(name))
+
+  def sendCommand(self, command) :
+    if not self.socket :
+      return
+    self._send(self._GMSH_PARSE_STRING, command)
+
+  def mergeFile(self, filename) :
+    if not self.socket or not filename :
+      return
+    self._send(self._GMSH_MERGE_FILE, filename)
+
+  def openProject(self, filename) :
+    if not self.socket or not filename :
+      return
+    self._send(self._GMSH_OPEN_PROJECT, filename)
+
+  def sendInfo(self, msg) :
+    if not self.socket :
+      print (msg)
+      return
+    self._send(self._GMSH_INFO, str(msg))
+
+  def sendWarning(self, msg) :
+    if not self.socket :
+      print (msg)
+      return
+    self._send(self._GMSH_WARNING, str(msg))
+
+  def sendError(self, msg) :
+    if not self.socket :
+      print (msg)
+      return
+    self._send(self._GMSH_ERROR, str(msg))
+
+  def preProcess(self, name, filename) :
+    if not self.socket :
+      return
+    msg = [name, filename]
+    self._send(self._GMSH_OLPARSE, &#39;\0&#39;.join(msg))
+    (t, msg) = self._receive()
+    if t == self._GMSH_OLPARSE :
+      if msg == &#34;true&#34; :
+          return True
+    return False
+
+  def isChanged(self, name) :
+    if not self.socket :
+      return
+    msg = [&#34;get&#34;, name]
+    self._send(self._GMSH_CLIENT_CHANGED, &#39;\0&#39;.join(msg))
+    (t, msg) = self._receive()
+    if t == self._GMSH_CLIENT_CHANGED :
+      if msg == &#34;true&#34; :
+          return True
+    return False
+
+  def setChanged(self, name, changed) :
+    if not self.socket :
+      return
+    msg = [&#34;set&#34;, name, &#39;true&#39; if changed else &#39;false&#39;]
+    self._send(self._GMSH_CLIENT_CHANGED, &#39;\0&#39;.join(msg))
+
+  def waitOnSubClients(self):
+    if not self.socket :
+      return
+    while self._numSubClients &gt; 0:
+      (t, msg) = self._receive()
+      if t == self._GMSH_STOP :
+        self._numSubClients -= 1
+
+  def runNonBlockingSubClient(self, name, command, arguments=&#39;&#39;):
+    if self.action == &#39;check&#39;:
+      cmd = command
+    else:
+      cmd = command + &#39; &#39; + arguments
+    if not self.socket :
+      return os.system(cmd);
+    msg = [name, cmd]
+    self._send(self._GMSH_CONNECT, &#39;\0&#39;.join(msg))
+    self._numSubClients +=1
+
+  def runSubClient(self, name, command, arguments=&#39;&#39;):
+    self.runNonBlockingSubClient(name, command, arguments)
+    self.waitOnSubClients() # makes the subclient blocking
+    if self.action == &#39;compute&#39;:
+      self.setChanged(name, False)
+
+  def run(self, name, command, arguments=&#39;&#39;):
+    self.runSubClient(name, command, arguments)
+
+  def __init__(self, ref=&#39;&#39;):
+    self.socket = None
+    self.name = &#34;&#34;
+    self.addr = &#34;&#34;
+    self.wdir = os.path.dirname(ref)
+    self._numSubClients = 0
+    for i, v in enumerate(sys.argv) :
+      if v == &#39;-onelab&#39;:
+        self.name = sys.argv[i + 1]
+        self.addr = sys.argv[i + 2]
+        self._createSocket()
+        self._send(self._GMSH_START, str(os.getpid()))
+    self.action = self.getString(self.name + &#39;/Action&#39;, False)
+    self.setNumber(&#39;IsPyMetamodel&#39;,values=[1],visible=0)
+    self.loop = self.getNumber(&#39;0Metamodel/Loop&#39;, warn_if_not_found=False)
+    self.batch = self.getNumber(&#39;0Metamodel/Batch&#39;, warn_if_not_found=False)
+    self.sendInfo(&#34;Performing OneLab &#39;&#34; + self.action + &#34;&#39;&#34;)
+    if self.action == &#34;initialize&#34;:
+      self.finalize()
+      exit(0)
+
+  def finalize(self):
+    # code aster python interpreter does not call the destructor at exit, it is
+    # necessary to call finalize() epxlicitely
+    if self.socket :
+      self.waitOnSubClients()
+      self._send(self._GMSH_STOP, &#39;Goodbye!&#39;)
+      self.socket.close()
+      self.socket = None
+
+  def __del__(self):
+    self.finalize()
+
+  def call(self, name, cmdline, remote=&#39;&#39;, rundir=&#39;&#39;, logfile=&#39;&#39;, poll=0):
+    cwd = None
+    if not remote :
+      argv = cmdline.rsplit(&#39; &#39;)
+      if rundir :
+        cwd = rundir
+    else :
+      argv=[&#39;ssh&#39;, remote , &#34;cd %s ; %s&#34; %(rundir,cmdline) ]
+
+    if poll and not logfile :
+        logfile = os.devnull
+    if logfile:
+      call = subprocess.Popen(argv, bufsize=1, cwd=cwd,
+                              stdout=open(logfile,&#34;w&#34;),
+                              stderr=subprocess.STDOUT)
+      while call.poll() == None :
+        self.action = self.getString(self.name + &#39;/Action&#39;, False)
+        if self.action == &#39;stop&#39;:
+          call.terminate()
+          self._send(self._GMSH_WARNING, &#39;client killed&#39;)
+          sys.exit(1)
+        time.sleep(1) # check every second for the stop signal from Gmsh
+    else:
+      call = subprocess.Popen(argv, bufsize=1, cwd=cwd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
+      count = 0
+      for line in iter(call.stdout.readline, b&#39;&#39;):
+        print(line.rstrip())
+        count += 1
+        if count == 50 : # check every 50 lines for the stop signal from Gmsh
+          count = 0
+          self.action = self.getString(self.name + &#39;/Action&#39;, False)
+          if self.action == &#39;stop&#39;:
+            call.terminate()
+            self._send(self._GMSH_WARNING, &#39;client killed&#39;)
+            sys.exit(1)
+
+    result = call.wait()
+    if result == 0 :
+      self._send(self._GMSH_INFO, &#39;done \&#34;&#39; + &#39; &#39;.join(argv) + &#39;\&#34;&#39;)
+      if self.action == &#39;compute&#39;:
+        self.setChanged(name, False)
+    else :
+      self._send(self._GMSH_ERROR, &#39;error \&#34;&#39; + &#39; &#39;.join(argv) + &#39;\&#34;&#39;)
+      sys.exit(1)
+
+  def copy(self, here, there):
+    os.system(&#39;cp &#39;+ here + &#39; &#39; + there)
+
+  def upload(self, here, there, remote=&#39;&#39;) :
+    if not here or not there :
+      return
+    if remote :
+      argv=[&#39;rsync&#39;,&#39;-e&#39;,&#39;ssh&#39;,&#39;-auv&#39;, here, remote + &#39;:&#39; + there]
+    else :
+      argv=[&#39;cp&#39;,&#39;-f&#39;, here, there]
+
+    call = subprocess.Popen(argv, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    result = call.wait()
+    if result == 0 :
+      self._send(self._GMSH_INFO, &#39;upload: &#39; + &#39; &#39;.join(argv))
+    else :
+      print(call.stderr.read())
+
+  def download(self, there, here, remote=&#39;&#39;) :
+    if not here or not there :
+      return
+    if remote :
+      argv=[&#39;rsync&#39;,&#39;-e&#39;,&#39;ssh&#39;,&#39;-auv&#39;, remote + &#39;:&#39; + there, here]
+    else :
+      argv=[&#39;cp&#39;,&#39;-f&#39;, there, here]
+
+    call = subprocess.Popen(argv, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    result = call.wait()
+    if result == 0 :
+      self._send(self._GMSH_INFO, &#39;download: &#39; + &#39; &#39;.join(argv))
+    else :
+      print(call.stderr.read())
+
+  def getPath(self, inp=&#39;&#39;) :
+    return path(self.wdir, inp)
+
+  def fileExists(self, p) :
+    return os.path.exists(p)
+
+  def checkFile(self, p) :
+    if not self.fileExists(p):
+      self.sendError(&#39;path error: %s&#39; %(p))
+      exit(0)
+    return True
+
+  def checkPath(self, inp=&#39;&#39;) :
+    p = path(self.wdir,inp)
+    self.checkFile(p)
+    return p
+
+  def solutionFiles(self, client, list) :
+    self.defineNumber(&#39;0Metamodel/9Use restored solution&#39;, values=[0], choices=[0,1])
+    self.defineString(&#39;0Metamodel/9Tag&#39;, values=[&#39;&#39;])
+    if list :
+      if self.getNumber(&#39;0Metamodel/9Use restored solution&#39;) :
+        solFiles = self.getStringChoices(&#39;0Metamodel/9Solution files&#39;)
+        for i in solFiles:
+          self.checkFile(i)
+      else :
+        solFiles = list
+        self.setString(&#39;0Metamodel/9Solution files&#39;, values=[solFiles[0]],
+                       choices=solFiles, readOnly=1)
+        for i in solFiles:
+          if not self.fileExists(i) :
+            self.setChanged(client, &#39;true&#39;)
+    return solFiles
+
+  def needsCompute(self, client) :
+    # Avoid recomputation when a database with restored solutions has just been loaded
+    # Otherwise, stop using restored solutions when the client elmer has changed
+    if self.useRestoredSolution() == 2: # we have just loaded a database
+      self.setRestoredSolution(1)
+      self.setChanged(client, &#39;false&#39;) # do not compute
+    else :
+      if self.isChanged(client):
+        self.setRestoredSolution(0)
+        return True
+    return False
+
+  def willCompute(self, client) : # Inform user about the value of needsCompute
+    if self.useRestoredSolution() == 2: # special value
+      return False
+    else :
+      return True if self.isChanged(client) else False
+
+  def useRestoredSolution(self) :
+    return self.getNumber(&#39;0Metamodel/9Use restored solution&#39;)
+
+  def setRestoredSolution(self, val) :
+    self.setNumber(&#39;0Metamodel/9Use restored solution&#39;, values=[val])
+
+  def outputFiles(self, list) :
+    if list :
+      self.setString(&#39;0Metamodel/9Output files&#39;, values=[list[0]],
+                     choices=list, visible=1)
+
+# tool to extract the (i, j)th element in an array file
+# from rlcompleter import readline
+def extract(filename,i,j):
+    input = open(filename,&#39;r&#39;)
+    all_lines = input.readlines()
+    input.close()
+    if i == -1:
+        i = len(all_lines) # last line
+    items = all_lines[i-1].split()
+    return float(items[j-1])</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="voxelfuse.utils.onelab.extract"><code class="name flex">
+<span>def <span class="ident">extract</span></span>(<span>filename, i, j)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extract(filename,i,j):
+    input = open(filename,&#39;r&#39;)
+    all_lines = input.readlines()
+    input.close()
+    if i == -1:
+        i = len(all_lines) # last line
+    items = all_lines[i-1].split()
+    return float(items[j-1])</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.path"><code class="name flex">
+<span>def <span class="ident">path</span></span>(<span>dirname, inp)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def path(dirname, inp):
+  # dirname is a directory, can be empty
+  # inp is an optional file or subdirectory name
+  # returns the path to &#39;inp&#39; in the same directory as &#39;ref&#39;
+  if dirname:
+    dirname = os.path.dirname(dirname + os.sep)
+  if not inp:
+    return dirname
+  if inp[0] == &#39;/&#39; or inp[0] == &#39;\\&#39; or (len(inp) &gt; 2 and inp[1] == &#39;\:&#39;):
+    return inp # do nothing, inp is an absolute path
+  if inp[0] == &#39;.&#39; :
+    inp = inp[2:] # cut off heading &#39;./&#39; or &#39;.\&#39;
+  if dirname:
+    return dirname + os.sep + inp # append inp to the path of the reference file
+  else:
+    return inp</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="voxelfuse.utils.onelab.client"><code class="flex name class">
+<span>class <span class="ident">client</span></span>
+<span>(</span><span>ref='')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class client :
+  _GMSH_START = 1
+  _GMSH_STOP = 2
+  _GMSH_INFO = 10
+  _GMSH_WARNING = 11
+  _GMSH_ERROR = 12
+  _GMSH_PROGRESS = 13
+  _GMSH_MERGE_FILE = 20
+  _GMSH_PARSE_STRING = 21
+  _GMSH_PARAMETER = 23
+  _GMSH_PARAMETER_QUERY = 24
+  _GMSH_CONNECT = 27
+  _GMSH_OLPARSE = 28
+  _GMSH_PARAMETER_NOT_FOUND = 29
+  _GMSH_PARAMETER_CLEAR = 31
+  _GMSH_PARAMETER_UPDATE = 32
+  _GMSH_OPEN_PROJECT = 33
+  _GMSH_CLIENT_CHANGED = 34
+
+  def _createSocket(self) :
+    addr = self.addr
+    if &#39;/&#39; in addr or &#39;\\&#39; in addr or &#39;:&#39; not in addr :
+      self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+      self.socket.connect(addr)
+    else :
+      self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      s = addr.split(&#39;:&#39;)
+      self.socket.connect((s[0], int(s[1])))
+
+  def _receive(self) :
+    def buffered_receive(l) :
+      msg = b&#39;&#39;
+      while len(msg) &lt; l:
+        chunk = self.socket.recv(l - len(msg))
+        if not chunk :
+          RuntimeError(&#39;onelab socket closed&#39;)
+        msg += chunk
+      return msg
+    msg = buffered_receive(struct.calcsize(&#39;ii&#39;))
+    t, l = struct.unpack(&#39;ii&#39;, msg)
+    msg = buffered_receive(l).decode(&#39;utf-8&#39;)
+    if t == self._GMSH_INFO :
+      print(&#39;onelab info : %s&#39; % msg)
+    return t, msg
+
+  def _send(self, t, msg) :
+    if not self.socket :
+      return
+    m = msg.encode(&#39;utf-8&#39;)
+    try:
+      if self.socket.send(struct.pack(&#39;ii%is&#39; %len(m), t, len(m), m)) == 0 :
+        RuntimeError(&#39;onelab socket closed&#39;)
+    except socket.error:
+      self.socket.close()
+      self._createSocket()
+      self.socket.send(struct.pack(&#39;ii%is&#39; %len(m), t, len(m), m))
+
+  def _defineParameter(self, p) :
+    if not self.socket :
+      return p.values
+    self._send(self._GMSH_PARAMETER_QUERY, p.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      self._send(self._GMSH_PARAMETER_UPDATE, p.tochar())
+      return p.fromchar(msg).values
+    elif t == self._GMSH_PARAMETER_NOT_FOUND :
+      self._send(self._GMSH_PARAMETER, p.tochar())
+      return p.values
+
+  def _getParameter(self, param, warn_if_not_found=True) :
+    if not self.socket :
+      return
+    self._send(self._GMSH_PARAMETER_QUERY, param.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      param.fromchar(msg)
+    elif t == self._GMSH_PARAMETER_NOT_FOUND and warn_if_not_found :
+      print (&#39;Unknown parameter %s&#39; %(param.name))
+
+  def defineNumber(self, name, **param):
+    if &#39;value&#39; in param :
+      param[&#34;values&#34;] = [param[&#34;value&#34;]]
+      del param[&#34;value&#34;]
+    if &#39;labels&#39; in param :
+      param[&#34;choices&#34;] = param[&#34;labels&#34;].keys()
+    p = _parameter(&#39;number&#39;, name=name, **param)
+    values = self._defineParameter(p)
+    return values[0] if len(values) else 0
+
+  def defineString(self, name, **param):
+    if &#39;value&#39; in param :
+      param[&#34;values&#34;] = [param[&#34;value&#34;]]
+      del param[&#34;value&#34;]
+    p = _parameter(&#39;string&#39;, name=name, **param)
+    values = self._defineParameter(p)
+    return values[0] if len(values) else &#39;&#39;
+
+  def setNumber(self, name, **param):
+    if not self.socket :
+      return
+    if &#39;value&#39; in param :
+      param[&#34;values&#34;] = [param[&#34;value&#34;]]
+      del param[&#34;value&#34;]
+    p = _parameter(&#39;number&#39;, name=name)
+    self._send(self._GMSH_PARAMETER_QUERY, p.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      p.fromchar(msg).modify(**param)
+    elif t == self._GMSH_PARAMETER_NOT_FOUND :
+      p.modify(**param)
+    self._send(self._GMSH_PARAMETER, p.tochar())
+
+  def setString(self, name, **param):
+    if not self.socket :
+      return
+    if &#39;value&#39; in param :
+      param[&#34;values&#34;] = [param[&#34;value&#34;]]
+      del param[&#34;value&#34;]
+    p = _parameter(&#39;string&#39;, name=name)
+    self._send(self._GMSH_PARAMETER_QUERY, p.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER : #modify an existing parameter
+      p.fromchar(msg).modify(**param)
+    elif t == self._GMSH_PARAMETER_NOT_FOUND : #create a new parameter
+      p.modify(**param)
+    self._send(self._GMSH_PARAMETER, p.tochar())
+
+  def clear(self, name) :
+    if not self.socket :
+      return
+    self._send(self._GMSH_PARAMETER_CLEAR, str(name))
+
+  def _setNumberChoices(self, name, val):
+    if not self.socket :
+      return
+    p = _parameter(&#39;number&#39;, name=name)
+    self._send(self._GMSH_PARAMETER_QUERY, p.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      if len(val) : # add new choices
+        p.fromchar(msg).values = val
+        p.choices.extend(val)
+      else : # reset choices list
+        p.fromchar(msg).choices = ()
+    elif t == self._GMSH_PARAMETER_NOT_FOUND :
+      print (&#39;Unknown parameter %s&#39; %(param.name))
+    self._send(self._GMSH_PARAMETER, p.tochar())
+
+  def resetNumberChoices(self, name):
+    self._setNumberChoices(name,[])
+
+  def addNumberChoice(self, name, value):
+    self._setNumberChoices(name,[value])
+
+  def getNumber(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;number&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.values[0] if len(param.values) else 0
+
+  def getNumbers(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;number&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.values
+
+  def getString(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;string&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.values[0] if len(param.values) else &#39;&#39;
+
+  def getStrings(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;string&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.values
+
+  def getNumberChoices(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;number&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.choices
+
+  def getStringChoices(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;string&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return param.choices
+
+  def getNumberRange(self, name, warn_if_not_found=True):
+    param = _parameter(&#39;number&#39;, name=name)
+    self._getParameter(param, warn_if_not_found)
+    return [param.values[0] if len(param.values) else 0, param.min, param.max]
+
+  def show(self, name) :
+    if not self.socket or not name:
+      return
+    param = _parameter(&#39;number&#39;, name=name)
+    self._send(self._GMSH_PARAMETER_QUERY, param.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      print (msg.replace(&#39;\0&#39;,&#39;|&#39;))
+    elif t == self._GMSH_PARAMETER_NOT_FOUND :
+      param = _parameter(&#39;string&#39;, name=name)
+      self._send(self._GMSH_PARAMETER_QUERY, param.tochar())
+      (t, msg) = self._receive()
+      if t == self._GMSH_PARAMETER :
+        print (msg.replace(&#39;\0&#39;,&#39;|&#39;))
+      elif t == self._GMSH_PARAMETER_NOT_FOUND :
+        print(&#39;Unknown parameter %s&#39; %(name))
+
+  def sendCommand(self, command) :
+    if not self.socket :
+      return
+    self._send(self._GMSH_PARSE_STRING, command)
+
+  def mergeFile(self, filename) :
+    if not self.socket or not filename :
+      return
+    self._send(self._GMSH_MERGE_FILE, filename)
+
+  def openProject(self, filename) :
+    if not self.socket or not filename :
+      return
+    self._send(self._GMSH_OPEN_PROJECT, filename)
+
+  def sendInfo(self, msg) :
+    if not self.socket :
+      print (msg)
+      return
+    self._send(self._GMSH_INFO, str(msg))
+
+  def sendWarning(self, msg) :
+    if not self.socket :
+      print (msg)
+      return
+    self._send(self._GMSH_WARNING, str(msg))
+
+  def sendError(self, msg) :
+    if not self.socket :
+      print (msg)
+      return
+    self._send(self._GMSH_ERROR, str(msg))
+
+  def preProcess(self, name, filename) :
+    if not self.socket :
+      return
+    msg = [name, filename]
+    self._send(self._GMSH_OLPARSE, &#39;\0&#39;.join(msg))
+    (t, msg) = self._receive()
+    if t == self._GMSH_OLPARSE :
+      if msg == &#34;true&#34; :
+          return True
+    return False
+
+  def isChanged(self, name) :
+    if not self.socket :
+      return
+    msg = [&#34;get&#34;, name]
+    self._send(self._GMSH_CLIENT_CHANGED, &#39;\0&#39;.join(msg))
+    (t, msg) = self._receive()
+    if t == self._GMSH_CLIENT_CHANGED :
+      if msg == &#34;true&#34; :
+          return True
+    return False
+
+  def setChanged(self, name, changed) :
+    if not self.socket :
+      return
+    msg = [&#34;set&#34;, name, &#39;true&#39; if changed else &#39;false&#39;]
+    self._send(self._GMSH_CLIENT_CHANGED, &#39;\0&#39;.join(msg))
+
+  def waitOnSubClients(self):
+    if not self.socket :
+      return
+    while self._numSubClients &gt; 0:
+      (t, msg) = self._receive()
+      if t == self._GMSH_STOP :
+        self._numSubClients -= 1
+
+  def runNonBlockingSubClient(self, name, command, arguments=&#39;&#39;):
+    if self.action == &#39;check&#39;:
+      cmd = command
+    else:
+      cmd = command + &#39; &#39; + arguments
+    if not self.socket :
+      return os.system(cmd);
+    msg = [name, cmd]
+    self._send(self._GMSH_CONNECT, &#39;\0&#39;.join(msg))
+    self._numSubClients +=1
+
+  def runSubClient(self, name, command, arguments=&#39;&#39;):
+    self.runNonBlockingSubClient(name, command, arguments)
+    self.waitOnSubClients() # makes the subclient blocking
+    if self.action == &#39;compute&#39;:
+      self.setChanged(name, False)
+
+  def run(self, name, command, arguments=&#39;&#39;):
+    self.runSubClient(name, command, arguments)
+
+  def __init__(self, ref=&#39;&#39;):
+    self.socket = None
+    self.name = &#34;&#34;
+    self.addr = &#34;&#34;
+    self.wdir = os.path.dirname(ref)
+    self._numSubClients = 0
+    for i, v in enumerate(sys.argv) :
+      if v == &#39;-onelab&#39;:
+        self.name = sys.argv[i + 1]
+        self.addr = sys.argv[i + 2]
+        self._createSocket()
+        self._send(self._GMSH_START, str(os.getpid()))
+    self.action = self.getString(self.name + &#39;/Action&#39;, False)
+    self.setNumber(&#39;IsPyMetamodel&#39;,values=[1],visible=0)
+    self.loop = self.getNumber(&#39;0Metamodel/Loop&#39;, warn_if_not_found=False)
+    self.batch = self.getNumber(&#39;0Metamodel/Batch&#39;, warn_if_not_found=False)
+    self.sendInfo(&#34;Performing OneLab &#39;&#34; + self.action + &#34;&#39;&#34;)
+    if self.action == &#34;initialize&#34;:
+      self.finalize()
+      exit(0)
+
+  def finalize(self):
+    # code aster python interpreter does not call the destructor at exit, it is
+    # necessary to call finalize() epxlicitely
+    if self.socket :
+      self.waitOnSubClients()
+      self._send(self._GMSH_STOP, &#39;Goodbye!&#39;)
+      self.socket.close()
+      self.socket = None
+
+  def __del__(self):
+    self.finalize()
+
+  def call(self, name, cmdline, remote=&#39;&#39;, rundir=&#39;&#39;, logfile=&#39;&#39;, poll=0):
+    cwd = None
+    if not remote :
+      argv = cmdline.rsplit(&#39; &#39;)
+      if rundir :
+        cwd = rundir
+    else :
+      argv=[&#39;ssh&#39;, remote , &#34;cd %s ; %s&#34; %(rundir,cmdline) ]
+
+    if poll and not logfile :
+        logfile = os.devnull
+    if logfile:
+      call = subprocess.Popen(argv, bufsize=1, cwd=cwd,
+                              stdout=open(logfile,&#34;w&#34;),
+                              stderr=subprocess.STDOUT)
+      while call.poll() == None :
+        self.action = self.getString(self.name + &#39;/Action&#39;, False)
+        if self.action == &#39;stop&#39;:
+          call.terminate()
+          self._send(self._GMSH_WARNING, &#39;client killed&#39;)
+          sys.exit(1)
+        time.sleep(1) # check every second for the stop signal from Gmsh
+    else:
+      call = subprocess.Popen(argv, bufsize=1, cwd=cwd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT)
+      count = 0
+      for line in iter(call.stdout.readline, b&#39;&#39;):
+        print(line.rstrip())
+        count += 1
+        if count == 50 : # check every 50 lines for the stop signal from Gmsh
+          count = 0
+          self.action = self.getString(self.name + &#39;/Action&#39;, False)
+          if self.action == &#39;stop&#39;:
+            call.terminate()
+            self._send(self._GMSH_WARNING, &#39;client killed&#39;)
+            sys.exit(1)
+
+    result = call.wait()
+    if result == 0 :
+      self._send(self._GMSH_INFO, &#39;done \&#34;&#39; + &#39; &#39;.join(argv) + &#39;\&#34;&#39;)
+      if self.action == &#39;compute&#39;:
+        self.setChanged(name, False)
+    else :
+      self._send(self._GMSH_ERROR, &#39;error \&#34;&#39; + &#39; &#39;.join(argv) + &#39;\&#34;&#39;)
+      sys.exit(1)
+
+  def copy(self, here, there):
+    os.system(&#39;cp &#39;+ here + &#39; &#39; + there)
+
+  def upload(self, here, there, remote=&#39;&#39;) :
+    if not here or not there :
+      return
+    if remote :
+      argv=[&#39;rsync&#39;,&#39;-e&#39;,&#39;ssh&#39;,&#39;-auv&#39;, here, remote + &#39;:&#39; + there]
+    else :
+      argv=[&#39;cp&#39;,&#39;-f&#39;, here, there]
+
+    call = subprocess.Popen(argv, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    result = call.wait()
+    if result == 0 :
+      self._send(self._GMSH_INFO, &#39;upload: &#39; + &#39; &#39;.join(argv))
+    else :
+      print(call.stderr.read())
+
+  def download(self, there, here, remote=&#39;&#39;) :
+    if not here or not there :
+      return
+    if remote :
+      argv=[&#39;rsync&#39;,&#39;-e&#39;,&#39;ssh&#39;,&#39;-auv&#39;, remote + &#39;:&#39; + there, here]
+    else :
+      argv=[&#39;cp&#39;,&#39;-f&#39;, there, here]
+
+    call = subprocess.Popen(argv, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    result = call.wait()
+    if result == 0 :
+      self._send(self._GMSH_INFO, &#39;download: &#39; + &#39; &#39;.join(argv))
+    else :
+      print(call.stderr.read())
+
+  def getPath(self, inp=&#39;&#39;) :
+    return path(self.wdir, inp)
+
+  def fileExists(self, p) :
+    return os.path.exists(p)
+
+  def checkFile(self, p) :
+    if not self.fileExists(p):
+      self.sendError(&#39;path error: %s&#39; %(p))
+      exit(0)
+    return True
+
+  def checkPath(self, inp=&#39;&#39;) :
+    p = path(self.wdir,inp)
+    self.checkFile(p)
+    return p
+
+  def solutionFiles(self, client, list) :
+    self.defineNumber(&#39;0Metamodel/9Use restored solution&#39;, values=[0], choices=[0,1])
+    self.defineString(&#39;0Metamodel/9Tag&#39;, values=[&#39;&#39;])
+    if list :
+      if self.getNumber(&#39;0Metamodel/9Use restored solution&#39;) :
+        solFiles = self.getStringChoices(&#39;0Metamodel/9Solution files&#39;)
+        for i in solFiles:
+          self.checkFile(i)
+      else :
+        solFiles = list
+        self.setString(&#39;0Metamodel/9Solution files&#39;, values=[solFiles[0]],
+                       choices=solFiles, readOnly=1)
+        for i in solFiles:
+          if not self.fileExists(i) :
+            self.setChanged(client, &#39;true&#39;)
+    return solFiles
+
+  def needsCompute(self, client) :
+    # Avoid recomputation when a database with restored solutions has just been loaded
+    # Otherwise, stop using restored solutions when the client elmer has changed
+    if self.useRestoredSolution() == 2: # we have just loaded a database
+      self.setRestoredSolution(1)
+      self.setChanged(client, &#39;false&#39;) # do not compute
+    else :
+      if self.isChanged(client):
+        self.setRestoredSolution(0)
+        return True
+    return False
+
+  def willCompute(self, client) : # Inform user about the value of needsCompute
+    if self.useRestoredSolution() == 2: # special value
+      return False
+    else :
+      return True if self.isChanged(client) else False
+
+  def useRestoredSolution(self) :
+    return self.getNumber(&#39;0Metamodel/9Use restored solution&#39;)
+
+  def setRestoredSolution(self, val) :
+    self.setNumber(&#39;0Metamodel/9Use restored solution&#39;, values=[val])
+
+  def outputFiles(self, list) :
+    if list :
+      self.setString(&#39;0Metamodel/9Output files&#39;, values=[list[0]],
+                     choices=list, visible=1)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="voxelfuse.utils.onelab.client.addNumberChoice"><code class="name flex">
+<span>def <span class="ident">addNumberChoice</span></span>(<span>self, name, value)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def addNumberChoice(self, name, value):
+  self._setNumberChoices(name,[value])</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.call"><code class="name flex">
+<span>def <span class="ident">call</span></span>(<span>self, name, cmdline, remote='', rundir='', logfile='', poll=0)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def call(self, name, cmdline, remote=&#39;&#39;, rundir=&#39;&#39;, logfile=&#39;&#39;, poll=0):
+  cwd = None
+  if not remote :
+    argv = cmdline.rsplit(&#39; &#39;)
+    if rundir :
+      cwd = rundir
+  else :
+    argv=[&#39;ssh&#39;, remote , &#34;cd %s ; %s&#34; %(rundir,cmdline) ]
+
+  if poll and not logfile :
+      logfile = os.devnull
+  if logfile:
+    call = subprocess.Popen(argv, bufsize=1, cwd=cwd,
+                            stdout=open(logfile,&#34;w&#34;),
+                            stderr=subprocess.STDOUT)
+    while call.poll() == None :
+      self.action = self.getString(self.name + &#39;/Action&#39;, False)
+      if self.action == &#39;stop&#39;:
+        call.terminate()
+        self._send(self._GMSH_WARNING, &#39;client killed&#39;)
+        sys.exit(1)
+      time.sleep(1) # check every second for the stop signal from Gmsh
+  else:
+    call = subprocess.Popen(argv, bufsize=1, cwd=cwd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+    count = 0
+    for line in iter(call.stdout.readline, b&#39;&#39;):
+      print(line.rstrip())
+      count += 1
+      if count == 50 : # check every 50 lines for the stop signal from Gmsh
+        count = 0
+        self.action = self.getString(self.name + &#39;/Action&#39;, False)
+        if self.action == &#39;stop&#39;:
+          call.terminate()
+          self._send(self._GMSH_WARNING, &#39;client killed&#39;)
+          sys.exit(1)
+
+  result = call.wait()
+  if result == 0 :
+    self._send(self._GMSH_INFO, &#39;done \&#34;&#39; + &#39; &#39;.join(argv) + &#39;\&#34;&#39;)
+    if self.action == &#39;compute&#39;:
+      self.setChanged(name, False)
+  else :
+    self._send(self._GMSH_ERROR, &#39;error \&#34;&#39; + &#39; &#39;.join(argv) + &#39;\&#34;&#39;)
+    sys.exit(1)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.checkFile"><code class="name flex">
+<span>def <span class="ident">checkFile</span></span>(<span>self, p)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def checkFile(self, p) :
+  if not self.fileExists(p):
+    self.sendError(&#39;path error: %s&#39; %(p))
+    exit(0)
+  return True</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.checkPath"><code class="name flex">
+<span>def <span class="ident">checkPath</span></span>(<span>self, inp='')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def checkPath(self, inp=&#39;&#39;) :
+  p = path(self.wdir,inp)
+  self.checkFile(p)
+  return p</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.clear"><code class="name flex">
+<span>def <span class="ident">clear</span></span>(<span>self, name)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def clear(self, name) :
+  if not self.socket :
+    return
+  self._send(self._GMSH_PARAMETER_CLEAR, str(name))</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.copy"><code class="name flex">
+<span>def <span class="ident">copy</span></span>(<span>self, here, there)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy(self, here, there):
+  os.system(&#39;cp &#39;+ here + &#39; &#39; + there)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.defineNumber"><code class="name flex">
+<span>def <span class="ident">defineNumber</span></span>(<span>self, name, **param)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def defineNumber(self, name, **param):
+  if &#39;value&#39; in param :
+    param[&#34;values&#34;] = [param[&#34;value&#34;]]
+    del param[&#34;value&#34;]
+  if &#39;labels&#39; in param :
+    param[&#34;choices&#34;] = param[&#34;labels&#34;].keys()
+  p = _parameter(&#39;number&#39;, name=name, **param)
+  values = self._defineParameter(p)
+  return values[0] if len(values) else 0</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.defineString"><code class="name flex">
+<span>def <span class="ident">defineString</span></span>(<span>self, name, **param)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def defineString(self, name, **param):
+  if &#39;value&#39; in param :
+    param[&#34;values&#34;] = [param[&#34;value&#34;]]
+    del param[&#34;value&#34;]
+  p = _parameter(&#39;string&#39;, name=name, **param)
+  values = self._defineParameter(p)
+  return values[0] if len(values) else &#39;&#39;</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.download"><code class="name flex">
+<span>def <span class="ident">download</span></span>(<span>self, there, here, remote='')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def download(self, there, here, remote=&#39;&#39;) :
+  if not here or not there :
+    return
+  if remote :
+    argv=[&#39;rsync&#39;,&#39;-e&#39;,&#39;ssh&#39;,&#39;-auv&#39;, remote + &#39;:&#39; + there, here]
+  else :
+    argv=[&#39;cp&#39;,&#39;-f&#39;, there, here]
+
+  call = subprocess.Popen(argv, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+  result = call.wait()
+  if result == 0 :
+    self._send(self._GMSH_INFO, &#39;download: &#39; + &#39; &#39;.join(argv))
+  else :
+    print(call.stderr.read())</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.fileExists"><code class="name flex">
+<span>def <span class="ident">fileExists</span></span>(<span>self, p)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fileExists(self, p) :
+  return os.path.exists(p)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.finalize"><code class="name flex">
+<span>def <span class="ident">finalize</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def finalize(self):
+  # code aster python interpreter does not call the destructor at exit, it is
+  # necessary to call finalize() epxlicitely
+  if self.socket :
+    self.waitOnSubClients()
+    self._send(self._GMSH_STOP, &#39;Goodbye!&#39;)
+    self.socket.close()
+    self.socket = None</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.getNumber"><code class="name flex">
+<span>def <span class="ident">getNumber</span></span>(<span>self, name, warn_if_not_found=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getNumber(self, name, warn_if_not_found=True):
+  param = _parameter(&#39;number&#39;, name=name)
+  self._getParameter(param, warn_if_not_found)
+  return param.values[0] if len(param.values) else 0</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.getNumberChoices"><code class="name flex">
+<span>def <span class="ident">getNumberChoices</span></span>(<span>self, name, warn_if_not_found=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getNumberChoices(self, name, warn_if_not_found=True):
+  param = _parameter(&#39;number&#39;, name=name)
+  self._getParameter(param, warn_if_not_found)
+  return param.choices</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.getNumberRange"><code class="name flex">
+<span>def <span class="ident">getNumberRange</span></span>(<span>self, name, warn_if_not_found=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getNumberRange(self, name, warn_if_not_found=True):
+  param = _parameter(&#39;number&#39;, name=name)
+  self._getParameter(param, warn_if_not_found)
+  return [param.values[0] if len(param.values) else 0, param.min, param.max]</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.getNumbers"><code class="name flex">
+<span>def <span class="ident">getNumbers</span></span>(<span>self, name, warn_if_not_found=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getNumbers(self, name, warn_if_not_found=True):
+  param = _parameter(&#39;number&#39;, name=name)
+  self._getParameter(param, warn_if_not_found)
+  return param.values</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.getPath"><code class="name flex">
+<span>def <span class="ident">getPath</span></span>(<span>self, inp='')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getPath(self, inp=&#39;&#39;) :
+  return path(self.wdir, inp)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.getString"><code class="name flex">
+<span>def <span class="ident">getString</span></span>(<span>self, name, warn_if_not_found=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getString(self, name, warn_if_not_found=True):
+  param = _parameter(&#39;string&#39;, name=name)
+  self._getParameter(param, warn_if_not_found)
+  return param.values[0] if len(param.values) else &#39;&#39;</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.getStringChoices"><code class="name flex">
+<span>def <span class="ident">getStringChoices</span></span>(<span>self, name, warn_if_not_found=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getStringChoices(self, name, warn_if_not_found=True):
+  param = _parameter(&#39;string&#39;, name=name)
+  self._getParameter(param, warn_if_not_found)
+  return param.choices</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.getStrings"><code class="name flex">
+<span>def <span class="ident">getStrings</span></span>(<span>self, name, warn_if_not_found=True)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getStrings(self, name, warn_if_not_found=True):
+  param = _parameter(&#39;string&#39;, name=name)
+  self._getParameter(param, warn_if_not_found)
+  return param.values</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.isChanged"><code class="name flex">
+<span>def <span class="ident">isChanged</span></span>(<span>self, name)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def isChanged(self, name) :
+  if not self.socket :
+    return
+  msg = [&#34;get&#34;, name]
+  self._send(self._GMSH_CLIENT_CHANGED, &#39;\0&#39;.join(msg))
+  (t, msg) = self._receive()
+  if t == self._GMSH_CLIENT_CHANGED :
+    if msg == &#34;true&#34; :
+        return True
+  return False</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.mergeFile"><code class="name flex">
+<span>def <span class="ident">mergeFile</span></span>(<span>self, filename)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def mergeFile(self, filename) :
+  if not self.socket or not filename :
+    return
+  self._send(self._GMSH_MERGE_FILE, filename)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.needsCompute"><code class="name flex">
+<span>def <span class="ident">needsCompute</span></span>(<span>self, client)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def needsCompute(self, client) :
+  # Avoid recomputation when a database with restored solutions has just been loaded
+  # Otherwise, stop using restored solutions when the client elmer has changed
+  if self.useRestoredSolution() == 2: # we have just loaded a database
+    self.setRestoredSolution(1)
+    self.setChanged(client, &#39;false&#39;) # do not compute
+  else :
+    if self.isChanged(client):
+      self.setRestoredSolution(0)
+      return True
+  return False</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.openProject"><code class="name flex">
+<span>def <span class="ident">openProject</span></span>(<span>self, filename)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def openProject(self, filename) :
+  if not self.socket or not filename :
+    return
+  self._send(self._GMSH_OPEN_PROJECT, filename)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.outputFiles"><code class="name flex">
+<span>def <span class="ident">outputFiles</span></span>(<span>self, list)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def outputFiles(self, list) :
+  if list :
+    self.setString(&#39;0Metamodel/9Output files&#39;, values=[list[0]],
+                   choices=list, visible=1)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.preProcess"><code class="name flex">
+<span>def <span class="ident">preProcess</span></span>(<span>self, name, filename)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preProcess(self, name, filename) :
+  if not self.socket :
+    return
+  msg = [name, filename]
+  self._send(self._GMSH_OLPARSE, &#39;\0&#39;.join(msg))
+  (t, msg) = self._receive()
+  if t == self._GMSH_OLPARSE :
+    if msg == &#34;true&#34; :
+        return True
+  return False</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.resetNumberChoices"><code class="name flex">
+<span>def <span class="ident">resetNumberChoices</span></span>(<span>self, name)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def resetNumberChoices(self, name):
+  self._setNumberChoices(name,[])</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self, name, command, arguments='')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(self, name, command, arguments=&#39;&#39;):
+  self.runSubClient(name, command, arguments)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.runNonBlockingSubClient"><code class="name flex">
+<span>def <span class="ident">runNonBlockingSubClient</span></span>(<span>self, name, command, arguments='')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def runNonBlockingSubClient(self, name, command, arguments=&#39;&#39;):
+  if self.action == &#39;check&#39;:
+    cmd = command
+  else:
+    cmd = command + &#39; &#39; + arguments
+  if not self.socket :
+    return os.system(cmd);
+  msg = [name, cmd]
+  self._send(self._GMSH_CONNECT, &#39;\0&#39;.join(msg))
+  self._numSubClients +=1</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.runSubClient"><code class="name flex">
+<span>def <span class="ident">runSubClient</span></span>(<span>self, name, command, arguments='')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def runSubClient(self, name, command, arguments=&#39;&#39;):
+  self.runNonBlockingSubClient(name, command, arguments)
+  self.waitOnSubClients() # makes the subclient blocking
+  if self.action == &#39;compute&#39;:
+    self.setChanged(name, False)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.sendCommand"><code class="name flex">
+<span>def <span class="ident">sendCommand</span></span>(<span>self, command)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sendCommand(self, command) :
+  if not self.socket :
+    return
+  self._send(self._GMSH_PARSE_STRING, command)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.sendError"><code class="name flex">
+<span>def <span class="ident">sendError</span></span>(<span>self, msg)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sendError(self, msg) :
+  if not self.socket :
+    print (msg)
+    return
+  self._send(self._GMSH_ERROR, str(msg))</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.sendInfo"><code class="name flex">
+<span>def <span class="ident">sendInfo</span></span>(<span>self, msg)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sendInfo(self, msg) :
+  if not self.socket :
+    print (msg)
+    return
+  self._send(self._GMSH_INFO, str(msg))</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.sendWarning"><code class="name flex">
+<span>def <span class="ident">sendWarning</span></span>(<span>self, msg)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sendWarning(self, msg) :
+  if not self.socket :
+    print (msg)
+    return
+  self._send(self._GMSH_WARNING, str(msg))</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.setChanged"><code class="name flex">
+<span>def <span class="ident">setChanged</span></span>(<span>self, name, changed)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setChanged(self, name, changed) :
+  if not self.socket :
+    return
+  msg = [&#34;set&#34;, name, &#39;true&#39; if changed else &#39;false&#39;]
+  self._send(self._GMSH_CLIENT_CHANGED, &#39;\0&#39;.join(msg))</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.setNumber"><code class="name flex">
+<span>def <span class="ident">setNumber</span></span>(<span>self, name, **param)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setNumber(self, name, **param):
+  if not self.socket :
+    return
+  if &#39;value&#39; in param :
+    param[&#34;values&#34;] = [param[&#34;value&#34;]]
+    del param[&#34;value&#34;]
+  p = _parameter(&#39;number&#39;, name=name)
+  self._send(self._GMSH_PARAMETER_QUERY, p.tochar())
+  (t, msg) = self._receive()
+  if t == self._GMSH_PARAMETER :
+    p.fromchar(msg).modify(**param)
+  elif t == self._GMSH_PARAMETER_NOT_FOUND :
+    p.modify(**param)
+  self._send(self._GMSH_PARAMETER, p.tochar())</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.setRestoredSolution"><code class="name flex">
+<span>def <span class="ident">setRestoredSolution</span></span>(<span>self, val)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setRestoredSolution(self, val) :
+  self.setNumber(&#39;0Metamodel/9Use restored solution&#39;, values=[val])</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.setString"><code class="name flex">
+<span>def <span class="ident">setString</span></span>(<span>self, name, **param)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setString(self, name, **param):
+  if not self.socket :
+    return
+  if &#39;value&#39; in param :
+    param[&#34;values&#34;] = [param[&#34;value&#34;]]
+    del param[&#34;value&#34;]
+  p = _parameter(&#39;string&#39;, name=name)
+  self._send(self._GMSH_PARAMETER_QUERY, p.tochar())
+  (t, msg) = self._receive()
+  if t == self._GMSH_PARAMETER : #modify an existing parameter
+    p.fromchar(msg).modify(**param)
+  elif t == self._GMSH_PARAMETER_NOT_FOUND : #create a new parameter
+    p.modify(**param)
+  self._send(self._GMSH_PARAMETER, p.tochar())</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.show"><code class="name flex">
+<span>def <span class="ident">show</span></span>(<span>self, name)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def show(self, name) :
+  if not self.socket or not name:
+    return
+  param = _parameter(&#39;number&#39;, name=name)
+  self._send(self._GMSH_PARAMETER_QUERY, param.tochar())
+  (t, msg) = self._receive()
+  if t == self._GMSH_PARAMETER :
+    print (msg.replace(&#39;\0&#39;,&#39;|&#39;))
+  elif t == self._GMSH_PARAMETER_NOT_FOUND :
+    param = _parameter(&#39;string&#39;, name=name)
+    self._send(self._GMSH_PARAMETER_QUERY, param.tochar())
+    (t, msg) = self._receive()
+    if t == self._GMSH_PARAMETER :
+      print (msg.replace(&#39;\0&#39;,&#39;|&#39;))
+    elif t == self._GMSH_PARAMETER_NOT_FOUND :
+      print(&#39;Unknown parameter %s&#39; %(name))</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.solutionFiles"><code class="name flex">
+<span>def <span class="ident">solutionFiles</span></span>(<span>self, client, list)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def solutionFiles(self, client, list) :
+  self.defineNumber(&#39;0Metamodel/9Use restored solution&#39;, values=[0], choices=[0,1])
+  self.defineString(&#39;0Metamodel/9Tag&#39;, values=[&#39;&#39;])
+  if list :
+    if self.getNumber(&#39;0Metamodel/9Use restored solution&#39;) :
+      solFiles = self.getStringChoices(&#39;0Metamodel/9Solution files&#39;)
+      for i in solFiles:
+        self.checkFile(i)
+    else :
+      solFiles = list
+      self.setString(&#39;0Metamodel/9Solution files&#39;, values=[solFiles[0]],
+                     choices=solFiles, readOnly=1)
+      for i in solFiles:
+        if not self.fileExists(i) :
+          self.setChanged(client, &#39;true&#39;)
+  return solFiles</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.upload"><code class="name flex">
+<span>def <span class="ident">upload</span></span>(<span>self, here, there, remote='')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def upload(self, here, there, remote=&#39;&#39;) :
+  if not here or not there :
+    return
+  if remote :
+    argv=[&#39;rsync&#39;,&#39;-e&#39;,&#39;ssh&#39;,&#39;-auv&#39;, here, remote + &#39;:&#39; + there]
+  else :
+    argv=[&#39;cp&#39;,&#39;-f&#39;, here, there]
+
+  call = subprocess.Popen(argv, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+  result = call.wait()
+  if result == 0 :
+    self._send(self._GMSH_INFO, &#39;upload: &#39; + &#39; &#39;.join(argv))
+  else :
+    print(call.stderr.read())</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.useRestoredSolution"><code class="name flex">
+<span>def <span class="ident">useRestoredSolution</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def useRestoredSolution(self) :
+  return self.getNumber(&#39;0Metamodel/9Use restored solution&#39;)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.waitOnSubClients"><code class="name flex">
+<span>def <span class="ident">waitOnSubClients</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def waitOnSubClients(self):
+  if not self.socket :
+    return
+  while self._numSubClients &gt; 0:
+    (t, msg) = self._receive()
+    if t == self._GMSH_STOP :
+      self._numSubClients -= 1</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.utils.onelab.client.willCompute"><code class="name flex">
+<span>def <span class="ident">willCompute</span></span>(<span>self, client)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def willCompute(self, client) : # Inform user about the value of needsCompute
+  if self.useRestoredSolution() == 2: # special value
+    return False
+  else :
+    return True if self.isChanged(client) else False</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="voxelfuse.utils" href="index.html">voxelfuse.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="voxelfuse.utils.onelab.extract" href="#voxelfuse.utils.onelab.extract">extract</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.path" href="#voxelfuse.utils.onelab.path">path</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="voxelfuse.utils.onelab.client" href="#voxelfuse.utils.onelab.client">client</a></code></h4>
+<ul class="">
+<li><code><a title="voxelfuse.utils.onelab.client.addNumberChoice" href="#voxelfuse.utils.onelab.client.addNumberChoice">addNumberChoice</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.call" href="#voxelfuse.utils.onelab.client.call">call</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.checkFile" href="#voxelfuse.utils.onelab.client.checkFile">checkFile</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.checkPath" href="#voxelfuse.utils.onelab.client.checkPath">checkPath</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.clear" href="#voxelfuse.utils.onelab.client.clear">clear</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.copy" href="#voxelfuse.utils.onelab.client.copy">copy</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.defineNumber" href="#voxelfuse.utils.onelab.client.defineNumber">defineNumber</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.defineString" href="#voxelfuse.utils.onelab.client.defineString">defineString</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.download" href="#voxelfuse.utils.onelab.client.download">download</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.fileExists" href="#voxelfuse.utils.onelab.client.fileExists">fileExists</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.finalize" href="#voxelfuse.utils.onelab.client.finalize">finalize</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.getNumber" href="#voxelfuse.utils.onelab.client.getNumber">getNumber</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.getNumberChoices" href="#voxelfuse.utils.onelab.client.getNumberChoices">getNumberChoices</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.getNumberRange" href="#voxelfuse.utils.onelab.client.getNumberRange">getNumberRange</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.getNumbers" href="#voxelfuse.utils.onelab.client.getNumbers">getNumbers</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.getPath" href="#voxelfuse.utils.onelab.client.getPath">getPath</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.getString" href="#voxelfuse.utils.onelab.client.getString">getString</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.getStringChoices" href="#voxelfuse.utils.onelab.client.getStringChoices">getStringChoices</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.getStrings" href="#voxelfuse.utils.onelab.client.getStrings">getStrings</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.isChanged" href="#voxelfuse.utils.onelab.client.isChanged">isChanged</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.mergeFile" href="#voxelfuse.utils.onelab.client.mergeFile">mergeFile</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.needsCompute" href="#voxelfuse.utils.onelab.client.needsCompute">needsCompute</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.openProject" href="#voxelfuse.utils.onelab.client.openProject">openProject</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.outputFiles" href="#voxelfuse.utils.onelab.client.outputFiles">outputFiles</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.preProcess" href="#voxelfuse.utils.onelab.client.preProcess">preProcess</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.resetNumberChoices" href="#voxelfuse.utils.onelab.client.resetNumberChoices">resetNumberChoices</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.run" href="#voxelfuse.utils.onelab.client.run">run</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.runNonBlockingSubClient" href="#voxelfuse.utils.onelab.client.runNonBlockingSubClient">runNonBlockingSubClient</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.runSubClient" href="#voxelfuse.utils.onelab.client.runSubClient">runSubClient</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.sendCommand" href="#voxelfuse.utils.onelab.client.sendCommand">sendCommand</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.sendError" href="#voxelfuse.utils.onelab.client.sendError">sendError</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.sendInfo" href="#voxelfuse.utils.onelab.client.sendInfo">sendInfo</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.sendWarning" href="#voxelfuse.utils.onelab.client.sendWarning">sendWarning</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.setChanged" href="#voxelfuse.utils.onelab.client.setChanged">setChanged</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.setNumber" href="#voxelfuse.utils.onelab.client.setNumber">setNumber</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.setRestoredSolution" href="#voxelfuse.utils.onelab.client.setRestoredSolution">setRestoredSolution</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.setString" href="#voxelfuse.utils.onelab.client.setString">setString</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.show" href="#voxelfuse.utils.onelab.client.show">show</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.solutionFiles" href="#voxelfuse.utils.onelab.client.solutionFiles">solutionFiles</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.upload" href="#voxelfuse.utils.onelab.client.upload">upload</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.useRestoredSolution" href="#voxelfuse.utils.onelab.client.useRestoredSolution">useRestoredSolution</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.waitOnSubClients" href="#voxelfuse.utils.onelab.client.waitOnSubClients">waitOnSubClients</a></code></li>
+<li><code><a title="voxelfuse.utils.onelab.client.willCompute" href="#voxelfuse.utils.onelab.client.willCompute">willCompute</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.2.dev6+g840cf93</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

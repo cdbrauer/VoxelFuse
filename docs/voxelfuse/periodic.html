@@ -38,7 +38,7 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 import math
 import numpy as np
 from typing import Tuple
-from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.voxel_model import VoxelModel, generateMaterials
 from voxelfuse.materials import material_properties
 from tqdm import tqdm
 
@@ -194,22 +194,7 @@ def FRD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tupl
                 else:
                     surface_model_outer.voxels[x, y, z] = 1
 
-    return surface_model_inner, surface_model_outer
-
-# Helper functions ##############################################################
-def generateMaterials(m: int):
-    &#34;&#34;&#34;
-    Generate the materials table for a single-material VoxelModel.
-
-    :param m: Material index corresponding to materials.py
-    :return: Array containing the specified material and the empty material
-    &#34;&#34;&#34;
-    materials = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector[0] = 1
-    material_vector[m+1] = 1
-    materials = np.vstack((materials, material_vector))
-    return materials</code></pre>
+    return surface_model_inner, surface_model_outer</code></pre>
 </details>
 </section>
 <section>
@@ -288,37 +273,6 @@ a non-zero thickness.</p>
                     surface_model_outer.voxels[x, y, z] = 1
 
     return surface_model_inner, surface_model_outer</code></pre>
-</details>
-</dd>
-<dt id="voxelfuse.periodic.generateMaterials"><code class="name flex">
-<span>def <span class="ident">generateMaterials</span></span>(<span>m: int)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Generate the materials table for a single-material VoxelModel.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>m</code></strong></dt>
-<dd>Material index corresponding to materials.py</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Array containing the specified material and the empty material</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def generateMaterials(m: int):
-    &#34;&#34;&#34;
-    Generate the materials table for a single-material VoxelModel.
-
-    :param m: Material index corresponding to materials.py
-    :return: Array containing the specified material and the empty material
-    &#34;&#34;&#34;
-    materials = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector[0] = 1
-    material_vector[m+1] = 1
-    materials = np.vstack((materials, material_vector))
-    return materials</code></pre>
 </details>
 </dd>
 <dt id="voxelfuse.periodic.gyroid"><code class="name flex">
@@ -551,7 +505,6 @@ a non-zero thickness.</p>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="voxelfuse.periodic.FRD" href="#voxelfuse.periodic.FRD">FRD</a></code></li>
-<li><code><a title="voxelfuse.periodic.generateMaterials" href="#voxelfuse.periodic.generateMaterials">generateMaterials</a></code></li>
 <li><code><a title="voxelfuse.periodic.gyroid" href="#voxelfuse.periodic.gyroid">gyroid</a></code></li>
 <li><code><a title="voxelfuse.periodic.schwarzD" href="#voxelfuse.periodic.schwarzD">schwarzD</a></code></li>
 <li><code><a title="voxelfuse.periodic.schwarzP" href="#voxelfuse.periodic.schwarzP">schwarzP</a></code></li>

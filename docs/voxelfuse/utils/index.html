@@ -4,9 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
-<title>voxelfuse_examples.testing.sim_testing API documentation</title>
-<meta name="description" content="Copyright 2020
-Cole Brauer, Dan Aukes" />
+<title>voxelfuse.utils API documentation</title>
+<meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -18,60 +17,19 @@ Cole Brauer, Dan Aukes" />
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>voxelfuse_examples.testing.sim_testing</code></h1>
+<h1 class="title">Namespace <code>voxelfuse.utils</code></h1>
 </header>
 <section id="section-intro">
-<p>Copyright 2020
-Cole Brauer, Dan Aukes</p>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">&#34;&#34;&#34;
-Copyright 2020
-Cole Brauer, Dan Aukes
-&#34;&#34;&#34;
-
-import PyQt5.QtGui as qg
-import sys
-from voxelfuse.voxel_model import VoxelModel
-from voxelfuse.simulation import Simulation, StopCondition
-from voxelfuse.mesh import Mesh
-from voxelfuse.plot import Plot
-from voxelfuse.primitives import empty, cube
-from voxelfuse.materials import material_properties
-
-workspaceX = 10
-workspaceY = 10
-workspaceZ = 25
-
-particleSize = 3
-particleSpacing = 5
-
-if __name__==&#39;__main__&#39;:
-    app1 = qg.QApplication(sys.argv)
-
-    model = cube(particleSize, (5, 5, 5))
-
-    # Clean up result
-    model = model.removeDuplicateMaterials()
-    model2 = model.setMaterial(3)
-
-    # Create simulation file
-    simulation = Simulation(model) # Initialize a simulation
-    simulation.addBoundaryConditionBox() # Add a box boundary with default settings (fixed constraint, YZ plane at X=0)
-
-    simulation2 = Simulation.copy(simulation)
-    simulation2.setStopCondition(StopCondition.TIME_VALUE, 5)
-    simulation2.setFixedThermal()
-    simulation2.setModel(model2)
-    simulation2.addBoundaryConditionBox(position=(0.99, 0, 0)) # Add a boundary condition at x = max, leave other settings at default (fixed constraint, YZ plane)
-
-    simulation.launchSim()
-    simulation2.launchSim()</code></pre>
-</details>
 </section>
 <section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="voxelfuse.utils.onelab" href="onelab.html">voxelfuse.utils.onelab</a></code></dt>
+<dd>
+<div class="desc"><p>ONELAB - Copyright (C) 2011-2020 Universite de Liege - Universite catholique
+de Louvain …</p></div>
+</dd>
+</dl>
 </section>
 <section>
 </section>
@@ -88,7 +46,12 @@ if __name__==&#39;__main__&#39;:
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="voxelfuse_examples.testing" href="index.html">voxelfuse_examples.testing</a></code></li>
+<li><code><a title="voxelfuse" href="../index.html">voxelfuse</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="voxelfuse.utils.onelab" href="onelab.html">voxelfuse.utils.onelab</a></code></li>
 </ul>
 </li>
 </ul>

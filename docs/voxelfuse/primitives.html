@@ -37,20 +37,21 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 
 import numpy as np
 from typing import Tuple
-from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.voxel_model import VoxelModel, generateMaterials
 from voxelfuse.materials import material_properties
 
 # Basic primitives
-def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
+def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1, num_materials: int = len(material_properties)):
     &#34;&#34;&#34;
     Create a VoxelModel containing a single empty voxel at the specified coordinates.
 
     :param coords: Model origin coordinates
     :param resolution: Number of voxels per mm
+    :param num_materials: Number of material types in materials vector
     :return: VoxelModel
     &#34;&#34;&#34;
     model_data = np.zeros((1, 1, 1), dtype=np.uint16)
-    materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+    materials = np.zeros((1, num_materials + 1), dtype=np.float)
     model = VoxelModel(model_data, materials, coords=coords, resolution=resolution)
     return model
 
@@ -191,22 +192,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
             model_data[radius:-radius, radius:-radius, z].fill(1)
 
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
-    return model
-
-# Helper functions ##############################################################
-def generateMaterials(m: int):
-    &#34;&#34;&#34;
-    Generate the materials table for a single-material VoxelModel.
-
-    :param m: Material index corresponding to materials.py
-    :return: Array containing the specified material and the empty material
-    &#34;&#34;&#34;
-    materials = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector[0] = 1
-    material_vector[m+1] = 1
-    materials = np.vstack((materials, material_vector))
-    return materials</code></pre>
+    return model</code></pre>
 </details>
 </section>
 <section>
@@ -401,7 +387,7 @@ def generateMaterials(m: int):
 </details>
 </dd>
 <dt id="voxelfuse.primitives.empty"><code class="name flex">
-<span>def <span class="ident">empty</span></span>(<span>coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1)</span>
+<span>def <span class="ident">empty</span></span>(<span>coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1, num_materials: int = 14)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create a VoxelModel containing a single empty voxel at the specified coordinates.</p>
@@ -411,6 +397,8 @@ def generateMaterials(m: int):
 <dd>Model origin coordinates</dd>
 <dt><strong><code>resolution</code></strong></dt>
 <dd>Number of voxels per mm</dd>
+<dt><strong><code>num_materials</code></strong></dt>
+<dd>Number of material types in materials vector</dd>
 <dt><strong><code>Returns</code></strong> :&ensp;<code>VoxelModel</code></dt>
 <dd>&nbsp;</dd>
 </dl></div>
@@ -418,49 +406,19 @@ def generateMaterials(m: int):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
+<pre><code class="python">def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1, num_materials: int = len(material_properties)):
     &#34;&#34;&#34;
     Create a VoxelModel containing a single empty voxel at the specified coordinates.
 
     :param coords: Model origin coordinates
     :param resolution: Number of voxels per mm
+    :param num_materials: Number of material types in materials vector
     :return: VoxelModel
     &#34;&#34;&#34;
     model_data = np.zeros((1, 1, 1), dtype=np.uint16)
-    materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+    materials = np.zeros((1, num_materials + 1), dtype=np.float)
     model = VoxelModel(model_data, materials, coords=coords, resolution=resolution)
     return model</code></pre>
-</details>
-</dd>
-<dt id="voxelfuse.primitives.generateMaterials"><code class="name flex">
-<span>def <span class="ident">generateMaterials</span></span>(<span>m: int)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Generate the materials table for a single-material VoxelModel.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>m</code></strong></dt>
-<dd>Material index corresponding to materials.py</dd>
-<dt><strong><code>Returns</code></strong> :&ensp;<code>Array containing the specified material and the <a title="voxelfuse.primitives.empty" href="#voxelfuse.primitives.empty">empty()</a> material</code></dt>
-<dd>&nbsp;</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def generateMaterials(m: int):
-    &#34;&#34;&#34;
-    Generate the materials table for a single-material VoxelModel.
-
-    :param m: Material index corresponding to materials.py
-    :return: Array containing the specified material and the empty material
-    &#34;&#34;&#34;
-    materials = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector[0] = 1
-    material_vector[m+1] = 1
-    materials = np.vstack((materials, material_vector))
-    return materials</code></pre>
 </details>
 </dd>
 <dt id="voxelfuse.primitives.pyramid"><code class="name flex">
@@ -589,7 +547,6 @@ def generateMaterials(m: int):
 <li><code><a title="voxelfuse.primitives.cuboid" href="#voxelfuse.primitives.cuboid">cuboid</a></code></li>
 <li><code><a title="voxelfuse.primitives.cylinder" href="#voxelfuse.primitives.cylinder">cylinder</a></code></li>
 <li><code><a title="voxelfuse.primitives.empty" href="#voxelfuse.primitives.empty">empty</a></code></li>
-<li><code><a title="voxelfuse.primitives.generateMaterials" href="#voxelfuse.primitives.generateMaterials">generateMaterials</a></code></li>
 <li><code><a title="voxelfuse.primitives.pyramid" href="#voxelfuse.primitives.pyramid">pyramid</a></code></li>
 <li><code><a title="voxelfuse.primitives.sphere" href="#voxelfuse.primitives.sphere">sphere</a></code></li>
 </ul>

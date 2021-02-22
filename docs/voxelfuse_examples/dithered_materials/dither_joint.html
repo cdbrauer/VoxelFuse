@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
-<title>voxelfuse_examples.testing API documentation</title>
-<meta name="description" content="" />
+<title>voxelfuse_examples.dithered_materials.dither_joint API documentation</title>
+<meta name="description" content="Material Dithering …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,26 +17,64 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Namespace <code>voxelfuse_examples.testing</code></h1>
+<h1 class="title">Module <code>voxelfuse_examples.dithered_materials.dither_joint</code></h1>
 </header>
 <section id="section-intro">
+<p>Material Dithering.</p>
+<p>Use dithering to add graded material transitions to a multi-material part.</p>
+<hr>
+<p>Copyright 2020 - Cole Brauer, Dan Aukes</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Material Dithering.
+
+Use dithering to add graded material transitions to a multi-material part.
+
+----
+
+Copyright 2020 - Cole Brauer, Dan Aukes
+&#34;&#34;&#34;
+
+from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.mesh import Mesh
+
+if __name__==&#39;__main__&#39;:
+    # User preferences
+    modelName = &#39;joint2.2.vox&#39;
+    blurRadius = 10
+
+    # Import model
+    modelIn = VoxelModel.fromVoxFile(modelName)
+
+    # Apply blur
+    modelBlur = modelIn.blur(blurRadius)
+    modelBlur = modelBlur.scaleValues()
+
+    # Apply dither
+    modelDither = modelBlur.dither()
+
+    # Create mesh data
+    for m in range(1, len(modelIn.materials)):
+        currentMaterial = modelIn.isolateMaterial(m)
+        currentMesh = Mesh.fromVoxelModel(currentMaterial)
+        currentMesh.export(&#39;input_&#39; + str(m) + &#39;.stl&#39;)
+
+    modelBlur = modelBlur.round(0.1).removeDuplicateMaterials()
+    for m in range(1, len(modelBlur.materials)):
+        currentMaterial = modelBlur.isolateMaterial(m)
+        currentMesh = Mesh.fromVoxelModel(currentMaterial)
+        currentMesh.export(&#39;blur_&#39; + str(m) + &#39;.stl&#39;)
+
+    for m in range(1, len(modelDither.materials)):
+        currentMaterial = modelDither.isolateMaterial(m)
+        currentMesh = Mesh.fromVoxelModel(currentMaterial)
+        currentMesh.export(&#39;dither_&#39; + str(m) + &#39;.stl&#39;)</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="voxelfuse_examples.testing.remove_duplicate_materials" href="remove_duplicate_materials.html">voxelfuse_examples.testing.remove_duplicate_materials</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.testing.test" href="test.html">voxelfuse_examples.testing.test</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="voxelfuse_examples.testing.test2" href="test2.html">voxelfuse_examples.testing.test2</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -53,14 +91,7 @@
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="voxelfuse_examples" href="../index.html">voxelfuse_examples</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="voxelfuse_examples.testing.remove_duplicate_materials" href="remove_duplicate_materials.html">voxelfuse_examples.testing.remove_duplicate_materials</a></code></li>
-<li><code><a title="voxelfuse_examples.testing.test" href="test.html">voxelfuse_examples.testing.test</a></code></li>
-<li><code><a title="voxelfuse_examples.testing.test2" href="test2.html">voxelfuse_examples.testing.test2</a></code></li>
+<li><code><a title="voxelfuse_examples.dithered_materials" href="index.html">voxelfuse_examples.dithered_materials</a></code></li>
 </ul>
 </li>
 </ul>

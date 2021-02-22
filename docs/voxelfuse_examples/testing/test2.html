@@ -4,9 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
-<title>voxelfuse_examples.testing.magicavoxel-test API documentation</title>
-<meta name="description" content="Copyright 2020
-Cole Brauer, Dan Aukes" />
+<title>voxelfuse_examples.testing.test2 API documentation</title>
+<meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -18,51 +17,35 @@ Cole Brauer, Dan Aukes" />
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>voxelfuse_examples.testing.magicavoxel-test</code></h1>
+<h1 class="title">Module <code>voxelfuse_examples.testing.test2</code></h1>
 </header>
 <section id="section-intro">
-<p>Copyright 2020
-Cole Brauer, Dan Aukes</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">&#34;&#34;&#34;
-Copyright 2020
-Cole Brauer, Dan Aukes
-&#34;&#34;&#34;
-
-import PyQt5.QtGui as qg
-import sys
-
-from voxelfuse.voxel_model import VoxelModel, Axes
-from voxelfuse.mesh import Mesh
-from voxelfuse.plot import Plot
-from voxelfuse.simulation import Simulation
+<pre><code class="python">from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.primitives import cube
+from  voxelfuse.simulation import Simulation, StopCondition
 
 if __name__==&#39;__main__&#39;:
-    app1 = qg.QApplication(sys.argv)
+    model = cube(3, (0, 0, 0), material=7)
 
-    # User preferences
-    modelName = &#39;untitled.vox&#39;
+    simulation = Simulation(model)  # Initialize a simulation
+    simulation.setStopCondition(StopCondition.TIME_VALUE, 30)
+    simulation.setGravity()
+    simulation.addBoundaryConditionVoxel((1,1,0), fixed_dof=0b111100)
 
-    # Import model
-    modelIn = VoxelModel.fromVoxFile(modelName)
+    simulation.addSensor((1, 1, 2))
 
-    # Create mesh data
-    mesh1 = Mesh.fromVoxelModel(modelIn)
+    for x in range(model.voxels.shape[0]):
+        for y in range(model.voxels.shape[1]):
+            for z in range(model.voxels.shape[2]):
+                simulation.addTempControl((x,y,z))
 
-    # Create plots
-    plot1 = Plot(mesh1)
-    plot1.show()
-    app1.processEvents()
-    #plot1.export(&#39;input.png&#39;)
-
-    app1.exec_()
-
-    # Create simulation file
-    simulation = Simulation(modelIn)
-    simulation.launchSim()</code></pre>
+    simulation.saveVXA(&#39;cube_sim&#39;)
+    model.saveVF(&#39;cube_sim&#39;)
+    model.saveVXC(&#39;cube_sim&#39;)</code></pre>
 </details>
 </section>
 <section>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.8.2.dev6+g840cf93" />
-<title>voxelfuse_examples.strength_test_coupon API documentation</title>
+<title>voxelfuse_examples.primitive_generation.sphere_resources API documentation</title>
 <meta name="description" content="" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
@@ -17,22 +17,102 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Namespace <code>voxelfuse_examples.strength_test_coupon</code></h1>
+<h1 class="title">Module <code>voxelfuse_examples.primitive_generation.sphere_resources</code></h1>
 </header>
 <section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import os
+import sys
+import time
+import PyQt5.QtGui as qg
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+from voxelfuse.mesh import Mesh
+from voxelfuse.primitives import sphere
+from voxelfuse.voxel_model import VoxelModel
+
+def memory_usage_psutil():
+    # return the memory usage in MB
+    import psutil
+    process = psutil.Process(os.getpid())
+    cpu = process.cpu_percent()
+    mem = process.memory_info()[0] / float(2 ** 20)
+    return [cpu, mem]
+
+if __name__ == &#39;__main__&#39;:
+    process_times = []
+    max_memory_values = []
+
+    scales = [0.1, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+    for scale in scales:
+        mem_psutil = []
+        time_process_started = time.time()
+
+        radius = round(5 * scale)
+
+        ditherResult = sphere(radius)
+        mem_psutil.append(memory_usage_psutil())
+        print(&#39;Model Created&#39;)
+
+        # ditherMesh = Mesh.fromVoxelModel(ditherResult)
+        # mem_psutil.append(memory_usage_psutil())
+
+        time_process_finished = time.time()
+
+        if scale &gt; 0.5: # Skip first iteration to avoid &#34;warm up&#34; on first loop
+            process_times.append(time_process_finished - time_process_started)
+            max_memory_values.append(np.max(np.array(mem_psutil)[:, 1]))
+
+    # Plot results ##########################
+    plt.subplot(2, 1, 1)
+    plt.subplots_adjust(left=0.12, right=0.95, hspace=0.6)
+    plt.plot(scales[1:], max_memory_values)
+    plt.title(&#34;Max Memory Usage&#34;)
+    plt.xlabel(&#34;Scale&#34;)
+    plt.ylabel(&#34;MB&#34;)
+    plt.grid()
+
+    plt.subplot(2,1,2)
+    plt.plot(scales[1:], process_times)
+    plt.title(&#34;Total Process Time&#34;)
+    plt.xlabel(&#34;Scale&#34;)
+    plt.ylabel(&#34;Seconds&#34;)
+    plt.grid()
+
+    plt.show()</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt><code class="name"><a title="voxelfuse_examples.strength_test_coupon.strength_test_coupon" href="strength_test_coupon.html">voxelfuse_examples.strength_test_coupon.strength_test_coupon</a></code></dt>
+<dt id="voxelfuse_examples.primitive_generation.sphere_resources.memory_usage_psutil"><code class="name flex">
+<span>def <span class="ident">memory_usage_psutil</span></span>(<span>)</span>
+</code></dt>
 <dd>
-<div class="desc"><p>Generate a coupon for tensile testing …</p></div>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def memory_usage_psutil():
+    # return the memory usage in MB
+    import psutil
+    process = psutil.Process(os.getpid())
+    cpu = process.cpu_percent()
+    mem = process.memory_info()[0] / float(2 ** 20)
+    return [cpu, mem]</code></pre>
+</details>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
 </section>
 <section>
 </section>
@@ -45,12 +125,12 @@
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="voxelfuse_examples" href="../index.html">voxelfuse_examples</a></code></li>
+<li><code><a title="voxelfuse_examples.primitive_generation" href="index.html">voxelfuse_examples.primitive_generation</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="voxelfuse_examples.strength_test_coupon.strength_test_coupon" href="strength_test_coupon.html">voxelfuse_examples.strength_test_coupon.strength_test_coupon</a></code></li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="voxelfuse_examples.primitive_generation.sphere_resources.memory_usage_psutil" href="#voxelfuse_examples.primitive_generation.sphere_resources.memory_usage_psutil">memory_usage_psutil</a></code></li>
 </ul>
 </li>
 </ul>
