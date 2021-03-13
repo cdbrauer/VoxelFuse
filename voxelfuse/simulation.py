@@ -108,7 +108,6 @@ class Simulation:
         # Environment ############
         # Boundary conditions
         self.__bcRegions = []
-        # self.__bcVoxels = [] # This data is not needed by the Voxelyze engine, and was disabled
 
         # Gravity
         self.__gravityEnable = True
@@ -128,7 +127,10 @@ class Simulation:
         self.__sensors = []
 
         # Temperature Controls #######
-        self.__tempControls = []
+        # Element format: element = [time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave]
+        # Structure: elements list -> [keyframes list -> element, locations list -> coords tuple]
+        self.__currentTempControlGroup = 0
+        self.__localTempControls = []
 
         # Disconnected Bonds #######
         self.__disconnections = []
@@ -151,9 +153,9 @@ class Simulation:
 
         # Make lists copies instead of references
         new_simulation.__bcRegions = simulation.__bcRegions.copy()
-        # new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
         new_simulation.__sensors = simulation.__sensors.copy()
-        new_simulation.__tempControls = simulation.__tempControls.copy()
+        new_simulation.__localTempControls = simulation.__localTempControls.copy()
+        new_simulation.__disconnections = simulation.__disconnections.copy()
         new_simulation.results = simulation.results.copy()
         new_simulation.valueMap = simulation.valueMap.copy()
 
@@ -258,7 +260,7 @@ class Simulation:
         self.__temperatureVaryEnable = False
         self.__growthAmplitude = growth_amplitude
 
-    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0, offset: float = 0.0, growth_amplitude: float = 1.0):
+    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 1.0, offset: float = 0.0, growth_amplitude: float = 1.0):
         """
         Set a varying environment temperature.
 
@@ -609,141 +611,213 @@ class Simulation:
 
         :param voxel_1: Coordinates in voxels
         :param voxel_2: Coordinates in voxels
-        :return:
+        :return: None
         """
         self.__disconnections.append([voxel_1[0], voxel_1[1], voxel_1[2], voxel_2[0], voxel_2[1], voxel_2[2]])
 
-    def clearTempControls(self):
+    # Element format: element = [time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave]
+    # Structure: elements list -> [keyframes list -> element, locations list -> coords tuple]
+
+    def addTempControlGroup(self, locations: List[Tuple[int, int, int]] = None):
         """
-        Remove all temperature control elements from a Simulation object.
+        Add a new temperature control group and select it.
+
+        :param locations: Control element locations in voxels as a list of tuples
+        :return: None
+        """
+        if locations is None:
+            print('No locations provided - applying temperature control group to entire model')
+
+            x_len = self.__model.voxels.shape[0]
+            y_len = self.__model.voxels.shape[1]
+            z_len = self.__model.voxels.shape[2]
+
+            locations = []
+            for x in range(x_len):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        locations.append((x, y, z))
+
+        self.__localTempControls.append([[], locations])
+        self.__currentTempControlGroup = len(self.__localTempControls)-1
+
+    def selectTempControlGroup(self, index: int = 0):
+        """
+        Select which keyframe new temperature control elements should be added to.
+
+        :param index: Temperature control group index
+        :return: None
+        """
+        self.__currentTempControlGroup = index
+
+    def clearTempControlGroups(self):
+        """
+        Clear all temperature control groups.
 
         :return: None
         """
-        self.__tempControls = []
+        self.__currentTempControlGroup = 0
+        self.__localTempControls = []
 
-    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), amplitude1: float = 0, amplitude2: float = 0, changeX: float = 0.5,
-                       phase_offset: float = 0, temp_offset: float = 0, const_temp: bool = False, square_wave: bool = False):
+    def clearKeyframes(self):
         """
-        Add a temperature control element to a voxel.
+        Remove all keyframes assigned to the current temperature control group.
 
-        This feature is not currently supported by VoxCad
+        :param current_group_only: When enabled, only keyframes assigned to the current temperature control group will be removed
+        :return: None
+        """
+        g = self.__currentTempControlGroup
+        locations = self.__localTempControls[g][1]
+        self.__localTempControls[g] = [[], locations]
 
-        :param location: Control element location in voxels
-        :param amplitude1: Control element positive temperature amplitude (deg C)
-        :param amplitude2: Control element negative temperature amplitude (deg C)
-        :param changeX: Percent of period spanned by positive temperature amplitude (0-1)
+    def addKeyframe(self, time_value: float = 0, amplitude_pos: float = 0, amplitude_neg: float = -1, percent_pos: float = 0.5,
+                    period: float = 1.0, phase_offset: float = 0, temp_offset: float = 0, const_temp: bool = False, square_wave: bool = False):
+        """
+        Add a keyframe to a temperature control group.
+
+        :param time_value: Time at which keyframe should take effect (sec)
+        :param amplitude_pos: Control element positive temperature amplitude (deg C)
+        :param amplitude_neg: Control element negative temperature amplitude (deg C)
+        :param percent_pos: Percent of period spanned by positive temperature amplitude (0-1)
+        :param period: Period of the control signal (sec)
         :param phase_offset: Control element phase offset for time-varying thermal (rad)
         :param temp_offset: Control element temperature offset for time-varying thermal (deg C)
         :param const_temp: Enable/disable setting a constant target temperature that respects heating/cooling rates
         :param square_wave: Enable/disable converting signal to a square wave (positive -> a = amplitude1, negative -> a = 0)
         :return: None
         """
-        x = location[0] - self.__model.coords[0]
-        y = location[1] - self.__model.coords[1]
-        z = location[2] - self.__model.coords[2]
+        amplitude_pos = max(amplitude_pos, 0) # amplitude_pos must be positive
 
-        element = [x, y, z, amplitude1, amplitude2, changeX, phase_offset, temp_offset, const_temp, square_wave]
-        self.__tempControls.append(element)
+        if amplitude_neg < 0: # If amplitude neg is not given (or not negative) use amplitude_pos instead
+            amplitude_neg = amplitude_pos
 
-    def applyTempMap(self, amp1_map, amp2_map=None, changeX_map=None, phase_map=None, offset_map=None, const_temp_map=None, square_wave_map=None):
-        """
-        Set the simulation temperature control elements based on a value maps of target temperature settings.
+        g = self.__currentTempControlGroup
+        element = [time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave]
 
-        :param amp1_map: Array of target positive temperature amplitudes for each voxel (deg C)
-        :param amp2_map: Array of target negative temperature amplitudes for each voxel (deg C)
-        :param changeX_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
-        :param phase_map: Array of phase offsets for each voxel (rad)
-        :param offset_map: Array of temperature offsets for each voxel (deg C)
-        :param const_temp_map: Array of boolean values to enable/disable constant temperature mode
-        :param square_wave_map:  Array of boolean values to enable/disable square wave mode
-        :return:
-        """
+        self.__localTempControls[g][0].append(element)
 
-        # Clear any existing temp controls
-        self.clearTempControls()
+    def initializeTempMap(self):
+        # Clear any existing temperature controls
+        self.clearTempControlGroups()
 
         # Get map size
-        x_len = amp1_map.shape[0]
-        y_len = amp1_map.shape[1]
-        z_len = amp1_map.shape[2]
+        x_len = self.__model.voxels.shape[0]
+        y_len = self.__model.voxels.shape[1]
+        z_len = self.__model.voxels.shape[2]
 
-        # Find required temperature change at each voxel
+        # Generate empty control element for each voxel
         for x in range(x_len):
             for y in range(y_len):
                 for z in range(z_len):
-                    if abs(amp1_map[x, y, z]) > FLOATING_ERROR or ((amp2_map is not None) and (abs(amp2_map[x, y, z]) > FLOATING_ERROR)):  # If voxel is not empty
-                        element = [x, y, z, amp1_map[x, y, z]]
+                    self.addTempControlGroup([(x, y, z)])
 
-                        if amp2_map is None:
-                            element.append(amp1_map[x, y, z])
-                        else:
-                            element.append(amp2_map[x, y, z])
-
-                        if changeX_map is None:
-                            element.append(0.5)
-                        else:
-                            element.append(changeX_map[x, y, z])
-
-                        if phase_map is None:
-                            element.append(0)
-                        else:
-                            element.append(phase_map[x, y, z])
-
-                        if offset_map is None:
-                            element.append(0)
-                        else:
-                            element.append(offset_map[x, y, z])
-
-                        if const_temp_map is None:
-                            element.append(False)
-                        else:
-                            element.append(const_temp_map[x, y, z])
-
-                        if square_wave_map is None:
-                            element.append(False)
-                        else:
-                            element.append(square_wave_map[x, y, z])
-
-                        self.__tempControls.append(element)
-
-    def saveTempControls(self, filename: str, figure: bool = False):
+    def applyTempMap(self, time_value, amp_pos_map, amp_neg_map=None, percent_pos_map=None, period_map=None,
+                     phase_map=None, offset_map=None, const_temp_map=None, square_wave_map=None):
         """
-        Save the temperature control elements applied to a model to a .csv file.
+        Set the simulation temperature control elements based on a value maps of target temperature settings.
 
-        :param filename: File name
-        :param figure: Enable/disable exporting a figure as well
+        This function relies on the temperature control groups being in a specific order. initializeTempMap should be called prior to running this function.
+
+        :param time_value: Time at which keyframe should take effect (sec)
+        :param amp_pos_map: Array of target positive temperature amplitudes for each voxel (deg C)
+        :param amp_neg_map: Array of target negative temperature amplitudes for each voxel (deg C)
+        :param percent_pos_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
+        :param period_map: Array of signal periods for each voxel (sec)
+        :param phase_map: Array of phase offsets for each voxel (rad)
+        :param offset_map: Array of temperature offsets for each voxel (deg C)
+        :param const_temp_map: Array of boolean values to enable/disable constant temperature mode
+        :param square_wave_map: Array of boolean values to enable/disable square wave mode
         :return: None
         """
-        f = open(filename + '.csv', 'w+')
-        print('Saving file: ' + f.name)
-        f.write('X,Y,Z,Amplitude 1 (deg C),Amplitude 2 (deg C),Change X,Phase Offset (rad),Temperature Offset (deg C),Constant Temperature Enabled,Square Wave Enabled\n')
-        for i in range(len(self.__tempControls)):
-            f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
-        f.close()
+        # Get map size
+        x_len = amp_pos_map.shape[0]
+        y_len = amp_pos_map.shape[1]
+        z_len = amp_pos_map.shape[2]
 
-        if figure:
-            # Get plot data
-            points = np.array(self.__tempControls)
-            xs = points[:, 0]
-            ys = points[:, 1]
-            zs = points[:, 2]
-            temps = points[:, 3]
-            colors = np.array(abs((temps - np.min(temps)) / (np.max(temps) - np.min(temps))), dtype=np.str)  # Grayscale range
+        # Generate the control element for each voxel
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if abs(amp_pos_map[x, y, z]) > FLOATING_ERROR or ((amp_neg_map is not None) and (abs(amp_neg_map[x, y, z]) > FLOATING_ERROR)):  # If voxel is not empty
+                        keyframe = [time_value, amp_pos_map[x, y, z]]
 
-            # Plot results
-            fig = plt.figure()
-            ax1 = fig.add_subplot(121)
-            ax1.scatter(zs, ys, c=colors, marker='s')
-            ax1.axis('equal')
-            ax1.set_title('Side')
-            ax2 = fig.add_subplot(122)
-            ax2.scatter(xs, ys, c=colors, marker='s')
-            ax2.axis('equal')
-            ax2.set_title('Top')
+                        if amp_neg_map is None:
+                            keyframe.append(amp_pos_map[x, y, z])
+                        else:
+                            keyframe.append(amp_neg_map[x, y, z])
 
-            # Save figure
-            print('Saving file: ' + filename + '.png')
-            plt.savefig(filename + '.png')
+                        if percent_pos_map is None:
+                            keyframe.append(0.5)
+                        else:
+                            keyframe.append(percent_pos_map[x, y, z])
+
+                        if period_map is None:
+                            keyframe.append(1.0)
+                        else:
+                            keyframe.append(period_map[x, y, z])
+
+                        if phase_map is None:
+                            keyframe.append(0)
+                        else:
+                            keyframe.append(phase_map[x, y, z])
+
+                        if offset_map is None:
+                            keyframe.append(0)
+                        else:
+                            keyframe.append(offset_map[x, y, z])
+
+                        if const_temp_map is None:
+                            keyframe.append(False)
+                        else:
+                            keyframe.append(const_temp_map[x, y, z])
+
+                        if square_wave_map is None:
+                            keyframe.append(False)
+                        else:
+                            keyframe.append(square_wave_map[x, y, z])
+
+                        g = z + y*z_len + x*y_len*z_len
+                        self.__localTempControls[g][0].append(keyframe)
+
+    # TODO: Remove or update to be compatible with keyframes
+    # def saveTempControls(self, filename: str, figure: bool = False):
+    #     """
+    #     Save the temperature control elements applied to a model to a .csv file.
+    #
+    #     :param filename: File name
+    #     :param figure: Enable/disable exporting a figure as well
+    #     :return: None
+    #     """
+    #     f = open(filename + '.csv', 'w+')
+    #     print('Saving file: ' + f.name)
+    #     f.write('X,Y,Z,Amplitude 1 (deg C),Amplitude 2 (deg C),Change X,Phase Offset (rad),Temperature Offset (deg C),Constant Temperature Enabled,Square Wave Enabled\n')
+    #     for i in range(len(self.__tempControls)):
+    #         f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
+    #     f.close()
+    #
+    #     if figure:
+    #         # Get plot data
+    #         points = np.array(self.__tempControls)
+    #         xs = points[:, 0]
+    #         ys = points[:, 1]
+    #         zs = points[:, 2]
+    #         temps = points[:, 3]
+    #         colors = np.array(abs((temps - np.min(temps)) / (np.max(temps) - np.min(temps))), dtype=np.str)  # Grayscale range
+    #
+    #         # Plot results
+    #         fig = plt.figure()
+    #         ax1 = fig.add_subplot(121)
+    #         ax1.scatter(zs, ys, c=colors, marker='s')
+    #         ax1.axis('equal')
+    #         ax1.set_title('Side')
+    #         ax2 = fig.add_subplot(122)
+    #         ax2.scatter(xs, ys, c=colors, marker='s')
+    #         ax2.axis('equal')
+    #         ax2.set_title('Top')
+    #
+    #         # Save figure
+    #         print('Saving file: ' + filename + '.png')
+    #         plt.savefig(filename + '.png')
 
     # Export simulation ##################################
     # Export simulation object to .vxa file for import into VoxCad or Voxelyze
@@ -909,19 +983,36 @@ class Simulation:
         :param f: File to write to
         :return: None
         """
+        # Element format: element = [time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave]
+        # Structure: elements list -> [keyframes list -> element, locations list -> coords tuple]
+
         writeData(f, 'EnableHydrogelModel', int(self.__hydrogelModelEnable), 0)
 
         writeOpen(f, 'TempControls', 0)
-        for element in self.__tempControls:
+        for group in self.__localTempControls:
             writeOpen(f, 'Element', 1)
-            writeData(f, 'Location', str(element[0:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'Temperature', str(element[3]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'Amplitude2', str(element[4]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'ChangeX', str(element[5]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'PhaseOffset', str(element[6]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'Offset', str(element[7]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'ConstantTemp', str(int(element[8])).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'SquareWave', str(int(element[9])).replace('[', '').replace(',', '').replace(']', ''), 2)
+
+            writeOpen(f, 'Locations', 2)
+            for loc in group[1]:
+                writeData(f, 'Location', str(loc).replace('(', '').replace(',', '').replace(')', ''), 3)
+            writeClos(f, 'Locations', 2)
+
+            writeOpen(f, 'Keyframes', 2)
+            for keyframe in group[0]:
+                writeOpen(f, 'Keyframe', 3)
+                # .replace('[', '').replace(',', '').replace(']', '')
+                writeData(f, 'TimeValue', str(keyframe[0]), 4)
+                writeData(f, 'AmplitudePos', str(keyframe[1]), 4)
+                writeData(f, 'AmplitudeNeg', str(keyframe[2]), 4)
+                writeData(f, 'PercentPos', str(keyframe[3]), 4)
+                writeData(f, 'Period', str(keyframe[4]), 4)
+                writeData(f, 'PhaseOffset', str(keyframe[5]), 4)
+                writeData(f, 'Offset', str(keyframe[6]), 4)
+                writeData(f, 'ConstantTemp', str(int(keyframe[7])), 4)
+                writeData(f, 'SquareWave', str(int(keyframe[8])), 4)
+                writeClos(f, 'Keyframe', 3)
+            writeClos(f, 'Keyframes', 2)
+
             writeClos(f, 'Element', 1)
         writeClos(f, 'TempControls', 0)
 
