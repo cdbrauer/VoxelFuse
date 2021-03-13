@@ -378,7 +378,8 @@ class Simulation:
                                   force: Tuple[float, float, float] = (0, 0, 0),
                                   displacement: Tuple[float, float, float] = (0, 0, 0),
                                   torque: Tuple[float, float, float] = (0, 0, 0),
-                                  angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+                                  angular_displacement: Tuple[float, float, float] = (0, 0, 0),
+                                  name: str = None):
         """
         Add a boundary condition at a specific voxel.
 
@@ -393,6 +394,7 @@ class Simulation:
         :param displacement: Displacement vector in mm
         :param torque: Torque values in Nm
         :param angular_displacement: Angular displacement values in deg
+        :param name: Boundary condition name
         :return: None
         """
         x = position[0] - self.__model.coords[0]
@@ -406,8 +408,7 @@ class Simulation:
         pos = ((x+0.5)/x_len, (y+0.5)/y_len, (z+0.5)/z_len)
         radius = 0.49/x_len
 
-        self.__bcRegions.append([BCShape.SPHERE, pos, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-        # self.__bcVoxels.append([x, y, z])
+        self.__bcRegions.append([BCShape.SPHERE, pos, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement, name])
 
     # Default box boundary condition is a fixed constraint in the XY plane (bottom layer)
     def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0),
@@ -416,7 +417,8 @@ class Simulation:
                                 force: Tuple[float, float, float] = (0, 0, 0),
                                 displacement: Tuple[float, float, float] = (0, 0, 0),
                                 torque: Tuple[float, float, float] = (0, 0, 0),
-                                angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+                                angular_displacement: Tuple[float, float, float] = (0, 0, 0),
+                                name: str = None):
         """
         Add a box-shaped boundary condition.
 
@@ -434,30 +436,10 @@ class Simulation:
         :param displacement: Displacement vector in mm
         :param torque: Torque values in Nm
         :param angular_displacement: Angular displacement values in deg
+        :param name: Boundary condition name
         :return: None
         """
-        self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-
-        # x_len = int(self.__model.voxels.shape[0])
-        # y_len = int(self.__model.voxels.shape[1])
-        # z_len = int(self.__model.voxels.shape[2])
-
-        # regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
-        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        # bcRegion = cuboid(regionSize, regionPosition, resolution=self.__model.resolution) & self.__model
-
-        # x_offset = int(bcRegion.coords[0])
-        # y_offset = int(bcRegion.coords[1])
-        # z_offset = int(bcRegion.coords[2])
-
-        # bcVoxels = []
-        # for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
-        #     for y in range(y_len):
-        #         for z in range(z_len):
-        #             if bcRegion.voxels[x, y, z] != 0:
-        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
-
-        # self.__bcVoxels.append(bcVoxels)
+        self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement, name])
 
     # Default sphere boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5),
@@ -466,7 +448,8 @@ class Simulation:
                                    force: Tuple[float, float, float] = (0, 0, 0),
                                    displacement: Tuple[float, float, float] = (0, 0, 0),
                                    torque: Tuple[float, float, float] = (0, 0, 0),
-                                   angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+                                   angular_displacement: Tuple[float, float, float] = (0, 0, 0),
+                                   name: str = None):
         """
         Add a spherical boundary condition.
 
@@ -484,30 +467,10 @@ class Simulation:
         :param displacement: Displacement vector in mm
         :param torque: Torque values in Nm
         :param angular_displacement: Angular displacement values in deg
+        :param name: Boundary condition name
         :return: None
         """
-        self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-
-        # x_len = int(self.__model.voxels.shape[0])
-        # y_len = int(self.__model.voxels.shape[1])
-        # z_len = int(self.__model.voxels.shape[2])
-        #
-        # regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
-        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        # bcRegion = sphere(regionRadius, regionPosition, resolution=self.__model.resolution) & self.__model
-        #
-        # x_offset = int(bcRegion.coords[0])
-        # y_offset = int(bcRegion.coords[1])
-        # z_offset = int(bcRegion.coords[2])
-        #
-        # bcVoxels = []
-        # for x in  range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
-        #     for y in range(y_len):
-        #         for z in range(z_len):
-        #             if bcRegion.voxels[x, y, z] != 0:
-        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
-        #
-        # self.__bcVoxels.append(bcVoxels)
+        self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement, name])
 
     # Default cylinder boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0,
@@ -517,7 +480,8 @@ class Simulation:
                                      force: Tuple[float, float, float] = (0, 0, 0),
                                      displacement: Tuple[float, float, float] = (0, 0, 0),
                                      torque: Tuple[float, float, float] = (0, 0, 0),
-                                     angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+                                     angular_displacement: Tuple[float, float, float] = (0, 0, 0),
+                                     name: str = None):
         """
         Add a cylindrical boundary condition.
 
@@ -537,40 +501,12 @@ class Simulation:
         :param displacement: Displacement vector in mm
         :param torque: Torque values in Nm
         :param angular_displacement: Angular displacement values in deg
+        :param name: Boundary condition name
         :return: None
         """
         size = [0.0, 0.0, 0.0]
         size[axis] = height
-        self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-
-        # x_len = int(self.__model.voxels.shape[0])
-        # y_len = int(self.__model.voxels.shape[1])
-        # z_len = int(self.__model.voxels.shape[2])
-        #
-        # regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
-        # regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
-        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        # bcRegion = cylinder(regionRadius, regionHeight, regionPosition, resolution=self.__model.resolution)
-        #
-        # if axis == 0:
-        #     bcRegion = bcRegion.rotate90(axis=1)
-        # elif axis == 1:
-        #     bcRegion = bcRegion.rotate90(axis=0)
-        #
-        # bcRegion = bcRegion & self.__model
-        #
-        # x_offset = int(bcRegion.coords[0])
-        # y_offset = int(bcRegion.coords[1])
-        # z_offset = int(bcRegion.coords[2])
-        #
-        # bcVoxels = []
-        # for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
-        #     for y in range(y_len):
-        #         for z in range(z_len):
-        #             if bcRegion.voxels[x, y, z] != 0:
-        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
-        #
-        # self.__bcVoxels.append(bcVoxels)
+        self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement, name])
 
     def clearSensors(self):
         """
@@ -580,7 +516,7 @@ class Simulation:
         """
         self.__sensors = []
 
-    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0), axis: Axis = Axis.NONE): # TODO: Make Voxelyze use axis parameter
+    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0), axis: Axis = Axis.NONE, name: str = None): # TODO: Make Voxelyze use axis parameter
         """
         Add a sensor to a voxel.
 
@@ -588,13 +524,14 @@ class Simulation:
 
         :param location: Sensor location in voxels
         :param axis: Sensor measurement axis
+        :param name: Sensor name
         :return: None
         """
         x = location[0] - self.__model.coords[0]
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        sensor = [x, y, z, axis.value]
+        sensor = [x, y, z, axis.value, name]
         self.__sensors.append(sensor)
 
     def clearDisconnections(self):
@@ -618,13 +555,18 @@ class Simulation:
     # Element format: element = [time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave]
     # Structure: elements list -> [keyframes list -> element, locations list -> coords tuple]
 
-    def addTempControlGroup(self, locations: List[Tuple[int, int, int]] = None):
+    def addTempControlGroup(self, locations: List[Tuple[int, int, int]] = None, name: str = None):
         """
         Add a new temperature control group and select it.
 
         :param locations: Control element locations in voxels as a list of tuples
+        :param name: Group name
         :return: None
         """
+        # Enable temperature control
+        self.__temperatureEnable = True
+        self.__temperatureVaryEnable = True
+
         if locations is None:
             print('No locations provided - applying temperature control group to entire model')
 
@@ -638,7 +580,7 @@ class Simulation:
                     for z in range(z_len):
                         locations.append((x, y, z))
 
-        self.__localTempControls.append([[], locations])
+        self.__localTempControls.append([[], locations, name])
         self.__currentTempControlGroup = len(self.__localTempControls)-1
 
     def selectTempControlGroup(self, index: int = 0):
@@ -663,12 +605,12 @@ class Simulation:
         """
         Remove all keyframes assigned to the current temperature control group.
 
-        :param current_group_only: When enabled, only keyframes assigned to the current temperature control group will be removed
         :return: None
         """
         g = self.__currentTempControlGroup
         locations = self.__localTempControls[g][1]
-        self.__localTempControls[g] = [[], locations]
+        name = self.__localTempControls[g][2]
+        self.__localTempControls[g] = [[], locations, name]
 
     def addKeyframe(self, time_value: float = 0, amplitude_pos: float = 0, amplitude_neg: float = -1, percent_pos: float = 0.5,
                     period: float = 1.0, phase_offset: float = 0, temp_offset: float = 0, const_temp: bool = False, square_wave: bool = False):
@@ -697,6 +639,11 @@ class Simulation:
         self.__localTempControls[g][0].append(element)
 
     def initializeTempMap(self):
+        """
+        Initialize temperature control groups to which keyframes will be stored when using applyTempMap.
+
+        :return: None
+        """
         # Clear any existing temperature controls
         self.clearTempControlGroups()
 
@@ -913,33 +860,35 @@ class Simulation:
         writeOpen(f, 'Environment', 0)
         writeOpen(f, 'Boundary_Conditions', 1)
         writeData(f, 'NumBCs', len(self.__bcRegions), 2)
-        for r in range(len(self.__bcRegions)): # tqdm(range(len(self.__bcRegions)), desc='Writing boundary conditions'):
+        for bc in self.__bcRegions:
             writeOpen(f, 'FRegion', 2)
-            writeData(f, 'PrimType', int(self.__bcRegions[r][0].value), 3)
-            writeData(f, 'X', self.__bcRegions[r][1][0], 3)
-            writeData(f, 'Y', self.__bcRegions[r][1][1], 3)
-            writeData(f, 'Z', self.__bcRegions[r][1][2], 3)
-            writeData(f, 'dX', self.__bcRegions[r][2][0], 3)
-            writeData(f, 'dY', self.__bcRegions[r][2][1], 3)
-            writeData(f, 'dZ', self.__bcRegions[r][2][2], 3)
-            writeData(f, 'Radius', self.__bcRegions[r][3], 3)
-            writeData(f, 'R', self.__bcRegions[r][4][0], 3)
-            writeData(f, 'G', self.__bcRegions[r][4][1], 3)
-            writeData(f, 'B', self.__bcRegions[r][4][2], 3)
-            writeData(f, 'alpha', self.__bcRegions[r][4][3], 3)
-            writeData(f, 'DofFixed', self.__bcRegions[r][5], 3)
-            writeData(f, 'ForceX', self.__bcRegions[r][6][0], 3)
-            writeData(f, 'ForceY', self.__bcRegions[r][6][1], 3)
-            writeData(f, 'ForceZ', self.__bcRegions[r][6][2], 3)
-            writeData(f, 'TorqueX', self.__bcRegions[r][7][0], 3)
-            writeData(f, 'TorqueY', self.__bcRegions[r][7][1], 3)
-            writeData(f, 'TorqueZ', self.__bcRegions[r][7][2], 3)
-            writeData(f, 'DisplaceX', self.__bcRegions[r][8][0] * 1e-3, 3)
-            writeData(f, 'DisplaceY', self.__bcRegions[r][8][1] * 1e-3, 3)
-            writeData(f, 'DisplaceZ', self.__bcRegions[r][8][2] * 1e-3, 3)
-            writeData(f, 'AngDisplaceX', self.__bcRegions[r][9][0], 3)
-            writeData(f, 'AngDisplaceY', self.__bcRegions[r][9][1], 3)
-            writeData(f, 'AngDisplaceZ', self.__bcRegions[r][9][2], 3)
+            if bc[10] is not None:
+                writeData(f, 'Name', bc[10], 3)
+            writeData(f, 'PrimType', int(bc[0].value), 3)
+            writeData(f, 'X', bc[1][0], 3)
+            writeData(f, 'Y', bc[1][1], 3)
+            writeData(f, 'Z', bc[1][2], 3)
+            writeData(f, 'dX', bc[2][0], 3)
+            writeData(f, 'dY', bc[2][1], 3)
+            writeData(f, 'dZ', bc[2][2], 3)
+            writeData(f, 'Radius', bc[3], 3)
+            writeData(f, 'R', bc[4][0], 3)
+            writeData(f, 'G', bc[4][1], 3)
+            writeData(f, 'B', bc[4][2], 3)
+            writeData(f, 'alpha', bc[4][3], 3)
+            writeData(f, 'DofFixed', bc[5], 3)
+            writeData(f, 'ForceX', bc[6][0], 3)
+            writeData(f, 'ForceY', bc[6][1], 3)
+            writeData(f, 'ForceZ', bc[6][2], 3)
+            writeData(f, 'TorqueX', bc[7][0], 3)
+            writeData(f, 'TorqueY', bc[7][1], 3)
+            writeData(f, 'TorqueZ', bc[7][2], 3)
+            writeData(f, 'DisplaceX', bc[8][0] * 1e-3, 3)
+            writeData(f, 'DisplaceY', bc[8][1] * 1e-3, 3)
+            writeData(f, 'DisplaceZ', bc[8][2] * 1e-3, 3)
+            writeData(f, 'AngDisplaceX', bc[9][0], 3)
+            writeData(f, 'AngDisplaceY', bc[9][1], 3)
+            writeData(f, 'AngDisplaceZ', bc[9][2], 3)
             writeClos(f, 'FRegion', 2)
         writeClos(f, 'Boundary_Conditions', 1)
 
@@ -971,6 +920,8 @@ class Simulation:
         writeOpen(f, 'Sensors', 0)
         for sensor in self.__sensors:
             writeOpen(f, 'Sensor', 1)
+            if sensor[4] is not None:
+                writeData(f, 'Name', sensor[4], 2)
             writeData(f, 'Location', str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
             writeData(f, 'Axis', sensor[3], 2)
             writeClos(f, 'Sensor', 1)
@@ -991,6 +942,9 @@ class Simulation:
         writeOpen(f, 'TempControls', 0)
         for group in self.__localTempControls:
             writeOpen(f, 'Element', 1)
+
+            if group[2] is not None:
+                writeData(f, 'Name', group[2], 2)
 
             writeOpen(f, 'Locations', 2)
             for loc in group[1]:

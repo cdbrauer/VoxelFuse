@@ -36,6 +36,7 @@
   <Boundary_Conditions>
     <NumBCs>1</NumBCs>
     <FRegion>
+      <Name>Bottom Center</Name>
       <PrimType>2</PrimType>
       <X>0.5</X>
       <Y>0.5</Y>
@@ -69,10 +70,10 @@
     <FloorEnabled>1</FloorEnabled>
   </Gravity>
   <Thermal>
-    <TempEnabled>0</TempEnabled>
+    <TempEnabled>1</TempEnabled>
     <TempAmplitude>0.0</TempAmplitude>
     <TempBase>25.0</TempBase>
-    <VaryTempEnabled>0</VaryTempEnabled>
+    <VaryTempEnabled>1</VaryTempEnabled>
     <TempPeriod>0.0</TempPeriod>
     <TempOffset>0.0</TempOffset>
   </Thermal>
@@ -80,6 +81,11 @@
 </Environment>
 <Sensors>
   <Sensor>
+    <Location>0 0 0</Location>
+    <Axis>-1</Axis>
+  </Sensor>
+  <Sensor>
+    <Name>Top Center</Name>
     <Location>1 1 2</Location>
     <Axis>-1</Axis>
   </Sensor>
@@ -87,6 +93,7 @@
 <EnableHydrogelModel>0</EnableHydrogelModel>
 <TempControls>
   <Element>
+    <Name>Locations 1</Name>
     <Locations>
       <Location>1 1 0</Location>
       <Location>1 1 1</Location>
@@ -117,6 +124,7 @@
     </Keyframes>
   </Element>
   <Element>
+    <Name>Locations 2</Name>
     <Locations>
       <Location>1 0 0</Location>
       <Location>0 1 0</Location>
