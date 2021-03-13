@@ -16,7 +16,6 @@ if __name__=='__main__':
     simulation.setStopCondition(StopCondition.TIME_VALUE, 30)
     simulation.setGravity()
     simulation.addBoundaryConditionVoxel((1,1,0), fixed_dof=0b111100, name='Bottom Center')
-    simulation.addSensor((0, 0, 0))
     simulation.addSensor((1, 1, 2), name='Top Center')
 
     locs1 = [(1,1,0),

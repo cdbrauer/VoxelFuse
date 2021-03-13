@@ -20,7 +20,7 @@ from typing import List, Tuple, TextIO
 from tqdm import tqdm
 import numpy as np
 from voxelfuse.voxel_model import VoxelModel, writeHeader, writeData, writeOpen, writeClos
-from voxelfuse.primitives import empty #, cuboid, sphere, cylinder # Formerly needed for finding bcVoxels
+from voxelfuse.primitives import empty
 
 # Floating point error threshold for rounding to zero
 FLOATING_ERROR = 0.0000000001
@@ -53,6 +53,83 @@ class BCShape(Enum):
     BOX = 0
     CYLINDER = 1
     SPHERE = 2
+
+class _BCRegion:
+    """
+    Internal boundary condition class.
+    """
+    def __init__(self, name: str,
+                 shape: BCShape,
+                 position: Tuple[float, float, float],
+                 size: Tuple[float, float, float],
+                 radius: float,
+                 fixed_dof: int,
+                 force: Tuple[float, float, float],
+                 displacement: Tuple[float, float, float],
+                 torque: Tuple[float, float, float],
+                 angular_displacement: Tuple[float, float, float]):
+
+        self.name = name
+        self.shape = shape
+        self.position = position
+        self.size = size
+        self.radius = radius
+        self.color = (0.6, 0.4, 0.4, 0.5)
+        self.fixed_dof = fixed_dof
+        self.force = force
+        self.displacement = displacement
+        self.torque = torque
+        self.angular_displacement = angular_displacement
+
+class _Sensor:
+    """
+    Internal sensor class.
+    """
+    def __init__(self, name: str, coords: Tuple[int, int, int], axis: Axis):
+        self.name = name
+        self.coords = coords
+        self.axis = axis
+
+class _Keyframe:
+    """
+    Internal keyframe class.
+    """
+    def __init__(self, time_value: float,
+                 amplitude_pos: float,
+                 amplitude_neg: float,
+                 percent_pos: float,
+                 period: float,
+                 phase_offset: float,
+                 temp_offset: float,
+                 const_temp: bool,
+                 square_wave: bool):
+
+        self.time_value = time_value
+        self.amplitude_pos = amplitude_pos
+        self.amplitude_neg = amplitude_neg
+        self.percent_pos = percent_pos
+        self.period = period
+        self.phase_offset = phase_offset
+        self.temp_offset = temp_offset
+        self.const_temp = const_temp
+        self.square_wave = square_wave
+
+class _TempControlGroup:
+    """
+    Internal temperature control group class.
+    """
+    def __init__(self, name: str, locations: List[Tuple[int, int, int]], keyframes: List[_Keyframe]):
+        self.name = name
+        self.locations = locations
+        self.keyframes = keyframes
+
+class _Disconnection:
+    """
+    Internal disconnection class.
+    """
+    def __init__(self, voxel_1: Tuple[int, int, int], voxel_2: Tuple[int, int, int]):
+        self.vx1 = voxel_1
+        self.vx2 = voxel_2
 
 class Simulation:
     """
@@ -127,8 +204,6 @@ class Simulation:
         self.__sensors = []
 
         # Temperature Controls #######
-        # Element format: element = [time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave]
-        # Structure: elements list -> [keyframes list -> element, locations list -> coords tuple]
         self.__currentTempControlGroup = 0
         self.__localTempControls = []
 
@@ -408,7 +483,8 @@ class Simulation:
         pos = ((x+0.5)/x_len, (y+0.5)/y_len, (z+0.5)/z_len)
         radius = 0.49/x_len
 
-        self.__bcRegions.append([BCShape.SPHERE, pos, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement, name])
+        bc = _BCRegion(name, BCShape.SPHERE, pos, (0.0, 0.0, 0.0), radius, fixed_dof, force, displacement, torque, angular_displacement)
+        self.__bcRegions.append(bc)
 
     # Default box boundary condition is a fixed constraint in the XY plane (bottom layer)
     def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0),
@@ -439,7 +515,8 @@ class Simulation:
         :param name: Boundary condition name
         :return: None
         """
-        self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement, name])
+        bc = _BCRegion(name, BCShape.BOX, position, size, 0, fixed_dof, force, displacement, torque, angular_displacement)
+        self.__bcRegions.append(bc)
 
     # Default sphere boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5),
@@ -470,10 +547,11 @@ class Simulation:
         :param name: Boundary condition name
         :return: None
         """
-        self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement, name])
+        bc = _BCRegion(name, BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, fixed_dof, force, displacement, torque, angular_displacement)
+        self.__bcRegions.append(bc)
 
     # Default cylinder boundary condition is a fixed constraint centered in the model
-    def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0,
+    def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: Axis = Axis.X,
                                      height: float = 0.1,
                                      radius: float = 0.05,
                                      fixed_dof: int = 0b111111,
@@ -505,8 +583,9 @@ class Simulation:
         :return: None
         """
         size = [0.0, 0.0, 0.0]
-        size[axis] = height
-        self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement, name])
+        size[axis.value] = height
+        bc = _BCRegion(name, BCShape.CYLINDER, position, (size[0], size[1], size[2]), radius, fixed_dof, force, displacement, torque, angular_displacement)
+        self.__bcRegions.append(bc)
 
     def clearSensors(self):
         """
@@ -531,7 +610,7 @@ class Simulation:
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        sensor = [x, y, z, axis.value, name]
+        sensor = _Sensor(name, (x, y, z), axis)
         self.__sensors.append(sensor)
 
     def clearDisconnections(self):
@@ -550,10 +629,8 @@ class Simulation:
         :param voxel_2: Coordinates in voxels
         :return: None
         """
-        self.__disconnections.append([voxel_1[0], voxel_1[1], voxel_1[2], voxel_2[0], voxel_2[1], voxel_2[2]])
-
-    # Element format: element = [time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave]
-    # Structure: elements list -> [keyframes list -> element, locations list -> coords tuple]
+        dc = _Disconnection(voxel_1, voxel_2)
+        self.__disconnections.append(dc)
 
     def addTempControlGroup(self, locations: List[Tuple[int, int, int]] = None, name: str = None):
         """
@@ -580,7 +657,8 @@ class Simulation:
                     for z in range(z_len):
                         locations.append((x, y, z))
 
-        self.__localTempControls.append([[], locations, name])
+        group = _TempControlGroup(name, locations, [])
+        self.__localTempControls.append(group)
         self.__currentTempControlGroup = len(self.__localTempControls)-1
 
     def selectTempControlGroup(self, index: int = 0):
@@ -608,9 +686,7 @@ class Simulation:
         :return: None
         """
         g = self.__currentTempControlGroup
-        locations = self.__localTempControls[g][1]
-        name = self.__localTempControls[g][2]
-        self.__localTempControls[g] = [[], locations, name]
+        self.__localTempControls[g].keyframes = []
 
     def addKeyframe(self, time_value: float = 0, amplitude_pos: float = 0, amplitude_neg: float = -1, percent_pos: float = 0.5,
                     period: float = 1.0, phase_offset: float = 0, temp_offset: float = 0, const_temp: bool = False, square_wave: bool = False):
@@ -634,9 +710,8 @@ class Simulation:
             amplitude_neg = amplitude_pos
 
         g = self.__currentTempControlGroup
-        element = [time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave]
-
-        self.__localTempControls[g][0].append(element)
+        kf = _Keyframe(time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave)
+        self.__localTempControls[g].keyframes.append(kf)
 
     def initializeTempMap(self):
         """
@@ -686,45 +761,46 @@ class Simulation:
             for y in range(y_len):
                 for z in range(z_len):
                     if abs(amp_pos_map[x, y, z]) > FLOATING_ERROR or ((amp_neg_map is not None) and (abs(amp_neg_map[x, y, z]) > FLOATING_ERROR)):  # If voxel is not empty
-                        keyframe = [time_value, amp_pos_map[x, y, z]]
+                        amplitude_pos = amp_pos_map[x, y, z]
 
                         if amp_neg_map is None:
-                            keyframe.append(amp_pos_map[x, y, z])
+                            amplitude_neg = amp_pos_map[x, y, z]
                         else:
-                            keyframe.append(amp_neg_map[x, y, z])
+                            amplitude_neg = amp_neg_map[x, y, z]
 
                         if percent_pos_map is None:
-                            keyframe.append(0.5)
+                            percent_pos = 0.5
                         else:
-                            keyframe.append(percent_pos_map[x, y, z])
+                            percent_pos = percent_pos_map[x, y, z]
 
                         if period_map is None:
-                            keyframe.append(1.0)
+                            period = 1.0
                         else:
-                            keyframe.append(period_map[x, y, z])
+                            period = period_map[x, y, z]
 
                         if phase_map is None:
-                            keyframe.append(0)
+                            phase_offset = 0
                         else:
-                            keyframe.append(phase_map[x, y, z])
+                            phase_offset = phase_map[x, y, z]
 
                         if offset_map is None:
-                            keyframe.append(0)
+                            temp_offset = 0
                         else:
-                            keyframe.append(offset_map[x, y, z])
+                            temp_offset = offset_map[x, y, z]
 
                         if const_temp_map is None:
-                            keyframe.append(False)
+                            const_temp = False
                         else:
-                            keyframe.append(const_temp_map[x, y, z])
+                            const_temp = const_temp_map[x, y, z]
 
                         if square_wave_map is None:
-                            keyframe.append(False)
+                            square_wave = False
                         else:
-                            keyframe.append(square_wave_map[x, y, z])
+                            square_wave = square_wave_map[x, y, z]
 
+                        kf = _Keyframe(time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave)
                         g = z + y*z_len + x*y_len*z_len
-                        self.__localTempControls[g][0].append(keyframe)
+                        self.__localTempControls[g].keyframes.append(kf)
 
     # TODO: Remove or update to be compatible with keyframes
     # def saveTempControls(self, filename: str, figure: bool = False):
@@ -862,33 +938,33 @@ class Simulation:
         writeData(f, 'NumBCs', len(self.__bcRegions), 2)
         for bc in self.__bcRegions:
             writeOpen(f, 'FRegion', 2)
-            if bc[10] is not None:
-                writeData(f, 'Name', bc[10], 3)
-            writeData(f, 'PrimType', int(bc[0].value), 3)
-            writeData(f, 'X', bc[1][0], 3)
-            writeData(f, 'Y', bc[1][1], 3)
-            writeData(f, 'Z', bc[1][2], 3)
-            writeData(f, 'dX', bc[2][0], 3)
-            writeData(f, 'dY', bc[2][1], 3)
-            writeData(f, 'dZ', bc[2][2], 3)
-            writeData(f, 'Radius', bc[3], 3)
-            writeData(f, 'R', bc[4][0], 3)
-            writeData(f, 'G', bc[4][1], 3)
-            writeData(f, 'B', bc[4][2], 3)
-            writeData(f, 'alpha', bc[4][3], 3)
-            writeData(f, 'DofFixed', bc[5], 3)
-            writeData(f, 'ForceX', bc[6][0], 3)
-            writeData(f, 'ForceY', bc[6][1], 3)
-            writeData(f, 'ForceZ', bc[6][2], 3)
-            writeData(f, 'TorqueX', bc[7][0], 3)
-            writeData(f, 'TorqueY', bc[7][1], 3)
-            writeData(f, 'TorqueZ', bc[7][2], 3)
-            writeData(f, 'DisplaceX', bc[8][0] * 1e-3, 3)
-            writeData(f, 'DisplaceY', bc[8][1] * 1e-3, 3)
-            writeData(f, 'DisplaceZ', bc[8][2] * 1e-3, 3)
-            writeData(f, 'AngDisplaceX', bc[9][0], 3)
-            writeData(f, 'AngDisplaceY', bc[9][1], 3)
-            writeData(f, 'AngDisplaceZ', bc[9][2], 3)
+            if bc.name is not None:
+                writeData(f, 'Name', bc.name, 3)
+            writeData(f, 'PrimType', int(bc.shape.value), 3)
+            writeData(f, 'X', bc.position[0], 3)
+            writeData(f, 'Y', bc.position[1], 3)
+            writeData(f, 'Z', bc.position[2], 3)
+            writeData(f, 'dX', bc.size[0], 3)
+            writeData(f, 'dY', bc.size[1], 3)
+            writeData(f, 'dZ', bc.size[2], 3)
+            writeData(f, 'Radius', bc.radius, 3)
+            writeData(f, 'R', bc.color[0], 3)
+            writeData(f, 'G', bc.color[1], 3)
+            writeData(f, 'B', bc.color[2], 3)
+            writeData(f, 'alpha', bc.color[3], 3)
+            writeData(f, 'DofFixed', bc.fixed_dof, 3)
+            writeData(f, 'ForceX', bc.force[0], 3)
+            writeData(f, 'ForceY', bc.force[1], 3)
+            writeData(f, 'ForceZ', bc.force[2], 3)
+            writeData(f, 'TorqueX', bc.torque[0], 3)
+            writeData(f, 'TorqueY', bc.torque[1], 3)
+            writeData(f, 'TorqueZ', bc.torque[2], 3)
+            writeData(f, 'DisplaceX', bc.displacement[0] * 1e-3, 3)
+            writeData(f, 'DisplaceY', bc.displacement[1] * 1e-3, 3)
+            writeData(f, 'DisplaceZ', bc.displacement[2] * 1e-3, 3)
+            writeData(f, 'AngDisplaceX', bc.angular_displacement[0], 3)
+            writeData(f, 'AngDisplaceY', bc.angular_displacement[1], 3)
+            writeData(f, 'AngDisplaceZ', bc.angular_displacement[2], 3)
             writeClos(f, 'FRegion', 2)
         writeClos(f, 'Boundary_Conditions', 1)
 
@@ -920,10 +996,10 @@ class Simulation:
         writeOpen(f, 'Sensors', 0)
         for sensor in self.__sensors:
             writeOpen(f, 'Sensor', 1)
-            if sensor[4] is not None:
-                writeData(f, 'Name', sensor[4], 2)
-            writeData(f, 'Location', str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'Axis', sensor[3], 2)
+            if sensor.name is not None:
+                writeData(f, 'Name', sensor.name, 2)
+            writeData(f, 'Location', str(sensor.coords).replace('(', '').replace(',', '').replace(')', ''), 2)
+            writeData(f, 'Axis', sensor.axis.value, 2)
             writeClos(f, 'Sensor', 1)
         writeClos(f, 'Sensors', 0)
 
@@ -934,36 +1010,32 @@ class Simulation:
         :param f: File to write to
         :return: None
         """
-        # Element format: element = [time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave]
-        # Structure: elements list -> [keyframes list -> element, locations list -> coords tuple]
-
         writeData(f, 'EnableHydrogelModel', int(self.__hydrogelModelEnable), 0)
 
         writeOpen(f, 'TempControls', 0)
         for group in self.__localTempControls:
             writeOpen(f, 'Element', 1)
 
-            if group[2] is not None:
-                writeData(f, 'Name', group[2], 2)
+            if group.name is not None:
+                writeData(f, 'Name', group.name, 2)
 
             writeOpen(f, 'Locations', 2)
-            for loc in group[1]:
+            for loc in group.locations:
                 writeData(f, 'Location', str(loc).replace('(', '').replace(',', '').replace(')', ''), 3)
             writeClos(f, 'Locations', 2)
 
             writeOpen(f, 'Keyframes', 2)
-            for keyframe in group[0]:
+            for keyframe in group.keyframes:
                 writeOpen(f, 'Keyframe', 3)
-                # .replace('[', '').replace(',', '').replace(']', '')
-                writeData(f, 'TimeValue', str(keyframe[0]), 4)
-                writeData(f, 'AmplitudePos', str(keyframe[1]), 4)
-                writeData(f, 'AmplitudeNeg', str(keyframe[2]), 4)
-                writeData(f, 'PercentPos', str(keyframe[3]), 4)
-                writeData(f, 'Period', str(keyframe[4]), 4)
-                writeData(f, 'PhaseOffset', str(keyframe[5]), 4)
-                writeData(f, 'Offset', str(keyframe[6]), 4)
-                writeData(f, 'ConstantTemp', str(int(keyframe[7])), 4)
-                writeData(f, 'SquareWave', str(int(keyframe[8])), 4)
+                writeData(f, 'TimeValue', keyframe.time_value, 4)
+                writeData(f, 'AmplitudePos', keyframe.amplitude_pos, 4)
+                writeData(f, 'AmplitudeNeg', keyframe.amplitude_neg, 4)
+                writeData(f, 'PercentPos', keyframe.percent_pos, 4)
+                writeData(f, 'Period', keyframe.period, 4)
+                writeData(f, 'PhaseOffset', keyframe.phase_offset, 4)
+                writeData(f, 'TempOffset', keyframe.temp_offset, 4)
+                writeData(f, 'ConstantTemp', int(keyframe.const_temp), 4)
+                writeData(f, 'SquareWave', int(keyframe.square_wave), 4)
                 writeClos(f, 'Keyframe', 3)
             writeClos(f, 'Keyframes', 2)
 
@@ -978,10 +1050,10 @@ class Simulation:
         :return: None
         """
         writeOpen(f, 'Disconnections', 0)
-        for element in self.__disconnections:
+        for dc in self.__disconnections:
             writeOpen(f, 'Break', 1)
-            writeData(f, 'Voxel1', str(element[:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'Voxel2', str(element[3:]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Voxel1', str(dc.vx1).replace('(', '').replace(',', '').replace(')', ''), 2)
+            writeData(f, 'Voxel2', str(dc.vx2).replace('(', '').replace(',', '').replace(')', ''), 2)
             writeClos(f, 'Break', 1)
         writeClos(f, 'Disconnections', 0)
 

@@ -81,10 +81,6 @@
 </Environment>
 <Sensors>
   <Sensor>
-    <Location>0 0 0</Location>
-    <Axis>-1</Axis>
-  </Sensor>
-  <Sensor>
     <Name>Top Center</Name>
     <Location>1 1 2</Location>
     <Axis>-1</Axis>
@@ -106,7 +102,7 @@
         <PercentPos>0.5</PercentPos>
         <Period>1.0</Period>
         <PhaseOffset>0</PhaseOffset>
-        <Offset>15</Offset>
+        <TempOffset>15</TempOffset>
         <ConstantTemp>0</ConstantTemp>
         <SquareWave>0</SquareWave>
       </Keyframe>
@@ -117,7 +113,7 @@
         <PercentPos>0.5</PercentPos>
         <Period>1.0</Period>
         <PhaseOffset>0</PhaseOffset>
-        <Offset>0</Offset>
+        <TempOffset>0</TempOffset>
         <ConstantTemp>1</ConstantTemp>
         <SquareWave>0</SquareWave>
       </Keyframe>
@@ -139,7 +135,7 @@
         <PercentPos>0.5</PercentPos>
         <Period>1.0</Period>
         <PhaseOffset>0</PhaseOffset>
-        <Offset>0</Offset>
+        <TempOffset>0</TempOffset>
         <ConstantTemp>0</ConstantTemp>
         <SquareWave>1</SquareWave>
       </Keyframe>
