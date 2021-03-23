@@ -10,7 +10,7 @@ from voxelfuse.primitives import cube
 from  voxelfuse.simulation import Simulation, StopCondition
 
 if __name__=='__main__':
-    model = cube(3, (0, 0, 0), material=7)
+    model = cube(3, (0, 0, 0), material=7) | cube(3, (3, 0, 0), material=10)
 
     simulation = Simulation(model)  # Initialize a simulation
     simulation.setStopCondition(StopCondition.TIME_VALUE, 30)
@@ -37,7 +37,6 @@ if __name__=='__main__':
     simulation.addTempControlGroup(name='All Voxels')
     simulation.addKeyframe(0, 15, temp_offset=15)
     simulation.addKeyframe(5, 30, period=3.0, const_temp=True)
-
     simulation.saveVXA('cube_sim_2')
 
     simulation.initializeTempMap()
