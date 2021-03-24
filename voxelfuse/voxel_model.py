@@ -989,7 +989,7 @@ class VoxelModel:
 
     # Morphology Operations ##############################
 
-    def dilate(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3): # TODO: Preserve overlapping materials?
+    def dilate(self, radius: int = 1, plane: Axes = Axes.XYZ, struct_type: Struct = Struct.STANDARD, connectivity: int = 3): # TODO: Preserve overlapping materials?
         """
         Dilate a model along the specified axes.
 
@@ -1005,7 +1005,7 @@ class VoxelModel:
 
         :param radius: Dilation radius in voxels
         :param plane: Dilation directions, set using Axes class
-        :param structType: Shape of structuring element, set using Struct class
+        :param struct_type: Shape of structuring element, set using Struct class
         :param connectivity: Connectivity of structuring element (1-3)
         :return: VoxelModel
         """
@@ -1019,7 +1019,7 @@ class VoxelModel:
         new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.uint16)
         new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
 
-        if structType == Struct.SPHERE:
+        if struct_type == Struct.SPHERE:
             struct = structSphere(radius, plane)
             new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
         else: # Struct.STANDARD
@@ -1028,6 +1028,23 @@ class VoxelModel:
                 new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
 
         return VoxelModel(new_voxels, self.materials, (self.coords[0] - radius, self.coords[1] - radius, self.coords[2] - radius), self.resolution)
+
+    def __lshift__(self, radius):
+        """
+        Dilate a model in all three axes.
+
+        Overload left shift operator (<<) for VoxelModel objects with dilate().
+
+        Uses:
+
+        - plane = Axes.XYZ
+        - struct_type = Struct.STANDARD
+        - connectivity = 3
+
+        :param radius: Dilation radius in voxels
+        :return: VoxelModel
+        """
+        return self.dilate(radius)
 
     def dilateBounded(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
         """
@@ -1054,7 +1071,7 @@ class VoxelModel:
 
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
-    def erode(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
+    def erode(self, radius: int = 1, plane: Axes = Axes.XYZ, struct_type: Struct = Struct.STANDARD, connectivity: int = 3):
         """
         Erode a model along the specified axes.
 
@@ -1070,7 +1087,7 @@ class VoxelModel:
 
         :param radius: Erosion radius in voxels
         :param plane: Erosion directions, set using Axes class
-        :param structType: Shape of structuring element, set using Struct class
+        :param struct_type: Shape of structuring element, set using Struct class
         :param connectivity: Connectivity of structuring element (1-3)
         :return: VoxelModel
         """
@@ -1080,7 +1097,7 @@ class VoxelModel:
         new_voxels = np.copy(self.voxels)
         mask = np.array(new_voxels != 0, dtype=np.bool)
 
-        if structType == Struct.SPHERE:
+        if struct_type == Struct.SPHERE:
             struct = structSphere(radius, plane)
             mask = ndimage.binary_erosion(mask, structure=struct)
         else: # Struct.STANDARD
@@ -1090,6 +1107,23 @@ class VoxelModel:
         new_voxels = np.multiply(new_voxels, mask)
 
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
+
+    def __rshift__(self, radius):
+        """
+        Erode a model in all three axes.
+
+        Overload right shift operator (>>) for VoxelModel objects with erode().
+
+        Uses:
+
+        - plane = Axes.XYZ
+        - struct_type = Struct.STANDARD
+        - connectivity = 3
+
+        :param radius: Dilation radius in voxels
+        :return: VoxelModel
+        """
+        return self.erode(radius)
 
     def closing(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
         """
