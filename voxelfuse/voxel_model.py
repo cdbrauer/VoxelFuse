@@ -2153,7 +2153,7 @@ class VoxelModel:
                     writeOpen(f, 'Hydrogel', 3)
                     writeData(f, 'Name', current_hg_model['name'], 4)
                     writeData(f, 'VoxelDim', current_hg_model['test_voxel_dim'], 4)
-                    writeData(f, 'IdealDisplacemnt', current_hg_model['ideal_displacement'], 4)
+                    writeData(f, 'IdealDisplacement', current_hg_model['ideal_displacement'], 4)
                     writeData(f, 'TestDisplacement', current_hg_model['test_displacement'], 4)
                     writeData(f, 'TimeStepCorrection', current_hg_model['test_time_step'], 4)
                     writeData(f, 'KpRising', current_hg_model['kp_rising'], 4)
