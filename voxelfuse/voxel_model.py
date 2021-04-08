@@ -135,7 +135,7 @@ class VoxelModel:
 
         :param filename: File name with extension
         :param coords: Model origin coordinates
-        :param material: Material index corresponding to materials.py
+        :param material: Material id corresponding to materials.py
         :param resolution: Number of voxels per mm
         :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
         :return: VoxelModel
@@ -498,7 +498,7 @@ class VoxelModel:
 
         ----
 
-        :param material: Material index corresponding to materials.py
+        :param material: Material id corresponding to materials.py
         :return: VoxelModel
         """
         new_voxels = self.getOccupied().voxels # Converts input model to a mask, no effect if input is already a mask
@@ -1593,26 +1593,27 @@ class VoxelModel:
         :param material: Material index
         :return: Dictionary of material properties
         """
-        avgProps = {}
+        avg_properties = {}
         for key in material_properties[0]:
             if key == 'name' or key == 'process':
                 string = ''
                 for i in range(len(self.materials[0])-1):
                     if self.materials[material][i + 1] > 0:
-                        string = string + material_properties[i][key] + ' '
-                avgProps.update({key: string})
-            elif key == 'MM' or key == 'FM':
-                var = 0
-                for i in range(len(self.materials[0])-1):
-                    if self.materials[material][i + 1] > 0:
-                        var = max(var, material_properties[i][key])
-                avgProps.update({key: var})
+                        current_material_data = getMaterialData(i)
+                        string = string + current_material_data[key] + ' '
+                avg_properties.update({key: string})
+            elif key == 'MM' or key == 'MMD' or key == 'FM' or key == 'HG' or key == 'HGM':
+                material_id = self.materials[material][1:].argmax()
+                current_material_data = getMaterialData(material_id)
+                var = current_material_data[key]
+                avg_properties.update({key: var})
             else:
                 var = 0
                 for i in range(len(self.materials[0])-1):
-                    var = var + self.materials[material][i + 1] * material_properties[i][key]
-                avgProps.update({key: var})
-        return avgProps
+                    current_material_data = getMaterialData(i)
+                    var = var + self.materials[material][i + 1] * current_material_data[key]
+                avg_properties.update({key: var})
+        return avg_properties
 
     def getSSData(self, material):
         """
@@ -1623,17 +1624,46 @@ class VoxelModel:
         TODO: Make this average multiple stress-strain curves
 
         :param material: Material index
-        :return: Dictionary of material properties
+        :return: Dictionary of stress-strain data
         """
-        materialIndex = self.materials[material][1:].argmax()
+        material_id = self.materials[material][1:].argmax()
+        current_material_data = getMaterialData(material_id)
 
         try:
-            SSData = {'stress':ss_data[materialIndex]['stress'], 'strain':ss_data[materialIndex]['strain']}
+            ss_data_index = current_material_data['MMD']
+            current_ss_data = next((item for item in ss_data if item['id'] == ss_data_index), None)
+            if current_ss_data is None:
+                raise KeyError
         except KeyError:
-            print('Stress-strain data not available for ' + ss_data[materialIndex]['name'])
-            SSData = None
+            print('Stress-strain data not available for ' + current_material_data['name'])
+            current_ss_data = None
 
-        return SSData
+        return current_ss_data
+
+    def getHGModel(self, material):
+        """
+        Get the hydrogel model parameters for a row in a model's material array.
+
+        This is currently returned based on the material present in the highest percentage.
+
+        TODO: Make this average multiple model parameters
+
+        :param material: Material index
+        :return: Dictionary of hydrogel model parameters
+        """
+        material_id = self.materials[material][1:].argmax()
+        current_material_data = getMaterialData(material_id)
+
+        try:
+            hg_model_index = current_material_data['HGM']
+            current_hg_model = next((item for item in hg_models if item['id'] == hg_model_index), None)
+            if current_hg_model is None:
+                raise KeyError
+        except KeyError:
+            print('Hydrogel model data not available for ' + current_material_data['name'])
+            current_hg_model = None
+
+        return current_hg_model
 
     def getVoxelProperties(self, coords: Tuple[int, int, int]):
         """
@@ -2114,22 +2144,27 @@ class VoxelModel:
             writeClos(f, 'Display', 3)
 
             writeOpen(f, 'Mechanical', 3)
-            writeData(f, 'MatModel', int(avgProps['MM']), 4)
             if int(avgProps['MM']) == 3:
-                SSData = self.getSSData(row)
-                writeOpen(f, 'SSData', 4)
-                writeData(f, 'NumDataPts', len(SSData['strain']), 5)
+                current_ss_data = self.getSSData(row)
+                if current_ss_data is not None:
+                    writeData(f, 'MatModel', 3, 4)
+                    writeOpen(f, 'SSData', 4)
+                    writeData(f, 'NumDataPts', len(current_ss_data['strain']), 5)
 
-                writeOpen(f, 'StrainData', 5)
-                for point in range(len(SSData['strain'])):
-                    writeData(f, 'Strain', SSData['strain'][point], 6)
-                writeClos(f, 'StrainData', 5)
+                    writeOpen(f, 'StrainData', 5)
+                    for point in current_ss_data['strain']:
+                        writeData(f, 'Strain', point, 6)
+                    writeClos(f, 'StrainData', 5)
 
-                writeOpen(f, 'StressData', 5)
-                for point in range(len(SSData['stress'])):
-                    writeData(f, 'Stress', SSData['stress'][point], 6)
-                writeClos(f, 'StressData', 5)
-                writeClos(f, 'SSData', 4)
+                    writeOpen(f, 'StressData', 5)
+                    for point in current_ss_data['stress']:
+                        writeData(f, 'Stress', point, 6)
+                    writeClos(f, 'StressData', 5)
+                    writeClos(f, 'SSData', 4)
+                else:
+                    writeData(f, 'MatModel', 0, 4)
+            else:
+                writeData(f, 'MatModel', avgProps['MM'], 4)
 
             writeData(f, 'Elastic_Mod', avgProps['E'], 4)
             writeData(f, 'Plastic_Mod', avgProps['Z'], 4)
@@ -2144,7 +2179,36 @@ class VoxelModel:
             writeData(f, 'uStatic', avgProps['uS'], 4)
             writeData(f, 'uDynamic', avgProps['uD'], 4)
 
-            writeClos(f, 'Mechanical', 3)
+            if int(avgProps['HG']) == 1:
+                current_hg_model = self.getHGModel(row)
+                if current_hg_model is not None:
+                    writeData(f, 'HydrogelModel', 1, 4)
+                    writeClos(f, 'Mechanical', 3)
+                    writeOpen(f, 'Hydrogel', 3)
+                    writeData(f, 'Name', current_hg_model['name'], 4)
+                    writeData(f, 'VoxelDim', current_hg_model['test_voxel_dim'], 4)
+                    writeData(f, 'IdealDisplacement', current_hg_model['ideal_displacement'], 4)
+                    writeData(f, 'TestDisplacement', current_hg_model['test_displacement'], 4)
+                    writeData(f, 'TimeStepCorrection', current_hg_model['test_time_step'], 4)
+                    writeData(f, 'KpRising', current_hg_model['kp_rising'], 4)
+                    writeData(f, 'KpFalling', current_hg_model['kp_falling'], 4)
+                    writeData(f, 'MaxTemp', current_hg_model['ideal_max_temp'], 4)
+                    writeData(f, 'MinTemp', current_hg_model['ideal_min_temp'], 4)
+                    writeData(f, 'TestMax', current_hg_model['test_max_temp'], 4)
+                    writeData(f, 'TestMin', current_hg_model['test_min_temp'], 4)
+                    writeData(f, 'C0', current_hg_model['c0'], 4)
+                    writeData(f, 'C1', current_hg_model['c1'], 4)
+                    writeData(f, 'C2', current_hg_model['c2'], 4)
+                    writeData(f, 'C3', current_hg_model['c3'], 4)
+                    writeData(f, 'C4', current_hg_model['c4'], 4)
+                    writeData(f, 'C5', current_hg_model['c5'], 4)
+                    writeClos(f, 'Hydrogel', 3)
+                else:
+                    writeData(f, 'HydrogelModel', 0, 4)
+                    writeClos(f, 'Mechanical', 3)
+            else:
+                writeData(f, 'HydrogelModel', 0, 4)
+                writeClos(f, 'Mechanical', 3)
             writeClos(f, 'Material', 2)
         writeClos(f, 'Palette', 1)
 
@@ -2251,6 +2315,21 @@ class GpuSettings:
         os.environ['VF_CUDA_DEVICE'] = str(self.CUDA_device)
 
 # Helper functions ##############################################################
+def getMaterialData(material_id):
+    """
+    Get the material data for a specific material id.
+
+    :param material_id: Material id corresponding to materials.py
+    :return: Dictionary of material properties
+    """
+    current_material_data = next((item for item in material_properties if item['id'] == material_id))
+
+    if current_material_data is None:
+        print('Material data not available for id ' + str(material_id) + ' -- using first nonzero material')
+        current_material_data = next((item for item in material_properties if item['id'] != 0))
+
+    return current_material_data
+
 def makeMesh(filename: str, delete_files: bool = True, gmsh_on_path: bool = False):
     """
     Import mesh data from file
@@ -2426,7 +2505,7 @@ def generateMaterials(m):
     """
     Generate the materials table for a single-material VoxelModel.
 
-    :param m: Material index corresponding to materials.py
+    :param m: Material id corresponding to materials.py
     :return: Array containing the specified material and the empty material
     """
     materials = np.zeros(len(material_properties) + 1, dtype=np.float)
