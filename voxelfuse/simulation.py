@@ -1275,19 +1275,25 @@ class MultiSimulation:
     MultiSimulation object that holds settings for generating a simulation and running multiple parallel trials of it using different parameters.
     """
 
-    def __init__(self, setup_fcn, setup_params: List[Tuple], thread_count):
+    def __init__(self, setup_fcn, setup_params: List[Tuple], thread_count: int = -1):
         """
         Initialize a MultiSimulation object.
 
         :param setup_fcn: Function to use for initializing Simulation objects. Should take a single tuple as an input and return a single Simulation object.
         :param setup_params: List containing the desired input tuples for setup_fcn
-        :param thread_count: Maximum number of CPU threads
+        :param thread_count: Maximum number of CPU threads, -1 to auto-detect
         """
         self.__setup_fcn = setup_fcn
         self.__setup_params = setup_params
-        self.__thread_count = thread_count
 
-        # Initialize result arrays
+        if thread_count > 0:
+            self.__thread_count = thread_count
+        else:
+            max_threads = os.cpu_count()
+            self.__thread_count = max(1,
+                                      max_threads - 2)  # Default to leaving 1 core (2 threads) free, minimum of 1 thread
+
+            # Initialize result arrays
         self.total_time = 0
         self.displacement_result = multiprocessing.Array('d', len(setup_params))
         self.time_result = multiprocessing.Array('d', len(setup_params))
@@ -1318,6 +1324,7 @@ class MultiSimulation:
         :return: None
         """
         print("Trials to run: " + str(len(self.__setup_params)))
+        print("Max CPU threads: " + str(self.__thread_count))
         input("Press Enter to continue...")
 
     def run(self, enable_log : bool = False):
