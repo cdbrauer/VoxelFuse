@@ -613,6 +613,9 @@ class Simulation:
         sensor = _Sensor(name, (x, y, z), axis)
         self.__sensors.append(sensor)
 
+        if not self.__model.isOccupied((x, y, z)):
+            print('WARNING: No material present at sensor voxel ' + str((x, y, z)))
+
     def clearDisconnections(self):
         """
         Clear all disconnected voxel bonds.
@@ -1125,40 +1128,44 @@ class Simulation:
                 endLoc.append(row)
 
         # Read the data from each sensor
-        for sensor in range(len(startLoc)): # tqdm(range(len(startLoc)), desc='Reading sensor results'):
-            # Create a dictionary to hold the current sensor results
-            sensorResults = {}
+        sensor_count = len(startLoc)
+        if sensor_count > 0:
+            for sensor in range(sensor_count): # tqdm(range(len(startLoc)), desc='Reading sensor results'):
+                # Create a dictionary to hold the current sensor results
+                sensorResults = {}
 
-            # Read the data from each sensor tag
-            for row in range(startLoc[sensor]+1, endLoc[sensor]):
-                # Determine the current tag
-                tag = ''
-                for col in range(1, len(data[row])):
-                    if data[row][col] == '>':
-                        tag = data[row][1:col]
-                        break
+                # Read the data from each sensor tag
+                for row in range(startLoc[sensor]+1, endLoc[sensor]):
+                    # Determine the current tag
+                    tag = ''
+                    for col in range(1, len(data[row])):
+                        if data[row][col] == '>':
+                            tag = data[row][1:col]
+                            break
 
-                # Remove the tags and newline to determine the current value
-                data[row] = data[row].replace('<'+tag+'>', '').replace('</'+tag+'>', '')
-                value = data[row][:-1]
+                    # Remove the tags and newline to determine the current value
+                    data[row] = data[row].replace('<'+tag+'>', '').replace('</'+tag+'>', '')
+                    value = data[row][:-1]
 
-                # Combine the current tag and value
-                if tag == 'Location':
-                    coords =  tuple(map(int, value.split(' ')))
-                    x = coords[0] + self.__model.coords[0]
-                    y = coords[1] + self.__model.coords[1]
-                    z = coords[2] + self.__model.coords[2]
-                    currentResult = {tag:(x, y, z)}
-                elif ' ' in value:
-                    currentResult = {tag:tuple(map(float, value.split(' ')))}
-                else:
-                    currentResult = {tag:float(value)}
+                    # Combine the current tag and value
+                    if tag == 'Location':
+                        coords =  tuple(map(int, value.split(' ')))
+                        x = coords[0] + self.__model.coords[0]
+                        y = coords[1] + self.__model.coords[1]
+                        z = coords[2] + self.__model.coords[2]
+                        currentResult = {tag:(x, y, z)}
+                    elif ' ' in value:
+                        currentResult = {tag:tuple(map(float, value.split(' ')))}
+                    else:
+                        currentResult = {tag:float(value)}
 
-                # Add the current tag and value to the sensor results dictionary
-                sensorResults.update(currentResult)
+                    # Add the current tag and value to the sensor results dictionary
+                    sensorResults.update(currentResult)
 
-            # Append the results dictionary for the current sensor to the simulation results list
-            self.results.append(sensorResults)
+                # Append the results dictionary for the current sensor to the simulation results list
+                self.results.append(sensorResults)
+        else:
+            print('No sensors found')
 
         if os.path.exists('value_map.txt'):
             # Open simulation value map results
@@ -1327,10 +1334,12 @@ class MultiSimulation:
         print("Max CPU threads: " + str(self.__thread_count))
         input("Press Enter to continue...")
 
-    def run(self, enable_log : bool = False):
+    def run(self, enable_log : bool = False, fine_log: bool = False):
         """
         Run all simulation configurations and save the results.
 
+        :param enable_log: Enable saving sensor log files
+        :param fine_log: If enabled, save entries in sensor logs and history files 100x as frequently
         :return: None
         """
         # Save start time
@@ -1352,7 +1361,10 @@ class MultiSimulation:
         # Initialize processing pool
         p = multiprocessing.Pool(self.__thread_count, initializer=poolInit, initargs=(self.displacement_result, self.time_result))
         if enable_log:
-            p.map(simProcessLog, sim_array)
+            if fine_log:
+                p.map(simProcessLogFine, sim_array)
+            else:
+                p.map(simProcessLog, sim_array)
         else:
             p.map(simProcess, sim_array)
 
@@ -1447,11 +1459,14 @@ def simProcess(simulation: Simulation):
     time_process_finished = time.time()
 
     # Read results
-    disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
-    disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
-    disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
-    disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
-    t_result[simulation.id] = time_process_finished - time_process_started
+    try:
+        disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
+        disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
+        disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+        disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
+        t_result[simulation.id] = time_process_finished - time_process_started
+    except IndexError:
+        print('Unable to load sensor results')
 
     # Finished
     print('\nProcess ' + str(simulation.id) + ' finished')
@@ -1471,11 +1486,41 @@ def simProcessLog(simulation: Simulation):
     time_process_finished = time.time()
 
     # Read results
-    disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
-    disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
-    disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
-    disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
-    t_result[simulation.id] = time_process_finished - time_process_started
+    try:
+        disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
+        disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
+        disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+        disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
+        t_result[simulation.id] = time_process_finished - time_process_started
+    except IndexError:
+        print('Unable to load sensor results')
+
+    # Finished
+    print('\nProcess ' + str(simulation.id) + ' finished')
+
+def simProcessLogFine(simulation: Simulation):
+    """
+    Simulation process.
+
+    :param simulation: Simulation object to run
+    :return: None
+    """
+    print('\nProcess ' + str(simulation.id) + ' started')
+
+    # Run simulation
+    time_process_started = time.time()
+    simulation.runSim('sim_' + str(simulation.id), log_interval=1000, history_interval=1000, wsl=False)
+    time_process_finished = time.time()
+
+    # Read results
+    try:
+        disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
+        disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
+        disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+        disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
+        t_result[simulation.id] = time_process_finished - time_process_started
+    except IndexError:
+        print('Unable to load sensor results')
 
     # Finished
     print('\nProcess ' + str(simulation.id) + ' finished')
