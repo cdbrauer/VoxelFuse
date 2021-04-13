@@ -241,6 +241,13 @@ class VoxelModel:
         return new_model
 
     # Property update operations ##############################
+    def setResolution(self, res: float):
+        """
+        Set the resolution of a model.
+
+        :return: None
+        """
+        self.resolution = res
 
     def fitWorkspace(self):
         """
@@ -1605,8 +1612,15 @@ class VoxelModel:
         x = coords[0] - self.coords[0]
         y = coords[1] - self.coords[1]
         z = coords[2] - self.coords[2]
-        v = self.voxels[x, y, z]
 
+        if x < 0 or x >= self.voxels.shape[0]:
+            return False
+        if y < 0 or y >= self.voxels.shape[1]:
+            return False
+        if z < 0 or z >= self.voxels.shape[2]:
+            return False
+
+        v = self.voxels[x, y, z]
         if v == 0:
             return False
         else:
