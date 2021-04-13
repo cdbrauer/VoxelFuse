@@ -1423,13 +1423,16 @@ class VoxelModel:
         """
         if axis == Axes.X:
             plane = (1, 2)
+            sign = 1
         elif axis == Axes.Y:
-            plane = (0, 2)
+            plane = (2, 0)
+            sign = -1 # For some reason, Y rotates the opposite direction than expected
         else: # axis == Axes.Z
             plane = (0, 1)
+            sign = 1
 
         centerCoords = self.getCenter()
-        new_voxels = ndimage.rotate(self.voxels, angle, plane, order=0)
+        new_voxels = ndimage.rotate(self.voxels, sign*angle, plane, order=0)
         new_model = VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
         new_model = new_model.setCenter(centerCoords)
 
@@ -1547,6 +1550,15 @@ class VoxelModel:
         new_model.coords = (x_new, y_new, z_new)
         return new_model
 
+    def getCoords(self):
+        """
+        Get the origin coordinates of a model.
+
+        :return: Origin coordinates in voxels
+        """
+        model = self.fitWorkspace()
+        return model.coords
+
     def setCoords(self, coords: Tuple[int, int, int]):
         """
         Set the origin of a model to the specified coordinates.
@@ -1557,6 +1569,48 @@ class VoxelModel:
         new_model = self.fitWorkspace()
         new_model.coords = coords
         return new_model
+
+    def getMaxCoords(self):
+        """
+        Get the maximum coordinate location in a model.
+
+        This point is equal to origin coordinates + model dimensions.
+
+        :return: Maximum coordinates in voxels
+        """
+        model = self.fitWorkspace()
+        x = model.coords[0] + model.voxels.shape[0]
+        y = model.coords[1] + model.voxels.shape[1]
+        z = model.coords[2] + model.voxels.shape[2]
+        return x, y, z
+
+    def getDim(self):
+        """
+        Get the dimensions of model.
+
+        :return: Model dimensions in voxels
+        """
+        model = self.fitWorkspace()
+        x = model.voxels.shape[0]
+        y = model.voxels.shape[1]
+        z = model.voxels.shape[2]
+        return x, y, z
+
+    def isOccupied(self, coords: Tuple[int, int, int]):
+        """
+        Determine if a specific voxel is occupied.
+
+        :return: True/False
+        """
+        x = coords[0] - self.coords[0]
+        y = coords[1] - self.coords[1]
+        z = coords[2] - self.coords[2]
+        v = self.voxels[x, y, z]
+
+        if v == 0:
+            return False
+        else:
+            return True
 
     # Model Info ##############################
 
