@@ -64,8 +64,8 @@ material_properties =\
      {'id': 12, 'name':'Adhesive', 'process':'3dp', 'r':0.30, 'g':0.30, 'b':0.30, 'p':0.930, 'v':0.50, 'E':1.8180e6, 'G':1.000e9, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':0.1e-6, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':3, 'MMD':2, 'FM':1, 'HG': 0, 'HGM': 0},
 
      # For use as a sensor element - similar hardness to hydrogel, low mass, no thermal expansion
-     {'id': 13, 'name':'Low Mass Soft', 'process':'3dp', 'r':0.80, 'g':0.60, 'b':0.00, 'p':0.01, 'v':0.50, 'E':5e3, 'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':0, 'TP':0, 'uS':0, 'uD':0, 'MM':0, 'MMD':0, 'FM':0, 'HG': 0, 'HGM': 0},
-     {'id': 14, 'name':'Low Mass Hard', 'process':'3dp', 'r':1.00, 'g':0.80, 'b':0.00, 'p':0.01, 'v':0.50, 'E':5e4, 'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':0, 'TP':0, 'uS':0, 'uD':0, 'MM':0, 'MMD':0, 'FM':0, 'HG': 0, 'HGM': 0}]
+     {'id': 13, 'name':'Low Mass Soft', 'process':'3dp', 'r':0.80, 'g':0.60, 'b':0.00, 'p':0.01, 'v':0.50, 'E':5e3, 'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':0, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 0, 'HGM': 0},
+     {'id': 14, 'name':'Low Mass Hard', 'process':'3dp', 'r':1.00, 'g':0.80, 'b':0.00, 'p':0.01, 'v':0.50, 'E':5e4, 'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':0, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 0, 'HGM': 0}]
 
 # Stress-strain curves for use when 'MM' = 3
 ss_data = [{'id': 1,
