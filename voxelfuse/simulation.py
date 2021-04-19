@@ -664,6 +664,17 @@ class Simulation:
         self.__localTempControls.append(group)
         self.__currentTempControlGroup = len(self.__localTempControls)-1
 
+    def removeTempControlGroup(self, index: int = 0):
+        """
+        Remove a temperature control group by index.
+
+        :param index: Temperature control group index
+        :return: Name of removed group
+        """
+        group = self.__localTempControls.pop(index)
+        self.__currentTempControlGroup = len(self.__localTempControls)-1
+        return group.name
+
     def selectTempControlGroup(self, index: int = 0):
         """
         Select which keyframe new temperature control elements should be added to.
@@ -681,6 +692,37 @@ class Simulation:
         """
         self.__currentTempControlGroup = 0
         self.__localTempControls = []
+
+    def cleanTempControlGroups(self):
+        """
+        Remove invalid temperature control groups.
+
+        Invalid groups have no keyframes, or have no target voxels.
+
+        :return: Number of groups removed
+        """
+        removed_groups = []
+        for g in range(len(self.__localTempControls)):
+            g = g - len(removed_groups)
+            group = self.__localTempControls[g]
+            if len(group.keyframes) == 0 or len(group.locations) == 0:
+                removed_groups.append(self.removeTempControlGroup(g))
+
+        self.__currentTempControlGroup = len(self.__localTempControls)-1
+
+        named_groups = []
+        for n in removed_groups:
+            if n is not None:
+                named_groups.append(n)
+
+        if len(removed_groups) == 0:
+            pass
+        elif len(named_groups) == 0:
+            print('Removed ' + str(len(removed_groups)) + ' temperature control groups')
+        else:
+            print('Removed ' + str(len(removed_groups)) + ' temperature control groups, including: ' + str(named_groups))
+
+        return len(removed_groups)
 
     def clearKeyframes(self):
         """
@@ -866,6 +908,7 @@ class Simulation:
         :param compression: Enable/disable voxel data compression
         :return: None
         """
+        self.cleanTempControlGroups()
         f = open(filename + '.vxa', 'w+')
         print('Saving file: ' + f.name)
 
