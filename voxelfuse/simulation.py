@@ -16,6 +16,7 @@ import multiprocessing
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from enum import Enum
+from datetime import date
 from typing import List, Tuple, TextIO
 from tqdm import tqdm
 import numpy as np
@@ -146,8 +147,11 @@ class Simulation:
 
         :param voxel_model: VoxelModel
         """
-        # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        # Simulation ID and start date
         self.id = id_number
+        self.date = date.today()
+
+        # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
         self.__model = ((VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1), resolution=voxel_model.resolution)).removeDuplicateMaterials()
 
         # Simulator ##############
@@ -225,6 +229,10 @@ class Simulation:
         # Create new simulation object and copy attribute values
         new_simulation = cls(simulation.__model)
         new_simulation.__dict__ = simulation.__dict__.copy()
+
+        # Update ID and date
+        new_simulation.id = simulation.id + 1
+        new_simulation.date = date.today()
 
         # Make lists copies instead of references
         new_simulation.__bcRegions = simulation.__bcRegions.copy()
@@ -1120,12 +1128,16 @@ class Simulation:
         :param wsl: Enable/disable using Windows Subsystem for Linux with bundled Voxelyze
         :return: None
         """
+        # Generate results file/directory names
+        filename = filename + '_' + str(self.id)
+        dirname = 'sim_results_' + str(self.date)
+
         # Create results directory
-        if not os.path.exists('sim_results'):
-            os.makedirs('sim_results')
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
 
         # Create simulation file
-        self.saveVXA('sim_results/' + filename)
+        self.saveVXA(dirname + '/' + filename)
 
         if voxelyze_on_path:
             command_string = 'voxelyze'
@@ -1139,7 +1151,7 @@ class Simulation:
             else: # Linux
                 command_string = f'"{os.path.dirname(os.path.realpath(__file__))}/utils/voxelyze"'
 
-        command_string = command_string + ' -f sim_results/' + filename + '.vxa -o sim_results/' + filename + ' -vm ' + str(value_map) + ' -p'
+        command_string = command_string + ' -f ' + dirname + '/' + filename + '.vxa -o ' + dirname + '/' + filename + ' -vm ' + str(value_map) + ' -p'
 
         if log_interval > 0:
             command_string = command_string + ' -log-interval ' + str(log_interval)
@@ -1152,7 +1164,7 @@ class Simulation:
         p.wait()
 
         # Open simulation results
-        f = open('sim_results/' + filename + '.xml', 'r')
+        f = open(dirname + '/' + filename + '.xml', 'r')
         #print('Opening file: ' + f.name)
         data = f.readlines()
         f.close()
@@ -1232,11 +1244,11 @@ class Simulation:
 
         # Remove temporary files
         if delete_files:
-            os.remove('sim_results/' + filename + '.vxa')
-            os.remove('sim_results/' + filename + '.xml')
+            os.remove(dirname + '/' + filename + '.vxa')
+            os.remove(dirname + '/' + filename + '.xml')
 
-            if os.path.exists('sim_results/value_map.txt'):
-                os.remove('sim_results/value_map.txt')
+            if os.path.exists(dirname + '/value_map.txt'):
+                os.remove(dirname + '/value_map.txt')
 
     def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, wsl: bool = False):
         """
@@ -1262,6 +1274,9 @@ class Simulation:
         :param wsl: Enable/disable using Windows Subsystem for Linux with bundled VoxCad
         :return: None
         """
+        # Generate file name
+        filename = filename + '_' + str(self.id)
+
         # Create simulation file
         self.saveVXA(filename)
 
@@ -1373,6 +1388,11 @@ class MultiSimulation:
 
         :return: None
         """
+        # Check if results directory already exists
+        dirname = 'sim_results_' + str(date.today())
+        if os.path.exists(dirname):
+            print("WARNING: Previous results exist and may be overwritten: " + str(dirname))
+
         print("Trials to run: " + str(len(self.__setup_params)))
         print("Max CPU threads: " + str(self.__thread_count))
         input("Press Enter to continue...")
@@ -1494,11 +1514,11 @@ def simProcess(simulation: Simulation):
     :param simulation: Simulation object to run
     :return: None
     """
-    print('\nProcess ' + str(simulation.id) + ' started')
+    print('Process ' + str(simulation.id) + ' starting')
 
     # Run simulation
     time_process_started = time.time()
-    simulation.runSim('sim_' + str(simulation.id), log_interval=-1, history_interval=100000, wsl=False)
+    simulation.runSim('multisim', log_interval=-1, history_interval=100000, wsl=True)
     time_process_finished = time.time()
 
     # Read results
@@ -1512,7 +1532,7 @@ def simProcess(simulation: Simulation):
         print('Unable to load sensor results')
 
     # Finished
-    print('\nProcess ' + str(simulation.id) + ' finished')
+    print('Process ' + str(simulation.id) + ' finished')
 
 def simProcessLog(simulation: Simulation):
     """
@@ -1521,11 +1541,11 @@ def simProcessLog(simulation: Simulation):
     :param simulation: Simulation object to run
     :return: None
     """
-    print('\nProcess ' + str(simulation.id) + ' started')
+    print('Process ' + str(simulation.id) + ' starting')
 
     # Run simulation
     time_process_started = time.time()
-    simulation.runSim('sim_' + str(simulation.id), log_interval=100000, history_interval=100000, wsl=False)
+    simulation.runSim('multisim', log_interval=100000, history_interval=100000, wsl=True)
     time_process_finished = time.time()
 
     # Read results
@@ -1539,7 +1559,7 @@ def simProcessLog(simulation: Simulation):
         print('Unable to load sensor results')
 
     # Finished
-    print('\nProcess ' + str(simulation.id) + ' finished')
+    print('Process ' + str(simulation.id) + ' finished')
 
 def simProcessLogFine(simulation: Simulation):
     """
@@ -1548,11 +1568,11 @@ def simProcessLogFine(simulation: Simulation):
     :param simulation: Simulation object to run
     :return: None
     """
-    print('\nProcess ' + str(simulation.id) + ' started')
+    print('Process ' + str(simulation.id) + ' starting')
 
     # Run simulation
     time_process_started = time.time()
-    simulation.runSim('sim_' + str(simulation.id), log_interval=1000, history_interval=1000, wsl=False)
+    simulation.runSim('multisim', log_interval=1000, history_interval=1000, wsl=True)
     time_process_finished = time.time()
 
     # Read results
@@ -1566,4 +1586,4 @@ def simProcessLogFine(simulation: Simulation):
         print('Unable to load sensor results')
 
     # Finished
-    print('\nProcess ' + str(simulation.id) + ' finished')
+    print('Process ' + str(simulation.id) + ' finished')
