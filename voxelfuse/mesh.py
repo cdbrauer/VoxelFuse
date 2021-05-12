@@ -162,6 +162,11 @@ class Mesh:
         :param kwargs: Additional display options (see above)
         :return: Plot object
         """
+        # Get tris
+        tris = np.empty_like(self.tris)
+        tris[:, 0] = self.tris[:, 1]
+        tris[:, 1] = self.tris[:, 0]
+        tris[:, 2] = self.tris[:, 2]
 
         # Get colors
         colors = []
@@ -173,7 +178,7 @@ class Mesh:
         if plot is None:
             plot = k3d.plot()
 
-        plot += k3d.mesh(self.verts.astype(np.float32), self.tris.astype(np.uint32), colors=colors, name=name, wireframe=wireframe, **kwargs)
+        plot += k3d.mesh(self.verts.astype(np.float32), tris.astype(np.uint32), colors=colors, name=name, wireframe=wireframe, **kwargs)
         return plot
 
     # Export model from mesh data
@@ -200,7 +205,15 @@ class Mesh:
         meshio.write(filename, output_mesh)
 
 # Helper functions ##############################################################
-def rgb_to_hex(r, g, b):
+def rgb_to_hex(r: float, g: float, b: float):
+    """
+    Convert RGB values to a single hexadecimal value.
+
+    :param r: Red percentage (0-1)
+    :param g: Green percentage (0-1)
+    :param b: Blue percentage (0-1)
+    :return: Hexadecimal color as an integer
+    """
     r = round(r * 255)
     g = round(g * 255)
     b = round(b * 255)

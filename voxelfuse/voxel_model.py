@@ -2435,7 +2435,15 @@ class GpuSettings:
         os.environ['VF_CUDA_DEVICE'] = str(self.CUDA_device)
 
 # Helper functions ##############################################################
-def rgb_to_hex(r, g, b):
+def rgb_to_hex(r: float, g: float, b: float):
+    """
+    Convert RGB values to a single hexadecimal value.
+
+    :param r: Red percentage (0-1)
+    :param g: Green percentage (0-1)
+    :param b: Blue percentage (0-1)
+    :return: Hexadecimal color as an integer
+    """
     r = round(r * 255)
     g = round(g * 255)
     b = round(b * 255)
