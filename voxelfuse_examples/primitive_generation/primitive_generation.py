@@ -3,17 +3,21 @@ Generate a series of primitive solids.
 
 ----
 
-Copyright 2020 - Cole Brauer, Dan Aukes
+Copyright 2021 - Cole Brauer, Dan Aukes
 """
 
-import PyQt5.QtGui as qg
 import sys
+import time
+import PyQt5.QtGui as qg
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 from voxelfuse.primitives import *
 
 if __name__=='__main__':
+    # Save start time
+    t1 = time.time()
+
     app1 = qg.QApplication(sys.argv)
 
     model1 = cube(11, (0, 0, 0), 1)
@@ -30,8 +34,13 @@ if __name__=='__main__':
     mesh1.export('primitives.stl')
 
     # Create plot
-    plot1 = Plot(mesh1)
+    plot1 = Plot(mesh1, grids=True)
     plot1.show()
     app1.processEvents()
 
-    app1.exec_()
+    # Get elapsed time
+    t2 = time.time()
+    time_pyqt5 = t2 - t1
+    print('Time to generate plot: ' + str(time_pyqt5) + ' sec')
+
+    app1.exec()

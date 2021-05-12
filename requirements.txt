@@ -8,3 +8,4 @@ meshio
 numba
 tqdm
 matplotlib
+k3d

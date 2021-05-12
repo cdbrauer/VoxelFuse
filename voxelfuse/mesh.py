@@ -5,11 +5,12 @@ Initialized from a voxel model
 
 ----
 
-Copyright 2020 - Cole Brauer, Dan Aukes
+Copyright 2021 - Cole Brauer, Dan Aukes
 """
 
 import numpy as np
 import meshio
+import k3d
 from numba import njit
 from tqdm import tqdm
 
@@ -126,6 +127,55 @@ class Mesh:
 
         return cls(voxel_model_array, verts, verts_colors, tris, resolution)
 
+    # Add mesh to a K3D plot in Jupyter Notebook
+    def plot(self, plot = None, name: str = 'mesh', wireframe: bool = True, **kwargs):
+        """
+        Add mesh to a K3D plot.
+
+        Additional display options:
+            flat_shading: `bool`.
+                Whether mesh should display with flat shading.
+            opacity: `float`.
+                Opacity of mesh.
+            volume: `array_like`.
+                3D array of `float`
+            volume_bounds: `array_like`.
+                6-element tuple specifying the bounds of the volume data (x0, x1, y0, y1, z0, z1)
+            opacity_function: `array`.
+                A list of float tuples (attribute value, opacity), sorted by attribute value. The first
+                typles should have value 0.0, the last 1.0; opacity is in the range 0.0 to 1.0.
+            side: `string`.
+                Control over which side to render for a mesh. Legal values are `front`, `back`, `double`.
+            texture: `bytes`.
+                Image data in a specific format.
+            texture_file_format: `str`.
+                Format of the data, it should be the second part of MIME format of type 'image/',
+                for example 'jpeg', 'png', 'gif', 'tiff'.
+            uvs: `array_like`.
+                Array of float uvs for the texturing, coresponding to each vertex.
+            kwargs: `dict`.
+                Dictionary arguments to configure transform and model_matrix.
+
+        :param plot: Plot object to add mesh to
+        :param name: Mesh name
+        :param wireframe: Enable displaying mesh as a wireframe
+        :param kwargs: Additional display options (see above)
+        :return: Plot object
+        """
+
+        # Get colors
+        colors = []
+        for c in self.colors:
+            colors.append(rgb_to_hex(c[0], c[1], c[2]))
+        colors = np.array(colors, dtype=np.uint32)
+
+        # Plot
+        if plot is None:
+            plot = k3d.plot()
+
+        plot += k3d.mesh(self.verts.astype(np.float32), self.tris.astype(np.uint32), colors=colors, name=name, wireframe=wireframe, **kwargs)
+        return plot
+
     # Export model from mesh data
     def export(self, filename: str):
         """
@@ -150,6 +200,13 @@ class Mesh:
         meshio.write(filename, output_mesh)
 
 # Helper functions ##############################################################
+def rgb_to_hex(r, g, b):
+    r = round(r * 255)
+    g = round(g * 255)
+    b = round(b * 255)
+    hex_str = '0x{:02x}{:02x}{:02x}'.format(r, g, b)
+    return int(hex_str, base=16)
+
 @njit()
 def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
     """

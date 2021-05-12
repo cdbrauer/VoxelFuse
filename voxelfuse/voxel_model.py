@@ -9,6 +9,7 @@ Copyright 2021 - Cole Brauer, Dan Aukes
 import os
 import subprocess
 import meshio
+import k3d
 import numpy as np
 import zlib
 import base64
@@ -1944,6 +1945,57 @@ class VoxelModel:
 
     # File IO ##############################
 
+    # Add model to a K3D plot in Jupyter Notebook
+    def plot(self, plot=None, name: str = 'model', wireframe: bool = False, **kwargs):
+        """
+        Add model to a K3D plot.
+
+        Additional display options:
+            opacity: `float`.
+                Opacity of voxels.
+            outlines: `bool`.
+                Whether mesh should display with outlines.
+            outlines_color: `int`.
+                Packed RGB color of the resulting outlines (0xff0000 is red, 0xff is blue)
+            kwargs: `dict`.
+                Dictionary arguments to configure transform and model_matrix.
+
+        :param plot: Plot object to add model to
+        :param name: Model name
+        :param wireframe: Enable displaying model as a wireframe
+        :param kwargs: Additional display options (see above)
+        :return: Plot object
+        """
+        model = self | VoxelModel.empty((1, 1, 1), self.resolution)
+
+        # Get colors
+        colors = []
+
+        for m in model.materials:
+            r = 0
+            g = 0
+            b = 0
+
+            for i in range(1, len(m)):
+                r = r + m[i] * material_properties[i - 1]['r']
+                g = g + m[i] * material_properties[i - 1]['g']
+                b = b + m[i] * material_properties[i - 1]['b']
+
+            r = 1 if r > 1 else r
+            g = 1 if g > 1 else g
+            b = 1 if b > 1 else b
+
+            colors.append(rgb_to_hex(r, g, b))
+
+        colors = np.array(colors, dtype=np.uint32)[1:]
+
+        # Plot
+        if plot is None:
+            plot = k3d.plot()
+
+        plot += k3d.voxels(np.swapaxes(model.voxels, 0, 2).astype(np.uint8), color_map=colors, name=name, wireframe=wireframe, **kwargs)
+        return plot
+
     def saveVF(self, filename: str):
         """
         Save model data to a .vf file
@@ -2383,6 +2435,13 @@ class GpuSettings:
         os.environ['VF_CUDA_DEVICE'] = str(self.CUDA_device)
 
 # Helper functions ##############################################################
+def rgb_to_hex(r, g, b):
+    r = round(r * 255)
+    g = round(g * 255)
+    b = round(b * 255)
+    hex_str = '0x{:02x}{:02x}{:02x}'.format(r, g, b)
+    return int(hex_str, base=16)
+
 def getMaterialData(material_id):
     """
     Get the material data for a specific material id.
