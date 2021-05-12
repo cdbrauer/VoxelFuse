@@ -162,6 +162,10 @@ class Mesh:
         :param kwargs: Additional display options (see above)
         :return: Plot object
         """
+        # Get verts
+        verts = self.verts
+        verts = np.add(verts, 0.5)
+
         # Get tris
         tris = np.empty_like(self.tris)
         tris[:, 0] = self.tris[:, 1]
@@ -178,7 +182,7 @@ class Mesh:
         if plot is None:
             plot = k3d.plot()
 
-        plot += k3d.mesh(self.verts.astype(np.float32), tris.astype(np.uint32), colors=colors, name=name, wireframe=wireframe, **kwargs)
+        plot += k3d.mesh(verts.astype(np.float32), tris.astype(np.uint32), colors=colors, name=name, wireframe=wireframe, **kwargs)
         return plot
 
     # Export model from mesh data
