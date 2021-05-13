@@ -160,7 +160,7 @@ class Mesh:
         :param name: Mesh name
         :param wireframe: Enable displaying mesh as a wireframe
         :param kwargs: Additional display options (see above)
-        :return: Plot object
+        :return: K3D plot object
         """
         # Get verts
         verts = self.verts

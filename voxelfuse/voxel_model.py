@@ -1964,7 +1964,7 @@ class VoxelModel:
         :param name: Model name
         :param wireframe: Enable displaying model as a wireframe
         :param kwargs: Additional display options (see above)
-        :return: Plot object
+        :return: K3D plot object
         """
         model = self | VoxelModel.empty((1, 1, 1), self.resolution)
 
