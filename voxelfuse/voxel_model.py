@@ -1993,6 +1993,7 @@ class VoxelModel:
         :return: K3D plot object
         """
         model = self.fitWorkspace() | VoxelModel.empty((1, 1, 1), self.resolution)
+        model = model.removeDuplicateMaterials()
 
         # Get colors
         colors = []

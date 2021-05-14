@@ -128,7 +128,7 @@ class Mesh:
         return cls(voxel_model_array, verts, verts_colors, tris, resolution)
 
     # Add mesh to a K3D plot in Jupyter Notebook
-    def plot(self, plot = None, name: str = 'mesh', wireframe: bool = True, **kwargs):
+    def plot(self, plot = None, name: str = 'mesh', voxel_scale: bool = True, wireframe: bool = True, **kwargs):
         """
         Add mesh to a K3D plot.
 
@@ -158,13 +158,18 @@ class Mesh:
 
         :param plot: Plot object to add mesh to
         :param name: Mesh name
+        :param voxel_scale: Enable to use a voxel plot scale, disable to use a mm plot scale
         :param wireframe: Enable displaying mesh as a wireframe
         :param kwargs: Additional display options (see above)
         :return: K3D plot object
         """
         # Get verts
         verts = self.verts
-        verts = np.add(verts, 0.5)
+
+        # Adjust coordinate scale
+        if voxel_scale:
+            verts = np.multiply(verts, self.res)
+            verts = np.add(verts, 0.5)
 
         # Get tris
         tris = np.empty_like(self.tris)
