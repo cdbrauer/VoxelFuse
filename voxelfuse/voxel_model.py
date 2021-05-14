@@ -1468,6 +1468,32 @@ class VoxelModel:
 
         return new_model
 
+    def mirror(self, axes: Axes = Axes.X):
+        """
+        Mirror a model along the given axes.
+
+        This operation will mirror ALONG the given axes. For example:
+
+        - Axes.X performs a mirror about the YZ plane
+        - Axes.XY performs a mirror about the YZ plane and the XZ plane
+        - Axes.XYZ performs a mirror along all three axes
+
+        :param axes: Axes for mirror operation, set using Axes class
+        :return: VoxelModel
+        """
+        flip_axis = []
+        for i in range(len(axes.value)):
+            if axes.value[i]:
+                flip_axis.append(i)
+        flip_axis = tuple(flip_axis)
+
+        centerCoords = self.getCenter()
+        new_voxels = np.flip(self.voxels, flip_axis)
+        new_model = VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
+        new_model = new_model.setCenter(centerCoords)
+
+        return new_model
+
     def scale(self, factor: float, adjustResolution: bool = True):
         """
         Scale a model.
@@ -1966,7 +1992,7 @@ class VoxelModel:
         :param kwargs: Additional display options (see above)
         :return: K3D plot object
         """
-        model = self | VoxelModel.empty((1, 1, 1), self.resolution)
+        model = self.fitWorkspace() | VoxelModel.empty((1, 1, 1), self.resolution)
 
         # Get colors
         colors = []
