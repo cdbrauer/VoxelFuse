@@ -21,7 +21,7 @@ from scipy import ndimage
 from numba import njit, prange, cuda
 from tqdm import tqdm
 from enum import Enum
-from typing import Tuple, TextIO
+from typing import Union as TypeUnion, Tuple, TextIO
 from pyvox.parser import VoxParser
 from voxelfuse.materials import *
 
@@ -70,17 +70,25 @@ class VoxelModel:
     VoxelModel object that stores geometry, position, and material information.
     """
 
-    def __init__(self, voxels, materials, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
+    def __init__(self, voxels: np.ndarray, materials: TypeUnion[int, np.ndarray] = None, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
         """
         Initialize a VoxelModel object.
 
         :param voxels: Array storing the index of the material present at each voxel
-        :param materials: Array of all material mixtures present in model, material format: (a, m0, m1, ... mn)
+        :param materials: Material index (int), or array of all material mixtures present in model with material format: (a, m0, m1, ... mn)
         :param coords: Model origin coordinates
         :param resolution: Number of voxels per mm (higher number = finer resolution)
         """
         self.voxels = np.copy(voxels) # Use np.copy to break references
-        self.materials = np.copy(materials)
+
+        # Determine how materials were specified and create the materials array accordingly
+        if materials is None:
+            self.materials = generateMaterials(1)
+        elif isinstance(materials, int):
+            self.materials = generateMaterials(materials)
+        else:
+            self.materials = np.copy(materials)
+
         self.coords = coords
         self.resolution = resolution
         self.components = np.zeros_like(voxels)
@@ -224,7 +232,7 @@ class VoxelModel:
     @classmethod
     def emptyLike(cls, voxel_model):
         """
-        Initialize an empty VoxelModel with the same size, coords, and resolution as another model.
+        Initialize an empty VoxelModel with the same size, materials, coords, and resolution as another model.
 
         :param voxel_model: Reference VoxelModel object
         :return: VoxelModel
