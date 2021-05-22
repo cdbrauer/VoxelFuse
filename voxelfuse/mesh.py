@@ -10,7 +10,9 @@ Copyright 2021 - Cole Brauer, Dan Aukes
 
 import numpy as np
 import meshio
+import mcubes
 import k3d
+from typing import List
 from numba import njit
 from tqdm import tqdm
 
@@ -22,26 +24,26 @@ class Mesh:
     Mesh object that can be exported or passed to a Plot object.
     """
 
-    def __init__(self, input_model, verts, verts_colors, tris, resolution):
+    def __init__(self, voxels: np.ndarray, verts: np.ndarray, verts_colors: np.ndarray, tris: np.ndarray, resolution: float):
         """
         Initialize a Mesh object.
 
-        :param input_model: Voxel data array
+        :param voxels: Voxel data array
         :param verts: List of coordinates of surface vertices
         :param verts_colors: List of colors associated with each vertex
         :param tris: List of the sets of vertices associated with triangular faces
         :param resolution: Number of voxels per mm
         """
 
+        self.model = voxels
         self.verts = verts
         self.colors = verts_colors
         self.tris = tris
-        self.model = input_model
         self.res = resolution
 
     # Create mesh from voxel data
     @classmethod
-    def fromVoxelModel(cls, voxel_model, resolution: float = -1):
+    def fromVoxelModel(cls, voxel_model: VoxelModel, resolution: float = -1):
         """
         Generate a mesh object from a VoxelModel object.
 
@@ -126,6 +128,49 @@ class Mesh:
         tris = np.array(tris)
 
         return cls(voxel_model_array, verts, verts_colors, tris, resolution)
+
+    # Create and save a mesh file using a marching cubes algorithm
+    @classmethod
+    def marchingCubes(cls, voxel_model: VoxelModel, resolution: float = -1, smooth: bool = False):
+        """
+        Generate a mesh object from a VoxelModel object using a marching cubes algorithm.
+
+        This meshing approach is best suited to high resolution models where some smoothing is acceptable.
+
+        :param voxel_model: VoxelModel object to be converted to a mesh
+        :param resolution: Number of voxels per mm, -1 to use model resolution
+        :param smooth: Enable smoothing
+        :return: None
+        """
+        if resolution < 0:
+            resolution = voxel_model.resolution
+
+        voxel_model_fit = voxel_model.fitWorkspace().getOccupied()
+        voxels = voxel_model_fit.voxels.astype(np.uint16)
+        x, y, z = voxels.shape
+
+        voxels_padded = np.zeros((x + 2, y + 2, z + 2))
+        voxels_padded[1:-1, 1:-1, 1:-1] = voxels
+
+        if smooth:
+            voxels_padded = mcubes.smooth(voxels_padded)
+            levelset = 0
+        else:
+            levelset = 0.5
+
+        verts, tris = mcubes.marching_cubes(voxels_padded, levelset)
+
+        # Adjust coordinate scale
+        verts = np.divide(verts, resolution)
+
+        # Generate colors
+        verts_colors = []
+        voxel_color = [0.8, 0.8, 0.8, 1]
+        for i in range(len(verts)):
+            verts_colors.append(voxel_color)
+        verts_colors = np.array(verts_colors)
+
+        return cls(voxels_padded, verts, verts_colors, tris, resolution)
 
     # Add mesh to a K3D plot in Jupyter Notebook
     def plot(self, plot = None, name: str = 'mesh', voxel_scale: bool = True, wireframe: bool = True, **kwargs):

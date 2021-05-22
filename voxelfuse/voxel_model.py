@@ -11,12 +11,9 @@ import sys
 import subprocess
 import numpy as np
 import meshio
-import mcubes
 import k3d
 import zlib
 import base64
-import PyQt5.QtGui as qg
-import pyqtgraph.opengl as pgo
 from scipy import ndimage
 from numba import njit, prange, cuda
 from tqdm import tqdm
@@ -1982,61 +1979,6 @@ class VoxelModel:
         return model_A
 
     # File IO ##############################
-
-    # Create and save a mesh file using a marching cubes algorithm
-    def marchingCubes(self, filename: str, smooth: bool = False, display: bool = False):
-        """
-        Convert model to a mesh using a marching cubes algorithm and save it as an .obj file.
-
-        :param filename: Output file name
-        :param smooth: Enable/disable model smoothing
-        :param display: Enable/disable generating a plot of the model
-        :return: None
-        """
-        voxels = self.getOccupied().voxels
-        x, y, z = voxels.shape
-
-        voxels_padded = np.zeros((x+2, y+2, z+2))
-        voxels_padded[1:-1, 1:-1, 1:-1] = voxels
-
-        if smooth:
-            voxels_padded = mcubes.smooth(voxels_padded)
-            levelset = 0
-        else:
-            levelset = 0.5
-
-        vertices, triangles = mcubes.marching_cubes(voxels_padded, levelset)
-
-        if filename is not None:
-            if filename[-4:] != '.obj':
-                filename = filename + '.obj'
-
-            mcubes.export_obj(vertices, triangles, filename)
-
-        if display and not smooth: # TODO: Display is mainly for debugging - probably remove this
-            app = qg.QApplication(sys.argv)
-
-            mesh_data = pgo.MeshData(vertexes=vertices, faces=triangles, vertexColors=None, faceColors=None)
-            mesh_item = pgo.GLMeshItem(meshdata=mesh_data, shader='balloon', drawEdges=True, edgeColor=(0, 0, 0, 0.5),
-                                       smooth=False, computeNormals=False, glOptions='translucent')
-
-            widget = pgo.GLViewWidget()
-            widget.setBackgroundColor('w')
-            widget.addItem(mesh_item)
-
-            # Set plot options
-            widget.opts['center'] = qg.QVector3D(voxels_padded.shape[0] / 2, voxels_padded.shape[1] / 2, voxels_padded.shape[2] / 2)
-            widget.opts['elevation'] = 40
-            widget.opts['azimuth'] = 30
-            widget.opts['distance'] = 300
-            widget.resize(1280, 720)
-
-            # Show plot
-            widget.setWindowTitle('Marching Cubes Output')
-            widget.show()
-
-            app.processEvents()
-            app.exec_()
 
     # Add model to a K3D plot in Jupyter Notebook
     def plot(self, plot=None, name: str = 'model', wireframe: bool = False, **kwargs):
