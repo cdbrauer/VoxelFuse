@@ -12,7 +12,7 @@ import numpy as np
 import meshio
 import mcubes
 import k3d
-from typing import List
+from typing import List, Tuple
 from numba import njit
 from tqdm import tqdm
 
@@ -66,9 +66,7 @@ class Mesh:
         # Find exterior voxels
         exterior_voxels_array = voxel_model_fit.difference(voxel_model_fit.erode(radius=1, connectivity=1)).voxels
         
-        x_len = len(voxel_model_array[:, 0, 0])
-        y_len = len(voxel_model_array[0, :, 0])
-        z_len = len(voxel_model_array[0, 0, :])
+        x_len, y_len, z_len = voxel_model_array.shape
         
         # Create list of exterior voxel coordinates
         exterior_voxels_coords = []
@@ -84,14 +82,13 @@ class Mesh:
         # Initialize arrays
         verts = []
         verts_colors = []
+        verts_indices = np.zeros((x_len+1, y_len+1, z_len+1))
         tris = []
         vi = 1  # Tracks current vertex index
 
         # Loop through voxel_model_array data
         for voxel_coords in tqdm(exterior_voxels_coords, desc='Meshing'):
-            x = voxel_coords[0]
-            y = voxel_coords[1]
-            z = voxel_coords[2]
+            x, y, z = voxel_coords
 
             r = 0
             g = 0
@@ -111,12 +108,12 @@ class Mesh:
             voxel_color = [r, g, b, a]
 
             # Add cube vertices
-            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, model_offsets, x, y, z, vi)
+            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, verts_indices, model_offsets, x, y, z, vi)
             verts += new_verts
             tris += new_tris
 
             # Apply color to all vertices
-            for i in range(0, np.count_nonzero(verts_indices)):
+            for i in range(len(new_verts)):
                 verts_colors.append(voxel_color)
 
         verts = np.array(verts)
@@ -129,12 +126,9 @@ class Mesh:
         tris_rev[:, 1] = tris[:, 0]
         tris_rev[:, 2] = tris[:, 2]
 
-        # Shift model to align with origin
-        verts = np.add(verts, 0.5)
-
         return cls(voxel_model_array, verts, verts_colors, tris_rev, voxel_model.resolution)
 
-    # Create and save a mesh file using a marching cubes algorithm
+    # Create mesh using a marching cubes algorithm
     @classmethod
     def marchingCubes(cls, voxel_model: VoxelModel, smooth: bool = False):
         """
@@ -178,7 +172,7 @@ class Mesh:
         """
         Change the defined resolution of a mesh.
 
-        The mesh resolution will determine the scale of exported mesh files.
+        The mesh resolution will determine the scale of plots and exported mesh files.
 
         :param resolution: Number of voxels per mm (higher number = finer resolution)
         :return: None
@@ -272,12 +266,12 @@ class Mesh:
 
 # Helper functions ##############################################################
 @njit()
-def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
+def check_adjacent_x(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord: int, x_dir: int):
     """
     Check if a target voxel has another voxel of the same material
     adjacent to it in the X direction.
 
-    :param input_model: VoxelModel
+    :param input_model: VoxelModel.voxels
     :param x_coord: Target voxel X location
     :param y_coord: Target voxel Y location
     :param z_coord: Target voxel Z location
@@ -295,12 +289,12 @@ def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
         return False
 
 @njit()
-def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
+def check_adjacent_y(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord: int, y_dir: int):
     """
     Check if a target voxel has another voxel of the same material
     adjacent to it in the Y direction.
 
-    :param input_model: VoxelModel
+    :param input_model: VoxelModel.voxels
     :param x_coord: Target voxel X location
     :param y_coord: Target voxel Y location
     :param z_coord: Target voxel Z location
@@ -318,12 +312,12 @@ def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
         return False
 
 @njit()
-def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
+def check_adjacent_z(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord: int, z_dir):
     """
     Check if a target voxel has another voxel of the same material
     adjacent to it in the Z direction.
 
-    :param input_model: VoxelModel
+    :param input_model: VoxelModel.voxels
     :param x_coord: Target voxel X location
     :param y_coord: Target voxel Y location
     :param z_coord: Target voxel Z location
@@ -341,17 +335,18 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
         return False
 
 @njit()
-def addVerticesAndTriangles(voxel_model_array, model_offsets, x, y, z, vi):
+def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.ndarray, model_offsets: Tuple, x: int, y: int, z: int, vi: int):
     """
     Find the applicable mesh vertices and triangles for a target voxel.
 
     :param voxel_model_array: VoxelModel.voxels
+    :param verts_indices: verts indices array
     :param model_offsets: VoxelModel.coords
     :param x: Target voxel X location
     :param y: Target voxel Y location
     :param z: Target voxel Z location
     :param vi: Current vertex index
-    :return: New verts, Indices for new verts, New tris, New current vert index
+    :return: New verts, Updated verts indices array, New tris, Updated current vert index
     """
     adjacent = [
         [check_adjacent_x(voxel_model_array, x, y, z, 1), check_adjacent_x(voxel_model_array, x, y, z, -1)],
@@ -359,78 +354,102 @@ def addVerticesAndTriangles(voxel_model_array, model_offsets, x, y, z, vi):
         [check_adjacent_z(voxel_model_array, x, y, z, 1), check_adjacent_z(voxel_model_array, x, y, z, -1)],
     ]
 
-    verts_indices = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+    cube_verts_indices = np.array([0, 0, 0, 0, 0, 0, 0, 0])
     verts = []
     tris = []
 
     if adjacent[0][0] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([(x + 0.5 + model_offsets[0]), (y + 0.5 + model_offsets[1]), (z + 0.5 + model_offsets[2])])
-        verts_indices[0] = vi
-        vi = vi + 1
+        vert_pos = (x+1, y+1, z+1)
+        if verts_indices[vert_pos] < 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[0] = verts_indices[vert_pos]
 
     if adjacent[0][0] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([(x + 0.5 + model_offsets[0]), (y - 0.5 + model_offsets[1]), (z + 0.5 + model_offsets[2])])
-        verts_indices[1] = vi
-        vi = vi + 1
+        vert_pos = (x+1, y, z+1)
+        if verts_indices[vert_pos] < 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[1] = verts_indices[vert_pos]
 
     if adjacent[0][1] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([(x - 0.5 + model_offsets[0]), (y + 0.5 + model_offsets[1]), (z + 0.5 + model_offsets[2])])
-        verts_indices[2] = vi
-        vi = vi + 1
+        vert_pos = (x, y+1, z+1)
+        if verts_indices[vert_pos] < 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[2] = verts_indices[vert_pos]
 
     if adjacent[0][1] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([(x - 0.5 + model_offsets[0]), (y - 0.5 + model_offsets[1]), (z + 0.5 + model_offsets[2])])
-        verts_indices[3] = vi
-        vi = vi + 1
+        vert_pos = (x, y, z+1)
+        if verts_indices[vert_pos] < 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[3] = verts_indices[vert_pos]
 
     if adjacent[0][0] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([(x + 0.5 + model_offsets[0]), (y + 0.5 + model_offsets[1]), (z - 0.5 + model_offsets[2])])
-        verts_indices[4] = vi
-        vi = vi + 1
+        vert_pos = (x+1, y+1, z)
+        if verts_indices[vert_pos] < 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[4] = verts_indices[vert_pos]
 
     if adjacent[0][0] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([(x + 0.5 + model_offsets[0]), (y - 0.5 + model_offsets[1]), (z - 0.5 + model_offsets[2])])
-        verts_indices[5] = vi
-        vi = vi + 1
+        vert_pos = (x+1, y, z)
+        if verts_indices[vert_pos] < 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[5] = verts_indices[vert_pos]
 
     if adjacent[0][1] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([(x - 0.5 + model_offsets[0]), (y + 0.5 + model_offsets[1]), (z - 0.5 + model_offsets[2])])
-        verts_indices[6] = vi
-        vi = vi + 1
+        vert_pos = (x, y+1, z)
+        if verts_indices[vert_pos] < 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[6] = verts_indices[vert_pos]
 
     if adjacent[0][1] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([(x - 0.5 + model_offsets[0]), (y - 0.5 + model_offsets[1]), (z - 0.5 + model_offsets[2])])
-        verts_indices[7] = vi
-        vi = vi + 1
+        vert_pos = (x, y, z)
+        if verts_indices[vert_pos] < 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[7] = verts_indices[vert_pos]
 
-    if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[2] != 0) and (
-            verts_indices[3] != 0):
-        tris.append([verts_indices[0] - 1, verts_indices[1] - 1, verts_indices[2] - 1])
-        tris.append([verts_indices[1] - 1, verts_indices[3] - 1, verts_indices[2] - 1])
+    if (cube_verts_indices[0] != 0) and (cube_verts_indices[1] != 0) and (cube_verts_indices[2] != 0) and (
+            cube_verts_indices[3] != 0):
+        tris.append([cube_verts_indices[0] - 1, cube_verts_indices[1] - 1, cube_verts_indices[2] - 1])
+        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[3] - 1, cube_verts_indices[2] - 1])
 
-    if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[4] != 0) and (
-            verts_indices[5] != 0):
-        tris.append([verts_indices[1] - 1, verts_indices[0] - 1, verts_indices[5] - 1])
-        tris.append([verts_indices[0] - 1, verts_indices[4] - 1, verts_indices[5] - 1])
+    if (cube_verts_indices[0] != 0) and (cube_verts_indices[1] != 0) and (cube_verts_indices[4] != 0) and (
+            cube_verts_indices[5] != 0):
+        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[0] - 1, cube_verts_indices[5] - 1])
+        tris.append([cube_verts_indices[0] - 1, cube_verts_indices[4] - 1, cube_verts_indices[5] - 1])
 
-    if (verts_indices[0] != 0) and (verts_indices[2] != 0) and (verts_indices[4] != 0) and (
-            verts_indices[6] != 0):
-        tris.append([verts_indices[0] - 1, verts_indices[2] - 1, verts_indices[4] - 1])
-        tris.append([verts_indices[2] - 1, verts_indices[6] - 1, verts_indices[4] - 1])
+    if (cube_verts_indices[0] != 0) and (cube_verts_indices[2] != 0) and (cube_verts_indices[4] != 0) and (
+            cube_verts_indices[6] != 0):
+        tris.append([cube_verts_indices[0] - 1, cube_verts_indices[2] - 1, cube_verts_indices[4] - 1])
+        tris.append([cube_verts_indices[2] - 1, cube_verts_indices[6] - 1, cube_verts_indices[4] - 1])
 
-    if (verts_indices[2] != 0) and (verts_indices[3] != 0) and (verts_indices[6] != 0) and (
-            verts_indices[7] != 0):
-        tris.append([verts_indices[2] - 1, verts_indices[3] - 1, verts_indices[6] - 1])
-        tris.append([verts_indices[3] - 1, verts_indices[7] - 1, verts_indices[6] - 1])
+    if (cube_verts_indices[2] != 0) and (cube_verts_indices[3] != 0) and (cube_verts_indices[6] != 0) and (
+            cube_verts_indices[7] != 0):
+        tris.append([cube_verts_indices[2] - 1, cube_verts_indices[3] - 1, cube_verts_indices[6] - 1])
+        tris.append([cube_verts_indices[3] - 1, cube_verts_indices[7] - 1, cube_verts_indices[6] - 1])
 
-    if (verts_indices[1] != 0) and (verts_indices[3] != 0) and (verts_indices[5] != 0) and (
-            verts_indices[7] != 0):
-        tris.append([verts_indices[3] - 1, verts_indices[1] - 1, verts_indices[7] - 1])
-        tris.append([verts_indices[1] - 1, verts_indices[5] - 1, verts_indices[7] - 1])
+    if (cube_verts_indices[1] != 0) and (cube_verts_indices[3] != 0) and (cube_verts_indices[5] != 0) and (
+            cube_verts_indices[7] != 0):
+        tris.append([cube_verts_indices[3] - 1, cube_verts_indices[1] - 1, cube_verts_indices[7] - 1])
+        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[5] - 1, cube_verts_indices[7] - 1])
 
-    if (verts_indices[4] != 0) and (verts_indices[5] != 0) and (verts_indices[6] != 0) and (
-            verts_indices[7] != 0):
-        tris.append([verts_indices[5] - 1, verts_indices[4] - 1, verts_indices[7] - 1])
-        tris.append([verts_indices[4] - 1, verts_indices[6] - 1, verts_indices[7] - 1])
+    if (cube_verts_indices[4] != 0) and (cube_verts_indices[5] != 0) and (cube_verts_indices[6] != 0) and (
+            cube_verts_indices[7] != 0):
+        tris.append([cube_verts_indices[5] - 1, cube_verts_indices[4] - 1, cube_verts_indices[7] - 1])
+        tris.append([cube_verts_indices[4] - 1, cube_verts_indices[6] - 1, cube_verts_indices[7] - 1])
 
     return verts, verts_indices, tris, vi
