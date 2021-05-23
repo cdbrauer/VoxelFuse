@@ -43,7 +43,7 @@ class Mesh:
 
     # Create mesh from voxel data
     @classmethod
-    def fromVoxelModel(cls, voxel_model: VoxelModel, resolution: float = -1):
+    def fromVoxelModel(cls, voxel_model: VoxelModel):
         """
         Generate a mesh object from a VoxelModel object.
 
@@ -56,12 +56,8 @@ class Mesh:
         ----
 
         :param voxel_model: VoxelModel object to be converted to a mesh
-        :param resolution: Number of voxels per mm, -1 to use model resolution
         :return: Mesh
         """
-        if resolution < 0:
-            resolution = voxel_model.resolution
-
         voxel_model_fit = voxel_model.fitWorkspace()
         voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
         model_materials = voxel_model_fit.materials
@@ -115,7 +111,7 @@ class Mesh:
             voxel_color = [r, g, b, a]
 
             # Add cube vertices
-            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi)
+            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, model_offsets, x, y, z, vi)
             verts += new_verts
             tris += new_tris
 
@@ -127,24 +123,29 @@ class Mesh:
         verts_colors = np.array(verts_colors)
         tris = np.array(tris)
 
-        return cls(voxel_model_array, verts, verts_colors, tris, resolution)
+        # Reverse face normals
+        tris_rev = np.empty_like(tris)
+        tris_rev[:, 0] = tris[:, 1]
+        tris_rev[:, 1] = tris[:, 0]
+        tris_rev[:, 2] = tris[:, 2]
+
+        # Shift model to align with origin
+        verts = np.add(verts, 0.5)
+
+        return cls(voxel_model_array, verts, verts_colors, tris_rev, voxel_model.resolution)
 
     # Create and save a mesh file using a marching cubes algorithm
     @classmethod
-    def marchingCubes(cls, voxel_model: VoxelModel, resolution: float = -1, smooth: bool = False):
+    def marchingCubes(cls, voxel_model: VoxelModel, smooth: bool = False):
         """
         Generate a mesh object from a VoxelModel object using a marching cubes algorithm.
 
         This meshing approach is best suited to high resolution models where some smoothing is acceptable.
 
         :param voxel_model: VoxelModel object to be converted to a mesh
-        :param resolution: Number of voxels per mm, -1 to use model resolution
         :param smooth: Enable smoothing
         :return: None
         """
-        if resolution < 0:
-            resolution = voxel_model.resolution
-
         voxel_model_fit = voxel_model.fitWorkspace().getOccupied()
         voxels = voxel_model_fit.voxels.astype(np.uint16)
         x, y, z = voxels.shape
@@ -160,8 +161,8 @@ class Mesh:
 
         verts, tris = mcubes.marching_cubes(voxels_padded, levelset)
 
-        # Adjust coordinate scale
-        verts = np.divide(verts, resolution)
+        # Shift model to align with origin
+        verts = np.subtract(verts, 0.5)
 
         # Generate colors
         verts_colors = []
@@ -170,10 +171,22 @@ class Mesh:
             verts_colors.append(voxel_color)
         verts_colors = np.array(verts_colors)
 
-        return cls(voxels_padded, verts, verts_colors, tris, resolution)
+        return cls(voxels_padded, verts, verts_colors, tris, voxel_model.resolution)
+
+    # Set the resolution of the mesh
+    def setResolution(self, resolution: float):
+        """
+        Change the defined resolution of a mesh.
+
+        The mesh resolution will determine the scale of exported mesh files.
+
+        :param resolution: Number of voxels per mm (higher number = finer resolution)
+        :return: None
+        """
+        self.res = resolution
 
     # Add mesh to a K3D plot in Jupyter Notebook
-    def plot(self, plot = None, name: str = 'mesh', voxel_scale: bool = True, wireframe: bool = True, **kwargs):
+    def plot(self, plot = None, name: str = 'mesh', wireframe: bool = True, mm_scale: bool = False, **kwargs):
         """
         Add mesh to a K3D plot.
 
@@ -203,8 +216,8 @@ class Mesh:
 
         :param plot: Plot object to add mesh to
         :param name: Mesh name
-        :param voxel_scale: Enable to use a voxel plot scale, disable to use a mm plot scale
         :param wireframe: Enable displaying mesh as a wireframe
+        :param mm_scale: Enable to use a mm plot scale, disable to use a voxel plot scale
         :param kwargs: Additional display options (see above)
         :return: K3D plot object
         """
@@ -212,15 +225,11 @@ class Mesh:
         verts = self.verts
 
         # Adjust coordinate scale
-        if voxel_scale:
-            verts = np.multiply(verts, self.res)
-            verts = np.add(verts, 0.5)
+        if mm_scale:
+            verts = np.divide(verts, self.res)
 
         # Get tris
-        tris = np.empty_like(self.tris)
-        tris[:, 0] = self.tris[:, 1]
-        tris[:, 1] = self.tris[:, 0]
-        tris[:, 2] = self.tris[:, 2]
+        tris = self.tris
 
         # Get colors
         colors = []
@@ -251,11 +260,14 @@ class Mesh:
         :param filename: File name with extension
         :return: None
         """
+        # Adjust coordinate scale
+        verts = np.divide(self.verts, self.res)
+
         cells = {
             "triangle": self.tris
         }
 
-        output_mesh = meshio.Mesh(self.verts, cells)
+        output_mesh = meshio.Mesh(verts, cells)
         meshio.write(filename, output_mesh)
 
 # Helper functions ##############################################################
@@ -344,13 +356,12 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
         return False
 
 @njit()
-def addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi):
+def addVerticesAndTriangles(voxel_model_array, model_offsets, x, y, z, vi):
     """
     Find the applicable mesh vertices and triangles for a target voxel.
 
     :param voxel_model_array: VoxelModel.voxels
     :param model_offsets: VoxelModel.coords
-    :param resolution: Number of voxels per mm
     :param x: Target voxel X location
     :param y: Target voxel Y location
     :param z: Target voxel Z location
@@ -368,42 +379,42 @@ def addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, 
     tris = []
 
     if adjacent[0][0] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
+        verts.append([(x + 0.5 + model_offsets[0]), (y + 0.5 + model_offsets[1]), (z + 0.5 + model_offsets[2])])
         verts_indices[0] = vi
         vi = vi + 1
 
     if adjacent[0][0] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
+        verts.append([(x + 0.5 + model_offsets[0]), (y - 0.5 + model_offsets[1]), (z + 0.5 + model_offsets[2])])
         verts_indices[1] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
+        verts.append([(x - 0.5 + model_offsets[0]), (y + 0.5 + model_offsets[1]), (z + 0.5 + model_offsets[2])])
         verts_indices[2] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
+        verts.append([(x - 0.5 + model_offsets[0]), (y - 0.5 + model_offsets[1]), (z + 0.5 + model_offsets[2])])
         verts_indices[3] = vi
         vi = vi + 1
 
     if adjacent[0][0] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
+        verts.append([(x + 0.5 + model_offsets[0]), (y + 0.5 + model_offsets[1]), (z - 0.5 + model_offsets[2])])
         verts_indices[4] = vi
         vi = vi + 1
 
     if adjacent[0][0] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
+        verts.append([(x + 0.5 + model_offsets[0]), (y - 0.5 + model_offsets[1]), (z - 0.5 + model_offsets[2])])
         verts_indices[5] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
+        verts.append([(x - 0.5 + model_offsets[0]), (y + 0.5 + model_offsets[1]), (z - 0.5 + model_offsets[2])])
         verts_indices[6] = vi
         vi = vi + 1
 
     if adjacent[0][1] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
+        verts.append([(x - 0.5 + model_offsets[0]), (y - 0.5 + model_offsets[1]), (z - 0.5 + model_offsets[2])])
         verts_indices[7] = vi
         vi = vi + 1
 
