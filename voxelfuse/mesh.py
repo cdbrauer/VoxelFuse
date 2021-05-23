@@ -16,7 +16,7 @@ from typing import List
 from numba import njit
 from tqdm import tqdm
 
-from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.voxel_model import VoxelModel, rgb_to_hex
 from voxelfuse.materials import material_properties
 
 class Mesh:
@@ -271,21 +271,6 @@ class Mesh:
         meshio.write(filename, output_mesh)
 
 # Helper functions ##############################################################
-def rgb_to_hex(r: float, g: float, b: float):
-    """
-    Convert RGB values to a single hexadecimal value.
-
-    :param r: Red percentage (0-1)
-    :param g: Green percentage (0-1)
-    :param b: Blue percentage (0-1)
-    :return: Hexadecimal color as an integer
-    """
-    r = round(r * 255)
-    g = round(g * 255)
-    b = round(b * 255)
-    hex_str = '0x{:02x}{:02x}{:02x}'.format(r, g, b)
-    return int(hex_str, base=16)
-
 @njit()
 def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
     """

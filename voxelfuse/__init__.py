@@ -97,3 +97,10 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 
 name = "voxelfuse"
 __version__ = "1.2.7"
+
+from voxelfuse.voxel_model import VoxelModel, Axes, Dir, Process, Struct, GpuSettings
+from voxelfuse.mesh import Mesh
+from voxelfuse.plot import Plot
+from voxelfuse.simulation import Simulation, MultiSimulation, Axis, StopCondition, BCShape
+from voxelfuse.primitives import *
+from voxelfuse.periodic import *
