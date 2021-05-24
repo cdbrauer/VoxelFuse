@@ -13,7 +13,7 @@ import meshio
 import mcubes
 from quad_mesh_simplify import simplify_mesh
 import k3d
-from typing import List, Tuple
+from typing import Tuple
 from numba import njit
 from tqdm import tqdm
 
@@ -125,13 +125,7 @@ class Mesh:
         verts_colors = np.array(verts_colors)
         tris = np.array(tris)
 
-        # Reverse face normals
-        tris_rev = np.empty_like(tris)
-        tris_rev[:, 0] = tris[:, 1]
-        tris_rev[:, 1] = tris[:, 0]
-        tris_rev[:, 2] = tris[:, 2]
-
-        return cls(voxel_model_array, verts, verts_colors, tris_rev, voxel_model.resolution)
+        return cls(voxel_model_array, verts, verts_colors, tris, voxel_model.resolution)
 
     # Create mesh using a marching cubes algorithm
     @classmethod
@@ -333,70 +327,29 @@ class Mesh:
 
 # Helper functions ##############################################################
 @njit()
-def check_adjacent_x(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord: int, x_dir: int):
+def check_adjacent(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord: int, x_dir: int, y_dir: int, z_dir: int):
     """
-    Check if a target voxel has another voxel of the same material
-    adjacent to it in the X direction.
+    Check if a target voxel has another voxel adjacent to it in the specified direction.
 
     :param input_model: VoxelModel.voxels
     :param x_coord: Target voxel X location
     :param y_coord: Target voxel Y location
     :param z_coord: Target voxel Z location
     :param x_dir: Specify X direction and distance (usually 1 or -1)
-    :return: Adjacent voxel present/not present
-    """
-    x_len = len(input_model[:, 0, 0])
-    x_coord_new = x_coord+x_dir
-
-    if (x_coord_new < x_len) and (x_coord_new >= 0) and not np.equal(input_model[x_coord_new, y_coord, z_coord], input_model[x_coord, y_coord, z_coord]):
-        return True
-    elif (x_coord_new >= x_len) or (x_coord_new < 0):
-        return True
-    else:
-        return False
-
-@njit()
-def check_adjacent_y(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord: int, y_dir: int):
-    """
-    Check if a target voxel has another voxel of the same material
-    adjacent to it in the Y direction.
-
-    :param input_model: VoxelModel.voxels
-    :param x_coord: Target voxel X location
-    :param y_coord: Target voxel Y location
-    :param z_coord: Target voxel Z location
     :param y_dir: Specify Y direction and distance (usually 1 or -1)
-    :return: Adjacent voxel present/not present
-    """
-    y_len = len(input_model[0, :, 0])
-    y_coord_new = y_coord+y_dir
-
-    if (y_coord_new < y_len) and (y_coord_new >= 0) and not np.equal(input_model[x_coord, y_coord_new, z_coord], input_model[x_coord, y_coord, z_coord]):
-        return True
-    elif (y_coord_new >= y_len) or (y_coord_new < 0):
-        return True
-    else:
-        return False
-
-@njit()
-def check_adjacent_z(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord: int, z_dir):
-    """
-    Check if a target voxel has another voxel of the same material
-    adjacent to it in the Z direction.
-
-    :param input_model: VoxelModel.voxels
-    :param x_coord: Target voxel X location
-    :param y_coord: Target voxel Y location
-    :param z_coord: Target voxel Z location
     :param z_dir: Specify Z direction and distance (usually 1 or -1)
     :return: Adjacent voxel present/not present
     """
-    z_len = len(input_model[0, 0, :])
+    y_len = len(input_model[0, :, 0])
+    x_coord_new = x_coord+x_dir
+    y_coord_new = y_coord+y_dir
     z_coord_new = z_coord+z_dir
 
-    if (z_coord_new < z_len) and (z_coord_new >= 0) and not np.equal(input_model[x_coord, y_coord, z_coord_new], input_model[x_coord, y_coord, z_coord]):
-        return True
-    elif (z_coord_new >= z_len) or (z_coord_new < 0):
+    x_in_bounds = (x_coord_new >= 0) and (x_coord_new < input_model.shape[0])
+    y_in_bounds = (y_coord_new >= 0) and (y_coord_new < input_model.shape[1])
+    z_in_bounds = (z_coord_new >= 0) and (z_coord_new < input_model.shape[2])
+
+    if x_in_bounds and y_in_bounds and z_in_bounds and input_model[x_coord_new, y_coord_new, z_coord_new] > 0:
         return True
     else:
         return False
@@ -416,16 +369,16 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
     :return: New verts, Updated verts indices array, New tris, Updated current vert index
     """
     adjacent = [
-        [check_adjacent_x(voxel_model_array, x, y, z, 1), check_adjacent_x(voxel_model_array, x, y, z, -1)],
-        [check_adjacent_y(voxel_model_array, x, y, z, 1), check_adjacent_y(voxel_model_array, x, y, z, -1)],
-        [check_adjacent_z(voxel_model_array, x, y, z, 1), check_adjacent_z(voxel_model_array, x, y, z, -1)],
+        [check_adjacent(voxel_model_array, x, y, z, 1, 0, 0), check_adjacent(voxel_model_array, x, y, z, -1, 0, 0)],
+        [check_adjacent(voxel_model_array, x, y, z, 0, 1, 0), check_adjacent(voxel_model_array, x, y, z, 0, -1, 0)],
+        [check_adjacent(voxel_model_array, x, y, z, 0, 0, 1), check_adjacent(voxel_model_array, x, y, z, 0, 0, -1)]
     ]
 
     cube_verts_indices = np.array([0, 0, 0, 0, 0, 0, 0, 0])
     verts = []
     tris = []
 
-    if adjacent[0][0] or adjacent[1][0] or adjacent[2][0]:
+    if not adjacent[0][0] or not adjacent[1][0] or not adjacent[2][0]:
         vert_pos = (x+1, y+1, z+1)
         if verts_indices[vert_pos] < 1:
             verts_indices[vert_pos] = vi
@@ -433,7 +386,7 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
             vi = vi + 1
         cube_verts_indices[0] = verts_indices[vert_pos]
 
-    if adjacent[0][0] or adjacent[1][1] or adjacent[2][0]:
+    if not adjacent[0][0] or not adjacent[1][1] or not adjacent[2][0]:
         vert_pos = (x+1, y, z+1)
         if verts_indices[vert_pos] < 1:
             verts_indices[vert_pos] = vi
@@ -441,7 +394,7 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
             vi = vi + 1
         cube_verts_indices[1] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][0] or adjacent[2][0]:
+    if not adjacent[0][1] or not adjacent[1][0] or not adjacent[2][0]:
         vert_pos = (x, y+1, z+1)
         if verts_indices[vert_pos] < 1:
             verts_indices[vert_pos] = vi
@@ -449,7 +402,7 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
             vi = vi + 1
         cube_verts_indices[2] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][1] or adjacent[2][0]:
+    if not adjacent[0][1] or not adjacent[1][1] or not adjacent[2][0]:
         vert_pos = (x, y, z+1)
         if verts_indices[vert_pos] < 1:
             verts_indices[vert_pos] = vi
@@ -457,7 +410,7 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
             vi = vi + 1
         cube_verts_indices[3] = verts_indices[vert_pos]
 
-    if adjacent[0][0] or adjacent[1][0] or adjacent[2][1]:
+    if not adjacent[0][0] or not adjacent[1][0] or not adjacent[2][1]:
         vert_pos = (x+1, y+1, z)
         if verts_indices[vert_pos] < 1:
             verts_indices[vert_pos] = vi
@@ -465,7 +418,7 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
             vi = vi + 1
         cube_verts_indices[4] = verts_indices[vert_pos]
 
-    if adjacent[0][0] or adjacent[1][1] or adjacent[2][1]:
+    if not adjacent[0][0] or not adjacent[1][1] or not adjacent[2][1]:
         vert_pos = (x+1, y, z)
         if verts_indices[vert_pos] < 1:
             verts_indices[vert_pos] = vi
@@ -473,7 +426,7 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
             vi = vi + 1
         cube_verts_indices[5] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][0] or adjacent[2][1]:
+    if not adjacent[0][1] or not adjacent[1][0] or not adjacent[2][1]:
         vert_pos = (x, y+1, z)
         if verts_indices[vert_pos] < 1:
             verts_indices[vert_pos] = vi
@@ -481,7 +434,7 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
             vi = vi + 1
         cube_verts_indices[6] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][1] or adjacent[2][1]:
+    if not adjacent[0][1] or not adjacent[1][1] or not adjacent[2][1]:
         vert_pos = (x, y, z)
         if verts_indices[vert_pos] < 1:
             verts_indices[vert_pos] = vi
@@ -489,34 +442,28 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
             vi = vi + 1
         cube_verts_indices[7] = verts_indices[vert_pos]
 
-    if (cube_verts_indices[0] != 0) and (cube_verts_indices[1] != 0) and (cube_verts_indices[2] != 0) and (
-            cube_verts_indices[3] != 0):
-        tris.append([cube_verts_indices[0] - 1, cube_verts_indices[1] - 1, cube_verts_indices[2] - 1])
-        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[3] - 1, cube_verts_indices[2] - 1])
+    if not adjacent[0][0]:
+        tris.append([cube_verts_indices[0] - 1, cube_verts_indices[1] - 1, cube_verts_indices[5] - 1])
+        tris.append([cube_verts_indices[5] - 1, cube_verts_indices[4] - 1, cube_verts_indices[0] - 1])
 
-    if (cube_verts_indices[0] != 0) and (cube_verts_indices[1] != 0) and (cube_verts_indices[4] != 0) and (
-            cube_verts_indices[5] != 0):
-        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[0] - 1, cube_verts_indices[5] - 1])
-        tris.append([cube_verts_indices[0] - 1, cube_verts_indices[4] - 1, cube_verts_indices[5] - 1])
+    if not adjacent[1][0]:
+        tris.append([cube_verts_indices[2] - 1, cube_verts_indices[0] - 1, cube_verts_indices[4] - 1])
+        tris.append([cube_verts_indices[4] - 1, cube_verts_indices[6] - 1, cube_verts_indices[2] - 1])
 
-    if (cube_verts_indices[0] != 0) and (cube_verts_indices[2] != 0) and (cube_verts_indices[4] != 0) and (
-            cube_verts_indices[6] != 0):
-        tris.append([cube_verts_indices[0] - 1, cube_verts_indices[2] - 1, cube_verts_indices[4] - 1])
-        tris.append([cube_verts_indices[2] - 1, cube_verts_indices[6] - 1, cube_verts_indices[4] - 1])
+    if not adjacent[2][0]:
+        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[0] - 1, cube_verts_indices[2] - 1])
+        tris.append([cube_verts_indices[2] - 1, cube_verts_indices[3] - 1, cube_verts_indices[1] - 1])
 
-    if (cube_verts_indices[2] != 0) and (cube_verts_indices[3] != 0) and (cube_verts_indices[6] != 0) and (
-            cube_verts_indices[7] != 0):
-        tris.append([cube_verts_indices[2] - 1, cube_verts_indices[3] - 1, cube_verts_indices[6] - 1])
-        tris.append([cube_verts_indices[3] - 1, cube_verts_indices[7] - 1, cube_verts_indices[6] - 1])
+    if not adjacent[0][1]:
+        tris.append([cube_verts_indices[3] - 1, cube_verts_indices[2] - 1, cube_verts_indices[6] - 1])
+        tris.append([cube_verts_indices[6] - 1, cube_verts_indices[7] - 1, cube_verts_indices[3] - 1])
 
-    if (cube_verts_indices[1] != 0) and (cube_verts_indices[3] != 0) and (cube_verts_indices[5] != 0) and (
-            cube_verts_indices[7] != 0):
-        tris.append([cube_verts_indices[3] - 1, cube_verts_indices[1] - 1, cube_verts_indices[7] - 1])
-        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[5] - 1, cube_verts_indices[7] - 1])
+    if not adjacent[1][1]:
+        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[3] - 1, cube_verts_indices[7] - 1])
+        tris.append([cube_verts_indices[7] - 1, cube_verts_indices[5] - 1, cube_verts_indices[1] - 1])
 
-    if (cube_verts_indices[4] != 0) and (cube_verts_indices[5] != 0) and (cube_verts_indices[6] != 0) and (
-            cube_verts_indices[7] != 0):
-        tris.append([cube_verts_indices[5] - 1, cube_verts_indices[4] - 1, cube_verts_indices[7] - 1])
-        tris.append([cube_verts_indices[4] - 1, cube_verts_indices[6] - 1, cube_verts_indices[7] - 1])
+    if not adjacent[2][1]:
+        tris.append([cube_verts_indices[4] - 1, cube_verts_indices[5] - 1, cube_verts_indices[7] - 1])
+        tris.append([cube_verts_indices[7] - 1, cube_verts_indices[6] - 1, cube_verts_indices[4] - 1])
 
     return verts, verts_indices, tris, vi
