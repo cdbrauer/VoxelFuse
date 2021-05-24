@@ -14,12 +14,13 @@ import meshio
 import k3d
 import zlib
 import base64
-from scipy import ndimage
-from numba import njit, prange, cuda
-from tqdm import tqdm
 from enum import Enum
 from typing import Union as TypeUnion, Tuple, TextIO
+from tqdm import tqdm
+from scipy import ndimage
+from numba import njit, prange, cuda
 from pyvox.parser import VoxParser
+
 from voxelfuse.materials import *
 
 # Floating point error threshold for rounding to zero

@@ -9,9 +9,9 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import numpy as np
+from typing import Tuple
 import PyQt5.QtGui as qg
 import pyqtgraph.opengl as pgo
-from typing import Tuple
 
 class Plot:
     """

@@ -12,14 +12,12 @@ import os
 import time
 import subprocess
 import multiprocessing
-
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
 from enum import Enum
 from datetime import date
 from typing import List, Tuple, TextIO
 from tqdm import tqdm
-import numpy as np
+
 from voxelfuse.voxel_model import VoxelModel, writeHeader, writeData, writeOpen, writeClos
 from voxelfuse.primitives import empty
 
@@ -854,46 +852,6 @@ class Simulation:
                         kf = _Keyframe(time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave)
                         g = z + y*z_len + x*y_len*z_len
                         self.__localTempControls[g].keyframes.append(kf)
-
-    # TODO: Remove or update to be compatible with keyframes
-    # def saveTempControls(self, filename: str, figure: bool = False):
-    #     """
-    #     Save the temperature control elements applied to a model to a .csv file.
-    #
-    #     :param filename: File name
-    #     :param figure: Enable/disable exporting a figure as well
-    #     :return: None
-    #     """
-    #     f = open(filename + '.csv', 'w+')
-    #     print('Saving file: ' + f.name)
-    #     f.write('X,Y,Z,Amplitude 1 (deg C),Amplitude 2 (deg C),Change X,Phase Offset (rad),Temperature Offset (deg C),Constant Temperature Enabled,Square Wave Enabled\n')
-    #     for i in range(len(self.__tempControls)):
-    #         f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
-    #     f.close()
-    #
-    #     if figure:
-    #         # Get plot data
-    #         points = np.array(self.__tempControls)
-    #         xs = points[:, 0]
-    #         ys = points[:, 1]
-    #         zs = points[:, 2]
-    #         temps = points[:, 3]
-    #         colors = np.array(abs((temps - np.min(temps)) / (np.max(temps) - np.min(temps))), dtype=np.str)  # Grayscale range
-    #
-    #         # Plot results
-    #         fig = plt.figure()
-    #         ax1 = fig.add_subplot(121)
-    #         ax1.scatter(zs, ys, c=colors, marker='s')
-    #         ax1.axis('equal')
-    #         ax1.set_title('Side')
-    #         ax2 = fig.add_subplot(122)
-    #         ax2.scatter(xs, ys, c=colors, marker='s')
-    #         ax2.axis('equal')
-    #         ax2.set_title('Top')
-    #
-    #         # Save figure
-    #         print('Saving file: ' + filename + '.png')
-    #         plt.savefig(filename + '.png')
 
     # Export simulation ##################################
     # Export simulation object to .vxa file for import into VoxCad or Voxelyze

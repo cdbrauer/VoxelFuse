@@ -7,5 +7,6 @@ py-vox-io
 meshio
 numba
 tqdm
-matplotlib
 k3d
+PyMCubes
+quad_mesh_simplify
