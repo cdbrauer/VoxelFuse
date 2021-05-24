@@ -11,6 +11,7 @@ Copyright 2021 - Cole Brauer, Dan Aukes
 import numpy as np
 import meshio
 import mcubes
+from quad_mesh_simplify import simplify_mesh
 import k3d
 from typing import List, Tuple
 from numba import njit
@@ -43,7 +44,7 @@ class Mesh:
 
     # Create mesh from voxel data
     @classmethod
-    def fromVoxelModel(cls, voxel_model: VoxelModel):
+    def fromVoxelModel(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
         """
         Generate a mesh object from a VoxelModel object.
 
@@ -56,6 +57,7 @@ class Mesh:
         ----
 
         :param voxel_model: VoxelModel object to be converted to a mesh
+        :param color: Mesh color in the format (r, g, b, a), None to use voxel colors
         :return: Mesh
         """
         voxel_model_fit = voxel_model.fitWorkspace()
@@ -90,22 +92,25 @@ class Mesh:
         for voxel_coords in tqdm(exterior_voxels_coords, desc='Meshing'):
             x, y, z = voxel_coords
 
-            r = 0
-            g = 0
-            b = 0
+            if color is None:
+                r = 0
+                g = 0
+                b = 0
 
-            for i in range(voxel_model.materials.shape[1]-1):
-                r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['r']
-                g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['g']
-                b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['b']
+                for i in range(voxel_model.materials.shape[1]-1):
+                    r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['r']
+                    g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['g']
+                    b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i]['b']
 
-            r = 1 if r > 1 else r
-            g = 1 if g > 1 else g
-            b = 1 if b > 1 else b
+                r = 1 if r > 1 else r
+                g = 1 if g > 1 else g
+                b = 1 if b > 1 else b
 
-            a = 1 - model_materials[voxel_model_array[x, y, z]][1]
+                a = 1 - model_materials[voxel_model_array[x, y, z]][1]
 
-            voxel_color = [r, g, b, a]
+                voxel_color = [r, g, b, a]
+            else:
+                voxel_color = list(color)
 
             # Add cube vertices
             new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, verts_indices, model_offsets, x, y, z, vi)
@@ -130,7 +135,7 @@ class Mesh:
 
     # Create mesh using a marching cubes algorithm
     @classmethod
-    def marchingCubes(cls, voxel_model: VoxelModel, smooth: bool = False):
+    def marchingCubes(cls, voxel_model: VoxelModel, smooth: bool = False, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
         """
         Generate a mesh object from a VoxelModel object using a marching cubes algorithm.
 
@@ -138,6 +143,7 @@ class Mesh:
 
         :param voxel_model: VoxelModel object to be converted to a mesh
         :param smooth: Enable smoothing
+        :param color: Mesh color in the format (r, g, b, a)
         :return: None
         """
         voxel_model_fit = voxel_model.fitWorkspace().getOccupied()
@@ -160,12 +166,23 @@ class Mesh:
 
         # Generate colors
         verts_colors = []
-        voxel_color = [0.8, 0.8, 0.8, 1]
+        voxel_color = list(color)
         for i in range(len(verts)):
             verts_colors.append(voxel_color)
         verts_colors = np.array(verts_colors)
 
         return cls(voxels_padded, verts, verts_colors, tris, voxel_model.resolution)
+
+    @classmethod
+    def copy(cls, mesh):
+        """
+        Initialize a Mesh that is a copy of another mesh.
+
+        :param mesh: Reference Mesh object
+        :return: Mesh
+        """
+        new_mesh = cls(np.copy(mesh.model), np.copy(mesh.verts), np.copy(mesh.colors), np.copy(mesh.tris), mesh.res)
+        return new_mesh
 
     # Set the resolution of the mesh
     def setResolution(self, resolution: float):
@@ -175,9 +192,59 @@ class Mesh:
         The mesh resolution will determine the scale of plots and exported mesh files.
 
         :param resolution: Number of voxels per mm (higher number = finer resolution)
-        :return: None
+        :return: Mesh
         """
-        self.res = resolution
+        new_mesh = Mesh.copy(self)
+        new_mesh.res = resolution
+        return new_mesh
+
+    def simplify(self, percent_verts: float, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+        """
+        Simplify a mesh to contain a given percentage of the original number of vertices.
+
+        :param percent_verts: Percentage of vertex count allowed in the result mesh, 0-1
+        :param color: Mesh color in the format (r, g, b, a)
+        :return: Mesh
+        """
+        num_verts = self.verts.shape[0]
+        target_verts = num_verts * percent_verts
+
+        new_verts, new_tris = simplify_mesh(positions=self.verts.astype(np.double), face=self.tris.astype(np.uint32), num_nodes=target_verts)
+
+        # Generate colors
+        verts_colors = []
+        voxel_color = list(color)
+        for i in range(len(new_verts)):
+            verts_colors.append(voxel_color)
+        verts_colors = np.array(verts_colors)
+
+        return Mesh(np.copy(self.model), new_verts, verts_colors, new_tris, self.res)
+
+    def translate(self, vector: Tuple[float, float, float]):
+        """
+        Translate a model by the specified vector.
+
+        :param vector: Translation vector in voxels
+        :return: Mesh
+        """
+        new_mesh = Mesh.copy(self)
+        new_mesh.verts[:, 0] = np.add(self.verts[:, 0], vector[0])
+        new_mesh.verts[:, 1] = np.add(self.verts[:, 1], vector[1])
+        new_mesh.verts[:, 2] = np.add(self.verts[:, 2], vector[2])
+        return new_mesh
+
+    def translateMM(self, vector: Tuple[float, float, float]):
+        """
+        Translate a model by the specified vector.
+
+        :param vector: Translation vector in mm
+        :return: Mesh
+        """
+        xV = vector[0] * self.res
+        yV = vector[1] * self.res
+        zV = vector[2] * self.res
+        new_mesh = self.translate((xV, yV, zV))
+        return new_mesh
 
     # Add mesh to a K3D plot in Jupyter Notebook
     def plot(self, plot = None, name: str = 'mesh', wireframe: bool = True, mm_scale: bool = False, **kwargs):

@@ -253,11 +253,13 @@ class VoxelModel:
     # Property update operations ##############################
     def setResolution(self, res: float):
         """
-        Set the resolution of a model.
+        Change the resolution of a model.
 
         :return: None
         """
-        self.resolution = res
+        new_model = VoxelModel.copy(self)
+        new_model.resolution = res
+        return new_model
 
     def fitWorkspace(self):
         """
