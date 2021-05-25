@@ -7,7 +7,6 @@ Copyright 2021 - Cole Brauer, Dan Aukes
 """
 
 import os
-import sys
 import subprocess
 import numpy as np
 import meshio
@@ -1997,6 +1996,8 @@ class VoxelModel:
                 Packed RGB color of the resulting outlines (0xff0000 is red, 0xff is blue)
             kwargs: `dict`.
                 Dictionary arguments to configure transform and model_matrix.
+
+        More information available at: https://github.com/K3D-tools/K3D-jupyter
 
         :param plot: Plot object to add model to
         :param name: Model name

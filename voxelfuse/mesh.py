@@ -8,14 +8,19 @@ Initialized from a voxel model
 Copyright 2021 - Cole Brauer, Dan Aukes
 """
 
+import sys
 import numpy as np
 import meshio
+import k3d
 import mcubes
 from quad_mesh_simplify import simplify_mesh
-import k3d
 from typing import Tuple
 from numba import njit
 from tqdm import tqdm
+
+import PyQt5.QtWidgets as qtw
+import PyQt5.QtGui as qg
+import pyqtgraph.opengl as pgo
 
 from voxelfuse.voxel_model import VoxelModel, rgb_to_hex
 from voxelfuse.materials import material_properties
@@ -196,6 +201,8 @@ class Mesh:
         """
         Simplify a mesh to contain a given percentage of the original number of vertices.
 
+        More information on the simplification algorithm is available at: https://github.com/jannessm/quadric-mesh-simplification
+
         :param percent_verts: Percentage of vertex count allowed in the result mesh, 0-1
         :param color: Mesh color in the format (r, g, b, a)
         :return: Mesh
@@ -240,10 +247,9 @@ class Mesh:
         new_mesh = self.translate((xV, yV, zV))
         return new_mesh
 
-    # Add mesh to a K3D plot in Jupyter Notebook
     def plot(self, plot = None, name: str = 'mesh', wireframe: bool = True, mm_scale: bool = False, **kwargs):
         """
-        Add mesh to a K3D plot.
+        Add mesh to a K3D plot in Jupyter Notebook.
 
         Additional display options:
             flat_shading: `bool`.
@@ -268,6 +274,8 @@ class Mesh:
                 Array of float uvs for the texturing, coresponding to each vertex.
             kwargs: `dict`.
                 Dictionary arguments to configure transform and model_matrix.
+
+        More information available at: https://github.com/K3D-tools/K3D-jupyter
 
         :param plot: Plot object to add mesh to
         :param name: Mesh name
@@ -298,6 +306,86 @@ class Mesh:
 
         plot += k3d.mesh(verts.astype(np.float32), tris.astype(np.uint32), colors=colors, name=name, wireframe=wireframe, **kwargs)
         return plot
+
+    def viewer(self, grids: bool = False, drawEdges: bool = True,
+               edgeColor: Tuple[float, float, float, float] = (0, 0, 0, 0.5),
+               positionOffset: Tuple[int, int, int] = (0, 0, 0), viewAngle: Tuple[int, int, int] = (40, 30, 300),
+               resolution: Tuple[int, int] = (1280, 720), name: str = 'Plot 1', export: bool = False):
+        """
+        Display the mesh in a 3D viewer window.
+
+        This function will block program execution until viewer window is closed
+
+        :param grids: Enable/disable display of XYZ axes and grids
+        :param drawEdges: Enable/disable display of voxel edges
+        :param edgeColor: Set display color of voxel edges
+        :param positionOffset: Offset of the camera target from the center of the model in voxels
+        :param viewAngle: Elevation, Azimuth, and Distance of the camera
+        :param resolution: Window resolution in px
+        :param name: Plot window name
+        :param export: Enable/disable exporting a screenshot of the plot
+        :return: None
+        """
+        app = qtw.QApplication(sys.argv)
+
+        mesh_data = pgo.MeshData(vertexes=self.verts, faces=self.tris, vertexColors=self.colors, faceColors=None)
+        mesh_item = pgo.GLMeshItem(meshdata=mesh_data, shader='balloon', drawEdges=drawEdges, edgeColor=edgeColor,
+                                   smooth=False, computeNormals=False, glOptions='translucent')
+
+        widget = pgo.GLViewWidget()
+        widget.setBackgroundColor('w')
+        widget.addItem(mesh_item)
+
+        if grids:
+            # Add grids
+            gx = pgo.GLGridItem()
+            gx.setSize(x=50, y=50, z=50)
+            gx.rotate(90, 0, 1, 0)
+            gx.translate(-0.5, 24.5, 24.5)
+            widget.addItem(gx)
+            gy = pgo.GLGridItem()
+            gy.setSize(x=50, y=50, z=50)
+            gy.rotate(90, 1, 0, 0)
+            gy.translate(24.5, -0.5, 24.5)
+            widget.addItem(gy)
+            gz = pgo.GLGridItem()
+            gz.setSize(x=50, y=50, z=50)
+            gz.translate(24.5, 24.5, -0.5)
+            widget.addItem(gz)
+
+            # Add axes
+            ptsx = np.array([[-0.5, -0.5, -0.5], [50, -0.5, -0.5]])
+            pltx = pgo.GLLinePlotItem(pos=ptsx, color=(1, 0, 0, 1), width=1, antialias=True)
+            widget.addItem(pltx)
+            ptsy = np.array([[-0.5, -0.5, -0.5], [-0.5, 50, -0.5]])
+            plty = pgo.GLLinePlotItem(pos=ptsy, color=(0, 1, 0, 1), width=1, antialias=True)
+            widget.addItem(plty)
+            ptsz = np.array([[-0.5, -0.5, -0.5], [-0.5, -0.5, 50]])
+            pltz = pgo.GLLinePlotItem(pos=ptsz, color=(0, 0, 1, 1), width=1, antialias=True)
+            widget.addItem(pltz)
+
+        # Set plot options
+        widget.opts['center'] = qg.QVector3D(((self.model.shape[0] / self.res) / 2) + positionOffset[0],
+                                             ((self.model.shape[1] / self.res) / 2) + positionOffset[1],
+                                             ((self.model.shape[2] / self.res) / 2) + positionOffset[2])
+        widget.opts['elevation'] = viewAngle[0]
+        widget.opts['azimuth'] = viewAngle[1]
+        widget.opts['distance'] = viewAngle[2]
+        widget.resize(resolution[0], resolution[1])
+
+        # Show plot
+        widget.setWindowTitle(str(name))
+        widget.show()
+
+        app.processEvents()
+
+        # if export: # TODO: Fix export code
+        #     widget.paintGL()
+        #     widget.grabFrameBuffer().save(str(name) + '.png')
+
+        print('Close viewer to resume program')
+        app.exec_()
+        app.quit()
 
     # Export model from mesh data
     def export(self, filename: str):
