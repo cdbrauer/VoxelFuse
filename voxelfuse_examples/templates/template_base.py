@@ -1,3 +1,11 @@
+"""
+Basic template for creating VoxelFuse scripts.
+
+----
+
+Copyright 2021 - Cole Brauer, Dan Aukes
+"""
+
 # Import Library
 import voxelfuse as vf
 

@@ -9,18 +9,13 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 # Import Libraries
-import PyQt5.QtGui as qg
-import sys
 import numpy as np
 from voxelfuse.voxel_model import VoxelModel
-from voxelfuse.primitives import cylinder
 from voxelfuse.mesh import Mesh
-from voxelfuse.plot import Plot
+from voxelfuse.primitives import cylinder
 
 # Start Application
 if __name__=='__main__':
-    app1 = qg.QApplication(sys.argv)
-
     dilate_radius = 2
 
     # Import element template
@@ -57,7 +52,4 @@ if __name__=='__main__':
     mesh3.export('V.stl')
 
     # Create Plot
-    plot3 = Plot(mesh3)
-    plot3.show()
-    app1.processEvents()
-    app1.exec_()
+    mesh3.viewer()

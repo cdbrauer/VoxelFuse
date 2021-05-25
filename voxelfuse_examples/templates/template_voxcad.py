@@ -1,3 +1,11 @@
+"""
+Template for creating scripts using VoxCad simulation.
+
+----
+
+Copyright 2021 - Cole Brauer, Dan Aukes
+"""
+
 # Import Library
 import voxelfuse as vf
 

@@ -9,19 +9,14 @@ and export an stl file of the modified part.
 Copyright 2019 - Cole Brauer, Dan Aukes
 """
 
-import PyQt5.QtGui as qg
-import sys
 import numpy as np
 import time
 
 from voxelfuse.voxel_model import VoxelModel, Axes, Process
 from voxelfuse.mesh import Mesh
-from voxelfuse.plot import Plot
 from voxelfuse.materials import material_properties
 
 if __name__=='__main__':
-    app1 = qg.QApplication(sys.argv)
-
     # User preferences
     modelName = 'joint-2.vox'
     # modelName = 'tail-holder-1r.vox'
@@ -105,14 +100,5 @@ if __name__=='__main__':
     print("Meshing time = %s" % meshingTime)
 
     # Create plots
-    plot1 = Plot(mesh1, name='Input')
-    plot1.show()
-    app1.processEvents()
-    #plot1.export('input.png')
-
-    plot2 = Plot(mesh2, name='Output')
-    plot2.show()
-    app1.processEvents()
-    #plot2.export('output.png')
-
-    app1.exec_()
+    # mesh1.viewer(name='Input')
+    mesh2.viewer(name='Output')

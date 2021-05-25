@@ -6,11 +6,8 @@ Export a VoxelFuse model as a .vxc file that can be imported into VoxCad.
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
-import PyQt5.QtGui as qg
-import sys
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
-from voxelfuse.plot import Plot
 from voxelfuse.primitives import *
 
 if __name__=='__main__':
@@ -27,11 +24,7 @@ if __name__=='__main__':
     modelResult.saveVF("test-file")
 
     # Create mesh data
-    # mesh1 = Mesh.fromVoxelModel(modelResult)
+    mesh1 = Mesh.fromVoxelModel(modelResult)
 
     # Create plot
-    # plot1 = Plot(mesh1)
-    # plot1.show()
-    # app1.processEvents()
-
-    # app1.exec_()
+    mesh1.viewer()
