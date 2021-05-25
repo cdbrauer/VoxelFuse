@@ -1,18 +1,18 @@
-# ![VoxelFuse](../master/images/logo.png?raw=true)
+# ![VoxelFuse](images/logo.png?raw=true)
 
 VoxelFuse is a Python library for processing multi-material 3D model data. It includes the tools needed for a complete workflow from design to part fabrication, including part composition, manufacturing planning, design simulation, mesh generation, and file export. This library allows scripts to be quickly created for processing different classes of models and generating the files needed to produce them.  
 
 Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at [ASU](https://www.asu.edu/).
 
-![Workflow](../master/images/workflow.png?raw=true)
+![Workflow](images/workflow.png?raw=true)
 
 ## Example Applications
 
-![Example 1](../master/images/embedded-joint.png?raw=true)
+![Example 1](images/embedded-joint.png?raw=true)
 
 *Design of a part with embedded electronic components*
 
-![Example 2](../master/images/blurring.png?raw=true)
+![Example 2](images/blurring.png?raw=true)
 
 *Generation of blurred material transitions*
 
@@ -26,7 +26,7 @@ Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at 
 - Import of the .vox voxel file format  
 - Import of native .vf file format 
 
-![Primitive solids](../master/images/primitives.png?raw=true)
+![Primitive solids](images/primitives.png?raw=true)
 
 ### Model Modification 
   
@@ -36,11 +36,11 @@ Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at 
 - Gaussian blurring
 - Dithering
 
-![Example CSG operations](../master/images/csg.png?raw=true)
+![Example CSG operations](images/csg.png?raw=true)
 
 ### Manufacturing Planning
 
-![Manufacturing Features](../master/images/manufacturing-features.png?raw=true)
+![Manufacturing Features](images/manufacturing-features.png?raw=true)
 
 ### Simulation
 
@@ -60,7 +60,7 @@ Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at 
 - Mesh plotting in [Jupyter Notebook](https://jupyter.org/)
 - Mesh file export
 
-![Mesh Examples](../master/images/mesh-options.png?raw=true)
+![Mesh Examples](images/mesh-options.png?raw=true)
 
 ## Installation
 
