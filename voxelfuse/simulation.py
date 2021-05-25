@@ -1077,6 +1077,8 @@ class Simulation:
         the results attribute of the Simulation object. Enabling delete_files will delete both the .vxa and .xml files
         once the results have been loaded.
 
+        History files can be viewed using https://github.com/voxcraft/voxcraft-viz
+
         :param filename: File name for .vxa and .xml files
         :param value_map: Index of the desired value map type
         :param log_interval: Set the step interval at which sensor log entries should be recorded, -1 to disable log
@@ -1358,6 +1360,8 @@ class MultiSimulation:
     def run(self, enable_log : bool = False, fine_log: bool = False):
         """
         Run all simulation configurations and save the results.
+
+        History files can be viewed using https://github.com/voxcraft/voxcraft-viz
 
         :param enable_log: Enable saving sensor log files
         :param fine_log: If enabled, save entries in sensor logs and history files 100x as frequently
