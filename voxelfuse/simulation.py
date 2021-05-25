@@ -605,8 +605,6 @@ class Simulation:
         """
         Add a sensor to a voxel.
 
-        This feature is not currently supported by VoxCad
-
         :param location: Sensor location in voxels
         :param axis: Sensor measurement axis
         :param name: Sensor name

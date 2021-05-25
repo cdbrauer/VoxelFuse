@@ -31,7 +31,7 @@ class Plot:
         :param resolution: Window resolution in px
         :param name: Plot window name
         """
-        print("WARNING: Plot class is deprecated. Please use 'plot' or 'viewer' from the Mesh class instead.")
+        print("WARNING: Plot class is deprecated and will be removed in later versions. Please use 'plot' or 'viewer' from the Mesh class instead.")
         self.mesh = mesh
         self.grids = grids
         self.drawEdges = drawEdges

@@ -100,7 +100,7 @@ class VoxelModel:
 
         Example:
 
-        ``model1 = VoxelModel.fromVoxFile('cylinder-red.vox', (0, 5, 0), 1)``
+        ``model1 = vf.VoxelModel.fromVoxFile('cylinder-red.vox', (0, 5, 0), 1)``
 
         ----
 
@@ -139,7 +139,7 @@ class VoxelModel:
 
         Example:
 
-        ``model1 = VoxelModel.fromMeshFile('center.stl', (67, 3, 0), 2, 1)``
+        ``model1 = vf.VoxelModel.fromMeshFile('center.stl', (67, 3, 0), 2, 1)``
 
         ____
 
@@ -195,8 +195,7 @@ class VoxelModel:
         xyz_mid = np.concatenate((xyz_mid, xyz_mid[:, 0:1] * 0 + 1), 1)
 
         # Create list of indices of each voxel
-        ijk_mid = np.array(
-            np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing='ij'))
+        ijk_mid = np.array(np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing='ij'))
         ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
         ijk_mid2 = ijk_mid.reshape(-1, 3)
 
@@ -205,7 +204,7 @@ class VoxelModel:
 
         lmn = ijk_mid2[np.unique(jj)]
 
-        voxels = np.zeros(ijk_mid.shape[:3], dtype=np.bool)
+        voxels = np.zeros(ijk_mid.shape[:3], dtype=np.bool_)
         voxels[lmn[:, 0], lmn[:, 1], lmn[:, 2]] = True
 
         new_model =  cls(voxels, generateMaterials(material), coords=coords, resolution=resolution).fitWorkspace()
@@ -222,7 +221,7 @@ class VoxelModel:
         :return: VoxelModel
         """
         modelData = np.zeros(size, dtype=np.uint16)
-        materials = np.zeros((1, num_materials + 1), dtype=np.float)
+        materials = np.zeros((1, num_materials + 1), dtype=np.float32)
         new_model = cls(modelData, materials, resolution=resolution)
         return new_model
 
@@ -383,11 +382,11 @@ class VoxelModel:
         :param connectivity: Connectivity of structuring element (1-3)
         :return: VoxelModel
         """
-        mask = np.array(self.voxels[:, :, :] > 0, dtype=np.bool)
+        mask = np.array(self.voxels[:, :, :] > 0, dtype=np.bool_)
         struct = ndimage.generate_binary_structure(3, connectivity)
         new_model = VoxelModel.copy(self)
         new_model.components, new_model.numComponents = ndimage.label(mask, structure=struct)
-        new_model.components = new_model.components.astype(dtype=np.uint8)
+        new_model.components = np.uint8(new_model.components)
         return new_model
 
     # Selection operations ##############################
@@ -409,7 +408,7 @@ class VoxelModel:
         :param material: Material index corresponding to the materials array for the model
         :return: VoxelModel
         """
-        mask = np.array(self.voxels == material, dtype=np.bool)
+        mask = np.array(self.voxels == material, dtype=np.bool_)
         materials = np.zeros((2, self.materials.shape[1]), dtype=np.float32)
         materials[1] = self.materials[material]
         return VoxelModel(mask.astype(int), materials, self.coords, self.resolution)
@@ -443,7 +442,7 @@ class VoxelModel:
         :param component: Component label to isolate
         :return: VoxelModel
         """
-        mask = np.array(self.components == component, dtype=np.bool)
+        mask = np.array(self.components == component, dtype=np.bool_)
         new_voxels = np.multiply(self.voxels, mask)
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
@@ -468,7 +467,7 @@ class VoxelModel:
 
         :return: VoxelModel
         """
-        mask = np.array(self.voxels == 0, dtype=np.bool)
+        mask = np.array(self.voxels == 0, dtype=np.bool_)
         return VoxelModel(mask, self.materials[0:2, :], self.coords, self.resolution)
 
     def __invert__(self):
@@ -487,7 +486,7 @@ class VoxelModel:
 
         :return: VoxelModel
         """
-        mask = np.array(self.voxels != 0, dtype=np.bool)
+        mask = np.array(self.voxels != 0, dtype=np.bool_)
         return VoxelModel(mask, self.materials[0:2, :], self.coords, self.resolution)
 
     def getBoundingBox(self):
@@ -592,7 +591,7 @@ class VoxelModel:
 
         # Paper uses a symmetric difference operation combined with the left/right intersection
         # A condensed version of this operation is used here for code simplicity
-        mask = np.array(a == 0, dtype=np.bool)
+        mask = np.array(a == 0, dtype=np.bool_)
         new_voxels = np.multiply(b, mask)
         new_voxels = new_voxels + a # material from left model takes priority
 
@@ -626,7 +625,7 @@ class VoxelModel:
         """
         checkResolution(self, model_to_sub)
         a, b, new_coords = alignDims(self, model_to_sub)
-        mask = np.array(b == 0, dtype=np.bool)
+        mask = np.array(b == 0, dtype=np.bool_)
         new_voxels = np.multiply(a, mask)
         return VoxelModel(new_voxels, self.materials, new_coords, self.resolution)
 
@@ -652,7 +651,7 @@ class VoxelModel:
         """
         checkResolution(self, model_2)
         a, b, new_coords = alignDims(self, model_2)
-        mask = np.logical_and(np.array(a != 0, dtype=np.bool), np.array(b != 0, dtype=np.bool))
+        mask = np.logical_and(np.array(a != 0, dtype=np.bool_), np.array(b != 0, dtype=np.bool_))
 
         # Paper provides for left/right intersection
         # For code simplicity, only a left intersection is provided here
@@ -699,8 +698,8 @@ class VoxelModel:
         b = b + i_offset
         b[b == i_offset] = 0
 
-        mask1 = np.array(b == 0, dtype=np.bool)
-        mask2 = np.array(a == 0, dtype=np.bool)
+        mask1 = np.array(b == 0, dtype=np.bool_)
+        mask2 = np.array(a == 0, dtype=np.bool_)
 
         new_voxels = np.multiply(a, mask1) + np.multiply(b, mask2)
 
@@ -1114,7 +1113,7 @@ class VoxelModel:
             return VoxelModel.copy(self)
 
         new_voxels = np.copy(self.voxels)
-        mask = np.array(new_voxels != 0, dtype=np.bool)
+        mask = np.array(new_voxels != 0, dtype=np.bool_)
 
         if struct_type == Struct.SPHERE:
             struct = structSphere(radius, plane)
@@ -1181,7 +1180,7 @@ class VoxelModel:
             return VoxelModel.copy(self)
 
         new_voxels = np.copy(self.voxels)
-        mask = np.array(new_voxels != 0, dtype=np.bool)
+        mask = np.array(new_voxels != 0, dtype=np.bool_)
 
         if structType == Struct.SPHERE:
             struct = structSphere(radius, plane)
@@ -2125,7 +2124,7 @@ class VoxelModel:
 
         Example:
 
-        ``model1.openVF("test-file")``
+        ``model1 = vf.VoxelModel.openVF("test-file")``
 
         ----
 
@@ -2414,7 +2413,7 @@ class GpuSettings:
     Object to store GPU settings.
 
     After initializing and configuring the GPU settings, use applySettings() to
-    apply them. Changes will only persist for the current python session.
+    apply them. Changes will only persist for the current Python session.
 
     For persistent GPU settings, configure these environment variables:
 
@@ -2428,7 +2427,7 @@ class GpuSettings:
 
     ``gpu = GpuSettings()``
 
-    ``print('Default CUDA settings:') + str(gpu.CUDA_enable) + ', ' + str(gpu.CUDA_device))``
+    ``print('Default CUDA settings:' + str(gpu.CUDA_enable) + ', ' + str(gpu.CUDA_device))``
 
     ``gpu.setCUDA(True, 1)``
 
@@ -2624,7 +2623,7 @@ def structSphere(radius: int, plane: Axes):
     :return: Structuring element array
     """
     diameter = (radius * 2) + 1
-    struct = np.zeros((diameter, diameter, diameter), dtype=np.bool)
+    struct = np.zeros((diameter, diameter, diameter), dtype=np.bool_)
     for x in range(diameter):
         for y in range(diameter):
             for z in range(diameter):
@@ -2683,8 +2682,8 @@ def generateMaterials(m):
     :param m: Material id corresponding to materials.py
     :return: Array containing the specified material and the empty material
     """
-    materials = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
+    materials = np.zeros(len(material_properties) + 1, dtype=np.float32)
+    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float32)
     material_vector[0] = 1
     material_vector[m+1] = 1
     materials = np.vstack((materials, material_vector))
