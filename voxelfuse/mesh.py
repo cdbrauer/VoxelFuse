@@ -14,7 +14,7 @@ import meshio
 import k3d
 import mcubes
 from quad_mesh_simplify import simplify_mesh
-from typing import Tuple
+from typing import Union as TypeUnion, Tuple
 from numba import njit
 from tqdm import tqdm
 
@@ -30,7 +30,7 @@ class Mesh:
     Mesh object that can be exported or passed to a Plot object.
     """
 
-    def __init__(self, voxels: np.ndarray, verts: np.ndarray, verts_colors: np.ndarray, tris: np.ndarray, resolution: float):
+    def __init__(self, voxels: TypeUnion[np.ndarray, None], verts: np.ndarray, verts_colors: np.ndarray, tris: np.ndarray, resolution: float):
         """
         Initialize a Mesh object.
 
@@ -40,14 +40,60 @@ class Mesh:
         :param tris: List of the sets of vertices associated with triangular faces
         :param resolution: Number of voxels per mm
         """
+        if voxels is not None:
+            self.model = voxels
+        else:
+            self.model = np.array([[[0]]])
 
-        self.model = voxels
         self.verts = verts
         self.colors = verts_colors
         self.tris = tris
         self.res = resolution
 
-    # Create mesh from voxel data
+    @classmethod
+    def fromMeshFile(cls, filename: str, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+        """
+        Import a mesh file to a mesh object.
+
+        ----
+
+        Example:
+
+        ``mesh1 = vf.Mesh.fromMeshFile(example.stl)``
+
+        ----
+
+        :param filename: File name with extension
+        :param color: Mesh color in the format (r, g, b, a)
+        :return: Mesh
+        """
+        # Open file
+        data = meshio.read(filename)
+
+        # Read verts
+        verts = np.array(data.points)
+
+        # Align to origin
+        x_min = np.min(verts[:, 0])
+        y_min = np.min(verts[:, 1])
+        z_min = np.min(verts[:, 2])
+        verts[:, 0] = np.subtract(verts[:, 0], x_min)
+        verts[:, 1] = np.subtract(verts[:, 1], y_min)
+        verts[:, 2] = np.subtract(verts[:, 2], z_min)
+
+        # Generate colors
+        verts_colors = generateColors(len(verts), color)
+
+        # Read tris
+        tris = []
+        for cell in data.cells:
+            if cell[0] == 'triangle':
+                for tri in cell[1]:
+                    tris.append(tri)
+        tris = np.array(tris)
+
+        return cls(None, verts, verts_colors, tris, 1)
+
     @classmethod
     def fromVoxelModel(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
         """
@@ -57,7 +103,7 @@ class Mesh:
 
         Example:
 
-        ``mesh1 = Mesh.fromVoxelModel(model1)``
+        ``mesh1 = vf.Mesh.fromVoxelModel(model1)``
 
         ----
 
@@ -162,13 +208,7 @@ class Mesh:
 
         # Shift model to align with origin
         verts = np.subtract(verts, 0.5)
-
-        # Generate colors
-        verts_colors = []
-        voxel_color = list(color)
-        for i in range(len(verts)):
-            verts_colors.append(voxel_color)
-        verts_colors = np.array(verts_colors)
+        verts_colors = generateColors(len(verts), color)
 
         return cls(voxels_padded, verts, verts_colors, tris, voxel_model.resolution)
 
@@ -183,7 +223,6 @@ class Mesh:
         new_mesh = cls(np.copy(mesh.model), np.copy(mesh.verts), np.copy(mesh.colors), np.copy(mesh.tris), mesh.res)
         return new_mesh
 
-    # Set the resolution of the mesh
     def setResolution(self, resolution: float):
         """
         Change the defined resolution of a mesh.
@@ -195,6 +234,17 @@ class Mesh:
         """
         new_mesh = Mesh.copy(self)
         new_mesh.res = resolution
+        return new_mesh
+
+    def scale(self, factor: float):
+        """
+        Apply a scaling factor to a mesh.
+
+        :param factor: Scaling factor
+        :return: Mesh
+        """
+        new_mesh = Mesh.copy(self)
+        new_mesh.verts = np.multiply(self.verts, factor)
         return new_mesh
 
     def simplify(self, percent_verts: float, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
@@ -211,13 +261,7 @@ class Mesh:
         target_verts = num_verts * percent_verts
 
         new_verts, new_tris = simplify_mesh(positions=self.verts.astype(np.double), face=self.tris.astype(np.uint32), num_nodes=target_verts)
-
-        # Generate colors
-        verts_colors = []
-        voxel_color = list(color)
-        for i in range(len(new_verts)):
-            verts_colors.append(voxel_color)
-        verts_colors = np.array(verts_colors)
+        verts_colors = generateColors(len(new_verts), color)
 
         return Mesh(np.copy(self.model), new_verts, verts_colors, new_tris, self.res)
 
@@ -245,6 +289,17 @@ class Mesh:
         yV = vector[1] * self.res
         zV = vector[2] * self.res
         new_mesh = self.translate((xV, yV, zV))
+        return new_mesh
+
+    def setColor(self, color: Tuple[float, float, float, float]):
+        """
+        Change the color of a mesh.
+
+        :param color: Mesh color in the format (r, g, b, a)
+        :return: Mesh
+        """
+        new_mesh = Mesh.copy(self)
+        new_mesh.colors = generateColors(len(self.verts), color)
         return new_mesh
 
     def plot(self, plot = None, name: str = 'mesh', wireframe: bool = True, mm_scale: bool = False, **kwargs):
@@ -414,6 +469,21 @@ class Mesh:
         meshio.write(filename, output_mesh)
 
 # Helper functions ##############################################################
+def generateColors(n: int, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+    """
+    Generate a colors list with the given number of elements
+
+    :param n: Number of vertices in target model
+    :param color: Mesh color in the format (r, g, b, a)
+    :return: List of vertex colors
+    """
+    verts_colors = []
+    voxel_color = list(color)
+    for i in range(n):
+        verts_colors.append(voxel_color)
+    verts_colors = np.array(verts_colors)
+    return verts_colors
+
 @njit()
 def check_adjacent(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord: int, x_dir: int, y_dir: int, z_dir: int):
     """
