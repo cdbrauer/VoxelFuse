@@ -194,6 +194,7 @@ class Mesh:
         voxel_model_fit = voxel_model.fitWorkspace().getOccupied()
         voxels = voxel_model_fit.voxels.astype(np.uint16)
         x, y, z = voxels.shape
+        coords = voxel_model_fit.coords
 
         voxels_padded = np.zeros((x + 2, y + 2, z + 2))
         voxels_padded[1:-1, 1:-1, 1:-1] = voxels
@@ -208,6 +209,10 @@ class Mesh:
 
         # Shift model to align with origin
         verts = np.subtract(verts, 0.5)
+        verts[:, 0] = np.add(verts[:, 0], coords[0])
+        verts[:, 1] = np.add(verts[:, 1], coords[1])
+        verts[:, 2] = np.add(verts[:, 2], coords[2])
+
         verts_colors = generateColors(len(verts), color)
 
         return cls(voxels_padded, verts, verts_colors, tris, voxel_model.resolution)
