@@ -23,8 +23,9 @@ if __name__=='__main__':
     model_result = model1 | model2 | model3 | model4 | model5 | model6
 
     # Create mesh data
-    mesh1 = vf.Mesh.fromVoxelModel(model_result)
-    mesh2 = vf.Mesh.marchingCubes(model_result, smooth=False)
+    # mesh1 = vf.Mesh.fromVoxelModel(model_result)
+    mesh2 = vf.Mesh.fromVoxelModel(model_result, simplify=True)
+    # mesh3 = vf.Mesh.marchingCubes(model_result, smooth=False)
 
     # Get elapsed time
     t2 = time.time()
@@ -32,9 +33,11 @@ if __name__=='__main__':
     print('Time to generate mesh: ' + str(time_mesh) + ' sec')
 
     # Save mesh
-    mesh1.export('primitives.stl')
-    mesh2.export('primitives-marchingcubes.stl')
+    # mesh1.export('primitives.stl')
+    mesh2.export('primitives-simple.stl')
+    # mesh3.export('primitives-marchingcubes.stl')
 
     # Create plot
-    mesh1.viewer(grids=True, name='primitives')
-    # mesh2.viewer(grids=True, name='primitives-marchingcubes') # TODO: Creating a second window causes an OpenGL error and displays a blank plot
+    # mesh1.viewer(grids=True, name='primitives')
+    mesh2.viewer(grids=True, name='primitives-simple')
+    # mesh3.viewer(grids=True, name='primitives-marchingcubes') # TODO: Creating a second window causes an OpenGL error and displays a blank plot

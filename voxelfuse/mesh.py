@@ -95,7 +95,7 @@ class Mesh:
         return cls(None, verts, verts_colors, tris, 1)
 
     @classmethod
-    def fromVoxelModel(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
+    def fromVoxelModel(cls, voxel_model: VoxelModel, simplify: bool = False, color: Tuple[float, float, float, float] = None):
         """
         Generate a mesh object from a VoxelModel object.
 
@@ -108,6 +108,7 @@ class Mesh:
         ----
 
         :param voxel_model: VoxelModel object to be converted to a mesh
+        :simplify: Run simplification to combine coincident faces
         :param color: Mesh color in the format (r, g, b, a), None to use voxel colors
         :return: Mesh
         """
@@ -172,9 +173,28 @@ class Mesh:
             for i in range(len(new_verts)):
                 verts_colors.append(voxel_color)
 
-        verts = np.array(verts)
-        verts_colors = np.array(verts_colors)
-        tris = np.array(tris)
+        if simplify:
+            simple_tris = []
+            status_xy = np.zeros_like(verts_indices, dtype=np.uint8)
+            status_yz = np.zeros_like(verts_indices, dtype=np.uint8)
+            status_xz = np.zeros_like(verts_indices, dtype=np.uint8)
+
+            for x in tqdm(range(x_len + 1), desc='Simplifying'):
+                for y in range(y_len + 1):
+                    for z in range(z_len + 1):
+                        status_xy, new_simple_tris_xy = findSquareXY(verts_indices, status_xy, x, y, z)
+                        status_yz, new_simple_tris_yz = findSquareYZ(verts_indices, status_yz, x, y, z)
+                        status_xz, new_simple_tris_xz = findSquareXZ(verts_indices, status_xz, x, y, z)
+
+                        simple_tris += new_simple_tris_xy
+                        simple_tris += new_simple_tris_yz
+                        simple_tris += new_simple_tris_xz
+
+            tris = simple_tris
+
+        verts = np.array(verts, dtype=np.float32)
+        verts_colors = np.array(verts_colors, dtype=np.float32)
+        tris = np.array(tris, dtype=np.uint32)
 
         return cls(voxel_model_array, verts, verts_colors, tris, voxel_model.resolution)
 
@@ -629,4 +649,109 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
         tris.append([cube_verts_indices[4] - 1, cube_verts_indices[5] - 1, cube_verts_indices[7] - 1])
         tris.append([cube_verts_indices[7] - 1, cube_verts_indices[6] - 1, cube_verts_indices[4] - 1])
 
-    return verts, verts_indices, tris, vi
+    return verts, verts_indices.astype(np.uint32), tris, vi
+
+@njit()
+def findSquareXY(verts_indices: np.ndarray, status: np.ndarray, x: int, y: int, z: int):
+    x_len, y_len, z_len = verts_indices.shape
+    simple_tris = []
+    if verts_indices[x, y, z] > 0 and status[x, y, z] <= 1:  # Point exists and is an edge or has not been checked yet
+        status[x, y, z] = 1
+
+        for i in range(1, min(x_len - x, y_len - y)):  # See if a square can be found starting at this point
+            xn = x + i
+            yn = y + i
+
+            p1 = verts_indices[xn, y, z] > 0 and status[xn, y, z] <= 1
+            p2 = verts_indices[x, yn, z] > 0 and status[x, yn, z] <= 1
+            p3 = verts_indices[xn, yn, z] > 0 and status[xn, yn, z] <= 1
+
+            if not (p1 and p2 and p3):
+                status[x + 1:xn - 1, y + 1:yn - 1, z] = 2
+                status[x:xn, y, z] = 1
+                status[x:xn, yn - 1, z] = 1
+                status[x, y:yn, z] = 1
+                status[xn - 1, y:yn, z] = 1
+                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[xn - 1, y, z] - 1, verts_indices[x, yn - 1, z] - 1])
+                simple_tris.append([verts_indices[x, yn - 1, z] - 1, verts_indices[xn - 1, y, z] - 1, verts_indices[xn - 1, yn - 1, z] - 1])
+                break
+            elif xn == x_len-1 or yn == y_len-1:
+                status[x + 1:xn, y + 1:yn, z] = 2
+                status[x:xn + 1, y, z] = 1
+                status[x:xn + 1, yn, z] = 1
+                status[x, y:yn + 1, z] = 1
+                status[xn, y:yn + 1, z] = 1
+                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[xn, y, z] - 1, verts_indices[x, yn, z] - 1])
+                simple_tris.append([verts_indices[x, yn, z] - 1, verts_indices[xn, y, z] - 1, verts_indices[xn, yn, z] - 1])
+                break
+    return status.astype(np.uint8), simple_tris
+
+@njit()
+def findSquareYZ(verts_indices: np.ndarray, status: np.ndarray, x: int, y: int, z: int):
+    x_len, y_len, z_len = verts_indices.shape
+    simple_tris = []
+    if verts_indices[x, y, z] > 0 and status[x, y, z] <= 1:  # Point exists and is an edge or has not been checked yet
+        status[x, y, z] = 1
+
+        for i in range(1, min(y_len - y, z_len - z)):  # See if a square can be found starting at this point
+            yn = y + i
+            zn = z + i
+
+            p1 = verts_indices[x, yn, z] > 0 and status[x, yn, z] <= 1
+            p2 = verts_indices[x, y, zn] > 0 and status[x, y, zn] <= 1
+            p3 = verts_indices[x, yn, zn] > 0 and status[x, yn, zn] <= 1
+
+            if not (p1 and p2 and p3):
+                status[x, y + 1:yn - 1, z + 1:zn - 1] = 2
+                status[x, y:yn, z] = 1
+                status[x, y:yn, zn - 1] = 1
+                status[x, y, z:zn] = 1
+                status[x, yn - 1, z:zn] = 1
+                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[x, y, zn - 1] - 1, verts_indices[x, yn - 1, z] - 1])
+                simple_tris.append([verts_indices[x, yn - 1, z] - 1, verts_indices[x, y, zn - 1] - 1, verts_indices[x, yn - 1, zn - 1] - 1])
+                break
+            elif yn == y_len-1 or zn == z_len-1:
+                status[x, y + 1:yn, z + 1:zn] = 2
+                status[x, y, z:zn + 1] = 1
+                status[x, yn, z:zn + 1] = 1
+                status[x, y:yn + 1, z] = 1
+                status[x, y:yn + 1, zn] = 1
+                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[x, y, zn] - 1, verts_indices[x, yn, z] - 1])
+                simple_tris.append([verts_indices[x, yn, z] - 1, verts_indices[x, y, zn] - 1, verts_indices[x, yn, zn] - 1])
+                break
+    return status.astype(np.uint8), simple_tris
+
+@njit()
+def findSquareXZ(verts_indices: np.ndarray, status: np.ndarray, x: int, y: int, z: int):
+    x_len, y_len, z_len = verts_indices.shape
+    simple_tris = []
+    if verts_indices[x, y, z] > 0 and status[x, y, z] <= 1:  # Point exists and is an edge or has not been checked yet
+        status[x, y, z] = 1
+
+        for i in range(1, min(x_len - x, z_len - z)):  # See if a square can be found starting at this point
+            xn = x + i
+            zn = z + i
+
+            p1 = verts_indices[xn, y, z] > 0 and status[xn, y, z] <= 1
+            p2 = verts_indices[x, y, zn] > 0 and status[x, y, zn] <= 1
+            p3 = verts_indices[xn, y, zn] > 0 and status[xn, y, zn] <= 1
+
+            if not (p1 and p2 and p3):
+                status[x + 1:xn - 1, y, z + 1:zn - 1] = 2
+                status[x:xn, y, z] = 1
+                status[x:xn, y, zn - 1] = 1
+                status[x, y, z:zn] = 1
+                status[xn - 1, y, z:zn] = 1
+                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[xn - 1, y, z] - 1, verts_indices[x, y, zn - 1] - 1])
+                simple_tris.append([verts_indices[x, y, zn - 1] - 1, verts_indices[xn - 1, y, z] - 1, verts_indices[xn - 1, y, zn - 1] - 1])
+                break
+            elif xn == x_len-1 or zn == z_len-1:
+                status[x + 1:xn, y, z + 1:zn] = 2
+                status[x, y, z:zn + 1] = 1
+                status[xn, y, z:zn + 1] = 1
+                status[x:xn + 1, y, z] = 1
+                status[x:xn + 1, y, zn] = 1
+                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[xn, y, z] - 1, verts_indices[x, y, zn] - 1])
+                simple_tris.append([verts_indices[x, y, zn] - 1, verts_indices[xn, y, z] - 1, verts_indices[xn, y, zn] - 1])
+                break
+    return status.astype(np.uint8), simple_tris
