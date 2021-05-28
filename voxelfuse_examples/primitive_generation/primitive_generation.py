@@ -24,7 +24,7 @@ if __name__=='__main__':
 
     # Create mesh data
     # mesh1 = vf.Mesh.fromVoxelModel(model_result)
-    mesh2 = vf.Mesh.fromVoxelModel(model_result, simplify=True)
+    mesh2 = vf.Mesh.simpleSquares(model_result)
     # mesh3 = vf.Mesh.marchingCubes(model_result, smooth=False)
 
     # Get elapsed time

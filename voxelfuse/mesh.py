@@ -95,7 +95,7 @@ class Mesh:
         return cls(None, verts, verts_colors, tris, 1)
 
     @classmethod
-    def fromVoxelModel(cls, voxel_model: VoxelModel, simplify: bool = False, color: Tuple[float, float, float, float] = None):
+    def fromVoxelModel(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
         """
         Generate a mesh object from a VoxelModel object.
 
@@ -108,7 +108,6 @@ class Mesh:
         ----
 
         :param voxel_model: VoxelModel object to be converted to a mesh
-        :simplify: Run simplification to combine coincident faces
         :param color: Mesh color in the format (r, g, b, a), None to use voxel colors
         :return: Mesh
         """
@@ -173,32 +172,102 @@ class Mesh:
             for i in range(len(new_verts)):
                 verts_colors.append(voxel_color)
 
-        if simplify:
-            simple_tris = []
-            status_xy = np.zeros_like(verts_indices, dtype=np.uint8)
-            status_yz = np.zeros_like(verts_indices, dtype=np.uint8)
-            status_xz = np.zeros_like(verts_indices, dtype=np.uint8)
-
-            for x in tqdm(range(x_len + 1), desc='Simplifying'):
-                for y in range(y_len + 1):
-                    for z in range(z_len + 1):
-                        status_xy, new_simple_tris_xy = findSquareXY(verts_indices, status_xy, x, y, z)
-                        status_yz, new_simple_tris_yz = findSquareYZ(verts_indices, status_yz, x, y, z)
-                        status_xz, new_simple_tris_xz = findSquareXZ(verts_indices, status_xz, x, y, z)
-
-                        simple_tris += new_simple_tris_xy
-                        simple_tris += new_simple_tris_yz
-                        simple_tris += new_simple_tris_xz
-
-            tris = simple_tris
-
         verts = np.array(verts, dtype=np.float32)
         verts_colors = np.array(verts_colors, dtype=np.float32)
         tris = np.array(tris, dtype=np.uint32)
 
         return cls(voxel_model_array, verts, verts_colors, tris, voxel_model.resolution)
 
-    # Create mesh using a marching cubes algorithm
+    @classmethod
+    def simpleSquares(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
+        """
+        Generate a mesh object from a VoxelModel object using large square faces.
+
+        ----
+
+        Example:
+
+        ``mesh1 = vf.Mesh.simpleSquares(model1)``
+
+        ----
+
+        :param voxel_model: VoxelModel object to be converted to a mesh
+        :param color: Mesh color in the format (r, g, b, a), None to use voxel colors
+        :return: Mesh
+        """
+        voxel_model_fit = voxel_model.fitWorkspace()
+        voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
+        model_materials = voxel_model_fit.materials
+        model_offsets = voxel_model_fit.coords
+
+        x_len, y_len, z_len = voxel_model_array.shape
+
+        # Determine vertex types
+        vert_type = np.zeros((x_len + 1, y_len + 1, z_len + 1), dtype=np.uint8)
+        vert_color = np.zeros((x_len + 1, y_len + 1, z_len + 1, 4), dtype=np.float32)
+        for x in tqdm(range(x_len), desc='Finding voxel vertices'):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if voxel_model_array[x, y, z] > 0:
+                        vert_type[x:x+2, y:y+2, z:z+2] = 1
+
+                        if color is None:
+                            r = 0
+                            g = 0
+                            b = 0
+
+                            for i in range(voxel_model.materials.shape[1] - 1):
+                                r = r + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i]['r']
+                                g = g + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i]['g']
+                                b = b + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i]['b']
+
+                            r = 1 if r > 1 else r
+                            g = 1 if g > 1 else g
+                            b = 1 if b > 1 else b
+
+                            a = 1 - model_materials[voxel_model_array[x, y, z]][1]
+
+                            voxel_color = np.array([r, g, b, a])
+                        else:
+                            voxel_color = np.array(color)
+
+                        for cx in range(x, x+2):
+                            for cy in range(y, y+2):
+                                for cz in range(z, z+2):
+                                    vert_color[cx, cy, cz, :] = voxel_color
+
+        for x in tqdm(range(1, x_len), desc='Finding interior vertices'):
+            for y in range(1, y_len):
+                for z in range(1, z_len):
+                    if np.all(vert_type[x-1:x+2, y-1:y+2, z-1:z+2]):
+                        vert_type[x, y, z] = 2
+
+        # Initialize arrays
+        vi = 0 # Tracks current vertex index
+        verts = []
+        colors = []
+        tris = []
+        quads = []
+        vert_index = np.multiply(np.ones_like(vert_type, dtype=np.int32), -1)
+
+        for x in tqdm(range(x_len + 1), desc='Meshing'):
+            for y in range(y_len + 1):
+                for z in range(z_len + 1):
+                    dirs = [[1, 1, 0], [1, 0, 1], [0, 1, 1]]
+                    for d in dirs:
+                        vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads = findSquare(vi, vert_type, vert_index, vert_color, x, y, z, d[0], d[1], d[2])
+                        verts += new_verts
+                        colors += new_colors
+                        tris += new_tris
+                        quads += new_quads
+
+        verts = np.array(verts, dtype=np.float32)
+        colors = np.array(colors, dtype=np.float32)
+        tris = np.array(tris, dtype=np.uint32)
+        quads = np.array(quads, dtype=np.uint32)
+
+        return cls(voxel_model_array, verts, colors, tris, voxel_model.resolution)
+
     @classmethod
     def marchingCubes(cls, voxel_model: VoxelModel, smooth: bool = False, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
         """
@@ -651,107 +720,89 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
 
     return verts, verts_indices.astype(np.uint32), tris, vi
 
-@njit()
-def findSquareXY(verts_indices: np.ndarray, status: np.ndarray, x: int, y: int, z: int):
-    x_len, y_len, z_len = verts_indices.shape
-    simple_tris = []
-    if verts_indices[x, y, z] > 0 and status[x, y, z] <= 1:  # Point exists and is an edge or has not been checked yet
-        status[x, y, z] = 1
+# @njit()
+def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_color: np.ndarray, x: int, y: int, z: int, dx: int, dy: int, dz: int):
+    x_len, y_len, z_len = vert_type.shape
+    new_verts = []
+    new_colors = []
+    new_tris = []
+    new_quads = []
 
-        for i in range(1, min(x_len - x, y_len - y)):  # See if a square can be found starting at this point
-            xn = x + i
-            yn = y + i
+    if vert_type[x, y, z] == 1 and x+dx < x_len and y+dy < y_len and z+dz < z_len:  # Point is an edge and next point is in bounds
+        xn = x
+        yn = y
+        zn = z
 
-            p1 = verts_indices[xn, y, z] > 0 and status[xn, y, z] <= 1
-            p2 = verts_indices[x, yn, z] > 0 and status[x, yn, z] <= 1
-            p3 = verts_indices[xn, yn, z] > 0 and status[xn, yn, z] <= 1
+        for i in range(1, max(x_len - x, y_len - y, z_len - z)):  # See if a square can be found starting at this point
+            xn = x + dx * i
+            yn = y + dy * i
+            zn = z + dz * i
 
-            if not (p1 and p2 and p3):
-                status[x + 1:xn - 1, y + 1:yn - 1, z] = 2
-                status[x:xn, y, z] = 1
-                status[x:xn, yn - 1, z] = 1
-                status[x, y:yn, z] = 1
-                status[xn - 1, y:yn, z] = 1
-                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[xn - 1, y, z] - 1, verts_indices[x, yn - 1, z] - 1])
-                simple_tris.append([verts_indices[x, yn - 1, z] - 1, verts_indices[xn - 1, y, z] - 1, verts_indices[xn - 1, yn - 1, z] - 1])
+            if xn == x_len or yn == y_len or zn == z_len:
+                xn = xn - 1
+                yn = yn - 1
+                zn = zn - 1
                 break
-            elif xn == x_len-1 or yn == y_len-1:
-                status[x + 1:xn, y + 1:yn, z] = 2
-                status[x:xn + 1, y, z] = 1
-                status[x:xn + 1, yn, z] = 1
-                status[x, y:yn + 1, z] = 1
-                status[xn, y:yn + 1, z] = 1
-                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[xn, y, z] - 1, verts_indices[x, yn, z] - 1])
-                simple_tris.append([verts_indices[x, yn, z] - 1, verts_indices[xn, y, z] - 1, verts_indices[xn, yn, z] - 1])
+
+            p_valid = [vert_type[xn, y,  z ] == 1,
+                       vert_type[x,  yn, z ] == 1,
+                       vert_type[x,  y,  zn] == 1,
+                       vert_type[xn, yn, z ] == 1,
+                       vert_type[x,  yn, zn] == 1,
+                       vert_type[xn, y,  zn] == 1,
+                       vert_type[xn, yn, zn] == 1]
+
+            if not all(p_valid):
+                xn = x + dx * (i-1)
+                yn = y + dy * (i-1)
+                zn = z + dz * (i-1)
                 break
-    return status.astype(np.uint8), simple_tris
 
-@njit()
-def findSquareYZ(verts_indices: np.ndarray, status: np.ndarray, x: int, y: int, z: int):
-    x_len, y_len, z_len = verts_indices.shape
-    simple_tris = []
-    if verts_indices[x, y, z] > 0 and status[x, y, z] <= 1:  # Point exists and is an edge or has not been checked yet
-        status[x, y, z] = 1
+        square = None
 
-        for i in range(1, min(y_len - y, z_len - z)):  # See if a square can be found starting at this point
-            yn = y + i
-            zn = z + i
+        if xn > x and yn > y and zn == z:
+            vert_type[x:xn+1, y:yn+1, z] = 1
+            vert_type[x+1:xn, y+1:yn, z] = 2
 
-            p1 = verts_indices[x, yn, z] > 0 and status[x, yn, z] <= 1
-            p2 = verts_indices[x, y, zn] > 0 and status[x, y, zn] <= 1
-            p3 = verts_indices[x, yn, zn] > 0 and status[x, yn, zn] <= 1
+            square = [[ x,  y, z],
+                      [xn,  y, z],
+                      [ x, yn, z],
+                      [xn, yn, z]]
 
-            if not (p1 and p2 and p3):
-                status[x, y + 1:yn - 1, z + 1:zn - 1] = 2
-                status[x, y:yn, z] = 1
-                status[x, y:yn, zn - 1] = 1
-                status[x, y, z:zn] = 1
-                status[x, yn - 1, z:zn] = 1
-                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[x, y, zn - 1] - 1, verts_indices[x, yn - 1, z] - 1])
-                simple_tris.append([verts_indices[x, yn - 1, z] - 1, verts_indices[x, y, zn - 1] - 1, verts_indices[x, yn - 1, zn - 1] - 1])
-                break
-            elif yn == y_len-1 or zn == z_len-1:
-                status[x, y + 1:yn, z + 1:zn] = 2
-                status[x, y, z:zn + 1] = 1
-                status[x, yn, z:zn + 1] = 1
-                status[x, y:yn + 1, z] = 1
-                status[x, y:yn + 1, zn] = 1
-                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[x, y, zn] - 1, verts_indices[x, yn, z] - 1])
-                simple_tris.append([verts_indices[x, yn, z] - 1, verts_indices[x, y, zn] - 1, verts_indices[x, yn, zn] - 1])
-                break
-    return status.astype(np.uint8), simple_tris
+        elif xn > x and yn == y and zn > z:
+            vert_type[x:xn+1, y, z:zn+1] = 1
+            vert_type[x+1:xn, y, z+1:zn] = 2
 
-@njit()
-def findSquareXZ(verts_indices: np.ndarray, status: np.ndarray, x: int, y: int, z: int):
-    x_len, y_len, z_len = verts_indices.shape
-    simple_tris = []
-    if verts_indices[x, y, z] > 0 and status[x, y, z] <= 1:  # Point exists and is an edge or has not been checked yet
-        status[x, y, z] = 1
+            square = [[ x, y,  z],
+                      [ x, y, zn],
+                      [xn, y,  z],
+                      [xn, y, zn]]
 
-        for i in range(1, min(x_len - x, z_len - z)):  # See if a square can be found starting at this point
-            xn = x + i
-            zn = z + i
+        elif xn == x and yn > y and zn > z:
+            vert_type[x, y:yn+1, z:zn+1] = 1
+            vert_type[x, y+1:yn, z+1:zn] = 2
 
-            p1 = verts_indices[xn, y, z] > 0 and status[xn, y, z] <= 1
-            p2 = verts_indices[x, y, zn] > 0 and status[x, y, zn] <= 1
-            p3 = verts_indices[xn, y, zn] > 0 and status[xn, y, zn] <= 1
+            square = [[x,  y,  z],
+                      [x, yn,  z],
+                      [x,  y, zn],
+                      [x, yn, zn]]
 
-            if not (p1 and p2 and p3):
-                status[x + 1:xn - 1, y, z + 1:zn - 1] = 2
-                status[x:xn, y, z] = 1
-                status[x:xn, y, zn - 1] = 1
-                status[x, y, z:zn] = 1
-                status[xn - 1, y, z:zn] = 1
-                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[xn - 1, y, z] - 1, verts_indices[x, y, zn - 1] - 1])
-                simple_tris.append([verts_indices[x, y, zn - 1] - 1, verts_indices[xn - 1, y, z] - 1, verts_indices[xn - 1, y, zn - 1] - 1])
-                break
-            elif xn == x_len-1 or zn == z_len-1:
-                status[x + 1:xn, y, z + 1:zn] = 2
-                status[x, y, z:zn + 1] = 1
-                status[xn, y, z:zn + 1] = 1
-                status[x:xn + 1, y, z] = 1
-                status[x:xn + 1, y, zn] = 1
-                simple_tris.append([verts_indices[x, y, z] - 1, verts_indices[xn, y, z] - 1, verts_indices[x, y, zn] - 1])
-                simple_tris.append([verts_indices[x, y, zn] - 1, verts_indices[xn, y, z] - 1, verts_indices[xn, y, zn] - 1])
-                break
-    return status.astype(np.uint8), simple_tris
+
+        if square is not None:
+            p = []
+            for i in range(len(square)):
+                new_vi = vert_index[square[i][0], square[i][1], square[i][2]]
+                if new_vi == -1:
+                    new_verts.append(square[i])
+                    new_colors.append(vert_color[square[i][0], square[i][1], square[i][2]])
+                    vert_index[square[i][0], square[i][1], square[i][2]] = vi
+                    p.append(vi)
+                    vi = vi + 1
+                else:
+                    p.append(new_vi)
+
+            new_tris.append([p[0], p[1], p[2]])
+            new_tris.append([p[3], p[2], p[1]])
+            new_quads.append([p[0], p[1], p[3], p[2]])
+
+    return vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads
