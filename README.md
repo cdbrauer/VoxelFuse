@@ -82,41 +82,45 @@ A custom version of [Voxelyze](https://github.com/jonhiller/Voxelyze) is used fo
 
 Base template for creating scripts:
 
-    # Import Library
-    import voxelfuse as vf
-    
-    # Start Application
-    if __name__=='__main__':
-        # Create Models
-        model = vf.sphere(5)
-    
-        # Process Models
-        modelResult = model.dilate(3, vf.Axes.XY)
-    
-        # Create and Export Mesh
-        mesh = vf.Mesh.fromVoxelModel(modelResult)
-        mesh.export('modelResult.stl')
-    
-        # Create Plot
-        mesh.viewer(grids=True, name='mesh')
+```python
+# Import Library
+import voxelfuse as vf
+
+# Start Application
+if __name__=='__main__':
+    # Create Models
+    model = vf.sphere(5)
+
+    # Process Models
+    modelResult = model.dilate(3, vf.Axes.XY)
+
+    # Create and Export Mesh
+    mesh = vf.Mesh.fromVoxelModel(modelResult)
+    mesh.export('modelResult.stl')
+
+    # Create Plot
+    mesh.viewer(grids=True, name='mesh')
+```
 
 Template for creating scripts using VoxCad simulation:
 
-    # Import Library
-    import voxelfuse as vf
-    
-    # Start Application
-    if __name__=='__main__':
-        # Create Models
-        model = vf.sphere(5)
-    
-        # Process Models
-        modelResult = model.dilate(3, vf.Axes.XY)
-        modelResult = modelResult.translate((0, 0, 20))
-    
-        # Create simulation and launch
-        simulation = vf.Simulation(modelResult)
-        simulation.runSimVoxCad()
+```python
+# Import Library
+import voxelfuse as vf
+
+# Start Application
+if __name__=='__main__':
+    # Create Models
+    model = vf.sphere(5)
+
+    # Process Models
+    modelResult = model.dilate(3, vf.Axes.XY)
+    modelResult = modelResult.translate((0, 0, 20))
+
+    # Create simulation and launch
+    simulation = vf.Simulation(modelResult)
+    simulation.runSimVoxCad()
+```
 
 ## Usage
 
