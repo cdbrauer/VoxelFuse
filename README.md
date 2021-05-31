@@ -60,7 +60,7 @@ Created as part of a research project with [IDEAlab](http://idealab.asu.edu) at 
 - Mesh plotting in [Jupyter Notebook](https://jupyter.org/)
 - Mesh file export
 
-![Mesh Examples](images/mesh-options.png?raw=true)
+![Mesh Examples](images/mesh_types.png?raw=true)
 
 ## Installation
 

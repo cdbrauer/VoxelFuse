@@ -184,7 +184,7 @@ class Mesh:
         Generate a mesh object from a VoxelModel object using large square faces.
 
         This function can greatly reduce the file size of generated meshes. However, it may not correctly recognize
-        small (vx) model features and currently produces files with a nonstandard vertex arrangement. Use at your own
+        small (1 voxel) model features and currently produces files with a nonstandard vertex arrangement. Use at your own
         risk.
 
         ----
@@ -263,7 +263,7 @@ class Mesh:
                 for z in range(z_len + 1):
                     dirs = [[1, 1, 0], [1, 0, 1], [0, 1, 1]]
                     for d in dirs:
-                        vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads = findSquare(vi, vert_type, vert_index, vert_color, x, y, z, d[0], d[1], d[2])
+                        vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads = findSquare(vi, vert_type, vert_index, vert_color, voxel_model_array, x, y, z, d[0], d[1], d[2])
                         verts += new_verts
                         colors += new_colors
                         tris += new_tris
@@ -786,7 +786,7 @@ def markInsideCorner(vert_type, x, y, z):
     return vert_type
 
 # @njit()
-def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_color: np.ndarray, x: int, y: int, z: int, dx: int, dy: int, dz: int):
+def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_color: np.ndarray, voxel_model_array: np.ndarray, x: int, y: int, z: int, dx: int, dy: int, dz: int):
     """
     Find the largest square starting from a given point and generate the corresponding points and tris.
 
@@ -794,6 +794,7 @@ def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_colo
     :param vert_type: Array of vertex types
     :param vert_index: Array of vertex indices
     :param vert_color: Array of vertex colors
+    :param voxel_model_array: Voxel data array
     :param x: Target voxel X
     :param y: Target voxel Y
     :param z: Target voxel Z
@@ -847,33 +848,80 @@ def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_colo
 
         square = None
 
+        # Determine vert coords based on search direction
         if xn > x and yn > y and zn == z:
-            vert_type[x:xn+1, y:yn+1, z] = 1 # Type 1 = occupied/exterior
+            # vert_type[x:xn+1, y:yn+1, z] = 1 # Type 1 = occupied/exterior
             vert_type[x+1:xn, y+1:yn, z] = 3 # Type 3 = interior/already included in a square
 
-            square = [[ x,  y, z],
-                      [xn,  y, z],
-                      [ x, yn, z],
-                      [xn, yn, z]]
+            vx_pos = False
+            vx_neg = False
+            if z - 1 >= 0:
+                vx_neg = (voxel_model_array[x, y, z - 1] != 0)
+            if z < z_len-1:
+                vx_pos = (voxel_model_array[x, y, z] != 0)
+
+            if vx_pos and not vx_neg: # CW
+                square = [[x, y, z],
+                          [x, yn, z],
+                          [xn, y, z],
+                          [xn, yn, z]]
+            elif vx_neg and not vx_pos: # CCW
+                square = [[x, y, z],
+                          [xn, y, z],
+                          [x, yn, z],
+                          [xn, yn, z]]
+            else: # Interior face -- can occur with certain small features
+                square = None
 
         elif xn > x and yn == y and zn > z:
-            vert_type[x:xn+1, y, z:zn+1] = 1 # Type 1 = occupied/exterior
+            # vert_type[x:xn+1, y, z:zn+1] = 1 # Type 1 = occupied/exterior
             vert_type[x+1:xn, y, z+1:zn] = 3 # Type 3 = interior/already included in a square
 
-            square = [[ x, y,  z],
-                      [ x, y, zn],
-                      [xn, y,  z],
-                      [xn, y, zn]]
+            vx_pos = False
+            vx_neg = False
+            if y - 1 >= 0:
+                vx_neg = (voxel_model_array[x, y - 1, z] != 0)
+            if y < y_len-1:
+                vx_pos = (voxel_model_array[x, y, z] != 0)
+
+            if vx_pos and not vx_neg:  # CW
+                square = [[x, y, z],
+                          [xn, y, z],
+                          [x, y, zn],
+                          [xn, y, zn]]
+            elif vx_neg and not vx_pos:  # CCW
+                square = [[x, y, z],
+                          [x, y, zn],
+                          [xn, y, z],
+                          [xn, y, zn]]
+            else:  # Interior face -- can occur with certain small features
+                square = None
 
         elif xn == x and yn > y and zn > z:
-            vert_type[x, y:yn+1, z:zn+1] = 1 # Type 1 = occupied/exterior
+            # vert_type[x, y:yn+1, z:zn+1] = 1 # Type 1 = occupied/exterior
             vert_type[x, y+1:yn, z+1:zn] = 3 # Type 3 = interior/already included in a square
 
-            square = [[x,  y,  z],
-                      [x, yn,  z],
-                      [x,  y, zn],
-                      [x, yn, zn]]
+            vx_pos = False
+            vx_neg = False
+            if x - 1 >= 0:
+                vx_neg = (voxel_model_array[x - 1, y, z] != 0)
+            if x < x_len-1:
+                vx_pos = (voxel_model_array[x, y, z] != 0)
 
+            if vx_pos and not vx_neg:  # CW
+                square = [[x, y, z],
+                          [x, y, zn],
+                          [x, yn, z],
+                          [x, yn, zn]]
+            elif vx_neg and not vx_pos:  # CCW
+                square = [[x, y, z],
+                          [x, yn, z],
+                          [x, y, zn],
+                          [x, yn, zn]]
+            else:  # Interior face -- can occur with certain small features
+                square = None
+
+        # Add verts, tris, quads, and colors
         if square is not None:
             p = []
             for i in range(len(square)):
