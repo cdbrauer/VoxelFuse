@@ -183,6 +183,10 @@ class Mesh:
         """
         Generate a mesh object from a VoxelModel object using large square faces.
 
+        This function can greatly reduce the file size of generated meshes. However, it may not correctly recognize
+        small (vx) model features and currently produces files with a nonstandard vertex arrangement. Use at your own
+        risk.
+
         ----
 
         Example:
@@ -209,7 +213,7 @@ class Mesh:
             for y in range(y_len):
                 for z in range(z_len):
                     if voxel_model_array[x, y, z] > 0:
-                        vert_type[x:x+2, y:y+2, z:z+2] = 1
+                        vert_type[x:x+2, y:y+2, z:z+2] = 1 # Type 1 = occupied/exterior
 
                         if color is None:
                             r = 0
@@ -239,8 +243,12 @@ class Mesh:
         for x in tqdm(range(1, x_len), desc='Finding interior vertices'):
             for y in range(1, y_len):
                 for z in range(1, z_len):
-                    if np.all(vert_type[x-1:x+2, y-1:y+2, z-1:z+2]):
-                        vert_type[x, y, z] = 2
+                    vert_type = markInterior(vert_type, x, y, z)
+
+        for x in tqdm(range(0, x_len+1), desc='Finding feature vertices'):
+            for y in range(0, y_len+1):
+                for z in range(0, z_len+1):
+                    vert_type = markInsideCorner(vert_type, x, y, z)
 
         # Initialize arrays
         vi = 0 # Tracks current vertex index
@@ -721,14 +729,87 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
     return verts, verts_indices.astype(np.uint32), tris, vi
 
 # @njit()
+def markInterior(vert_type: np.ndarray, x: int, y: int, z: int):
+    """
+    Determine if target voxel is an interior voxel.
+
+    :param vert_type: Array of vertex types
+    :param x: Target voxel X
+    :param y: Target voxel Y
+    :param z: Target voxel Z
+    :return: Updated array of vertex types
+    """
+    if np.all(vert_type[x-1:x+2, y-1:y+2, z-1:z+2] != 0):
+        vert_type[x, y, z] = 3 # Type 3 = interior/already included in a square
+    return vert_type
+
+@njit()
+def markInsideCorner(vert_type, x, y, z):
+    """
+    Determine if target voxel is an inside corner.
+
+    :param vert_type: Array of vertex types
+    :param x: Target voxel X
+    :param y: Target voxel Y
+    :param z: Target voxel Z
+    :return: Updated array of vertex types
+    """
+    x_len, y_len, z_len = vert_type.shape
+    adjacent_empty = [True, True, True, True, True, True]
+
+    if x > 0:
+        adjacent_empty[0] = (vert_type[x - 1, y, z] == 0)
+    if x < x_len-1:
+        adjacent_empty[1] = (vert_type[x + 1, y, z] == 0)
+
+    if y > 0:
+        adjacent_empty[2] = (vert_type[x, y - 1, z] == 0)
+    if y < y_len-1:
+        adjacent_empty[3] = (vert_type[x, y + 1, z] == 0)
+
+    if z > 0:
+        adjacent_empty[4] = (vert_type[x, y, z - 1] == 0)
+    if z < z_len-1:
+        adjacent_empty[5] = (vert_type[x, y, z + 1] == 0)
+
+    is_face = [adjacent_empty[0] != adjacent_empty[1],
+               adjacent_empty[2] != adjacent_empty[3],
+               adjacent_empty[4] != adjacent_empty[5]]
+
+    # Inside corner  - 0 faces
+    # Face           - 1 face
+    # Outside edge   - 2 faces
+    # Outside corner - 3 faces
+    if vert_type[x, y, z] == 1 and np.sum(np.array(is_face)) == 0:
+        vert_type[x, y, z] = 2  # Type 2 = blocking
+
+    return vert_type
+
+# @njit()
 def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_color: np.ndarray, x: int, y: int, z: int, dx: int, dy: int, dz: int):
+    """
+    Find the largest square starting from a given point and generate the corresponding points and tris.
+
+    :param vi: Current vertex index
+    :param vert_type: Array of vertex types
+    :param vert_index: Array of vertex indices
+    :param vert_color: Array of vertex colors
+    :param x: Target voxel X
+    :param y: Target voxel Y
+    :param z: Target voxel Z
+    :param dx: Square search step in X
+    :param dy: Square search step in Y
+    :param dz: Square search step in Z
+    :return: vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads
+    """
     x_len, y_len, z_len = vert_type.shape
     new_verts = []
     new_colors = []
     new_tris = []
     new_quads = []
 
-    if vert_type[x, y, z] == 1 and x+dx < x_len and y+dy < y_len and z+dz < z_len:  # Point is an edge and next point is in bounds
+    vert_on_surface = (vert_type[x, y, z] == 1 or vert_type[x, y, z] == 2)
+    if vert_on_surface and x+dx < x_len and y+dy < y_len and z+dz < z_len:  # Point is a face vertex and next point is in bounds
         xn = x
         yn = y
         zn = z
@@ -738,31 +819,37 @@ def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_colo
             yn = y + dy * i
             zn = z + dz * i
 
-            if xn == x_len or yn == y_len or zn == z_len:
-                xn = xn - 1
-                yn = yn - 1
-                zn = zn - 1
-                break
+            # Check if endpoint is in bounds
+            in_range = [xn < x_len,
+                        yn < y_len,
+                        zn < z_len]
 
-            p_valid = [vert_type[xn, y,  z ] == 1,
-                       vert_type[x,  yn, z ] == 1,
-                       vert_type[x,  y,  zn] == 1,
-                       vert_type[xn, yn, z ] == 1,
-                       vert_type[x,  yn, zn] == 1,
-                       vert_type[xn, y,  zn] == 1,
-                       vert_type[xn, yn, zn] == 1]
-
-            if not all(p_valid):
+            if not np.all(np.array(in_range)):
                 xn = x + dx * (i-1)
                 yn = y + dy * (i-1)
                 zn = z + dz * (i-1)
                 break
 
+            face = (vert_type[x:xn+1, y:yn+1,  z:zn+1] == 1)
+            blocking = (vert_type[x:xn+1, y:yn+1,  z:zn+1] == 2)
+            on_surface = np.logical_or(face, blocking)
+
+            # Check if square includes only surface vertices
+            if not np.all(on_surface):
+                xn = x + dx * (i-1)
+                yn = y + dy * (i-1)
+                zn = z + dz * (i-1)
+                break
+
+            # Check if square includes any blocking vertices
+            if np.any(blocking):
+                break
+
         square = None
 
         if xn > x and yn > y and zn == z:
-            vert_type[x:xn+1, y:yn+1, z] = 1
-            vert_type[x+1:xn, y+1:yn, z] = 2
+            vert_type[x:xn+1, y:yn+1, z] = 1 # Type 1 = occupied/exterior
+            vert_type[x+1:xn, y+1:yn, z] = 3 # Type 3 = interior/already included in a square
 
             square = [[ x,  y, z],
                       [xn,  y, z],
@@ -770,8 +857,8 @@ def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_colo
                       [xn, yn, z]]
 
         elif xn > x and yn == y and zn > z:
-            vert_type[x:xn+1, y, z:zn+1] = 1
-            vert_type[x+1:xn, y, z+1:zn] = 2
+            vert_type[x:xn+1, y, z:zn+1] = 1 # Type 1 = occupied/exterior
+            vert_type[x+1:xn, y, z+1:zn] = 3 # Type 3 = interior/already included in a square
 
             square = [[ x, y,  z],
                       [ x, y, zn],
@@ -779,14 +866,13 @@ def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_colo
                       [xn, y, zn]]
 
         elif xn == x and yn > y and zn > z:
-            vert_type[x, y:yn+1, z:zn+1] = 1
-            vert_type[x, y+1:yn, z+1:zn] = 2
+            vert_type[x, y:yn+1, z:zn+1] = 1 # Type 1 = occupied/exterior
+            vert_type[x, y+1:yn, z+1:zn] = 3 # Type 3 = interior/already included in a square
 
             square = [[x,  y,  z],
                       [x, yn,  z],
                       [x,  y, zn],
                       [x, yn, zn]]
-
 
         if square is not None:
             p = []
