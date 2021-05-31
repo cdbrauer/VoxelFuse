@@ -274,6 +274,11 @@ class Mesh:
         tris = np.array(tris, dtype=np.uint32)
         quads = np.array(quads, dtype=np.uint32)
 
+        # Shift model to align with origin
+        verts[:, 0] = np.add(verts[:, 0], model_offsets[0])
+        verts[:, 1] = np.add(verts[:, 1], model_offsets[1])
+        verts[:, 2] = np.add(verts[:, 2], model_offsets[2])
+
         return cls(voxel_model_array, verts, colors, tris, voxel_model.resolution)
 
     @classmethod
@@ -291,7 +296,7 @@ class Mesh:
         voxel_model_fit = voxel_model.fitWorkspace().getOccupied()
         voxels = voxel_model_fit.voxels.astype(np.uint16)
         x, y, z = voxels.shape
-        coords = voxel_model_fit.coords
+        model_offsets = voxel_model_fit.coords
 
         voxels_padded = np.zeros((x + 2, y + 2, z + 2))
         voxels_padded[1:-1, 1:-1, 1:-1] = voxels
@@ -306,9 +311,9 @@ class Mesh:
 
         # Shift model to align with origin
         verts = np.subtract(verts, 0.5)
-        verts[:, 0] = np.add(verts[:, 0], coords[0])
-        verts[:, 1] = np.add(verts[:, 1], coords[1])
-        verts[:, 2] = np.add(verts[:, 2], coords[2])
+        verts[:, 0] = np.add(verts[:, 0], model_offsets[0])
+        verts[:, 1] = np.add(verts[:, 1], model_offsets[1])
+        verts[:, 2] = np.add(verts[:, 2], model_offsets[2])
 
         verts_colors = generateColors(len(verts), color)
 
@@ -728,7 +733,7 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
 
     return verts, verts_indices.astype(np.uint32), tris, vi
 
-# @njit()
+@njit()
 def markInterior(vert_type: np.ndarray, x: int, y: int, z: int):
     """
     Determine if target voxel is an interior voxel.
@@ -785,7 +790,7 @@ def markInsideCorner(vert_type, x, y, z):
 
     return vert_type
 
-# @njit()
+@njit()
 def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_color: np.ndarray, voxel_model_array: np.ndarray, x: int, y: int, z: int, dx: int, dy: int, dz: int):
     """
     Find the largest square starting from a given point and generate the corresponding points and tris.
