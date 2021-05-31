@@ -9,9 +9,9 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 import math
 import numpy as np
 from typing import Tuple
-from voxelfuse.voxel_model import VoxelModel, generateMaterials
-from voxelfuse.materials import material_properties
 from tqdm import tqdm
+
+from voxelfuse.voxel_model import VoxelModel, generateMaterials
 
 def gyroid(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1):
     """

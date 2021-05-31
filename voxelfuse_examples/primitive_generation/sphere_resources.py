@@ -1,14 +1,20 @@
+"""
+Generate different size spheres and plot the change in processing time and memory requirements.
+
+----
+
+Copyright 2020 - Cole Brauer, Dan Aukes
+"""
+
 import os
-import sys
 import time
-import PyQt5.QtGui as qg
 
 import numpy as np
 import matplotlib.pyplot as plt
 
+from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.primitives import sphere
-from voxelfuse.voxel_model import VoxelModel
 
 def memory_usage_psutil():
     # return the memory usage in MB

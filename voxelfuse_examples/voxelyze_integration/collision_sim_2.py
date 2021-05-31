@@ -6,12 +6,9 @@ Export a simulation of multiple falling objects.
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
-import PyQt5.QtGui as qg
-import sys
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.simulation import Simulation
 from voxelfuse.mesh import Mesh
-from voxelfuse.plot import Plot
 from voxelfuse.primitives import empty, cube
 from voxelfuse.materials import material_properties
 
@@ -23,8 +20,6 @@ particleSize = 3
 particleSpacing = 5
 
 if __name__=='__main__':
-    app1 = qg.QApplication(sys.argv)
-
     # Initialize an empty model
     model = empty()
     mat = 1

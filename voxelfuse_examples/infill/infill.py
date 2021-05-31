@@ -8,17 +8,12 @@ Generate a part containing a shell of one material, and infill of another materi
 Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
-import PyQt5.QtGui as qg
-import sys
 from voxelfuse.voxel_model import VoxelModel
-from voxelfuse.plot import Plot
+from voxelfuse.mesh import Mesh
 from voxelfuse.primitives import sphere
 from voxelfuse.periodic import gyroid
-from voxelfuse.mesh import Mesh
 
 if __name__=='__main__':
-    app1 = qg.QApplication(sys.argv)
-
     # User preferences
     modelRadius = 60
     infillScale = 30
@@ -31,9 +26,7 @@ if __name__=='__main__':
 
     # Display
     mesh1 = Mesh.fromVoxelModel(volume)
-    plot1 = Plot(mesh1, name='Input Model')
-    plot1.show()
-    app1.processEvents()
+    mesh1.viewer(name='Input Model')
 
     # Create infill structure
     infillN, infillP = gyroid(size=(modelRadius*2, modelRadius*2, modelRadius*2), scale=infillScale, material1=2, material2=2)
@@ -43,15 +36,11 @@ if __name__=='__main__':
 
     # Display
     mesh2 = Mesh.fromVoxelModel(infillN.setMaterial(3) | infillP)
-    plot2 = Plot(mesh2, name='Infill Volume Halves')
-    plot2.show()
-    app1.processEvents()
+    mesh2.viewer(name='Infill Volume Halves')
 
     # Display
     mesh3 = Mesh.fromVoxelModel(infill)
-    plot3 = Plot(mesh3, name='Infill Surface')
-    plot3.show()
-    app1.processEvents()
+    mesh3.viewer(name='Infill Surface')
 
     # Hollow out volume model
     hollow = volume.erode(shellThickness)
@@ -62,17 +51,13 @@ if __name__=='__main__':
 
     # Display
     mesh4 = Mesh.fromVoxelModel(infill)
-    plot4 = Plot(mesh4, name='Trimmed Infill')
-    plot4.show()
-    app1.processEvents()
+    mesh4.viewer(name='Trimmed Infill')
 
     # Combine infill and shell
     result = shell | infill
 
     # Create mesh data
-    for m in range(1, len(result.materials)):
-        currentMaterial = result.isolateMaterial(m)
-        currentMesh = Mesh.fromVoxelModel(currentMaterial)
-        currentMesh.export('output_' + str(m) + '.stl')
-
-    app1.exec_()
+    # for m in range(1, len(result.materials)):
+    #     currentMaterial = result.isolateMaterial(m)
+    #     currentMesh = Mesh.fromVoxelModel(currentMaterial)
+    #     currentMesh.export('output_' + str(m) + '.stl')

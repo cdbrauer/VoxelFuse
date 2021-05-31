@@ -1,7 +1,7 @@
 """
 Find the surface voxels of a model and output a list of their coordinates.
 
-Used by the Mesh class to improve meshing speed.
+A similar process is used by the Mesh class to improve meshing speed.
 
 ----
 

@@ -8,6 +8,7 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 
 import numpy as np
 from typing import Tuple
+
 from voxelfuse.voxel_model import VoxelModel, generateMaterials
 from voxelfuse.materials import material_properties
 
