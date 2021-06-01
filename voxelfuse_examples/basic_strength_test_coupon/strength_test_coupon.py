@@ -8,13 +8,10 @@ Includes options for generating molds and fixtures for casting the center coupon
 Copyright 2019 - Cole Brauer, Dan Aukes
 """
 
-import PyQt5.QtGui as qg
-import sys
 import time
 import numpy as np
 from voxelfuse.voxel_model import VoxelModel, Axes
 from voxelfuse.mesh import Mesh
-from voxelfuse.plot import Plot
 from voxelfuse.materials import material_properties
 
 if __name__=='__main__':
@@ -34,8 +31,6 @@ if __name__=='__main__':
     fixtureGap = 1
 
     export = False
-
-    app1 = qg.QApplication(sys.argv)
 
     # Import coupon components
     print('Importing Files')
@@ -95,12 +90,6 @@ if __name__=='__main__':
     print('Meshing')
     mesh1 = Mesh.fromVoxelModel(coupon)
 
-    # Create plot
-    print('Plotting')
-    plot1 = Plot(mesh1, grids=True)
-    plot1.show()
-    app1.processEvents()
-
     if export:
         print('Exporting')
 
@@ -115,9 +104,8 @@ if __name__=='__main__':
         printed_components = printed_components.setMaterial(1)
 
         mesh2 = Mesh.fromVoxelModel(printed_components)
-        plot2 = Plot(mesh2, grids=True)
-        plot2.show()
-        app1.processEvents()
         mesh2.export('modified-coupon.stl')
 
-    app1.exec_()
+    # Create plot
+    print('Plotting')
+    mesh1.viewer()

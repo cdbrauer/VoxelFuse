@@ -40,11 +40,12 @@
         <MaterialTempPhase>0.0</MaterialTempPhase>
         <uStatic>0.5</uStatic>
         <uDynamic>0.4</uDynamic>
+        <HydrogelModel>0</HydrogelModel>
       </Mechanical>
     </Material>
     <Material ID="2">
       <MatType>0</MatType>
-      <Name>R PLA Y H-Gel Cold</Name>
+      <Name>R PLA Y H-Gel 1</Name>
       <Display>
         <Red>0.8</Red>
         <Green>0.3</Green>
@@ -65,11 +66,12 @@
         <MaterialTempPhase>0.0</MaterialTempPhase>
         <uStatic>0.7</uStatic>
         <uDynamic>0.6000000000000001</uDynamic>
+        <HydrogelModel>0</HydrogelModel>
       </Mechanical>
     </Material>
     <Material ID="3">
       <MatType>0</MatType>
-      <Name>Y H-Gel Cold</Name>
+      <Name>Y H-Gel 1</Name>
       <Display>
         <Red>0.6</Red>
         <Green>0.6</Green>
@@ -90,7 +92,27 @@
         <MaterialTempPhase>0.0</MaterialTempPhase>
         <uStatic>0.9</uStatic>
         <uDynamic>0.8</uDynamic>
+        <HydrogelModel>1</HydrogelModel>
       </Mechanical>
+      <Hydrogel>
+        <Name>3over10</Name>
+        <VoxelDim>0.005</VoxelDim>
+        <IdealDisplacement>2.0</IdealDisplacement>
+        <TestDisplacement>1.65</TestDisplacement>
+        <TimeStepCorrection>0.07843137</TimeStepCorrection>
+        <KpRising>0.009</KpRising>
+        <KpFalling>0.0048</KpFalling>
+        <MaxTemp>45.0</MaxTemp>
+        <MinTemp>20.0</MinTemp>
+        <TestMax>43.0</TestMax>
+        <TestMin>15.32</TestMin>
+        <C0>17.779</C0>
+        <C1>-3.7322</C1>
+        <C2>0.30097</C2>
+        <C3>-0.011557</C3>
+        <C4>0.00020873</C4>
+        <C5>-1.4297e-06</C5>
+      </Hydrogel>
     </Material>
     <Material ID="4">
       <MatType>0</MatType>
@@ -115,6 +137,7 @@
         <MaterialTempPhase>0.0</MaterialTempPhase>
         <uStatic>0.5</uStatic>
         <uDynamic>0.4</uDynamic>
+        <HydrogelModel>0</HydrogelModel>
       </Mechanical>
     </Material>
   </Palette>

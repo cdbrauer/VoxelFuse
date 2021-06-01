@@ -9,9 +9,9 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 """
 
 import numpy as np
+from typing import Tuple
 import PyQt5.QtGui as qg
 import pyqtgraph.opengl as pgo
-from typing import Tuple
 
 class Plot:
     """
@@ -28,9 +28,10 @@ class Plot:
         :param edgeColor: Set display color of voxel edges
         :param positionOffset: Offset of the camera target from the center of the model in voxels
         :param viewAngle: Elevation, Azimuth, and Distance of the camera
-        :param resolution: Number of voxels per mm
+        :param resolution: Window resolution in px
         :param name: Plot window name
         """
+        print("WARNING: Plot class is deprecated and will be removed in later versions. Please use 'plot' or 'viewer' from the Mesh class instead.")
         self.mesh = mesh
         self.grids = grids
         self.drawEdges = drawEdges

@@ -12,15 +12,14 @@ import os
 import time
 import subprocess
 import multiprocessing
-
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
 from enum import Enum
+from datetime import date
 from typing import List, Tuple, TextIO
 from tqdm import tqdm
-import numpy as np
+
 from voxelfuse.voxel_model import VoxelModel, writeHeader, writeData, writeOpen, writeClos
-from voxelfuse.primitives import empty #, cuboid, sphere, cylinder # Formerly needed for finding bcVoxels
+from voxelfuse.primitives import empty
 
 # Floating point error threshold for rounding to zero
 FLOATING_ERROR = 0.0000000001
@@ -54,6 +53,83 @@ class BCShape(Enum):
     CYLINDER = 1
     SPHERE = 2
 
+class _BCRegion:
+    """
+    Internal boundary condition class.
+    """
+    def __init__(self, name: str,
+                 shape: BCShape,
+                 position: Tuple[float, float, float],
+                 size: Tuple[float, float, float],
+                 radius: float,
+                 fixed_dof: int,
+                 force: Tuple[float, float, float],
+                 displacement: Tuple[float, float, float],
+                 torque: Tuple[float, float, float],
+                 angular_displacement: Tuple[float, float, float]):
+
+        self.name = name
+        self.shape = shape
+        self.position = position
+        self.size = size
+        self.radius = radius
+        self.color = (0.6, 0.4, 0.4, 0.5)
+        self.fixed_dof = fixed_dof
+        self.force = force
+        self.displacement = displacement
+        self.torque = torque
+        self.angular_displacement = angular_displacement
+
+class _Sensor:
+    """
+    Internal sensor class.
+    """
+    def __init__(self, name: str, coords: Tuple[int, int, int], axis: Axis):
+        self.name = name
+        self.coords = coords
+        self.axis = axis
+
+class _Keyframe:
+    """
+    Internal keyframe class.
+    """
+    def __init__(self, time_value: float,
+                 amplitude_pos: float,
+                 amplitude_neg: float,
+                 percent_pos: float,
+                 period: float,
+                 phase_offset: float,
+                 temp_offset: float,
+                 const_temp: bool,
+                 square_wave: bool):
+
+        self.time_value = time_value
+        self.amplitude_pos = amplitude_pos
+        self.amplitude_neg = amplitude_neg
+        self.percent_pos = percent_pos
+        self.period = period
+        self.phase_offset = phase_offset
+        self.temp_offset = temp_offset
+        self.const_temp = const_temp
+        self.square_wave = square_wave
+
+class _TempControlGroup:
+    """
+    Internal temperature control group class.
+    """
+    def __init__(self, name: str, locations: List[Tuple[int, int, int]], keyframes: List[_Keyframe]):
+        self.name = name
+        self.locations = locations
+        self.keyframes = keyframes
+
+class _Disconnection:
+    """
+    Internal disconnection class.
+    """
+    def __init__(self, voxel_1: Tuple[int, int, int], voxel_2: Tuple[int, int, int]):
+        self.vx1 = voxel_1
+        self.vx2 = voxel_2
+
 class Simulation:
     """
     Simulation object that stores a VoxelModel and its associated simulation settings.
@@ -69,8 +145,11 @@ class Simulation:
 
         :param voxel_model: VoxelModel
         """
-        # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
+        # Simulation ID and start date
         self.id = id_number
+        self.date = date.today()
+
+        # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
         self.__model = ((VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1), resolution=voxel_model.resolution)).removeDuplicateMaterials()
 
         # Simulator ##############
@@ -108,7 +187,6 @@ class Simulation:
         # Environment ############
         # Boundary conditions
         self.__bcRegions = []
-        # self.__bcVoxels = [] # This data is not needed by the Voxelyze engine, and was disabled
 
         # Gravity
         self.__gravityEnable = True
@@ -128,7 +206,8 @@ class Simulation:
         self.__sensors = []
 
         # Temperature Controls #######
-        self.__tempControls = []
+        self.__currentTempControlGroup = 0
+        self.__localTempControls = []
 
         # Disconnected Bonds #######
         self.__disconnections = []
@@ -149,11 +228,15 @@ class Simulation:
         new_simulation = cls(simulation.__model)
         new_simulation.__dict__ = simulation.__dict__.copy()
 
+        # Update ID and date
+        new_simulation.id = simulation.id + 1
+        new_simulation.date = date.today()
+
         # Make lists copies instead of references
         new_simulation.__bcRegions = simulation.__bcRegions.copy()
-        # new_simulation.__bcVoxels = simulation.__bcVoxels.copy()
         new_simulation.__sensors = simulation.__sensors.copy()
-        new_simulation.__tempControls = simulation.__tempControls.copy()
+        new_simulation.__localTempControls = simulation.__localTempControls.copy()
+        new_simulation.__disconnections = simulation.__disconnections.copy()
         new_simulation.results = simulation.results.copy()
         new_simulation.valueMap = simulation.valueMap.copy()
 
@@ -258,7 +341,7 @@ class Simulation:
         self.__temperatureVaryEnable = False
         self.__growthAmplitude = growth_amplitude
 
-    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 0.0, offset: float = 0.0, growth_amplitude: float = 1.0):
+    def setVaryingThermal(self, enable: bool = True, base_temp: float = 25.0, amplitude: float = 0.0, period: float = 1.0, offset: float = 0.0, growth_amplitude: float = 1.0):
         """
         Set a varying environment temperature.
 
@@ -376,7 +459,8 @@ class Simulation:
                                   force: Tuple[float, float, float] = (0, 0, 0),
                                   displacement: Tuple[float, float, float] = (0, 0, 0),
                                   torque: Tuple[float, float, float] = (0, 0, 0),
-                                  angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+                                  angular_displacement: Tuple[float, float, float] = (0, 0, 0),
+                                  name: str = None):
         """
         Add a boundary condition at a specific voxel.
 
@@ -391,6 +475,7 @@ class Simulation:
         :param displacement: Displacement vector in mm
         :param torque: Torque values in Nm
         :param angular_displacement: Angular displacement values in deg
+        :param name: Boundary condition name
         :return: None
         """
         x = position[0] - self.__model.coords[0]
@@ -404,8 +489,8 @@ class Simulation:
         pos = ((x+0.5)/x_len, (y+0.5)/y_len, (z+0.5)/z_len)
         radius = 0.49/x_len
 
-        self.__bcRegions.append([BCShape.SPHERE, pos, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-        # self.__bcVoxels.append([x, y, z])
+        bc = _BCRegion(name, BCShape.SPHERE, pos, (0.0, 0.0, 0.0), radius, fixed_dof, force, displacement, torque, angular_displacement)
+        self.__bcRegions.append(bc)
 
     # Default box boundary condition is a fixed constraint in the XY plane (bottom layer)
     def addBoundaryConditionBox(self, position: Tuple[float, float, float] = (0.0, 0.0, 0.0),
@@ -414,7 +499,8 @@ class Simulation:
                                 force: Tuple[float, float, float] = (0, 0, 0),
                                 displacement: Tuple[float, float, float] = (0, 0, 0),
                                 torque: Tuple[float, float, float] = (0, 0, 0),
-                                angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+                                angular_displacement: Tuple[float, float, float] = (0, 0, 0),
+                                name: str = None):
         """
         Add a box-shaped boundary condition.
 
@@ -432,30 +518,11 @@ class Simulation:
         :param displacement: Displacement vector in mm
         :param torque: Torque values in Nm
         :param angular_displacement: Angular displacement values in deg
+        :param name: Boundary condition name
         :return: None
         """
-        self.__bcRegions.append([BCShape.BOX, position, size, 0, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-
-        # x_len = int(self.__model.voxels.shape[0])
-        # y_len = int(self.__model.voxels.shape[1])
-        # z_len = int(self.__model.voxels.shape[2])
-
-        # regionSize = np.ceil([size[0]*x_len, size[1]*y_len, size[2]*z_len]).astype(np.int32)
-        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        # bcRegion = cuboid(regionSize, regionPosition, resolution=self.__model.resolution) & self.__model
-
-        # x_offset = int(bcRegion.coords[0])
-        # y_offset = int(bcRegion.coords[1])
-        # z_offset = int(bcRegion.coords[2])
-
-        # bcVoxels = []
-        # for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
-        #     for y in range(y_len):
-        #         for z in range(z_len):
-        #             if bcRegion.voxels[x, y, z] != 0:
-        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
-
-        # self.__bcVoxels.append(bcVoxels)
+        bc = _BCRegion(name, BCShape.BOX, position, size, 0, fixed_dof, force, displacement, torque, angular_displacement)
+        self.__bcRegions.append(bc)
 
     # Default sphere boundary condition is a fixed constraint centered in the model
     def addBoundaryConditionSphere(self, position: Tuple[float, float, float] = (0.5, 0.5, 0.5),
@@ -464,7 +531,8 @@ class Simulation:
                                    force: Tuple[float, float, float] = (0, 0, 0),
                                    displacement: Tuple[float, float, float] = (0, 0, 0),
                                    torque: Tuple[float, float, float] = (0, 0, 0),
-                                   angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+                                   angular_displacement: Tuple[float, float, float] = (0, 0, 0),
+                                   name: str = None):
         """
         Add a spherical boundary condition.
 
@@ -482,40 +550,22 @@ class Simulation:
         :param displacement: Displacement vector in mm
         :param torque: Torque values in Nm
         :param angular_displacement: Angular displacement values in deg
+        :param name: Boundary condition name
         :return: None
         """
-        self.__bcRegions.append([BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-
-        # x_len = int(self.__model.voxels.shape[0])
-        # y_len = int(self.__model.voxels.shape[1])
-        # z_len = int(self.__model.voxels.shape[2])
-        #
-        # regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
-        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        # bcRegion = sphere(regionRadius, regionPosition, resolution=self.__model.resolution) & self.__model
-        #
-        # x_offset = int(bcRegion.coords[0])
-        # y_offset = int(bcRegion.coords[1])
-        # z_offset = int(bcRegion.coords[2])
-        #
-        # bcVoxels = []
-        # for x in  range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
-        #     for y in range(y_len):
-        #         for z in range(z_len):
-        #             if bcRegion.voxels[x, y, z] != 0:
-        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
-        #
-        # self.__bcVoxels.append(bcVoxels)
+        bc = _BCRegion(name, BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, fixed_dof, force, displacement, torque, angular_displacement)
+        self.__bcRegions.append(bc)
 
     # Default cylinder boundary condition is a fixed constraint centered in the model
-    def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: int = 0,
+    def addBoundaryConditionCylinder(self, position: Tuple[float, float, float] = (0.45, 0.5, 0.5), axis: Axis = Axis.X,
                                      height: float = 0.1,
                                      radius: float = 0.05,
                                      fixed_dof: int = 0b111111,
                                      force: Tuple[float, float, float] = (0, 0, 0),
                                      displacement: Tuple[float, float, float] = (0, 0, 0),
                                      torque: Tuple[float, float, float] = (0, 0, 0),
-                                     angular_displacement: Tuple[float, float, float] = (0, 0, 0)):
+                                     angular_displacement: Tuple[float, float, float] = (0, 0, 0),
+                                     name: str = None):
         """
         Add a cylindrical boundary condition.
 
@@ -535,40 +585,13 @@ class Simulation:
         :param displacement: Displacement vector in mm
         :param torque: Torque values in Nm
         :param angular_displacement: Angular displacement values in deg
+        :param name: Boundary condition name
         :return: None
         """
         size = [0.0, 0.0, 0.0]
-        size[axis] = height
-        self.__bcRegions.append([BCShape.CYLINDER, position, tuple(size), radius, (0.6, 0.4, 0.4, .5), fixed_dof, force, torque, displacement, angular_displacement])
-
-        # x_len = int(self.__model.voxels.shape[0])
-        # y_len = int(self.__model.voxels.shape[1])
-        # z_len = int(self.__model.voxels.shape[2])
-        #
-        # regionRadius = np.ceil(np.max([x_len, y_len, z_len]) * radius).astype(np.int32)
-        # regionHeight = np.ceil(int(self.__model.voxels.shape[axis] * height))
-        # regionPosition = np.floor([position[0] * x_len + self.__model.coords[0], position[1] * y_len + self.__model.coords[1], position[2] * z_len + self.__model.coords[2]]).astype(np.int32)
-        # bcRegion = cylinder(regionRadius, regionHeight, regionPosition, resolution=self.__model.resolution)
-        #
-        # if axis == 0:
-        #     bcRegion = bcRegion.rotate90(axis=1)
-        # elif axis == 1:
-        #     bcRegion = bcRegion.rotate90(axis=0)
-        #
-        # bcRegion = bcRegion & self.__model
-        #
-        # x_offset = int(bcRegion.coords[0])
-        # y_offset = int(bcRegion.coords[1])
-        # z_offset = int(bcRegion.coords[2])
-        #
-        # bcVoxels = []
-        # for x in range(x_len): # tqdm(range(x_len), desc='Finding constrained voxels'):
-        #     for y in range(y_len):
-        #         for z in range(z_len):
-        #             if bcRegion.voxels[x, y, z] != 0:
-        #                 bcVoxels.append([x+x_offset, y+y_offset, z+z_offset])
-        #
-        # self.__bcVoxels.append(bcVoxels)
+        size[axis.value] = height
+        bc = _BCRegion(name, BCShape.CYLINDER, position, (size[0], size[1], size[2]), radius, fixed_dof, force, displacement, torque, angular_displacement)
+        self.__bcRegions.append(bc)
 
     def clearSensors(self):
         """
@@ -578,22 +601,24 @@ class Simulation:
         """
         self.__sensors = []
 
-    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0), axis: Axis = Axis.NONE): # TODO: Make Voxelyze use axis parameter
+    def addSensor(self, location: Tuple[int, int, int] = (0, 0, 0), axis: Axis = Axis.NONE, name: str = None): # TODO: Make Voxelyze use axis parameter
         """
         Add a sensor to a voxel.
 
-        This feature is not currently supported by VoxCad
-
         :param location: Sensor location in voxels
         :param axis: Sensor measurement axis
+        :param name: Sensor name
         :return: None
         """
         x = location[0] - self.__model.coords[0]
         y = location[1] - self.__model.coords[1]
         z = location[2] - self.__model.coords[2]
 
-        sensor = [x, y, z, axis.value]
+        sensor = _Sensor(name, (x, y, z), axis)
         self.__sensors.append(sensor)
+
+        if not self.__model.isOccupied((x, y, z)):
+            print('WARNING: No material present at sensor voxel ' + str((x, y, z)))
 
     def clearDisconnections(self):
         """
@@ -609,141 +634,222 @@ class Simulation:
 
         :param voxel_1: Coordinates in voxels
         :param voxel_2: Coordinates in voxels
-        :return:
+        :return: None
         """
-        self.__disconnections.append([voxel_1[0], voxel_1[1], voxel_1[2], voxel_2[0], voxel_2[1], voxel_2[2]])
+        dc = _Disconnection(voxel_1, voxel_2)
+        self.__disconnections.append(dc)
 
-    def clearTempControls(self):
+    def addTempControlGroup(self, locations: List[Tuple[int, int, int]] = None, name: str = None):
         """
-        Remove all temperature control elements from a Simulation object.
+        Add a new temperature control group and select it.
+
+        :param locations: Control element locations in voxels as a list of tuples
+        :param name: Group name
+        :return: None
+        """
+        # Enable temperature control
+        self.__temperatureEnable = True
+        self.__temperatureVaryEnable = True
+
+        if locations is None:
+            print('No locations provided - applying temperature control group to entire model')
+
+            x_len = self.__model.voxels.shape[0]
+            y_len = self.__model.voxels.shape[1]
+            z_len = self.__model.voxels.shape[2]
+
+            locations = []
+            for x in range(x_len):
+                for y in range(y_len):
+                    for z in range(z_len):
+                        locations.append((x, y, z))
+
+        group = _TempControlGroup(name, locations, [])
+        self.__localTempControls.append(group)
+        self.__currentTempControlGroup = len(self.__localTempControls)-1
+
+    def removeTempControlGroup(self, index: int = 0):
+        """
+        Remove a temperature control group by index.
+
+        :param index: Temperature control group index
+        :return: Name of removed group
+        """
+        group = self.__localTempControls.pop(index)
+        self.__currentTempControlGroup = len(self.__localTempControls)-1
+        return group.name
+
+    def selectTempControlGroup(self, index: int = 0):
+        """
+        Select which keyframe new temperature control elements should be added to.
+
+        :param index: Temperature control group index
+        :return: None
+        """
+        self.__currentTempControlGroup = index
+
+    def clearTempControlGroups(self):
+        """
+        Clear all temperature control groups.
 
         :return: None
         """
-        self.__tempControls = []
+        self.__currentTempControlGroup = 0
+        self.__localTempControls = []
 
-    def addTempControl(self, location: Tuple[int, int, int] = (0, 0, 0), amplitude1: float = 0, amplitude2: float = 0, changeX: float = 0.5,
-                       phase_offset: float = 0, temp_offset: float = 0, const_temp: bool = False, square_wave: bool = False):
+    def cleanTempControlGroups(self):
         """
-        Add a temperature control element to a voxel.
+        Remove invalid temperature control groups.
 
-        This feature is not currently supported by VoxCad
+        Invalid groups have no keyframes, or have no target voxels.
 
-        :param location: Control element location in voxels
-        :param amplitude1: Control element positive temperature amplitude (deg C)
-        :param amplitude2: Control element negative temperature amplitude (deg C)
-        :param changeX: Percent of period spanned by positive temperature amplitude (0-1)
+        :return: Number of groups removed
+        """
+        removed_groups = []
+        for g in range(len(self.__localTempControls)):
+            g = g - len(removed_groups)
+            group = self.__localTempControls[g]
+            if len(group.keyframes) == 0 or len(group.locations) == 0:
+                removed_groups.append(self.removeTempControlGroup(g))
+
+        self.__currentTempControlGroup = len(self.__localTempControls)-1
+
+        named_groups = []
+        for n in removed_groups:
+            if n is not None:
+                named_groups.append(n)
+
+        if len(removed_groups) == 0:
+            pass
+        elif len(named_groups) == 0:
+            print('Removed ' + str(len(removed_groups)) + ' temperature control groups')
+        else:
+            print('Removed ' + str(len(removed_groups)) + ' temperature control groups, including: ' + str(named_groups))
+
+        return len(removed_groups)
+
+    def clearKeyframes(self):
+        """
+        Remove all keyframes assigned to the current temperature control group.
+
+        :return: None
+        """
+        g = self.__currentTempControlGroup
+        self.__localTempControls[g].keyframes = []
+
+    def addKeyframe(self, time_value: float = 0, amplitude_pos: float = 0, amplitude_neg: float = -1, percent_pos: float = 0.5,
+                    period: float = 1.0, phase_offset: float = 0, temp_offset: float = 0, const_temp: bool = False, square_wave: bool = False):
+        """
+        Add a keyframe to a temperature control group.
+
+        :param time_value: Time at which keyframe should take effect (sec)
+        :param amplitude_pos: Control element positive temperature amplitude (deg C)
+        :param amplitude_neg: Control element negative temperature amplitude (deg C)
+        :param percent_pos: Percent of period spanned by positive temperature amplitude (0-1)
+        :param period: Period of the control signal (sec)
         :param phase_offset: Control element phase offset for time-varying thermal (rad)
         :param temp_offset: Control element temperature offset for time-varying thermal (deg C)
         :param const_temp: Enable/disable setting a constant target temperature that respects heating/cooling rates
         :param square_wave: Enable/disable converting signal to a square wave (positive -> a = amplitude1, negative -> a = 0)
         :return: None
         """
-        x = location[0] - self.__model.coords[0]
-        y = location[1] - self.__model.coords[1]
-        z = location[2] - self.__model.coords[2]
+        amplitude_pos = max(amplitude_pos, 0) # amplitude_pos must be positive
 
-        element = [x, y, z, amplitude1, amplitude2, changeX, phase_offset, temp_offset, const_temp, square_wave]
-        self.__tempControls.append(element)
+        if amplitude_neg < 0: # If amplitude neg is not given (or not negative) use amplitude_pos instead
+            amplitude_neg = amplitude_pos
 
-    def applyTempMap(self, amp1_map, amp2_map=None, changeX_map=None, phase_map=None, offset_map=None, const_temp_map=None, square_wave_map=None):
+        g = self.__currentTempControlGroup
+        kf = _Keyframe(time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave)
+        self.__localTempControls[g].keyframes.append(kf)
+
+    def initializeTempMap(self):
         """
-        Set the simulation temperature control elements based on a value maps of target temperature settings.
+        Initialize temperature control groups to which keyframes will be stored when using applyTempMap.
 
-        :param amp1_map: Array of target positive temperature amplitudes for each voxel (deg C)
-        :param amp2_map: Array of target negative temperature amplitudes for each voxel (deg C)
-        :param changeX_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
-        :param phase_map: Array of phase offsets for each voxel (rad)
-        :param offset_map: Array of temperature offsets for each voxel (deg C)
-        :param const_temp_map: Array of boolean values to enable/disable constant temperature mode
-        :param square_wave_map:  Array of boolean values to enable/disable square wave mode
-        :return:
+        :return: None
         """
-
-        # Clear any existing temp controls
-        self.clearTempControls()
+        # Clear any existing temperature controls
+        self.clearTempControlGroups()
 
         # Get map size
-        x_len = amp1_map.shape[0]
-        y_len = amp1_map.shape[1]
-        z_len = amp1_map.shape[2]
+        x_len = self.__model.voxels.shape[0]
+        y_len = self.__model.voxels.shape[1]
+        z_len = self.__model.voxels.shape[2]
 
-        # Find required temperature change at each voxel
+        # Generate empty control element for each voxel
         for x in range(x_len):
             for y in range(y_len):
                 for z in range(z_len):
-                    if abs(amp1_map[x, y, z]) > FLOATING_ERROR or ((amp2_map is not None) and (abs(amp2_map[x, y, z]) > FLOATING_ERROR)):  # If voxel is not empty
-                        element = [x, y, z, amp1_map[x, y, z]]
+                    self.addTempControlGroup([(x, y, z)])
 
-                        if amp2_map is None:
-                            element.append(amp1_map[x, y, z])
-                        else:
-                            element.append(amp2_map[x, y, z])
-
-                        if changeX_map is None:
-                            element.append(0.5)
-                        else:
-                            element.append(changeX_map[x, y, z])
-
-                        if phase_map is None:
-                            element.append(0)
-                        else:
-                            element.append(phase_map[x, y, z])
-
-                        if offset_map is None:
-                            element.append(0)
-                        else:
-                            element.append(offset_map[x, y, z])
-
-                        if const_temp_map is None:
-                            element.append(False)
-                        else:
-                            element.append(const_temp_map[x, y, z])
-
-                        if square_wave_map is None:
-                            element.append(False)
-                        else:
-                            element.append(square_wave_map[x, y, z])
-
-                        self.__tempControls.append(element)
-
-    def saveTempControls(self, filename: str, figure: bool = False):
+    def applyTempMap(self, time_value, amp_pos_map, amp_neg_map=None, percent_pos_map=None, period_map=None,
+                     phase_map=None, offset_map=None, const_temp_map=None, square_wave_map=None):
         """
-        Save the temperature control elements applied to a model to a .csv file.
+        Set the simulation temperature control elements based on a value maps of target temperature settings.
 
-        :param filename: File name
-        :param figure: Enable/disable exporting a figure as well
+        This function relies on the temperature control groups being in a specific order. initializeTempMap should be called prior to running this function.
+
+        :param time_value: Time at which keyframe should take effect (sec)
+        :param amp_pos_map: Array of target positive temperature amplitudes for each voxel (deg C)
+        :param amp_neg_map: Array of target negative temperature amplitudes for each voxel (deg C)
+        :param percent_pos_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
+        :param period_map: Array of signal periods for each voxel (sec)
+        :param phase_map: Array of phase offsets for each voxel (rad)
+        :param offset_map: Array of temperature offsets for each voxel (deg C)
+        :param const_temp_map: Array of boolean values to enable/disable constant temperature mode
+        :param square_wave_map: Array of boolean values to enable/disable square wave mode
         :return: None
         """
-        f = open(filename + '.csv', 'w+')
-        print('Saving file: ' + f.name)
-        f.write('X,Y,Z,Amplitude 1 (deg C),Amplitude 2 (deg C),Change X,Phase Offset (rad),Temperature Offset (deg C),Constant Temperature Enabled,Square Wave Enabled\n')
-        for i in range(len(self.__tempControls)):
-            f.write(str(self.__tempControls[i]).replace('[', '').replace(' ', '').replace(']', '') + '\n')
-        f.close()
+        # Get map size
+        x_len = amp_pos_map.shape[0]
+        y_len = amp_pos_map.shape[1]
+        z_len = amp_pos_map.shape[2]
 
-        if figure:
-            # Get plot data
-            points = np.array(self.__tempControls)
-            xs = points[:, 0]
-            ys = points[:, 1]
-            zs = points[:, 2]
-            temps = points[:, 3]
-            colors = np.array(abs((temps - np.min(temps)) / (np.max(temps) - np.min(temps))), dtype=np.str)  # Grayscale range
+        # Generate the control element for each voxel
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if abs(amp_pos_map[x, y, z]) > FLOATING_ERROR or ((amp_neg_map is not None) and (abs(amp_neg_map[x, y, z]) > FLOATING_ERROR)):  # If voxel is not empty
+                        amplitude_pos = amp_pos_map[x, y, z]
 
-            # Plot results
-            fig = plt.figure()
-            ax1 = fig.add_subplot(121)
-            ax1.scatter(zs, ys, c=colors, marker='s')
-            ax1.axis('equal')
-            ax1.set_title('Side')
-            ax2 = fig.add_subplot(122)
-            ax2.scatter(xs, ys, c=colors, marker='s')
-            ax2.axis('equal')
-            ax2.set_title('Top')
+                        if amp_neg_map is None:
+                            amplitude_neg = amp_pos_map[x, y, z]
+                        else:
+                            amplitude_neg = amp_neg_map[x, y, z]
 
-            # Save figure
-            print('Saving file: ' + filename + '.png')
-            plt.savefig(filename + '.png')
+                        if percent_pos_map is None:
+                            percent_pos = 0.5
+                        else:
+                            percent_pos = percent_pos_map[x, y, z]
+
+                        if period_map is None:
+                            period = 1.0
+                        else:
+                            period = period_map[x, y, z]
+
+                        if phase_map is None:
+                            phase_offset = 0
+                        else:
+                            phase_offset = phase_map[x, y, z]
+
+                        if offset_map is None:
+                            temp_offset = 0
+                        else:
+                            temp_offset = offset_map[x, y, z]
+
+                        if const_temp_map is None:
+                            const_temp = False
+                        else:
+                            const_temp = const_temp_map[x, y, z]
+
+                        if square_wave_map is None:
+                            square_wave = False
+                        else:
+                            square_wave = square_wave_map[x, y, z]
+
+                        kf = _Keyframe(time_value, amplitude_pos, amplitude_neg, percent_pos, period, phase_offset, temp_offset, const_temp, square_wave)
+                        g = z + y*z_len + x*y_len*z_len
+                        self.__localTempControls[g].keyframes.append(kf)
 
     # Export simulation ##################################
     # Export simulation object to .vxa file for import into VoxCad or Voxelyze
@@ -766,6 +872,7 @@ class Simulation:
         :param compression: Enable/disable voxel data compression
         :return: None
         """
+        self.cleanTempControlGroups()
         f = open(filename + '.vxa', 'w+')
         print('Saving file: ' + f.name)
 
@@ -839,33 +946,35 @@ class Simulation:
         writeOpen(f, 'Environment', 0)
         writeOpen(f, 'Boundary_Conditions', 1)
         writeData(f, 'NumBCs', len(self.__bcRegions), 2)
-        for r in range(len(self.__bcRegions)): # tqdm(range(len(self.__bcRegions)), desc='Writing boundary conditions'):
+        for bc in self.__bcRegions:
             writeOpen(f, 'FRegion', 2)
-            writeData(f, 'PrimType', int(self.__bcRegions[r][0].value), 3)
-            writeData(f, 'X', self.__bcRegions[r][1][0], 3)
-            writeData(f, 'Y', self.__bcRegions[r][1][1], 3)
-            writeData(f, 'Z', self.__bcRegions[r][1][2], 3)
-            writeData(f, 'dX', self.__bcRegions[r][2][0], 3)
-            writeData(f, 'dY', self.__bcRegions[r][2][1], 3)
-            writeData(f, 'dZ', self.__bcRegions[r][2][2], 3)
-            writeData(f, 'Radius', self.__bcRegions[r][3], 3)
-            writeData(f, 'R', self.__bcRegions[r][4][0], 3)
-            writeData(f, 'G', self.__bcRegions[r][4][1], 3)
-            writeData(f, 'B', self.__bcRegions[r][4][2], 3)
-            writeData(f, 'alpha', self.__bcRegions[r][4][3], 3)
-            writeData(f, 'DofFixed', self.__bcRegions[r][5], 3)
-            writeData(f, 'ForceX', self.__bcRegions[r][6][0], 3)
-            writeData(f, 'ForceY', self.__bcRegions[r][6][1], 3)
-            writeData(f, 'ForceZ', self.__bcRegions[r][6][2], 3)
-            writeData(f, 'TorqueX', self.__bcRegions[r][7][0], 3)
-            writeData(f, 'TorqueY', self.__bcRegions[r][7][1], 3)
-            writeData(f, 'TorqueZ', self.__bcRegions[r][7][2], 3)
-            writeData(f, 'DisplaceX', self.__bcRegions[r][8][0] * 1e-3, 3)
-            writeData(f, 'DisplaceY', self.__bcRegions[r][8][1] * 1e-3, 3)
-            writeData(f, 'DisplaceZ', self.__bcRegions[r][8][2] * 1e-3, 3)
-            writeData(f, 'AngDisplaceX', self.__bcRegions[r][9][0], 3)
-            writeData(f, 'AngDisplaceY', self.__bcRegions[r][9][1], 3)
-            writeData(f, 'AngDisplaceZ', self.__bcRegions[r][9][2], 3)
+            if bc.name is not None:
+                writeData(f, 'Name', bc.name, 3)
+            writeData(f, 'PrimType', int(bc.shape.value), 3)
+            writeData(f, 'X', bc.position[0], 3)
+            writeData(f, 'Y', bc.position[1], 3)
+            writeData(f, 'Z', bc.position[2], 3)
+            writeData(f, 'dX', bc.size[0], 3)
+            writeData(f, 'dY', bc.size[1], 3)
+            writeData(f, 'dZ', bc.size[2], 3)
+            writeData(f, 'Radius', bc.radius, 3)
+            writeData(f, 'R', bc.color[0], 3)
+            writeData(f, 'G', bc.color[1], 3)
+            writeData(f, 'B', bc.color[2], 3)
+            writeData(f, 'alpha', bc.color[3], 3)
+            writeData(f, 'DofFixed', bc.fixed_dof, 3)
+            writeData(f, 'ForceX', bc.force[0], 3)
+            writeData(f, 'ForceY', bc.force[1], 3)
+            writeData(f, 'ForceZ', bc.force[2], 3)
+            writeData(f, 'TorqueX', bc.torque[0], 3)
+            writeData(f, 'TorqueY', bc.torque[1], 3)
+            writeData(f, 'TorqueZ', bc.torque[2], 3)
+            writeData(f, 'DisplaceX', bc.displacement[0] * 1e-3, 3)
+            writeData(f, 'DisplaceY', bc.displacement[1] * 1e-3, 3)
+            writeData(f, 'DisplaceZ', bc.displacement[2] * 1e-3, 3)
+            writeData(f, 'AngDisplaceX', bc.angular_displacement[0], 3)
+            writeData(f, 'AngDisplaceY', bc.angular_displacement[1], 3)
+            writeData(f, 'AngDisplaceZ', bc.angular_displacement[2], 3)
             writeClos(f, 'FRegion', 2)
         writeClos(f, 'Boundary_Conditions', 1)
 
@@ -897,8 +1006,10 @@ class Simulation:
         writeOpen(f, 'Sensors', 0)
         for sensor in self.__sensors:
             writeOpen(f, 'Sensor', 1)
-            writeData(f, 'Location', str(sensor[0:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'Axis', sensor[3], 2)
+            if sensor.name is not None:
+                writeData(f, 'Name', sensor.name, 2)
+            writeData(f, 'Location', str(sensor.coords).replace('(', '').replace(',', '').replace(')', ''), 2)
+            writeData(f, 'Axis', sensor.axis.value, 2)
             writeClos(f, 'Sensor', 1)
         writeClos(f, 'Sensors', 0)
 
@@ -912,16 +1023,32 @@ class Simulation:
         writeData(f, 'EnableHydrogelModel', int(self.__hydrogelModelEnable), 0)
 
         writeOpen(f, 'TempControls', 0)
-        for element in self.__tempControls:
+        for group in self.__localTempControls:
             writeOpen(f, 'Element', 1)
-            writeData(f, 'Location', str(element[0:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'Temperature', str(element[3]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'Amplitude2', str(element[4]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'ChangeX', str(element[5]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'PhaseOffset', str(element[6]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'Offset', str(element[7]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'ConstantTemp', str(int(element[8])).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'SquareWave', str(int(element[9])).replace('[', '').replace(',', '').replace(']', ''), 2)
+
+            if group.name is not None:
+                writeData(f, 'Name', group.name, 2)
+
+            writeOpen(f, 'Locations', 2)
+            for loc in group.locations:
+                writeData(f, 'Location', str(loc).replace('(', '').replace(',', '').replace(')', ''), 3)
+            writeClos(f, 'Locations', 2)
+
+            writeOpen(f, 'Keyframes', 2)
+            for keyframe in group.keyframes:
+                writeOpen(f, 'Keyframe', 3)
+                writeData(f, 'TimeValue', keyframe.time_value, 4)
+                writeData(f, 'AmplitudePos', keyframe.amplitude_pos, 4)
+                writeData(f, 'AmplitudeNeg', keyframe.amplitude_neg, 4)
+                writeData(f, 'PercentPos', keyframe.percent_pos, 4)
+                writeData(f, 'Period', keyframe.period, 4)
+                writeData(f, 'PhaseOffset', keyframe.phase_offset, 4)
+                writeData(f, 'TempOffset', keyframe.temp_offset, 4)
+                writeData(f, 'ConstantTemp', int(keyframe.const_temp), 4)
+                writeData(f, 'SquareWave', int(keyframe.square_wave), 4)
+                writeClos(f, 'Keyframe', 3)
+            writeClos(f, 'Keyframes', 2)
+
             writeClos(f, 'Element', 1)
         writeClos(f, 'TempControls', 0)
 
@@ -933,10 +1060,10 @@ class Simulation:
         :return: None
         """
         writeOpen(f, 'Disconnections', 0)
-        for element in self.__disconnections:
+        for dc in self.__disconnections:
             writeOpen(f, 'Break', 1)
-            writeData(f, 'Voxel1', str(element[:3]).replace('[', '').replace(',', '').replace(']', ''), 2)
-            writeData(f, 'Voxel2', str(element[3:]).replace('[', '').replace(',', '').replace(']', ''), 2)
+            writeData(f, 'Voxel1', str(dc.vx1).replace('(', '').replace(',', '').replace(')', ''), 2)
+            writeData(f, 'Voxel2', str(dc.vx2).replace('(', '').replace(',', '').replace(')', ''), 2)
             writeClos(f, 'Break', 1)
         writeClos(f, 'Disconnections', 0)
 
@@ -948,6 +1075,8 @@ class Simulation:
         the results attribute of the Simulation object. Enabling delete_files will delete both the .vxa and .xml files
         once the results have been loaded.
 
+        History files can be viewed using https://github.com/voxcraft/voxcraft-viz
+
         :param filename: File name for .vxa and .xml files
         :param value_map: Index of the desired value map type
         :param log_interval: Set the step interval at which sensor log entries should be recorded, -1 to disable log
@@ -957,12 +1086,16 @@ class Simulation:
         :param wsl: Enable/disable using Windows Subsystem for Linux with bundled Voxelyze
         :return: None
         """
+        # Generate results file/directory names
+        filename = filename + '_' + str(self.id)
+        dirname = 'sim_results_' + str(self.date)
+
         # Create results directory
-        if not os.path.exists('sim_results'):
-            os.makedirs('sim_results')
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
 
         # Create simulation file
-        self.saveVXA('sim_results/' + filename)
+        self.saveVXA(dirname + '/' + filename)
 
         if voxelyze_on_path:
             command_string = 'voxelyze'
@@ -976,7 +1109,7 @@ class Simulation:
             else: # Linux
                 command_string = f'"{os.path.dirname(os.path.realpath(__file__))}/utils/voxelyze"'
 
-        command_string = command_string + ' -f sim_results/' + filename + '.vxa -o sim_results/' + filename + ' -vm ' + str(value_map) + ' -p'
+        command_string = command_string + ' -f ' + dirname + '/' + filename + '.vxa -o ' + dirname + '/' + filename + ' -vm ' + str(value_map) + ' -p'
 
         if log_interval > 0:
             command_string = command_string + ' -log-interval ' + str(log_interval)
@@ -989,7 +1122,7 @@ class Simulation:
         p.wait()
 
         # Open simulation results
-        f = open('sim_results/' + filename + '.xml', 'r')
+        f = open(dirname + '/' + filename + '.xml', 'r')
         #print('Opening file: ' + f.name)
         data = f.readlines()
         f.close()
@@ -1008,40 +1141,44 @@ class Simulation:
                 endLoc.append(row)
 
         # Read the data from each sensor
-        for sensor in range(len(startLoc)): # tqdm(range(len(startLoc)), desc='Reading sensor results'):
-            # Create a dictionary to hold the current sensor results
-            sensorResults = {}
+        sensor_count = len(startLoc)
+        if sensor_count > 0:
+            for sensor in range(sensor_count): # tqdm(range(len(startLoc)), desc='Reading sensor results'):
+                # Create a dictionary to hold the current sensor results
+                sensorResults = {}
 
-            # Read the data from each sensor tag
-            for row in range(startLoc[sensor]+1, endLoc[sensor]):
-                # Determine the current tag
-                tag = ''
-                for col in range(1, len(data[row])):
-                    if data[row][col] == '>':
-                        tag = data[row][1:col]
-                        break
+                # Read the data from each sensor tag
+                for row in range(startLoc[sensor]+1, endLoc[sensor]):
+                    # Determine the current tag
+                    tag = ''
+                    for col in range(1, len(data[row])):
+                        if data[row][col] == '>':
+                            tag = data[row][1:col]
+                            break
 
-                # Remove the tags and newline to determine the current value
-                data[row] = data[row].replace('<'+tag+'>', '').replace('</'+tag+'>', '')
-                value = data[row][:-1]
+                    # Remove the tags and newline to determine the current value
+                    data[row] = data[row].replace('<'+tag+'>', '').replace('</'+tag+'>', '')
+                    value = data[row][:-1]
 
-                # Combine the current tag and value
-                if tag == 'Location':
-                    coords =  tuple(map(int, value.split(' ')))
-                    x = coords[0] + self.__model.coords[0]
-                    y = coords[1] + self.__model.coords[1]
-                    z = coords[2] + self.__model.coords[2]
-                    currentResult = {tag:(x, y, z)}
-                elif ' ' in value:
-                    currentResult = {tag:tuple(map(float, value.split(' ')))}
-                else:
-                    currentResult = {tag:float(value)}
+                    # Combine the current tag and value
+                    if tag == 'Location':
+                        coords =  tuple(map(int, value.split(' ')))
+                        x = coords[0] + self.__model.coords[0]
+                        y = coords[1] + self.__model.coords[1]
+                        z = coords[2] + self.__model.coords[2]
+                        currentResult = {tag:(x, y, z)}
+                    elif ' ' in value:
+                        currentResult = {tag:tuple(map(float, value.split(' ')))}
+                    else:
+                        currentResult = {tag:float(value)}
 
-                # Add the current tag and value to the sensor results dictionary
-                sensorResults.update(currentResult)
+                    # Add the current tag and value to the sensor results dictionary
+                    sensorResults.update(currentResult)
 
-            # Append the results dictionary for the current sensor to the simulation results list
-            self.results.append(sensorResults)
+                # Append the results dictionary for the current sensor to the simulation results list
+                self.results.append(sensorResults)
+        else:
+            print('No sensors found')
 
         if os.path.exists('value_map.txt'):
             # Open simulation value map results
@@ -1065,11 +1202,11 @@ class Simulation:
 
         # Remove temporary files
         if delete_files:
-            os.remove('sim_results/' + filename + '.vxa')
-            os.remove('sim_results/' + filename + '.xml')
+            os.remove(dirname + '/' + filename + '.vxa')
+            os.remove(dirname + '/' + filename + '.xml')
 
-            if os.path.exists('sim_results/value_map.txt'):
-                os.remove('sim_results/value_map.txt')
+            if os.path.exists(dirname + '/value_map.txt'):
+                os.remove(dirname + '/value_map.txt')
 
     def runSimVoxCad(self, filename: str = 'temp', delete_files: bool = True, voxcad_on_path: bool = False, wsl: bool = False):
         """
@@ -1095,6 +1232,9 @@ class Simulation:
         :param wsl: Enable/disable using Windows Subsystem for Linux with bundled VoxCad
         :return: None
         """
+        # Generate file name
+        filename = filename + '_' + str(self.id)
+
         # Create simulation file
         self.saveVXA(filename)
 
@@ -1158,19 +1298,25 @@ class MultiSimulation:
     MultiSimulation object that holds settings for generating a simulation and running multiple parallel trials of it using different parameters.
     """
 
-    def __init__(self, setup_fcn, setup_params: List[Tuple], thread_count):
+    def __init__(self, setup_fcn, setup_params: List[Tuple], thread_count: int = -1):
         """
         Initialize a MultiSimulation object.
 
         :param setup_fcn: Function to use for initializing Simulation objects. Should take a single tuple as an input and return a single Simulation object.
         :param setup_params: List containing the desired input tuples for setup_fcn
-        :param thread_count: Maximum number of CPU threads
+        :param thread_count: Maximum number of CPU threads, -1 to auto-detect
         """
         self.__setup_fcn = setup_fcn
         self.__setup_params = setup_params
-        self.__thread_count = thread_count
 
-        # Initialize result arrays
+        if thread_count > 0:
+            self.__thread_count = thread_count
+        else:
+            max_threads = os.cpu_count()
+            self.__thread_count = max(1,
+                                      max_threads - 2)  # Default to leaving 1 core (2 threads) free, minimum of 1 thread
+
+            # Initialize result arrays
         self.total_time = 0
         self.displacement_result = multiprocessing.Array('d', len(setup_params))
         self.time_result = multiprocessing.Array('d', len(setup_params))
@@ -1200,13 +1346,23 @@ class MultiSimulation:
 
         :return: None
         """
+        # Check if results directory already exists
+        dirname = 'sim_results_' + str(date.today())
+        if os.path.exists(dirname):
+            print("WARNING: Previous results exist and may be overwritten: " + str(dirname))
+
         print("Trials to run: " + str(len(self.__setup_params)))
+        print("Max CPU threads: " + str(self.__thread_count))
         input("Press Enter to continue...")
 
-    def run(self, enable_log : bool = False):
+    def run(self, enable_log : bool = False, fine_log: bool = False):
         """
         Run all simulation configurations and save the results.
 
+        History files can be viewed using https://github.com/voxcraft/voxcraft-viz
+
+        :param enable_log: Enable saving sensor log files
+        :param fine_log: If enabled, save entries in sensor logs and history files 100x as frequently
         :return: None
         """
         # Save start time
@@ -1228,7 +1384,10 @@ class MultiSimulation:
         # Initialize processing pool
         p = multiprocessing.Pool(self.__thread_count, initializer=poolInit, initargs=(self.displacement_result, self.time_result))
         if enable_log:
-            p.map(simProcessLog, sim_array)
+            if fine_log:
+                p.map(simProcessLogFine, sim_array)
+            else:
+                p.map(simProcessLog, sim_array)
         else:
             p.map(simProcess, sim_array)
 
@@ -1315,22 +1474,25 @@ def simProcess(simulation: Simulation):
     :param simulation: Simulation object to run
     :return: None
     """
-    print('\nProcess ' + str(simulation.id) + ' started')
+    print('Process ' + str(simulation.id) + ' starting')
 
     # Run simulation
     time_process_started = time.time()
-    simulation.runSim('sim_' + str(simulation.id), log_interval=-1, history_interval=100000, wsl=True)
+    simulation.runSim('multisim', log_interval=-1, history_interval=100000, wsl=True)
     time_process_finished = time.time()
 
     # Read results
-    disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
-    disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
-    disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
-    disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
-    t_result[simulation.id] = time_process_finished - time_process_started
+    try:
+        disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
+        disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
+        disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+        disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
+        t_result[simulation.id] = time_process_finished - time_process_started
+    except IndexError:
+        print('Unable to load sensor results')
 
     # Finished
-    print('\nProcess ' + str(simulation.id) + ' finished')
+    print('Process ' + str(simulation.id) + ' finished')
 
 def simProcessLog(simulation: Simulation):
     """
@@ -1339,19 +1501,49 @@ def simProcessLog(simulation: Simulation):
     :param simulation: Simulation object to run
     :return: None
     """
-    print('\nProcess ' + str(simulation.id) + ' started')
+    print('Process ' + str(simulation.id) + ' starting')
 
     # Run simulation
     time_process_started = time.time()
-    simulation.runSim('sim_' + str(simulation.id), log_interval=100000, history_interval=100000, wsl=True)
+    simulation.runSim('multisim', log_interval=100000, history_interval=100000, wsl=True)
     time_process_finished = time.time()
 
     # Read results
-    disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
-    disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
-    disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
-    disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
-    t_result[simulation.id] = time_process_finished - time_process_started
+    try:
+        disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
+        disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
+        disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+        disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
+        t_result[simulation.id] = time_process_finished - time_process_started
+    except IndexError:
+        print('Unable to load sensor results')
 
     # Finished
-    print('\nProcess ' + str(simulation.id) + ' finished')
+    print('Process ' + str(simulation.id) + ' finished')
+
+def simProcessLogFine(simulation: Simulation):
+    """
+    Simulation process.
+
+    :param simulation: Simulation object to run
+    :return: None
+    """
+    print('Process ' + str(simulation.id) + ' starting')
+
+    # Run simulation
+    time_process_started = time.time()
+    simulation.runSim('multisim', log_interval=1000, history_interval=1000, wsl=True)
+    time_process_finished = time.time()
+
+    # Read results
+    try:
+        disp_x = float(simulation.results[0]['Position'][0]) - float(simulation.results[0]['InitialPosition'][0])
+        disp_y = float(simulation.results[0]['Position'][1]) - float(simulation.results[0]['InitialPosition'][1])
+        disp_z = float(simulation.results[0]['Position'][2]) - float(simulation.results[0]['InitialPosition'][2])
+        disp_result[simulation.id] = np.sqrt((disp_x**2) + (disp_y**2) + (disp_z**2))
+        t_result[simulation.id] = time_process_finished - time_process_started
+    except IndexError:
+        print('Unable to load sensor results')
+
+    # Finished
+    print('Process ' + str(simulation.id) + ' finished')

@@ -8,16 +8,10 @@ Apply blurring to the specified materials.
 Copyright 2019 - Cole Brauer, Dan Aukes
 """
 
-import PyQt5.QtGui as qg
-import sys
-
 from voxelfuse.voxel_model import VoxelModel, Axes
 from voxelfuse.mesh import Mesh
-from voxelfuse.plot import Plot
 
 if __name__=='__main__':
-    app1 = qg.QApplication(sys.argv)
-
     # User preferences
     modelName = 'tail-20.vox'
     blurMaterials = [1, 2] # materials to blur
@@ -46,24 +40,15 @@ if __name__=='__main__':
     modelResult = modelResult.removeDuplicateMaterials()
 
     # Create mesh files
-    for m in range(1, len(modelResult.materials)):
-        currentMaterial = modelResult.isolateMaterial(m)
-        currentMesh = Mesh.fromVoxelModel(currentMaterial)
-        currentMesh.export('output_' + str(m) + '.stl')
+    # for m in range(1, len(modelResult.materials)):
+    #     currentMaterial = modelResult.isolateMaterial(m)
+    #     currentMesh = Mesh.fromVoxelModel(currentMaterial)
+    #     currentMesh.export('output_' + str(m) + '.stl')
 
     # Create mesh data
     mesh1 = Mesh.fromVoxelModel(modelIn)
     mesh2 = Mesh.fromVoxelModel(modelResult)
 
     # Create plots
-    plot1 = Plot(mesh1, name='Input')
-    plot1.show()
-    app1.processEvents()
-    #plot1.export('input.png')
-
-    plot2 = Plot(mesh2, name='Output')
-    plot2.show()
-    app1.processEvents()
-    #plot2.export('output.png')
-
-    app1.exec_()
+    # mesh1.viewer(name='Input')
+    mesh2.viewer(name='Output')
