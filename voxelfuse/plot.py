@@ -3,6 +3,8 @@ Plot Class
 
 Initialized from mesh data
 
+** Plot class is deprecated and will be removed in later versions. Please use 'plot' or 'viewer' from the Mesh class instead. **
+
 ----
 
 Copyright 2020 - Cole Brauer, Dan Aukes
@@ -22,14 +24,15 @@ class Plot:
         """
         Initialize a Plot object from a Mesh object.
 
-        :param mesh: Mesh object to be plotted
-        :param grids: Enable/disable display of XYZ axes and grids
-        :param drawEdges: Enable/disable display of voxel edges
-        :param edgeColor: Set display color of voxel edges
-        :param positionOffset: Offset of the camera target from the center of the model in voxels
-        :param viewAngle: Elevation, Azimuth, and Distance of the camera
-        :param resolution: Window resolution in px
-        :param name: Plot window name
+        Args:
+            mesh: Mesh object to be plotted
+            grids: Enable/disable display of XYZ axes and grids
+            drawEdges: Enable/disable display of voxel edges
+            edgeColor: Set display color of voxel edges
+            positionOffset: Offset of the camera target from the center of the model in voxels
+            viewAngle: Elevation, Azimuth, and Distance of the camera
+            resolution: Window resolution in px
+            name: Plot window name
         """
         print("WARNING: Plot class is deprecated and will be removed in later versions. Please use 'plot' or 'viewer' from the Mesh class instead.")
         self.mesh = mesh
@@ -62,7 +65,8 @@ class Plot:
 
         ----
 
-        :return: None
+        Returns:
+            None
         """
         mesh_data = pgo.MeshData(vertexes=self.mesh.verts, faces=self.mesh.tris, vertexColors=self.mesh.colors, faceColors=None)
         mesh_item = pgo.GLMeshItem(meshdata=mesh_data, shader='balloon', drawEdges=self.drawEdges, edgeColor=self.edgeColor,
@@ -136,8 +140,11 @@ class Plot:
 
         ----
 
-        :param filename: File name with extension
-        :return: None
+        Args:
+            filename: File name with extension
+        
+        Returns:
+            None
         """
         if self.widget is not None:
             self.widget.paintGL()

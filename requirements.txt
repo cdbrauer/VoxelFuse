@@ -10,4 +10,3 @@ tqdm>=4.60.0
 k3d>=2.9.4
 PyMCubes>=0.1.2
 quad_mesh_simplify>=1.1.4
-matplotlib>=3.4.2

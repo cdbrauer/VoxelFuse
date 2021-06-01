@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2.dev21+g6d35cca" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>voxelfuse.mesh API documentation</title>
 <meta name="description" content="Mesh Class …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -25,7 +25,7 @@
 <p>Mesh Class</p>
 <p>Initialized from a voxel model</p>
 <hr>
-<p>Copyright 2020 - Cole Brauer, Dan Aukes</p>
+<p>Copyright 2021 - Cole Brauer, Dan Aukes</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -37,15 +37,24 @@ Initialized from a voxel model
 
 ----
 
-Copyright 2020 - Cole Brauer, Dan Aukes
+Copyright 2021 - Cole Brauer, Dan Aukes
 &#34;&#34;&#34;
 
+import sys
 import numpy as np
 import meshio
+import k3d
+import mcubes
+from quad_mesh_simplify import simplify_mesh
+from typing import Union as TypeUnion, Tuple
 from numba import njit
 from tqdm import tqdm
 
-from voxelfuse.voxel_model import VoxelModel
+import PyQt5.QtWidgets as qtw
+import PyQt5.QtGui as qg
+import pyqtgraph.opengl as pgo
+
+from voxelfuse.voxel_model import VoxelModel, rgb_to_hex
 from voxelfuse.materials import material_properties
 
 class Mesh:
@@ -53,26 +62,76 @@ class Mesh:
     Mesh object that can be exported or passed to a Plot object.
     &#34;&#34;&#34;
 
-    def __init__(self, input_model, verts, verts_colors, tris, resolution):
+    def __init__(self, voxels: TypeUnion[np.ndarray, None], verts: np.ndarray, verts_colors: np.ndarray, tris: np.ndarray, resolution: float):
         &#34;&#34;&#34;
         Initialize a Mesh object.
 
-        :param input_model: Voxel data array
-        :param verts: List of coordinates of surface vertices
-        :param verts_colors: List of colors associated with each vertex
-        :param tris: List of the sets of vertices associated with triangular faces
-        :param resolution: Number of voxels per mm
+        Args:
+            voxels: Voxel data array
+            verts: List of coordinates of surface vertices
+            verts_colors: List of colors associated with each vertex
+            tris: List of the sets of vertices associated with triangular faces
+            resolution: Number of voxels per mm
         &#34;&#34;&#34;
+        if voxels is not None:
+            self.model = voxels
+        else:
+            self.model = np.array([[[0]]])
 
         self.verts = verts
         self.colors = verts_colors
         self.tris = tris
-        self.model = input_model
         self.res = resolution
 
-    # Create mesh from voxel data
     @classmethod
-    def fromVoxelModel(cls, voxel_model, resolution: float = -1):
+    def fromMeshFile(cls, filename: str, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+        &#34;&#34;&#34;
+        Import a mesh file to a mesh object.
+
+        ----
+
+        Example:
+
+        ``mesh1 = vf.Mesh.fromMeshFile(example.stl)``
+
+        ----
+
+        Args:
+            filename: File name with extension
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        # Open file
+        data = meshio.read(filename)
+
+        # Read verts
+        verts = np.array(data.points)
+
+        # Align to origin
+        x_min = np.min(verts[:, 0])
+        y_min = np.min(verts[:, 1])
+        z_min = np.min(verts[:, 2])
+        verts[:, 0] = np.subtract(verts[:, 0], x_min)
+        verts[:, 1] = np.subtract(verts[:, 1], y_min)
+        verts[:, 2] = np.subtract(verts[:, 2], z_min)
+
+        # Generate colors
+        verts_colors = generateColors(len(verts), color)
+
+        # Read tris
+        tris = []
+        for cell in data.cells:
+            if cell[0] == &#39;triangle&#39;:
+                for tri in cell[1]:
+                    tris.append(tri)
+        tris = np.array(tris)
+
+        return cls(None, verts, verts_colors, tris, 1)
+
+    @classmethod
+    def fromVoxelModel(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
         &#34;&#34;&#34;
         Generate a mesh object from a VoxelModel object.
 
@@ -80,17 +139,17 @@ class Mesh:
 
         Example:
 
-        ``mesh1 = Mesh.fromVoxelModel(model1)``
+        ``mesh1 = vf.Mesh.fromVoxelModel(model1)``
 
         ----
 
-        :param voxel_model: VoxelModel object to be converted to a mesh
-        :param resolution: Number of voxels per mm, -1 to use model resolution
-        :return: Mesh
+        Args:
+            voxel_model: VoxelModel object to be converted to a mesh
+            color: Mesh color in the format (r, g, b, a), None to use voxel colors
+        
+        Returns:
+            Mesh
         &#34;&#34;&#34;
-        if resolution &lt; 0:
-            resolution = voxel_model.resolution
-
         voxel_model_fit = voxel_model.fitWorkspace()
         voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
         model_materials = voxel_model_fit.materials
@@ -99,9 +158,7 @@ class Mesh:
         # Find exterior voxels
         exterior_voxels_array = voxel_model_fit.difference(voxel_model_fit.erode(radius=1, connectivity=1)).voxels
         
-        x_len = len(voxel_model_array[:, 0, 0])
-        y_len = len(voxel_model_array[0, :, 0])
-        z_len = len(voxel_model_array[0, 0, :])
+        x_len, y_len, z_len = voxel_model_array.shape
         
         # Create list of exterior voxel coordinates
         exterior_voxels_coords = []
@@ -117,46 +174,441 @@ class Mesh:
         # Initialize arrays
         verts = []
         verts_colors = []
+        verts_indices = np.zeros((x_len+1, y_len+1, z_len+1))
         tris = []
         vi = 1  # Tracks current vertex index
 
         # Loop through voxel_model_array data
         for voxel_coords in tqdm(exterior_voxels_coords, desc=&#39;Meshing&#39;):
-            x = voxel_coords[0]
-            y = voxel_coords[1]
-            z = voxel_coords[2]
+            x, y, z = voxel_coords
 
-            r = 0
-            g = 0
-            b = 0
+            if color is None:
+                r = 0
+                g = 0
+                b = 0
 
-            for i in range(voxel_model.materials.shape[1]-1):
-                r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;r&#39;]
-                g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;g&#39;]
-                b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;b&#39;]
+                for i in range(voxel_model.materials.shape[1]-1):
+                    r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;r&#39;]
+                    g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;g&#39;]
+                    b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;b&#39;]
 
-            r = 1 if r &gt; 1 else r
-            g = 1 if g &gt; 1 else g
-            b = 1 if b &gt; 1 else b
+                r = 1 if r &gt; 1 else r
+                g = 1 if g &gt; 1 else g
+                b = 1 if b &gt; 1 else b
 
-            a = 1 - model_materials[voxel_model_array[x, y, z]][1]
+                a = 1 - model_materials[voxel_model_array[x, y, z]][1]
 
-            voxel_color = [r, g, b, a]
+                voxel_color = [r, g, b, a]
+            else:
+                voxel_color = list(color)
 
             # Add cube vertices
-            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi)
+            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, verts_indices, model_offsets, x, y, z, vi)
             verts += new_verts
             tris += new_tris
 
             # Apply color to all vertices
-            for i in range(0, np.count_nonzero(verts_indices)):
+            for i in range(len(new_verts)):
                 verts_colors.append(voxel_color)
 
-        verts = np.array(verts)
-        verts_colors = np.array(verts_colors)
-        tris = np.array(tris)
+        verts = np.array(verts, dtype=np.float32)
+        verts_colors = np.array(verts_colors, dtype=np.float32)
+        tris = np.array(tris, dtype=np.uint32)
 
-        return cls(voxel_model_array, verts, verts_colors, tris, resolution)
+        return cls(voxel_model_array, verts, verts_colors, tris, voxel_model.resolution)
+
+    @classmethod
+    def simpleSquares(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
+        &#34;&#34;&#34;
+        Generate a mesh object from a VoxelModel object using large square faces.
+
+        This function can greatly reduce the file size of generated meshes. However, it may not correctly recognize
+        small (1 voxel) model features and currently produces files with a nonstandard vertex arrangement. Use at your own
+        risk.
+
+        ----
+
+        Example:
+
+        ``mesh1 = vf.Mesh.simpleSquares(model1)``
+
+        ----
+
+        Args:
+            voxel_model: VoxelModel object to be converted to a mesh
+            color: Mesh color in the format (r, g, b, a), None to use voxel colors
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        voxel_model_fit = voxel_model.fitWorkspace()
+        voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
+        model_materials = voxel_model_fit.materials
+        model_offsets = voxel_model_fit.coords
+
+        x_len, y_len, z_len = voxel_model_array.shape
+
+        # Determine vertex types
+        vert_type = np.zeros((x_len + 1, y_len + 1, z_len + 1), dtype=np.uint8)
+        vert_color = np.zeros((x_len + 1, y_len + 1, z_len + 1, 4), dtype=np.float32)
+        for x in tqdm(range(x_len), desc=&#39;Finding voxel vertices&#39;):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if voxel_model_array[x, y, z] &gt; 0:
+                        vert_type[x:x+2, y:y+2, z:z+2] = 1 # Type 1 = occupied/exterior
+
+                        if color is None:
+                            r = 0
+                            g = 0
+                            b = 0
+
+                            for i in range(voxel_model.materials.shape[1] - 1):
+                                r = r + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i][&#39;r&#39;]
+                                g = g + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i][&#39;g&#39;]
+                                b = b + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i][&#39;b&#39;]
+
+                            r = 1 if r &gt; 1 else r
+                            g = 1 if g &gt; 1 else g
+                            b = 1 if b &gt; 1 else b
+
+                            a = 1 - model_materials[voxel_model_array[x, y, z]][1]
+
+                            voxel_color = np.array([r, g, b, a])
+                        else:
+                            voxel_color = np.array(color)
+
+                        for cx in range(x, x+2):
+                            for cy in range(y, y+2):
+                                for cz in range(z, z+2):
+                                    vert_color[cx, cy, cz, :] = voxel_color
+
+        for x in tqdm(range(1, x_len), desc=&#39;Finding interior vertices&#39;):
+            for y in range(1, y_len):
+                for z in range(1, z_len):
+                    vert_type = markInterior(vert_type, x, y, z)
+
+        for x in tqdm(range(0, x_len+1), desc=&#39;Finding feature vertices&#39;):
+            for y in range(0, y_len+1):
+                for z in range(0, z_len+1):
+                    vert_type = markInsideCorner(vert_type, x, y, z)
+
+        # Initialize arrays
+        vi = 0 # Tracks current vertex index
+        verts = []
+        colors = []
+        tris = []
+        quads = []
+        vert_index = np.multiply(np.ones_like(vert_type, dtype=np.int32), -1)
+
+        for x in tqdm(range(x_len + 1), desc=&#39;Meshing&#39;):
+            for y in range(y_len + 1):
+                for z in range(z_len + 1):
+                    dirs = [[1, 1, 0], [1, 0, 1], [0, 1, 1]]
+                    for d in dirs:
+                        vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads = findSquare(vi, vert_type, vert_index, vert_color, voxel_model_array, x, y, z, d[0], d[1], d[2])
+                        verts += new_verts
+                        colors += new_colors
+                        tris += new_tris
+                        quads += new_quads
+
+        verts = np.array(verts, dtype=np.float32)
+        colors = np.array(colors, dtype=np.float32)
+        tris = np.array(tris, dtype=np.uint32)
+        quads = np.array(quads, dtype=np.uint32)
+
+        # Shift model to align with origin
+        verts[:, 0] = np.add(verts[:, 0], model_offsets[0])
+        verts[:, 1] = np.add(verts[:, 1], model_offsets[1])
+        verts[:, 2] = np.add(verts[:, 2], model_offsets[2])
+
+        return cls(voxel_model_array, verts, colors, tris, voxel_model.resolution)
+
+    @classmethod
+    def marchingCubes(cls, voxel_model: VoxelModel, smooth: bool = False, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+        &#34;&#34;&#34;
+        Generate a mesh object from a VoxelModel object using a marching cubes algorithm.
+
+        This meshing approach is best suited to high resolution models where some smoothing is acceptable.
+
+        Args:
+            voxel_model: VoxelModel object to be converted to a mesh
+            smooth: Enable smoothing
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            None
+        &#34;&#34;&#34;
+        voxel_model_fit = voxel_model.fitWorkspace().getOccupied()
+        voxels = voxel_model_fit.voxels.astype(np.uint16)
+        x, y, z = voxels.shape
+        model_offsets = voxel_model_fit.coords
+
+        voxels_padded = np.zeros((x + 2, y + 2, z + 2))
+        voxels_padded[1:-1, 1:-1, 1:-1] = voxels
+
+        if smooth:
+            voxels_padded = mcubes.smooth(voxels_padded)
+            levelset = 0
+        else:
+            levelset = 0.5
+
+        verts, tris = mcubes.marching_cubes(voxels_padded, levelset)
+
+        # Shift model to align with origin
+        verts = np.subtract(verts, 0.5)
+        verts[:, 0] = np.add(verts[:, 0], model_offsets[0])
+        verts[:, 1] = np.add(verts[:, 1], model_offsets[1])
+        verts[:, 2] = np.add(verts[:, 2], model_offsets[2])
+
+        verts_colors = generateColors(len(verts), color)
+
+        return cls(voxels_padded, verts, verts_colors, tris, voxel_model.resolution)
+
+    @classmethod
+    def copy(cls, mesh):
+        &#34;&#34;&#34;
+        Initialize a Mesh that is a copy of another mesh.
+
+        Args:
+            mesh: Reference Mesh object
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        new_mesh = cls(np.copy(mesh.model), np.copy(mesh.verts), np.copy(mesh.colors), np.copy(mesh.tris), mesh.res)
+        return new_mesh
+
+    def setResolution(self, resolution: float):
+        &#34;&#34;&#34;
+        Change the defined resolution of a mesh.
+
+        The mesh resolution will determine the scale of plots and exported mesh files.
+
+        Args:
+            resolution: Number of voxels per mm (higher number = finer resolution)
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        new_mesh = Mesh.copy(self)
+        new_mesh.res = resolution
+        return new_mesh
+
+    def scale(self, factor: float):
+        &#34;&#34;&#34;
+        Apply a scaling factor to a mesh.
+
+        Args:
+            factor: Scaling factor
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        new_mesh = Mesh.copy(self)
+        new_mesh.verts = np.multiply(self.verts, factor)
+        return new_mesh
+
+    def simplify(self, percent_verts: float, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+        &#34;&#34;&#34;
+        Simplify a mesh to contain a given percentage of the original number of vertices.
+
+        More information on the simplification algorithm is available at: https://github.com/jannessm/quadric-mesh-simplification
+
+        Args:
+            percent_verts: Percentage of vertex count allowed in the result mesh, 0-1
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        num_verts = self.verts.shape[0]
+        target_verts = num_verts * percent_verts
+
+        new_verts, new_tris = simplify_mesh(positions=self.verts.astype(np.double), face=self.tris.astype(np.uint32), num_nodes=target_verts)
+        verts_colors = generateColors(len(new_verts), color)
+
+        return Mesh(np.copy(self.model), new_verts, verts_colors, new_tris, self.res)
+
+    def translate(self, vector: Tuple[float, float, float]):
+        &#34;&#34;&#34;
+        Translate a model by the specified vector.
+
+        Args:
+            vector: Translation vector in voxels
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        new_mesh = Mesh.copy(self)
+        new_mesh.verts[:, 0] = np.add(self.verts[:, 0], vector[0])
+        new_mesh.verts[:, 1] = np.add(self.verts[:, 1], vector[1])
+        new_mesh.verts[:, 2] = np.add(self.verts[:, 2], vector[2])
+        return new_mesh
+
+    def translateMM(self, vector: Tuple[float, float, float]):
+        &#34;&#34;&#34;
+        Translate a model by the specified vector.
+
+        Args:
+            vector: Translation vector in mm
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        xV = vector[0] * self.res
+        yV = vector[1] * self.res
+        zV = vector[2] * self.res
+        new_mesh = self.translate((xV, yV, zV))
+        return new_mesh
+
+    def setColor(self, color: Tuple[float, float, float, float]):
+        &#34;&#34;&#34;
+        Change the color of a mesh.
+
+        Args:
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        new_mesh = Mesh.copy(self)
+        new_mesh.colors = generateColors(len(self.verts), color)
+        return new_mesh
+
+    def plot(self, plot = None, name: str = &#39;mesh&#39;, wireframe: bool = True, mm_scale: bool = False, **kwargs):
+        &#34;&#34;&#34;
+        Add mesh to a K3D plot in Jupyter Notebook.
+
+        Additional display options:
+
+        - flat_shading: `bool`. Whether mesh should display with flat shading.
+        - opacity: `float`. Opacity of mesh.
+        - volume: `array_like`. 3D array of `float`
+        - volume_bounds: `array_like`. 6-element tuple specifying the bounds of the volume data (x0, x1, y0, y1, z0, z1)
+        - opacity_function: `array`. A list of float tuples (attribute value, opacity), sorted by attribute value. The first tuples should have value 0.0, the last 1.0; opacity is in the range 0.0 to 1.0.
+        - side: `string`. Control over which side to render for a mesh. Legal values are `front`, `back`, `double`.
+        - texture: `bytes`. Image data in a specific format.
+        - texture_file_format: `str`. Format of the data, it should be the second part of MIME format of type &#39;image/&#39;, for example &#39;jpeg&#39;, &#39;png&#39;, &#39;gif&#39;, &#39;tiff&#39;.
+        - uvs: `array_like`. Array of float uvs for the texturing, coresponding to each vertex.
+        - kwargs: `dict`. Dictionary arguments to configure transform and model_matrix.
+
+        More information available at: https://github.com/K3D-tools/K3D-jupyter
+
+        Args:
+            plot: Plot object to add mesh to
+            name: Mesh name
+            wireframe: Enable displaying mesh as a wireframe
+            mm_scale: Enable to use a mm plot scale, disable to use a voxel plot scale
+            kwargs: Additional display options (see above)
+        
+        Returns:
+            K3D plot object
+        &#34;&#34;&#34;
+        # Get verts
+        verts = self.verts
+
+        # Adjust coordinate scale
+        if mm_scale:
+            verts = np.divide(verts, self.res)
+
+        # Get tris
+        tris = self.tris
+
+        # Get colors
+        colors = []
+        for c in self.colors:
+            colors.append(rgb_to_hex(c[0], c[1], c[2]))
+        colors = np.array(colors, dtype=np.uint32)
+
+        # Plot
+        if plot is None:
+            plot = k3d.plot()
+
+        plot += k3d.mesh(verts.astype(np.float32), tris.astype(np.uint32), colors=colors, name=name, wireframe=wireframe, **kwargs)
+        return plot
+
+    def viewer(self, grids: bool = False, drawEdges: bool = True,
+               edgeColor: Tuple[float, float, float, float] = (0, 0, 0, 0.5),
+               positionOffset: Tuple[int, int, int] = (0, 0, 0), viewAngle: Tuple[int, int, int] = (40, 30, 300),
+               resolution: Tuple[int, int] = (1280, 720), name: str = &#39;Plot 1&#39;, export: bool = False):
+        &#34;&#34;&#34;
+        Display the mesh in a 3D viewer window.
+
+        This function will block program execution until viewer window is closed
+
+        Args:
+            grids: Enable/disable display of XYZ axes and grids
+            drawEdges: Enable/disable display of voxel edges
+            edgeColor: Set display color of voxel edges
+            positionOffset: Offset of the camera target from the center of the model in voxels
+            viewAngle: Elevation, Azimuth, and Distance of the camera
+            resolution: Window resolution in px
+            name: Plot window name
+            export: Enable/disable exporting a screenshot of the plot
+        
+        Returns:
+            None
+        &#34;&#34;&#34;
+        app = qtw.QApplication(sys.argv)
+
+        mesh_data = pgo.MeshData(vertexes=self.verts, faces=self.tris, vertexColors=self.colors, faceColors=None)
+        mesh_item = pgo.GLMeshItem(meshdata=mesh_data, shader=&#39;balloon&#39;, drawEdges=drawEdges, edgeColor=edgeColor,
+                                   smooth=False, computeNormals=False, glOptions=&#39;translucent&#39;)
+
+        widget = pgo.GLViewWidget()
+        widget.setBackgroundColor(&#39;w&#39;)
+        widget.addItem(mesh_item)
+
+        if grids:
+            # Add grids
+            gx = pgo.GLGridItem()
+            gx.setSize(x=50, y=50, z=50)
+            gx.rotate(90, 0, 1, 0)
+            gx.translate(-0.5, 24.5, 24.5)
+            widget.addItem(gx)
+            gy = pgo.GLGridItem()
+            gy.setSize(x=50, y=50, z=50)
+            gy.rotate(90, 1, 0, 0)
+            gy.translate(24.5, -0.5, 24.5)
+            widget.addItem(gy)
+            gz = pgo.GLGridItem()
+            gz.setSize(x=50, y=50, z=50)
+            gz.translate(24.5, 24.5, -0.5)
+            widget.addItem(gz)
+
+            # Add axes
+            ptsx = np.array([[-0.5, -0.5, -0.5], [50, -0.5, -0.5]])
+            pltx = pgo.GLLinePlotItem(pos=ptsx, color=(1, 0, 0, 1), width=1, antialias=True)
+            widget.addItem(pltx)
+            ptsy = np.array([[-0.5, -0.5, -0.5], [-0.5, 50, -0.5]])
+            plty = pgo.GLLinePlotItem(pos=ptsy, color=(0, 1, 0, 1), width=1, antialias=True)
+            widget.addItem(plty)
+            ptsz = np.array([[-0.5, -0.5, -0.5], [-0.5, -0.5, 50]])
+            pltz = pgo.GLLinePlotItem(pos=ptsz, color=(0, 0, 1, 1), width=1, antialias=True)
+            widget.addItem(pltz)
+
+        # Set plot options
+        widget.opts[&#39;center&#39;] = qg.QVector3D(((self.model.shape[0] / self.res) / 2) + positionOffset[0],
+                                             ((self.model.shape[1] / self.res) / 2) + positionOffset[1],
+                                             ((self.model.shape[2] / self.res) / 2) + positionOffset[2])
+        widget.opts[&#39;elevation&#39;] = viewAngle[0]
+        widget.opts[&#39;azimuth&#39;] = viewAngle[1]
+        widget.opts[&#39;distance&#39;] = viewAngle[2]
+        widget.resize(resolution[0], resolution[1])
+
+        # Show plot
+        widget.setWindowTitle(str(name))
+        widget.show()
+
+        app.processEvents()
+
+        # if export: # TODO: Fix export code
+        #     widget.paintGL()
+        #     widget.grabFrameBuffer().save(str(name) + &#39;.png&#39;)
+
+        print(&#39;Close viewer to resume program&#39;)
+        app.exec_()
+        app.quit()
 
     # Export model from mesh data
     def export(self, filename: str):
@@ -171,181 +623,409 @@ class Mesh:
 
         ----
 
-        :param filename: File name with extension
-        :return: None
+        Args:
+            filename: File name with extension
+        
+        Returns:
+            None
         &#34;&#34;&#34;
+        # Adjust coordinate scale
+        verts = np.divide(self.verts, self.res)
+
         cells = {
             &#34;triangle&#34;: self.tris
         }
 
-        output_mesh = meshio.Mesh(self.verts, cells)
+        output_mesh = meshio.Mesh(verts, cells)
         meshio.write(filename, output_mesh)
 
 # Helper functions ##############################################################
-@njit()
-def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
+def generateColors(n: int, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
     &#34;&#34;&#34;
-    Check if a target voxel has another voxel of the same material
-    adjacent to it in the X direction.
+    Generate a colors list with the given number of elements
 
-    :param input_model: VoxelModel
-    :param x_coord: Target voxel X location
-    :param y_coord: Target voxel Y location
-    :param z_coord: Target voxel Z location
-    :param x_dir: Specify X direction and distance (usually 1 or -1)
-    :return: Adjacent voxel present/not present
+    Args:
+        n: Number of vertices in target model
+        color: Mesh color in the format (r, g, b, a)
+    
+    Returns:
+        List of vertex colors
     &#34;&#34;&#34;
-    x_len = len(input_model[:, 0, 0])
+    verts_colors = []
+    voxel_color = list(color)
+    for i in range(n):
+        verts_colors.append(voxel_color)
+    verts_colors = np.array(verts_colors)
+    return verts_colors
+
+@njit()
+def check_adjacent(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord: int, x_dir: int, y_dir: int, z_dir: int):
+    &#34;&#34;&#34;
+    Check if a target voxel has another voxel adjacent to it in the specified direction.
+
+    Args:
+        input_model: VoxelModel.voxels
+        x_coord: Target voxel X location
+        y_coord: Target voxel Y location
+        z_coord: Target voxel Z location
+        x_dir: Specify X direction and distance (usually 1 or -1)
+        y_dir: Specify Y direction and distance (usually 1 or -1)
+        z_dir: Specify Z direction and distance (usually 1 or -1)
+    
+    Returns:
+        Adjacent voxel present/not present
+    &#34;&#34;&#34;
     x_coord_new = x_coord+x_dir
-
-    if (x_coord_new &lt; x_len) and (x_coord_new &gt;= 0) and not np.equal(input_model[x_coord_new, y_coord, z_coord], input_model[x_coord, y_coord, z_coord]):
-        return True
-    elif (x_coord_new &gt;= x_len) or (x_coord_new &lt; 0):
-        return True
-    else:
-        return False
-
-@njit()
-def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
-    &#34;&#34;&#34;
-    Check if a target voxel has another voxel of the same material
-    adjacent to it in the Y direction.
-
-    :param input_model: VoxelModel
-    :param x_coord: Target voxel X location
-    :param y_coord: Target voxel Y location
-    :param z_coord: Target voxel Z location
-    :param y_dir: Specify Y direction and distance (usually 1 or -1)
-    :return: Adjacent voxel present/not present
-    &#34;&#34;&#34;
-    y_len = len(input_model[0, :, 0])
     y_coord_new = y_coord+y_dir
-
-    if (y_coord_new &lt; y_len) and (y_coord_new &gt;= 0) and not np.equal(input_model[x_coord, y_coord_new, z_coord], input_model[x_coord, y_coord, z_coord]):
-        return True
-    elif (y_coord_new &gt;= y_len) or (y_coord_new &lt; 0):
-        return True
-    else:
-        return False
-
-@njit()
-def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
-    &#34;&#34;&#34;
-    Check if a target voxel has another voxel of the same material
-    adjacent to it in the Z direction.
-
-    :param input_model: VoxelModel
-    :param x_coord: Target voxel X location
-    :param y_coord: Target voxel Y location
-    :param z_coord: Target voxel Z location
-    :param z_dir: Specify Z direction and distance (usually 1 or -1)
-    :return: Adjacent voxel present/not present
-    &#34;&#34;&#34;
-    z_len = len(input_model[0, 0, :])
     z_coord_new = z_coord+z_dir
 
-    if (z_coord_new &lt; z_len) and (z_coord_new &gt;= 0) and not np.equal(input_model[x_coord, y_coord, z_coord_new], input_model[x_coord, y_coord, z_coord]):
-        return True
-    elif (z_coord_new &gt;= z_len) or (z_coord_new &lt; 0):
+    x_in_bounds = (x_coord_new &gt;= 0) and (x_coord_new &lt; input_model.shape[0])
+    y_in_bounds = (y_coord_new &gt;= 0) and (y_coord_new &lt; input_model.shape[1])
+    z_in_bounds = (z_coord_new &gt;= 0) and (z_coord_new &lt; input_model.shape[2])
+
+    if x_in_bounds and y_in_bounds and z_in_bounds and input_model[x_coord_new, y_coord_new, z_coord_new] &gt; 0:
         return True
     else:
         return False
 
 @njit()
-def addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi):
+def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.ndarray, model_offsets: Tuple, x: int, y: int, z: int, vi: int):
     &#34;&#34;&#34;
     Find the applicable mesh vertices and triangles for a target voxel.
 
-    :param voxel_model_array: VoxelModel.voxels
-    :param model_offsets: VoxelModel.coords
-    :param resolution: Number of voxels per mm
-    :param x: Target voxel X location
-    :param y: Target voxel Y location
-    :param z: Target voxel Z location
-    :param vi: Current vertex index
-    :return: New verts, Indices for new verts, New tris, New current vert index
+    Args:
+        voxel_model_array: VoxelModel.voxels
+        verts_indices: verts indices array
+        model_offsets: VoxelModel.coords
+        x: Target voxel X location
+        y: Target voxel Y location
+        z: Target voxel Z location
+        vi: Current vertex index
+
+    Returns:
+        New verts, Updated verts indices array, New tris, Updated current vert index
     &#34;&#34;&#34;
     adjacent = [
-        [check_adjacent_x(voxel_model_array, x, y, z, 1), check_adjacent_x(voxel_model_array, x, y, z, -1)],
-        [check_adjacent_y(voxel_model_array, x, y, z, 1), check_adjacent_y(voxel_model_array, x, y, z, -1)],
-        [check_adjacent_z(voxel_model_array, x, y, z, 1), check_adjacent_z(voxel_model_array, x, y, z, -1)],
+        [check_adjacent(voxel_model_array, x, y, z, 1, 0, 0), check_adjacent(voxel_model_array, x, y, z, -1, 0, 0)],
+        [check_adjacent(voxel_model_array, x, y, z, 0, 1, 0), check_adjacent(voxel_model_array, x, y, z, 0, -1, 0)],
+        [check_adjacent(voxel_model_array, x, y, z, 0, 0, 1), check_adjacent(voxel_model_array, x, y, z, 0, 0, -1)]
     ]
 
-    verts_indices = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+    cube_verts_indices = np.array([0, 0, 0, 0, 0, 0, 0, 0])
     verts = []
     tris = []
 
-    if adjacent[0][0] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
-        verts_indices[0] = vi
-        vi = vi + 1
+    if not adjacent[0][0] or not adjacent[1][0] or not adjacent[2][0]:
+        vert_pos = (x+1, y+1, z+1)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[0] = verts_indices[vert_pos]
 
-    if adjacent[0][0] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
-        verts_indices[1] = vi
-        vi = vi + 1
+    if not adjacent[0][0] or not adjacent[1][1] or not adjacent[2][0]:
+        vert_pos = (x+1, y, z+1)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[1] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
-        verts_indices[2] = vi
-        vi = vi + 1
+    if not adjacent[0][1] or not adjacent[1][0] or not adjacent[2][0]:
+        vert_pos = (x, y+1, z+1)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[2] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
-        verts_indices[3] = vi
-        vi = vi + 1
+    if not adjacent[0][1] or not adjacent[1][1] or not adjacent[2][0]:
+        vert_pos = (x, y, z+1)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[3] = verts_indices[vert_pos]
 
-    if adjacent[0][0] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
-        verts_indices[4] = vi
-        vi = vi + 1
+    if not adjacent[0][0] or not adjacent[1][0] or not adjacent[2][1]:
+        vert_pos = (x+1, y+1, z)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[4] = verts_indices[vert_pos]
 
-    if adjacent[0][0] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
-        verts_indices[5] = vi
-        vi = vi + 1
+    if not adjacent[0][0] or not adjacent[1][1] or not adjacent[2][1]:
+        vert_pos = (x+1, y, z)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[5] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
-        verts_indices[6] = vi
-        vi = vi + 1
+    if not adjacent[0][1] or not adjacent[1][0] or not adjacent[2][1]:
+        vert_pos = (x, y+1, z)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[6] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
-        verts_indices[7] = vi
-        vi = vi + 1
+    if not adjacent[0][1] or not adjacent[1][1] or not adjacent[2][1]:
+        vert_pos = (x, y, z)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[7] = verts_indices[vert_pos]
 
-    if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[2] != 0) and (
-            verts_indices[3] != 0):
-        tris.append([verts_indices[0] - 1, verts_indices[1] - 1, verts_indices[2] - 1])
-        tris.append([verts_indices[1] - 1, verts_indices[3] - 1, verts_indices[2] - 1])
+    if not adjacent[0][0]:
+        tris.append([cube_verts_indices[0] - 1, cube_verts_indices[1] - 1, cube_verts_indices[5] - 1])
+        tris.append([cube_verts_indices[5] - 1, cube_verts_indices[4] - 1, cube_verts_indices[0] - 1])
 
-    if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[4] != 0) and (
-            verts_indices[5] != 0):
-        tris.append([verts_indices[1] - 1, verts_indices[0] - 1, verts_indices[5] - 1])
-        tris.append([verts_indices[0] - 1, verts_indices[4] - 1, verts_indices[5] - 1])
+    if not adjacent[1][0]:
+        tris.append([cube_verts_indices[2] - 1, cube_verts_indices[0] - 1, cube_verts_indices[4] - 1])
+        tris.append([cube_verts_indices[4] - 1, cube_verts_indices[6] - 1, cube_verts_indices[2] - 1])
 
-    if (verts_indices[0] != 0) and (verts_indices[2] != 0) and (verts_indices[4] != 0) and (
-            verts_indices[6] != 0):
-        tris.append([verts_indices[0] - 1, verts_indices[2] - 1, verts_indices[4] - 1])
-        tris.append([verts_indices[2] - 1, verts_indices[6] - 1, verts_indices[4] - 1])
+    if not adjacent[2][0]:
+        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[0] - 1, cube_verts_indices[2] - 1])
+        tris.append([cube_verts_indices[2] - 1, cube_verts_indices[3] - 1, cube_verts_indices[1] - 1])
 
-    if (verts_indices[2] != 0) and (verts_indices[3] != 0) and (verts_indices[6] != 0) and (
-            verts_indices[7] != 0):
-        tris.append([verts_indices[2] - 1, verts_indices[3] - 1, verts_indices[6] - 1])
-        tris.append([verts_indices[3] - 1, verts_indices[7] - 1, verts_indices[6] - 1])
+    if not adjacent[0][1]:
+        tris.append([cube_verts_indices[3] - 1, cube_verts_indices[2] - 1, cube_verts_indices[6] - 1])
+        tris.append([cube_verts_indices[6] - 1, cube_verts_indices[7] - 1, cube_verts_indices[3] - 1])
 
-    if (verts_indices[1] != 0) and (verts_indices[3] != 0) and (verts_indices[5] != 0) and (
-            verts_indices[7] != 0):
-        tris.append([verts_indices[3] - 1, verts_indices[1] - 1, verts_indices[7] - 1])
-        tris.append([verts_indices[1] - 1, verts_indices[5] - 1, verts_indices[7] - 1])
+    if not adjacent[1][1]:
+        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[3] - 1, cube_verts_indices[7] - 1])
+        tris.append([cube_verts_indices[7] - 1, cube_verts_indices[5] - 1, cube_verts_indices[1] - 1])
 
-    if (verts_indices[4] != 0) and (verts_indices[5] != 0) and (verts_indices[6] != 0) and (
-            verts_indices[7] != 0):
-        tris.append([verts_indices[5] - 1, verts_indices[4] - 1, verts_indices[7] - 1])
-        tris.append([verts_indices[4] - 1, verts_indices[6] - 1, verts_indices[7] - 1])
+    if not adjacent[2][1]:
+        tris.append([cube_verts_indices[4] - 1, cube_verts_indices[5] - 1, cube_verts_indices[7] - 1])
+        tris.append([cube_verts_indices[7] - 1, cube_verts_indices[6] - 1, cube_verts_indices[4] - 1])
 
-    return verts, verts_indices, tris, vi</code></pre>
+    return verts, verts_indices.astype(np.uint32), tris, vi
+
+@njit()
+def markInterior(vert_type: np.ndarray, x: int, y: int, z: int):
+    &#34;&#34;&#34;
+    Determine if target voxel is an interior voxel.
+
+    Args:
+        vert_type: Array of vertex types
+        x: Target voxel X
+        y: Target voxel Y
+        z: Target voxel Z
+
+    Returns:
+        Updated array of vertex types
+    &#34;&#34;&#34;
+    if np.all(vert_type[x-1:x+2, y-1:y+2, z-1:z+2] != 0):
+        vert_type[x, y, z] = 3 # Type 3 = interior/already included in a square
+    return vert_type
+
+@njit()
+def markInsideCorner(vert_type, x, y, z):
+    &#34;&#34;&#34;
+    Determine if target voxel is an inside corner.
+
+    Args:
+        vert_type: Array of vertex types
+        x: Target voxel X
+        y: Target voxel Y
+        z: Target voxel Z
+
+    Returns:
+        Updated array of vertex types
+    &#34;&#34;&#34;
+    x_len, y_len, z_len = vert_type.shape
+    adjacent_empty = [True, True, True, True, True, True]
+
+    if x &gt; 0:
+        adjacent_empty[0] = (vert_type[x - 1, y, z] == 0)
+    if x &lt; x_len-1:
+        adjacent_empty[1] = (vert_type[x + 1, y, z] == 0)
+
+    if y &gt; 0:
+        adjacent_empty[2] = (vert_type[x, y - 1, z] == 0)
+    if y &lt; y_len-1:
+        adjacent_empty[3] = (vert_type[x, y + 1, z] == 0)
+
+    if z &gt; 0:
+        adjacent_empty[4] = (vert_type[x, y, z - 1] == 0)
+    if z &lt; z_len-1:
+        adjacent_empty[5] = (vert_type[x, y, z + 1] == 0)
+
+    is_face = [adjacent_empty[0] != adjacent_empty[1],
+               adjacent_empty[2] != adjacent_empty[3],
+               adjacent_empty[4] != adjacent_empty[5]]
+
+    # Inside corner  - 0 faces
+    # Face           - 1 face
+    # Outside edge   - 2 faces
+    # Outside corner - 3 faces
+    if vert_type[x, y, z] == 1 and np.sum(np.array(is_face)) == 0:
+        vert_type[x, y, z] = 2  # Type 2 = blocking
+
+    return vert_type
+
+@njit()
+def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_color: np.ndarray, voxel_model_array: np.ndarray, x: int, y: int, z: int, dx: int, dy: int, dz: int):
+    &#34;&#34;&#34;
+    Find the largest square starting from a given point and generate the corresponding points and tris.
+
+    Args:
+        vi: Current vertex index
+        vert_type: Array of vertex types
+        vert_index: Array of vertex indices
+        vert_color: Array of vertex colors
+        voxel_model_array: Voxel data array
+        x: Target voxel X
+        y: Target voxel Y
+        z: Target voxel Z
+        dx: Square search step in X
+        dy: Square search step in Y
+        dz: Square search step in Z
+
+    Returns:
+        vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads
+    &#34;&#34;&#34;
+    x_len, y_len, z_len = vert_type.shape
+    new_verts = []
+    new_colors = []
+    new_tris = []
+    new_quads = []
+
+    vert_on_surface = (vert_type[x, y, z] == 1 or vert_type[x, y, z] == 2)
+    if vert_on_surface and x+dx &lt; x_len and y+dy &lt; y_len and z+dz &lt; z_len:  # Point is a face vertex and next point is in bounds
+        xn = x
+        yn = y
+        zn = z
+
+        for i in range(1, max(x_len - x, y_len - y, z_len - z)):  # See if a square can be found starting at this point
+            xn = x + dx * i
+            yn = y + dy * i
+            zn = z + dz * i
+
+            # Check if endpoint is in bounds
+            in_range = [xn &lt; x_len,
+                        yn &lt; y_len,
+                        zn &lt; z_len]
+
+            if not np.all(np.array(in_range)):
+                xn = x + dx * (i-1)
+                yn = y + dy * (i-1)
+                zn = z + dz * (i-1)
+                break
+
+            face = (vert_type[x:xn+1, y:yn+1,  z:zn+1] == 1)
+            blocking = (vert_type[x:xn+1, y:yn+1,  z:zn+1] == 2)
+            on_surface = np.logical_or(face, blocking)
+
+            # Check if square includes only surface vertices
+            if not np.all(on_surface):
+                xn = x + dx * (i-1)
+                yn = y + dy * (i-1)
+                zn = z + dz * (i-1)
+                break
+
+            # Check if square includes any blocking vertices
+            if np.any(blocking):
+                break
+
+        square = None
+
+        # Determine vert coords based on search direction
+        if xn &gt; x and yn &gt; y and zn == z:
+            # vert_type[x:xn+1, y:yn+1, z] = 1 # Type 1 = occupied/exterior
+            vert_type[x+1:xn, y+1:yn, z] = 3 # Type 3 = interior/already included in a square
+
+            vx_pos = False
+            vx_neg = False
+            if z - 1 &gt;= 0:
+                vx_neg = (voxel_model_array[x, y, z - 1] != 0)
+            if z &lt; z_len-1:
+                vx_pos = (voxel_model_array[x, y, z] != 0)
+
+            if vx_pos and not vx_neg: # CW
+                square = [[x, y, z],
+                          [x, yn, z],
+                          [xn, y, z],
+                          [xn, yn, z]]
+            elif vx_neg and not vx_pos: # CCW
+                square = [[x, y, z],
+                          [xn, y, z],
+                          [x, yn, z],
+                          [xn, yn, z]]
+            else: # Interior face -- can occur with certain small features
+                square = None
+
+        elif xn &gt; x and yn == y and zn &gt; z:
+            # vert_type[x:xn+1, y, z:zn+1] = 1 # Type 1 = occupied/exterior
+            vert_type[x+1:xn, y, z+1:zn] = 3 # Type 3 = interior/already included in a square
+
+            vx_pos = False
+            vx_neg = False
+            if y - 1 &gt;= 0:
+                vx_neg = (voxel_model_array[x, y - 1, z] != 0)
+            if y &lt; y_len-1:
+                vx_pos = (voxel_model_array[x, y, z] != 0)
+
+            if vx_pos and not vx_neg:  # CW
+                square = [[x, y, z],
+                          [xn, y, z],
+                          [x, y, zn],
+                          [xn, y, zn]]
+            elif vx_neg and not vx_pos:  # CCW
+                square = [[x, y, z],
+                          [x, y, zn],
+                          [xn, y, z],
+                          [xn, y, zn]]
+            else:  # Interior face -- can occur with certain small features
+                square = None
+
+        elif xn == x and yn &gt; y and zn &gt; z:
+            # vert_type[x, y:yn+1, z:zn+1] = 1 # Type 1 = occupied/exterior
+            vert_type[x, y+1:yn, z+1:zn] = 3 # Type 3 = interior/already included in a square
+
+            vx_pos = False
+            vx_neg = False
+            if x - 1 &gt;= 0:
+                vx_neg = (voxel_model_array[x - 1, y, z] != 0)
+            if x &lt; x_len-1:
+                vx_pos = (voxel_model_array[x, y, z] != 0)
+
+            if vx_pos and not vx_neg:  # CW
+                square = [[x, y, z],
+                          [x, y, zn],
+                          [x, yn, z],
+                          [x, yn, zn]]
+            elif vx_neg and not vx_pos:  # CCW
+                square = [[x, y, z],
+                          [x, yn, z],
+                          [x, y, zn],
+                          [x, yn, zn]]
+            else:  # Interior face -- can occur with certain small features
+                square = None
+
+        # Add verts, tris, quads, and colors
+        if square is not None:
+            p = []
+            for i in range(len(square)):
+                new_vi = vert_index[square[i][0], square[i][1], square[i][2]]
+                if new_vi == -1:
+                    new_verts.append(square[i])
+                    new_colors.append(vert_color[square[i][0], square[i][1], square[i][2]])
+                    vert_index[square[i][0], square[i][1], square[i][2]] = vi
+                    p.append(vi)
+                    vi = vi + 1
+                else:
+                    p.append(new_vi)
+
+            new_tris.append([p[0], p[1], p[2]])
+            new_tris.append([p[3], p[2], p[1]])
+            new_quads.append([p[0], p[1], p[3], p[2]])
+
+    return vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads</code></pre>
 </details>
 </section>
 <section>
@@ -356,283 +1036,550 @@ def addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, 
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="voxelfuse.mesh.addVerticesAndTriangles"><code class="name flex">
-<span>def <span class="ident">addVerticesAndTriangles</span></span>(<span>voxel_model_array, model_offsets, resolution, x, y, z, vi)</span>
+<span>def <span class="ident">addVerticesAndTriangles</span></span>(<span>voxel_model_array: numpy.ndarray, verts_indices: numpy.ndarray, model_offsets: Tuple, x: int, y: int, z: int, vi: int)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Find the applicable mesh vertices and triangles for a target voxel.</p>
-<h2 id="args">Args:</h2>
+<h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>voxel_model_array</code></strong></dt>
-<dd><p>VoxelModel.voxels</p></dd>
+<dd>VoxelModel.voxels</dd>
+<dt><strong><code>verts_indices</code></strong></dt>
+<dd>verts indices array</dd>
 <dt><strong><code>model_offsets</code></strong></dt>
-<dd><p>VoxelModel.coords</p></dd>
-<dt><strong><code>resolution</code></strong></dt>
-<dd><p>Number of voxels per mm</p></dd>
+<dd>VoxelModel.coords</dd>
 <dt><strong><code>x</code></strong></dt>
-<dd><p>Target voxel X location</p></dd>
+<dd>Target voxel X location</dd>
 <dt><strong><code>y</code></strong></dt>
-<dd><p>Target voxel Y location</p></dd>
+<dd>Target voxel Y location</dd>
 <dt><strong><code>z</code></strong></dt>
-<dd><p>Target voxel Z location</p></dd>
+<dd>Target voxel Z location</dd>
 <dt><strong><code>vi</code></strong></dt>
-<dd><p>Current vertex index</p></dd>
+<dd>Current vertex index</dd>
 </dl>
-<h2 id="returns">Returns:</h2>
-<dl>
-<dd><p>New verts, Indices for new verts, New tris, New current vert index</p></dd>
-</dl></div>
+<h2 id="returns">Returns</h2>
+<p>New verts, Updated verts indices array, New tris, Updated current vert index</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@njit()
-def addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi):
+def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.ndarray, model_offsets: Tuple, x: int, y: int, z: int, vi: int):
     &#34;&#34;&#34;
     Find the applicable mesh vertices and triangles for a target voxel.
 
-    :param voxel_model_array: VoxelModel.voxels
-    :param model_offsets: VoxelModel.coords
-    :param resolution: Number of voxels per mm
-    :param x: Target voxel X location
-    :param y: Target voxel Y location
-    :param z: Target voxel Z location
-    :param vi: Current vertex index
-    :return: New verts, Indices for new verts, New tris, New current vert index
+    Args:
+        voxel_model_array: VoxelModel.voxels
+        verts_indices: verts indices array
+        model_offsets: VoxelModel.coords
+        x: Target voxel X location
+        y: Target voxel Y location
+        z: Target voxel Z location
+        vi: Current vertex index
+
+    Returns:
+        New verts, Updated verts indices array, New tris, Updated current vert index
     &#34;&#34;&#34;
     adjacent = [
-        [check_adjacent_x(voxel_model_array, x, y, z, 1), check_adjacent_x(voxel_model_array, x, y, z, -1)],
-        [check_adjacent_y(voxel_model_array, x, y, z, 1), check_adjacent_y(voxel_model_array, x, y, z, -1)],
-        [check_adjacent_z(voxel_model_array, x, y, z, 1), check_adjacent_z(voxel_model_array, x, y, z, -1)],
+        [check_adjacent(voxel_model_array, x, y, z, 1, 0, 0), check_adjacent(voxel_model_array, x, y, z, -1, 0, 0)],
+        [check_adjacent(voxel_model_array, x, y, z, 0, 1, 0), check_adjacent(voxel_model_array, x, y, z, 0, -1, 0)],
+        [check_adjacent(voxel_model_array, x, y, z, 0, 0, 1), check_adjacent(voxel_model_array, x, y, z, 0, 0, -1)]
     ]
 
-    verts_indices = np.array([0, 0, 0, 0, 0, 0, 0, 0])
+    cube_verts_indices = np.array([0, 0, 0, 0, 0, 0, 0, 0])
     verts = []
     tris = []
 
-    if adjacent[0][0] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
-        verts_indices[0] = vi
-        vi = vi + 1
+    if not adjacent[0][0] or not adjacent[1][0] or not adjacent[2][0]:
+        vert_pos = (x+1, y+1, z+1)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[0] = verts_indices[vert_pos]
 
-    if adjacent[0][0] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
-        verts_indices[1] = vi
-        vi = vi + 1
+    if not adjacent[0][0] or not adjacent[1][1] or not adjacent[2][0]:
+        vert_pos = (x+1, y, z+1)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[1] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][0] or adjacent[2][0]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
-        verts_indices[2] = vi
-        vi = vi + 1
+    if not adjacent[0][1] or not adjacent[1][0] or not adjacent[2][0]:
+        vert_pos = (x, y+1, z+1)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[2] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][1] or adjacent[2][0]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z + 0.5 + model_offsets[2])/resolution])
-        verts_indices[3] = vi
-        vi = vi + 1
+    if not adjacent[0][1] or not adjacent[1][1] or not adjacent[2][0]:
+        vert_pos = (x, y, z+1)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[3] = verts_indices[vert_pos]
 
-    if adjacent[0][0] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
-        verts_indices[4] = vi
-        vi = vi + 1
+    if not adjacent[0][0] or not adjacent[1][0] or not adjacent[2][1]:
+        vert_pos = (x+1, y+1, z)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[4] = verts_indices[vert_pos]
 
-    if adjacent[0][0] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([(x + 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
-        verts_indices[5] = vi
-        vi = vi + 1
+    if not adjacent[0][0] or not adjacent[1][1] or not adjacent[2][1]:
+        vert_pos = (x+1, y, z)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[5] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][0] or adjacent[2][1]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y + 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
-        verts_indices[6] = vi
-        vi = vi + 1
+    if not adjacent[0][1] or not adjacent[1][0] or not adjacent[2][1]:
+        vert_pos = (x, y+1, z)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[6] = verts_indices[vert_pos]
 
-    if adjacent[0][1] or adjacent[1][1] or adjacent[2][1]:
-        verts.append([(x - 0.5 + model_offsets[0])/resolution, (y - 0.5 + model_offsets[1])/resolution, (z - 0.5 + model_offsets[2])/resolution])
-        verts_indices[7] = vi
-        vi = vi + 1
+    if not adjacent[0][1] or not adjacent[1][1] or not adjacent[2][1]:
+        vert_pos = (x, y, z)
+        if verts_indices[vert_pos] &lt; 1:
+            verts_indices[vert_pos] = vi
+            verts.append([vert_pos[0]+model_offsets[0], vert_pos[1]+model_offsets[1], vert_pos[2]+model_offsets[2]])
+            vi = vi + 1
+        cube_verts_indices[7] = verts_indices[vert_pos]
 
-    if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[2] != 0) and (
-            verts_indices[3] != 0):
-        tris.append([verts_indices[0] - 1, verts_indices[1] - 1, verts_indices[2] - 1])
-        tris.append([verts_indices[1] - 1, verts_indices[3] - 1, verts_indices[2] - 1])
+    if not adjacent[0][0]:
+        tris.append([cube_verts_indices[0] - 1, cube_verts_indices[1] - 1, cube_verts_indices[5] - 1])
+        tris.append([cube_verts_indices[5] - 1, cube_verts_indices[4] - 1, cube_verts_indices[0] - 1])
 
-    if (verts_indices[0] != 0) and (verts_indices[1] != 0) and (verts_indices[4] != 0) and (
-            verts_indices[5] != 0):
-        tris.append([verts_indices[1] - 1, verts_indices[0] - 1, verts_indices[5] - 1])
-        tris.append([verts_indices[0] - 1, verts_indices[4] - 1, verts_indices[5] - 1])
+    if not adjacent[1][0]:
+        tris.append([cube_verts_indices[2] - 1, cube_verts_indices[0] - 1, cube_verts_indices[4] - 1])
+        tris.append([cube_verts_indices[4] - 1, cube_verts_indices[6] - 1, cube_verts_indices[2] - 1])
 
-    if (verts_indices[0] != 0) and (verts_indices[2] != 0) and (verts_indices[4] != 0) and (
-            verts_indices[6] != 0):
-        tris.append([verts_indices[0] - 1, verts_indices[2] - 1, verts_indices[4] - 1])
-        tris.append([verts_indices[2] - 1, verts_indices[6] - 1, verts_indices[4] - 1])
+    if not adjacent[2][0]:
+        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[0] - 1, cube_verts_indices[2] - 1])
+        tris.append([cube_verts_indices[2] - 1, cube_verts_indices[3] - 1, cube_verts_indices[1] - 1])
 
-    if (verts_indices[2] != 0) and (verts_indices[3] != 0) and (verts_indices[6] != 0) and (
-            verts_indices[7] != 0):
-        tris.append([verts_indices[2] - 1, verts_indices[3] - 1, verts_indices[6] - 1])
-        tris.append([verts_indices[3] - 1, verts_indices[7] - 1, verts_indices[6] - 1])
+    if not adjacent[0][1]:
+        tris.append([cube_verts_indices[3] - 1, cube_verts_indices[2] - 1, cube_verts_indices[6] - 1])
+        tris.append([cube_verts_indices[6] - 1, cube_verts_indices[7] - 1, cube_verts_indices[3] - 1])
 
-    if (verts_indices[1] != 0) and (verts_indices[3] != 0) and (verts_indices[5] != 0) and (
-            verts_indices[7] != 0):
-        tris.append([verts_indices[3] - 1, verts_indices[1] - 1, verts_indices[7] - 1])
-        tris.append([verts_indices[1] - 1, verts_indices[5] - 1, verts_indices[7] - 1])
+    if not adjacent[1][1]:
+        tris.append([cube_verts_indices[1] - 1, cube_verts_indices[3] - 1, cube_verts_indices[7] - 1])
+        tris.append([cube_verts_indices[7] - 1, cube_verts_indices[5] - 1, cube_verts_indices[1] - 1])
 
-    if (verts_indices[4] != 0) and (verts_indices[5] != 0) and (verts_indices[6] != 0) and (
-            verts_indices[7] != 0):
-        tris.append([verts_indices[5] - 1, verts_indices[4] - 1, verts_indices[7] - 1])
-        tris.append([verts_indices[4] - 1, verts_indices[6] - 1, verts_indices[7] - 1])
+    if not adjacent[2][1]:
+        tris.append([cube_verts_indices[4] - 1, cube_verts_indices[5] - 1, cube_verts_indices[7] - 1])
+        tris.append([cube_verts_indices[7] - 1, cube_verts_indices[6] - 1, cube_verts_indices[4] - 1])
 
-    return verts, verts_indices, tris, vi</code></pre>
+    return verts, verts_indices.astype(np.uint32), tris, vi</code></pre>
 </details>
 </dd>
-<dt id="voxelfuse.mesh.check_adjacent_x"><code class="name flex">
-<span>def <span class="ident">check_adjacent_x</span></span>(<span>input_model, x_coord, y_coord, z_coord, x_dir)</span>
+<dt id="voxelfuse.mesh.check_adjacent"><code class="name flex">
+<span>def <span class="ident">check_adjacent</span></span>(<span>input_model: numpy.ndarray, x_coord: int, y_coord: int, z_coord: int, x_dir: int, y_dir: int, z_dir: int)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Check if a target voxel has another voxel of the same material
-adjacent to it in the X direction.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><p>Check if a target voxel has another voxel adjacent to it in the specified direction.</p>
+<h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>input_model</code></strong></dt>
-<dd><p>VoxelModel</p></dd>
+<dd>VoxelModel.voxels</dd>
 <dt><strong><code>x_coord</code></strong></dt>
-<dd><p>Target voxel X location</p></dd>
+<dd>Target voxel X location</dd>
 <dt><strong><code>y_coord</code></strong></dt>
-<dd><p>Target voxel Y location</p></dd>
+<dd>Target voxel Y location</dd>
 <dt><strong><code>z_coord</code></strong></dt>
-<dd><p>Target voxel Z location</p></dd>
+<dd>Target voxel Z location</dd>
 <dt><strong><code>x_dir</code></strong></dt>
-<dd><p>Specify X direction and distance (usually 1 or -1)</p></dd>
-</dl>
-<h2 id="returns">Returns:</h2>
-<dl>
-<dd><p>Adjacent voxel present/not present</p></dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@njit()
-def check_adjacent_x(input_model, x_coord, y_coord, z_coord, x_dir):
-    &#34;&#34;&#34;
-    Check if a target voxel has another voxel of the same material
-    adjacent to it in the X direction.
-
-    :param input_model: VoxelModel
-    :param x_coord: Target voxel X location
-    :param y_coord: Target voxel Y location
-    :param z_coord: Target voxel Z location
-    :param x_dir: Specify X direction and distance (usually 1 or -1)
-    :return: Adjacent voxel present/not present
-    &#34;&#34;&#34;
-    x_len = len(input_model[:, 0, 0])
-    x_coord_new = x_coord+x_dir
-
-    if (x_coord_new &lt; x_len) and (x_coord_new &gt;= 0) and not np.equal(input_model[x_coord_new, y_coord, z_coord], input_model[x_coord, y_coord, z_coord]):
-        return True
-    elif (x_coord_new &gt;= x_len) or (x_coord_new &lt; 0):
-        return True
-    else:
-        return False</code></pre>
-</details>
-</dd>
-<dt id="voxelfuse.mesh.check_adjacent_y"><code class="name flex">
-<span>def <span class="ident">check_adjacent_y</span></span>(<span>input_model, x_coord, y_coord, z_coord, y_dir)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Check if a target voxel has another voxel of the same material
-adjacent to it in the Y direction.</p>
-<h2 id="args">Args:</h2>
-<dl>
-<dt><strong><code>input_model</code></strong></dt>
-<dd><p>VoxelModel</p></dd>
-<dt><strong><code>x_coord</code></strong></dt>
-<dd><p>Target voxel X location</p></dd>
-<dt><strong><code>y_coord</code></strong></dt>
-<dd><p>Target voxel Y location</p></dd>
-<dt><strong><code>z_coord</code></strong></dt>
-<dd><p>Target voxel Z location</p></dd>
+<dd>Specify X direction and distance (usually 1 or -1)</dd>
 <dt><strong><code>y_dir</code></strong></dt>
-<dd><p>Specify Y direction and distance (usually 1 or -1)</p></dd>
-</dl>
-<h2 id="returns">Returns:</h2>
-<dl>
-<dd><p>Adjacent voxel present/not present</p></dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@njit()
-def check_adjacent_y(input_model, x_coord, y_coord, z_coord, y_dir):
-    &#34;&#34;&#34;
-    Check if a target voxel has another voxel of the same material
-    adjacent to it in the Y direction.
-
-    :param input_model: VoxelModel
-    :param x_coord: Target voxel X location
-    :param y_coord: Target voxel Y location
-    :param z_coord: Target voxel Z location
-    :param y_dir: Specify Y direction and distance (usually 1 or -1)
-    :return: Adjacent voxel present/not present
-    &#34;&#34;&#34;
-    y_len = len(input_model[0, :, 0])
-    y_coord_new = y_coord+y_dir
-
-    if (y_coord_new &lt; y_len) and (y_coord_new &gt;= 0) and not np.equal(input_model[x_coord, y_coord_new, z_coord], input_model[x_coord, y_coord, z_coord]):
-        return True
-    elif (y_coord_new &gt;= y_len) or (y_coord_new &lt; 0):
-        return True
-    else:
-        return False</code></pre>
-</details>
-</dd>
-<dt id="voxelfuse.mesh.check_adjacent_z"><code class="name flex">
-<span>def <span class="ident">check_adjacent_z</span></span>(<span>input_model, x_coord, y_coord, z_coord, z_dir)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Check if a target voxel has another voxel of the same material
-adjacent to it in the Z direction.</p>
-<h2 id="args">Args:</h2>
-<dl>
-<dt><strong><code>input_model</code></strong></dt>
-<dd><p>VoxelModel</p></dd>
-<dt><strong><code>x_coord</code></strong></dt>
-<dd><p>Target voxel X location</p></dd>
-<dt><strong><code>y_coord</code></strong></dt>
-<dd><p>Target voxel Y location</p></dd>
-<dt><strong><code>z_coord</code></strong></dt>
-<dd><p>Target voxel Z location</p></dd>
+<dd>Specify Y direction and distance (usually 1 or -1)</dd>
 <dt><strong><code>z_dir</code></strong></dt>
-<dd><p>Specify Z direction and distance (usually 1 or -1)</p></dd>
+<dd>Specify Z direction and distance (usually 1 or -1)</dd>
 </dl>
-<h2 id="returns">Returns:</h2>
-<dl>
-<dd><p>Adjacent voxel present/not present</p></dd>
-</dl></div>
+<h2 id="returns">Returns</h2>
+<p>Adjacent voxel present/not present</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@njit()
-def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
+def check_adjacent(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord: int, x_dir: int, y_dir: int, z_dir: int):
     &#34;&#34;&#34;
-    Check if a target voxel has another voxel of the same material
-    adjacent to it in the Z direction.
+    Check if a target voxel has another voxel adjacent to it in the specified direction.
 
-    :param input_model: VoxelModel
-    :param x_coord: Target voxel X location
-    :param y_coord: Target voxel Y location
-    :param z_coord: Target voxel Z location
-    :param z_dir: Specify Z direction and distance (usually 1 or -1)
-    :return: Adjacent voxel present/not present
+    Args:
+        input_model: VoxelModel.voxels
+        x_coord: Target voxel X location
+        y_coord: Target voxel Y location
+        z_coord: Target voxel Z location
+        x_dir: Specify X direction and distance (usually 1 or -1)
+        y_dir: Specify Y direction and distance (usually 1 or -1)
+        z_dir: Specify Z direction and distance (usually 1 or -1)
+    
+    Returns:
+        Adjacent voxel present/not present
     &#34;&#34;&#34;
-    z_len = len(input_model[0, 0, :])
+    x_coord_new = x_coord+x_dir
+    y_coord_new = y_coord+y_dir
     z_coord_new = z_coord+z_dir
 
-    if (z_coord_new &lt; z_len) and (z_coord_new &gt;= 0) and not np.equal(input_model[x_coord, y_coord, z_coord_new], input_model[x_coord, y_coord, z_coord]):
-        return True
-    elif (z_coord_new &gt;= z_len) or (z_coord_new &lt; 0):
+    x_in_bounds = (x_coord_new &gt;= 0) and (x_coord_new &lt; input_model.shape[0])
+    y_in_bounds = (y_coord_new &gt;= 0) and (y_coord_new &lt; input_model.shape[1])
+    z_in_bounds = (z_coord_new &gt;= 0) and (z_coord_new &lt; input_model.shape[2])
+
+    if x_in_bounds and y_in_bounds and z_in_bounds and input_model[x_coord_new, y_coord_new, z_coord_new] &gt; 0:
         return True
     else:
         return False</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.findSquare"><code class="name flex">
+<span>def <span class="ident">findSquare</span></span>(<span>vi: int, vert_type: numpy.ndarray, vert_index: numpy.ndarray, vert_color: numpy.ndarray, voxel_model_array: numpy.ndarray, x: int, y: int, z: int, dx: int, dy: int, dz: int)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Find the largest square starting from a given point and generate the corresponding points and tris.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>vi</code></strong></dt>
+<dd>Current vertex index</dd>
+<dt><strong><code>vert_type</code></strong></dt>
+<dd>Array of vertex types</dd>
+<dt><strong><code>vert_index</code></strong></dt>
+<dd>Array of vertex indices</dd>
+<dt><strong><code>vert_color</code></strong></dt>
+<dd>Array of vertex colors</dd>
+<dt><strong><code>voxel_model_array</code></strong></dt>
+<dd>Voxel data array</dd>
+<dt><strong><code>x</code></strong></dt>
+<dd>Target voxel X</dd>
+<dt><strong><code>y</code></strong></dt>
+<dd>Target voxel Y</dd>
+<dt><strong><code>z</code></strong></dt>
+<dd>Target voxel Z</dd>
+<dt><strong><code>dx</code></strong></dt>
+<dd>Square search step in X</dd>
+<dt><strong><code>dy</code></strong></dt>
+<dd>Square search step in Y</dd>
+<dt><strong><code>dz</code></strong></dt>
+<dd>Square search step in Z</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@njit()
+def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_color: np.ndarray, voxel_model_array: np.ndarray, x: int, y: int, z: int, dx: int, dy: int, dz: int):
+    &#34;&#34;&#34;
+    Find the largest square starting from a given point and generate the corresponding points and tris.
+
+    Args:
+        vi: Current vertex index
+        vert_type: Array of vertex types
+        vert_index: Array of vertex indices
+        vert_color: Array of vertex colors
+        voxel_model_array: Voxel data array
+        x: Target voxel X
+        y: Target voxel Y
+        z: Target voxel Z
+        dx: Square search step in X
+        dy: Square search step in Y
+        dz: Square search step in Z
+
+    Returns:
+        vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads
+    &#34;&#34;&#34;
+    x_len, y_len, z_len = vert_type.shape
+    new_verts = []
+    new_colors = []
+    new_tris = []
+    new_quads = []
+
+    vert_on_surface = (vert_type[x, y, z] == 1 or vert_type[x, y, z] == 2)
+    if vert_on_surface and x+dx &lt; x_len and y+dy &lt; y_len and z+dz &lt; z_len:  # Point is a face vertex and next point is in bounds
+        xn = x
+        yn = y
+        zn = z
+
+        for i in range(1, max(x_len - x, y_len - y, z_len - z)):  # See if a square can be found starting at this point
+            xn = x + dx * i
+            yn = y + dy * i
+            zn = z + dz * i
+
+            # Check if endpoint is in bounds
+            in_range = [xn &lt; x_len,
+                        yn &lt; y_len,
+                        zn &lt; z_len]
+
+            if not np.all(np.array(in_range)):
+                xn = x + dx * (i-1)
+                yn = y + dy * (i-1)
+                zn = z + dz * (i-1)
+                break
+
+            face = (vert_type[x:xn+1, y:yn+1,  z:zn+1] == 1)
+            blocking = (vert_type[x:xn+1, y:yn+1,  z:zn+1] == 2)
+            on_surface = np.logical_or(face, blocking)
+
+            # Check if square includes only surface vertices
+            if not np.all(on_surface):
+                xn = x + dx * (i-1)
+                yn = y + dy * (i-1)
+                zn = z + dz * (i-1)
+                break
+
+            # Check if square includes any blocking vertices
+            if np.any(blocking):
+                break
+
+        square = None
+
+        # Determine vert coords based on search direction
+        if xn &gt; x and yn &gt; y and zn == z:
+            # vert_type[x:xn+1, y:yn+1, z] = 1 # Type 1 = occupied/exterior
+            vert_type[x+1:xn, y+1:yn, z] = 3 # Type 3 = interior/already included in a square
+
+            vx_pos = False
+            vx_neg = False
+            if z - 1 &gt;= 0:
+                vx_neg = (voxel_model_array[x, y, z - 1] != 0)
+            if z &lt; z_len-1:
+                vx_pos = (voxel_model_array[x, y, z] != 0)
+
+            if vx_pos and not vx_neg: # CW
+                square = [[x, y, z],
+                          [x, yn, z],
+                          [xn, y, z],
+                          [xn, yn, z]]
+            elif vx_neg and not vx_pos: # CCW
+                square = [[x, y, z],
+                          [xn, y, z],
+                          [x, yn, z],
+                          [xn, yn, z]]
+            else: # Interior face -- can occur with certain small features
+                square = None
+
+        elif xn &gt; x and yn == y and zn &gt; z:
+            # vert_type[x:xn+1, y, z:zn+1] = 1 # Type 1 = occupied/exterior
+            vert_type[x+1:xn, y, z+1:zn] = 3 # Type 3 = interior/already included in a square
+
+            vx_pos = False
+            vx_neg = False
+            if y - 1 &gt;= 0:
+                vx_neg = (voxel_model_array[x, y - 1, z] != 0)
+            if y &lt; y_len-1:
+                vx_pos = (voxel_model_array[x, y, z] != 0)
+
+            if vx_pos and not vx_neg:  # CW
+                square = [[x, y, z],
+                          [xn, y, z],
+                          [x, y, zn],
+                          [xn, y, zn]]
+            elif vx_neg and not vx_pos:  # CCW
+                square = [[x, y, z],
+                          [x, y, zn],
+                          [xn, y, z],
+                          [xn, y, zn]]
+            else:  # Interior face -- can occur with certain small features
+                square = None
+
+        elif xn == x and yn &gt; y and zn &gt; z:
+            # vert_type[x, y:yn+1, z:zn+1] = 1 # Type 1 = occupied/exterior
+            vert_type[x, y+1:yn, z+1:zn] = 3 # Type 3 = interior/already included in a square
+
+            vx_pos = False
+            vx_neg = False
+            if x - 1 &gt;= 0:
+                vx_neg = (voxel_model_array[x - 1, y, z] != 0)
+            if x &lt; x_len-1:
+                vx_pos = (voxel_model_array[x, y, z] != 0)
+
+            if vx_pos and not vx_neg:  # CW
+                square = [[x, y, z],
+                          [x, y, zn],
+                          [x, yn, z],
+                          [x, yn, zn]]
+            elif vx_neg and not vx_pos:  # CCW
+                square = [[x, y, z],
+                          [x, yn, z],
+                          [x, y, zn],
+                          [x, yn, zn]]
+            else:  # Interior face -- can occur with certain small features
+                square = None
+
+        # Add verts, tris, quads, and colors
+        if square is not None:
+            p = []
+            for i in range(len(square)):
+                new_vi = vert_index[square[i][0], square[i][1], square[i][2]]
+                if new_vi == -1:
+                    new_verts.append(square[i])
+                    new_colors.append(vert_color[square[i][0], square[i][1], square[i][2]])
+                    vert_index[square[i][0], square[i][1], square[i][2]] = vi
+                    p.append(vi)
+                    vi = vi + 1
+                else:
+                    p.append(new_vi)
+
+            new_tris.append([p[0], p[1], p[2]])
+            new_tris.append([p[3], p[2], p[1]])
+            new_quads.append([p[0], p[1], p[3], p[2]])
+
+    return vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.generateColors"><code class="name flex">
+<span>def <span class="ident">generateColors</span></span>(<span>n: int, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate a colors list with the given number of elements</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>n</code></strong></dt>
+<dd>Number of vertices in target model</dd>
+<dt><strong><code>color</code></strong></dt>
+<dd>Mesh color in the format (r, g, b, a)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>List of vertex colors</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generateColors(n: int, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+    &#34;&#34;&#34;
+    Generate a colors list with the given number of elements
+
+    Args:
+        n: Number of vertices in target model
+        color: Mesh color in the format (r, g, b, a)
+    
+    Returns:
+        List of vertex colors
+    &#34;&#34;&#34;
+    verts_colors = []
+    voxel_color = list(color)
+    for i in range(n):
+        verts_colors.append(voxel_color)
+    verts_colors = np.array(verts_colors)
+    return verts_colors</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.markInsideCorner"><code class="name flex">
+<span>def <span class="ident">markInsideCorner</span></span>(<span>vert_type, x, y, z)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Determine if target voxel is an inside corner.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>vert_type</code></strong></dt>
+<dd>Array of vertex types</dd>
+<dt><strong><code>x</code></strong></dt>
+<dd>Target voxel X</dd>
+<dt><strong><code>y</code></strong></dt>
+<dd>Target voxel Y</dd>
+<dt><strong><code>z</code></strong></dt>
+<dd>Target voxel Z</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Updated array of vertex types</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@njit()
+def markInsideCorner(vert_type, x, y, z):
+    &#34;&#34;&#34;
+    Determine if target voxel is an inside corner.
+
+    Args:
+        vert_type: Array of vertex types
+        x: Target voxel X
+        y: Target voxel Y
+        z: Target voxel Z
+
+    Returns:
+        Updated array of vertex types
+    &#34;&#34;&#34;
+    x_len, y_len, z_len = vert_type.shape
+    adjacent_empty = [True, True, True, True, True, True]
+
+    if x &gt; 0:
+        adjacent_empty[0] = (vert_type[x - 1, y, z] == 0)
+    if x &lt; x_len-1:
+        adjacent_empty[1] = (vert_type[x + 1, y, z] == 0)
+
+    if y &gt; 0:
+        adjacent_empty[2] = (vert_type[x, y - 1, z] == 0)
+    if y &lt; y_len-1:
+        adjacent_empty[3] = (vert_type[x, y + 1, z] == 0)
+
+    if z &gt; 0:
+        adjacent_empty[4] = (vert_type[x, y, z - 1] == 0)
+    if z &lt; z_len-1:
+        adjacent_empty[5] = (vert_type[x, y, z + 1] == 0)
+
+    is_face = [adjacent_empty[0] != adjacent_empty[1],
+               adjacent_empty[2] != adjacent_empty[3],
+               adjacent_empty[4] != adjacent_empty[5]]
+
+    # Inside corner  - 0 faces
+    # Face           - 1 face
+    # Outside edge   - 2 faces
+    # Outside corner - 3 faces
+    if vert_type[x, y, z] == 1 and np.sum(np.array(is_face)) == 0:
+        vert_type[x, y, z] = 2  # Type 2 = blocking
+
+    return vert_type</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.markInterior"><code class="name flex">
+<span>def <span class="ident">markInterior</span></span>(<span>vert_type: numpy.ndarray, x: int, y: int, z: int)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Determine if target voxel is an interior voxel.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>vert_type</code></strong></dt>
+<dd>Array of vertex types</dd>
+<dt><strong><code>x</code></strong></dt>
+<dd>Target voxel X</dd>
+<dt><strong><code>y</code></strong></dt>
+<dd>Target voxel Y</dd>
+<dt><strong><code>z</code></strong></dt>
+<dd>Target voxel Z</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Updated array of vertex types</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@njit()
+def markInterior(vert_type: np.ndarray, x: int, y: int, z: int):
+    &#34;&#34;&#34;
+    Determine if target voxel is an interior voxel.
+
+    Args:
+        vert_type: Array of vertex types
+        x: Target voxel X
+        y: Target voxel Y
+        z: Target voxel Z
+
+    Returns:
+        Updated array of vertex types
+    &#34;&#34;&#34;
+    if np.all(vert_type[x-1:x+2, y-1:y+2, z-1:z+2] != 0):
+        vert_type[x, y, z] = 3 # Type 3 = interior/already included in a square
+    return vert_type</code></pre>
 </details>
 </dd>
 </dl>
@@ -642,23 +1589,23 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
 <dl>
 <dt id="voxelfuse.mesh.Mesh"><code class="flex name class">
 <span>class <span class="ident">Mesh</span></span>
-<span>(</span><span>input_model, verts, verts_colors, tris, resolution)</span>
+<span>(</span><span>voxels: Optional[numpy.ndarray], verts: numpy.ndarray, verts_colors: numpy.ndarray, tris: numpy.ndarray, resolution: float)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Mesh object that can be exported or passed to a Plot object.</p>
 <p>Initialize a Mesh object.</p>
-<h2 id="args">Args:</h2>
+<h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>input_model</code></strong></dt>
-<dd><p>Voxel data array</p></dd>
+<dt><strong><code>voxels</code></strong></dt>
+<dd>Voxel data array</dd>
 <dt><strong><code>verts</code></strong></dt>
-<dd><p>List of coordinates of surface vertices</p></dd>
+<dd>List of coordinates of surface vertices</dd>
 <dt><strong><code>verts_colors</code></strong></dt>
-<dd><p>List of colors associated with each vertex</p></dd>
+<dd>List of colors associated with each vertex</dd>
 <dt><strong><code>tris</code></strong></dt>
-<dd><p>List of the sets of vertices associated with triangular faces</p></dd>
+<dd>List of the sets of vertices associated with triangular faces</dd>
 <dt><strong><code>resolution</code></strong></dt>
-<dd><p>Number of voxels per mm</p></dd>
+<dd>Number of voxels per mm</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -669,26 +1616,76 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
     Mesh object that can be exported or passed to a Plot object.
     &#34;&#34;&#34;
 
-    def __init__(self, input_model, verts, verts_colors, tris, resolution):
+    def __init__(self, voxels: TypeUnion[np.ndarray, None], verts: np.ndarray, verts_colors: np.ndarray, tris: np.ndarray, resolution: float):
         &#34;&#34;&#34;
         Initialize a Mesh object.
 
-        :param input_model: Voxel data array
-        :param verts: List of coordinates of surface vertices
-        :param verts_colors: List of colors associated with each vertex
-        :param tris: List of the sets of vertices associated with triangular faces
-        :param resolution: Number of voxels per mm
+        Args:
+            voxels: Voxel data array
+            verts: List of coordinates of surface vertices
+            verts_colors: List of colors associated with each vertex
+            tris: List of the sets of vertices associated with triangular faces
+            resolution: Number of voxels per mm
         &#34;&#34;&#34;
+        if voxels is not None:
+            self.model = voxels
+        else:
+            self.model = np.array([[[0]]])
 
         self.verts = verts
         self.colors = verts_colors
         self.tris = tris
-        self.model = input_model
         self.res = resolution
 
-    # Create mesh from voxel data
     @classmethod
-    def fromVoxelModel(cls, voxel_model, resolution: float = -1):
+    def fromMeshFile(cls, filename: str, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+        &#34;&#34;&#34;
+        Import a mesh file to a mesh object.
+
+        ----
+
+        Example:
+
+        ``mesh1 = vf.Mesh.fromMeshFile(example.stl)``
+
+        ----
+
+        Args:
+            filename: File name with extension
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        # Open file
+        data = meshio.read(filename)
+
+        # Read verts
+        verts = np.array(data.points)
+
+        # Align to origin
+        x_min = np.min(verts[:, 0])
+        y_min = np.min(verts[:, 1])
+        z_min = np.min(verts[:, 2])
+        verts[:, 0] = np.subtract(verts[:, 0], x_min)
+        verts[:, 1] = np.subtract(verts[:, 1], y_min)
+        verts[:, 2] = np.subtract(verts[:, 2], z_min)
+
+        # Generate colors
+        verts_colors = generateColors(len(verts), color)
+
+        # Read tris
+        tris = []
+        for cell in data.cells:
+            if cell[0] == &#39;triangle&#39;:
+                for tri in cell[1]:
+                    tris.append(tri)
+        tris = np.array(tris)
+
+        return cls(None, verts, verts_colors, tris, 1)
+
+    @classmethod
+    def fromVoxelModel(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
         &#34;&#34;&#34;
         Generate a mesh object from a VoxelModel object.
 
@@ -696,17 +1693,17 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
 
         Example:
 
-        ``mesh1 = Mesh.fromVoxelModel(model1)``
+        ``mesh1 = vf.Mesh.fromVoxelModel(model1)``
 
         ----
 
-        :param voxel_model: VoxelModel object to be converted to a mesh
-        :param resolution: Number of voxels per mm, -1 to use model resolution
-        :return: Mesh
+        Args:
+            voxel_model: VoxelModel object to be converted to a mesh
+            color: Mesh color in the format (r, g, b, a), None to use voxel colors
+        
+        Returns:
+            Mesh
         &#34;&#34;&#34;
-        if resolution &lt; 0:
-            resolution = voxel_model.resolution
-
         voxel_model_fit = voxel_model.fitWorkspace()
         voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
         model_materials = voxel_model_fit.materials
@@ -715,9 +1712,7 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
         # Find exterior voxels
         exterior_voxels_array = voxel_model_fit.difference(voxel_model_fit.erode(radius=1, connectivity=1)).voxels
         
-        x_len = len(voxel_model_array[:, 0, 0])
-        y_len = len(voxel_model_array[0, :, 0])
-        z_len = len(voxel_model_array[0, 0, :])
+        x_len, y_len, z_len = voxel_model_array.shape
         
         # Create list of exterior voxel coordinates
         exterior_voxels_coords = []
@@ -733,46 +1728,441 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
         # Initialize arrays
         verts = []
         verts_colors = []
+        verts_indices = np.zeros((x_len+1, y_len+1, z_len+1))
         tris = []
         vi = 1  # Tracks current vertex index
 
         # Loop through voxel_model_array data
         for voxel_coords in tqdm(exterior_voxels_coords, desc=&#39;Meshing&#39;):
-            x = voxel_coords[0]
-            y = voxel_coords[1]
-            z = voxel_coords[2]
+            x, y, z = voxel_coords
 
-            r = 0
-            g = 0
-            b = 0
+            if color is None:
+                r = 0
+                g = 0
+                b = 0
 
-            for i in range(voxel_model.materials.shape[1]-1):
-                r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;r&#39;]
-                g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;g&#39;]
-                b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;b&#39;]
+                for i in range(voxel_model.materials.shape[1]-1):
+                    r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;r&#39;]
+                    g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;g&#39;]
+                    b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;b&#39;]
 
-            r = 1 if r &gt; 1 else r
-            g = 1 if g &gt; 1 else g
-            b = 1 if b &gt; 1 else b
+                r = 1 if r &gt; 1 else r
+                g = 1 if g &gt; 1 else g
+                b = 1 if b &gt; 1 else b
 
-            a = 1 - model_materials[voxel_model_array[x, y, z]][1]
+                a = 1 - model_materials[voxel_model_array[x, y, z]][1]
 
-            voxel_color = [r, g, b, a]
+                voxel_color = [r, g, b, a]
+            else:
+                voxel_color = list(color)
 
             # Add cube vertices
-            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi)
+            new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, verts_indices, model_offsets, x, y, z, vi)
             verts += new_verts
             tris += new_tris
 
             # Apply color to all vertices
-            for i in range(0, np.count_nonzero(verts_indices)):
+            for i in range(len(new_verts)):
                 verts_colors.append(voxel_color)
 
-        verts = np.array(verts)
-        verts_colors = np.array(verts_colors)
-        tris = np.array(tris)
+        verts = np.array(verts, dtype=np.float32)
+        verts_colors = np.array(verts_colors, dtype=np.float32)
+        tris = np.array(tris, dtype=np.uint32)
 
-        return cls(voxel_model_array, verts, verts_colors, tris, resolution)
+        return cls(voxel_model_array, verts, verts_colors, tris, voxel_model.resolution)
+
+    @classmethod
+    def simpleSquares(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
+        &#34;&#34;&#34;
+        Generate a mesh object from a VoxelModel object using large square faces.
+
+        This function can greatly reduce the file size of generated meshes. However, it may not correctly recognize
+        small (1 voxel) model features and currently produces files with a nonstandard vertex arrangement. Use at your own
+        risk.
+
+        ----
+
+        Example:
+
+        ``mesh1 = vf.Mesh.simpleSquares(model1)``
+
+        ----
+
+        Args:
+            voxel_model: VoxelModel object to be converted to a mesh
+            color: Mesh color in the format (r, g, b, a), None to use voxel colors
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        voxel_model_fit = voxel_model.fitWorkspace()
+        voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
+        model_materials = voxel_model_fit.materials
+        model_offsets = voxel_model_fit.coords
+
+        x_len, y_len, z_len = voxel_model_array.shape
+
+        # Determine vertex types
+        vert_type = np.zeros((x_len + 1, y_len + 1, z_len + 1), dtype=np.uint8)
+        vert_color = np.zeros((x_len + 1, y_len + 1, z_len + 1, 4), dtype=np.float32)
+        for x in tqdm(range(x_len), desc=&#39;Finding voxel vertices&#39;):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if voxel_model_array[x, y, z] &gt; 0:
+                        vert_type[x:x+2, y:y+2, z:z+2] = 1 # Type 1 = occupied/exterior
+
+                        if color is None:
+                            r = 0
+                            g = 0
+                            b = 0
+
+                            for i in range(voxel_model.materials.shape[1] - 1):
+                                r = r + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i][&#39;r&#39;]
+                                g = g + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i][&#39;g&#39;]
+                                b = b + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i][&#39;b&#39;]
+
+                            r = 1 if r &gt; 1 else r
+                            g = 1 if g &gt; 1 else g
+                            b = 1 if b &gt; 1 else b
+
+                            a = 1 - model_materials[voxel_model_array[x, y, z]][1]
+
+                            voxel_color = np.array([r, g, b, a])
+                        else:
+                            voxel_color = np.array(color)
+
+                        for cx in range(x, x+2):
+                            for cy in range(y, y+2):
+                                for cz in range(z, z+2):
+                                    vert_color[cx, cy, cz, :] = voxel_color
+
+        for x in tqdm(range(1, x_len), desc=&#39;Finding interior vertices&#39;):
+            for y in range(1, y_len):
+                for z in range(1, z_len):
+                    vert_type = markInterior(vert_type, x, y, z)
+
+        for x in tqdm(range(0, x_len+1), desc=&#39;Finding feature vertices&#39;):
+            for y in range(0, y_len+1):
+                for z in range(0, z_len+1):
+                    vert_type = markInsideCorner(vert_type, x, y, z)
+
+        # Initialize arrays
+        vi = 0 # Tracks current vertex index
+        verts = []
+        colors = []
+        tris = []
+        quads = []
+        vert_index = np.multiply(np.ones_like(vert_type, dtype=np.int32), -1)
+
+        for x in tqdm(range(x_len + 1), desc=&#39;Meshing&#39;):
+            for y in range(y_len + 1):
+                for z in range(z_len + 1):
+                    dirs = [[1, 1, 0], [1, 0, 1], [0, 1, 1]]
+                    for d in dirs:
+                        vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads = findSquare(vi, vert_type, vert_index, vert_color, voxel_model_array, x, y, z, d[0], d[1], d[2])
+                        verts += new_verts
+                        colors += new_colors
+                        tris += new_tris
+                        quads += new_quads
+
+        verts = np.array(verts, dtype=np.float32)
+        colors = np.array(colors, dtype=np.float32)
+        tris = np.array(tris, dtype=np.uint32)
+        quads = np.array(quads, dtype=np.uint32)
+
+        # Shift model to align with origin
+        verts[:, 0] = np.add(verts[:, 0], model_offsets[0])
+        verts[:, 1] = np.add(verts[:, 1], model_offsets[1])
+        verts[:, 2] = np.add(verts[:, 2], model_offsets[2])
+
+        return cls(voxel_model_array, verts, colors, tris, voxel_model.resolution)
+
+    @classmethod
+    def marchingCubes(cls, voxel_model: VoxelModel, smooth: bool = False, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+        &#34;&#34;&#34;
+        Generate a mesh object from a VoxelModel object using a marching cubes algorithm.
+
+        This meshing approach is best suited to high resolution models where some smoothing is acceptable.
+
+        Args:
+            voxel_model: VoxelModel object to be converted to a mesh
+            smooth: Enable smoothing
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            None
+        &#34;&#34;&#34;
+        voxel_model_fit = voxel_model.fitWorkspace().getOccupied()
+        voxels = voxel_model_fit.voxels.astype(np.uint16)
+        x, y, z = voxels.shape
+        model_offsets = voxel_model_fit.coords
+
+        voxels_padded = np.zeros((x + 2, y + 2, z + 2))
+        voxels_padded[1:-1, 1:-1, 1:-1] = voxels
+
+        if smooth:
+            voxels_padded = mcubes.smooth(voxels_padded)
+            levelset = 0
+        else:
+            levelset = 0.5
+
+        verts, tris = mcubes.marching_cubes(voxels_padded, levelset)
+
+        # Shift model to align with origin
+        verts = np.subtract(verts, 0.5)
+        verts[:, 0] = np.add(verts[:, 0], model_offsets[0])
+        verts[:, 1] = np.add(verts[:, 1], model_offsets[1])
+        verts[:, 2] = np.add(verts[:, 2], model_offsets[2])
+
+        verts_colors = generateColors(len(verts), color)
+
+        return cls(voxels_padded, verts, verts_colors, tris, voxel_model.resolution)
+
+    @classmethod
+    def copy(cls, mesh):
+        &#34;&#34;&#34;
+        Initialize a Mesh that is a copy of another mesh.
+
+        Args:
+            mesh: Reference Mesh object
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        new_mesh = cls(np.copy(mesh.model), np.copy(mesh.verts), np.copy(mesh.colors), np.copy(mesh.tris), mesh.res)
+        return new_mesh
+
+    def setResolution(self, resolution: float):
+        &#34;&#34;&#34;
+        Change the defined resolution of a mesh.
+
+        The mesh resolution will determine the scale of plots and exported mesh files.
+
+        Args:
+            resolution: Number of voxels per mm (higher number = finer resolution)
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        new_mesh = Mesh.copy(self)
+        new_mesh.res = resolution
+        return new_mesh
+
+    def scale(self, factor: float):
+        &#34;&#34;&#34;
+        Apply a scaling factor to a mesh.
+
+        Args:
+            factor: Scaling factor
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        new_mesh = Mesh.copy(self)
+        new_mesh.verts = np.multiply(self.verts, factor)
+        return new_mesh
+
+    def simplify(self, percent_verts: float, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+        &#34;&#34;&#34;
+        Simplify a mesh to contain a given percentage of the original number of vertices.
+
+        More information on the simplification algorithm is available at: https://github.com/jannessm/quadric-mesh-simplification
+
+        Args:
+            percent_verts: Percentage of vertex count allowed in the result mesh, 0-1
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        num_verts = self.verts.shape[0]
+        target_verts = num_verts * percent_verts
+
+        new_verts, new_tris = simplify_mesh(positions=self.verts.astype(np.double), face=self.tris.astype(np.uint32), num_nodes=target_verts)
+        verts_colors = generateColors(len(new_verts), color)
+
+        return Mesh(np.copy(self.model), new_verts, verts_colors, new_tris, self.res)
+
+    def translate(self, vector: Tuple[float, float, float]):
+        &#34;&#34;&#34;
+        Translate a model by the specified vector.
+
+        Args:
+            vector: Translation vector in voxels
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        new_mesh = Mesh.copy(self)
+        new_mesh.verts[:, 0] = np.add(self.verts[:, 0], vector[0])
+        new_mesh.verts[:, 1] = np.add(self.verts[:, 1], vector[1])
+        new_mesh.verts[:, 2] = np.add(self.verts[:, 2], vector[2])
+        return new_mesh
+
+    def translateMM(self, vector: Tuple[float, float, float]):
+        &#34;&#34;&#34;
+        Translate a model by the specified vector.
+
+        Args:
+            vector: Translation vector in mm
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        xV = vector[0] * self.res
+        yV = vector[1] * self.res
+        zV = vector[2] * self.res
+        new_mesh = self.translate((xV, yV, zV))
+        return new_mesh
+
+    def setColor(self, color: Tuple[float, float, float, float]):
+        &#34;&#34;&#34;
+        Change the color of a mesh.
+
+        Args:
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            Mesh
+        &#34;&#34;&#34;
+        new_mesh = Mesh.copy(self)
+        new_mesh.colors = generateColors(len(self.verts), color)
+        return new_mesh
+
+    def plot(self, plot = None, name: str = &#39;mesh&#39;, wireframe: bool = True, mm_scale: bool = False, **kwargs):
+        &#34;&#34;&#34;
+        Add mesh to a K3D plot in Jupyter Notebook.
+
+        Additional display options:
+
+        - flat_shading: `bool`. Whether mesh should display with flat shading.
+        - opacity: `float`. Opacity of mesh.
+        - volume: `array_like`. 3D array of `float`
+        - volume_bounds: `array_like`. 6-element tuple specifying the bounds of the volume data (x0, x1, y0, y1, z0, z1)
+        - opacity_function: `array`. A list of float tuples (attribute value, opacity), sorted by attribute value. The first tuples should have value 0.0, the last 1.0; opacity is in the range 0.0 to 1.0.
+        - side: `string`. Control over which side to render for a mesh. Legal values are `front`, `back`, `double`.
+        - texture: `bytes`. Image data in a specific format.
+        - texture_file_format: `str`. Format of the data, it should be the second part of MIME format of type &#39;image/&#39;, for example &#39;jpeg&#39;, &#39;png&#39;, &#39;gif&#39;, &#39;tiff&#39;.
+        - uvs: `array_like`. Array of float uvs for the texturing, coresponding to each vertex.
+        - kwargs: `dict`. Dictionary arguments to configure transform and model_matrix.
+
+        More information available at: https://github.com/K3D-tools/K3D-jupyter
+
+        Args:
+            plot: Plot object to add mesh to
+            name: Mesh name
+            wireframe: Enable displaying mesh as a wireframe
+            mm_scale: Enable to use a mm plot scale, disable to use a voxel plot scale
+            kwargs: Additional display options (see above)
+        
+        Returns:
+            K3D plot object
+        &#34;&#34;&#34;
+        # Get verts
+        verts = self.verts
+
+        # Adjust coordinate scale
+        if mm_scale:
+            verts = np.divide(verts, self.res)
+
+        # Get tris
+        tris = self.tris
+
+        # Get colors
+        colors = []
+        for c in self.colors:
+            colors.append(rgb_to_hex(c[0], c[1], c[2]))
+        colors = np.array(colors, dtype=np.uint32)
+
+        # Plot
+        if plot is None:
+            plot = k3d.plot()
+
+        plot += k3d.mesh(verts.astype(np.float32), tris.astype(np.uint32), colors=colors, name=name, wireframe=wireframe, **kwargs)
+        return plot
+
+    def viewer(self, grids: bool = False, drawEdges: bool = True,
+               edgeColor: Tuple[float, float, float, float] = (0, 0, 0, 0.5),
+               positionOffset: Tuple[int, int, int] = (0, 0, 0), viewAngle: Tuple[int, int, int] = (40, 30, 300),
+               resolution: Tuple[int, int] = (1280, 720), name: str = &#39;Plot 1&#39;, export: bool = False):
+        &#34;&#34;&#34;
+        Display the mesh in a 3D viewer window.
+
+        This function will block program execution until viewer window is closed
+
+        Args:
+            grids: Enable/disable display of XYZ axes and grids
+            drawEdges: Enable/disable display of voxel edges
+            edgeColor: Set display color of voxel edges
+            positionOffset: Offset of the camera target from the center of the model in voxels
+            viewAngle: Elevation, Azimuth, and Distance of the camera
+            resolution: Window resolution in px
+            name: Plot window name
+            export: Enable/disable exporting a screenshot of the plot
+        
+        Returns:
+            None
+        &#34;&#34;&#34;
+        app = qtw.QApplication(sys.argv)
+
+        mesh_data = pgo.MeshData(vertexes=self.verts, faces=self.tris, vertexColors=self.colors, faceColors=None)
+        mesh_item = pgo.GLMeshItem(meshdata=mesh_data, shader=&#39;balloon&#39;, drawEdges=drawEdges, edgeColor=edgeColor,
+                                   smooth=False, computeNormals=False, glOptions=&#39;translucent&#39;)
+
+        widget = pgo.GLViewWidget()
+        widget.setBackgroundColor(&#39;w&#39;)
+        widget.addItem(mesh_item)
+
+        if grids:
+            # Add grids
+            gx = pgo.GLGridItem()
+            gx.setSize(x=50, y=50, z=50)
+            gx.rotate(90, 0, 1, 0)
+            gx.translate(-0.5, 24.5, 24.5)
+            widget.addItem(gx)
+            gy = pgo.GLGridItem()
+            gy.setSize(x=50, y=50, z=50)
+            gy.rotate(90, 1, 0, 0)
+            gy.translate(24.5, -0.5, 24.5)
+            widget.addItem(gy)
+            gz = pgo.GLGridItem()
+            gz.setSize(x=50, y=50, z=50)
+            gz.translate(24.5, 24.5, -0.5)
+            widget.addItem(gz)
+
+            # Add axes
+            ptsx = np.array([[-0.5, -0.5, -0.5], [50, -0.5, -0.5]])
+            pltx = pgo.GLLinePlotItem(pos=ptsx, color=(1, 0, 0, 1), width=1, antialias=True)
+            widget.addItem(pltx)
+            ptsy = np.array([[-0.5, -0.5, -0.5], [-0.5, 50, -0.5]])
+            plty = pgo.GLLinePlotItem(pos=ptsy, color=(0, 1, 0, 1), width=1, antialias=True)
+            widget.addItem(plty)
+            ptsz = np.array([[-0.5, -0.5, -0.5], [-0.5, -0.5, 50]])
+            pltz = pgo.GLLinePlotItem(pos=ptsz, color=(0, 0, 1, 1), width=1, antialias=True)
+            widget.addItem(pltz)
+
+        # Set plot options
+        widget.opts[&#39;center&#39;] = qg.QVector3D(((self.model.shape[0] / self.res) / 2) + positionOffset[0],
+                                             ((self.model.shape[1] / self.res) / 2) + positionOffset[1],
+                                             ((self.model.shape[2] / self.res) / 2) + positionOffset[2])
+        widget.opts[&#39;elevation&#39;] = viewAngle[0]
+        widget.opts[&#39;azimuth&#39;] = viewAngle[1]
+        widget.opts[&#39;distance&#39;] = viewAngle[2]
+        widget.resize(resolution[0], resolution[1])
+
+        # Show plot
+        widget.setWindowTitle(str(name))
+        widget.show()
+
+        app.processEvents()
+
+        # if export: # TODO: Fix export code
+        #     widget.paintGL()
+        #     widget.grabFrameBuffer().save(str(name) + &#39;.png&#39;)
+
+        print(&#39;Close viewer to resume program&#39;)
+        app.exec_()
+        app.quit()
 
     # Export model from mesh data
     def export(self, filename: str):
@@ -787,44 +2177,149 @@ def check_adjacent_z(input_model, x_coord, y_coord, z_coord, z_dir):
 
         ----
 
-        :param filename: File name with extension
-        :return: None
+        Args:
+            filename: File name with extension
+        
+        Returns:
+            None
         &#34;&#34;&#34;
+        # Adjust coordinate scale
+        verts = np.divide(self.verts, self.res)
+
         cells = {
             &#34;triangle&#34;: self.tris
         }
 
-        output_mesh = meshio.Mesh(self.verts, cells)
+        output_mesh = meshio.Mesh(verts, cells)
         meshio.write(filename, output_mesh)</code></pre>
 </details>
 <h3>Static methods</h3>
 <dl>
-<dt id="voxelfuse.mesh.Mesh.fromVoxelModel"><code class="name flex">
-<span>def <span class="ident">fromVoxelModel</span></span>(<span>voxel_model, resolution: float = -1)</span>
+<dt id="voxelfuse.mesh.Mesh.copy"><code class="name flex">
+<span>def <span class="ident">copy</span></span>(<span>mesh)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a mesh object from a VoxelModel object.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">mesh1 = Mesh.fromVoxelModel(model1)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><p>Initialize a Mesh that is a copy of another mesh.</p>
+<h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>voxel_model</code></strong></dt>
-<dd><p>VoxelModel object to be converted to a mesh</p></dd>
-<dt><strong><code>resolution</code></strong></dt>
-<dd><p>Number of voxels per mm, -1 to use model resolution</p></dd>
+<dt><strong><code>mesh</code></strong></dt>
+<dd>Reference Mesh object</dd>
 </dl>
-<h2 id="returns">Returns:</h2>
-<dl>
-<dd><p>Mesh</p></dd>
-</dl></div>
+<h2 id="returns">Returns</h2>
+<p>Mesh</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def fromVoxelModel(cls, voxel_model, resolution: float = -1):
+def copy(cls, mesh):
+    &#34;&#34;&#34;
+    Initialize a Mesh that is a copy of another mesh.
+
+    Args:
+        mesh: Reference Mesh object
+    
+    Returns:
+        Mesh
+    &#34;&#34;&#34;
+    new_mesh = cls(np.copy(mesh.model), np.copy(mesh.verts), np.copy(mesh.colors), np.copy(mesh.tris), mesh.res)
+    return new_mesh</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.fromMeshFile"><code class="name flex">
+<span>def <span class="ident">fromMeshFile</span></span>(<span>filename: str, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Import a mesh file to a mesh object.</p>
+<hr>
+<p>Example:</p>
+<p><code>mesh1 = vf.Mesh.fromMeshFile(example.stl)</code></p>
+<hr>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>filename</code></strong></dt>
+<dd>File name with extension</dd>
+<dt><strong><code>color</code></strong></dt>
+<dd>Mesh color in the format (r, g, b, a)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Mesh</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def fromMeshFile(cls, filename: str, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+    &#34;&#34;&#34;
+    Import a mesh file to a mesh object.
+
+    ----
+
+    Example:
+
+    ``mesh1 = vf.Mesh.fromMeshFile(example.stl)``
+
+    ----
+
+    Args:
+        filename: File name with extension
+        color: Mesh color in the format (r, g, b, a)
+    
+    Returns:
+        Mesh
+    &#34;&#34;&#34;
+    # Open file
+    data = meshio.read(filename)
+
+    # Read verts
+    verts = np.array(data.points)
+
+    # Align to origin
+    x_min = np.min(verts[:, 0])
+    y_min = np.min(verts[:, 1])
+    z_min = np.min(verts[:, 2])
+    verts[:, 0] = np.subtract(verts[:, 0], x_min)
+    verts[:, 1] = np.subtract(verts[:, 1], y_min)
+    verts[:, 2] = np.subtract(verts[:, 2], z_min)
+
+    # Generate colors
+    verts_colors = generateColors(len(verts), color)
+
+    # Read tris
+    tris = []
+    for cell in data.cells:
+        if cell[0] == &#39;triangle&#39;:
+            for tri in cell[1]:
+                tris.append(tri)
+    tris = np.array(tris)
+
+    return cls(None, verts, verts_colors, tris, 1)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.fromVoxelModel"><code class="name flex">
+<span>def <span class="ident">fromVoxelModel</span></span>(<span>voxel_model: <a title="voxelfuse.voxel_model.VoxelModel" href="voxel_model.html#voxelfuse.voxel_model.VoxelModel">VoxelModel</a>, color: Tuple[float, float, float, float] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate a mesh object from a VoxelModel object.</p>
+<hr>
+<p>Example:</p>
+<p><code>mesh1 = vf.Mesh.fromVoxelModel(model1)</code></p>
+<hr>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>voxel_model</code></strong></dt>
+<dd>VoxelModel object to be converted to a mesh</dd>
+<dt><strong><code>color</code></strong></dt>
+<dd>Mesh color in the format (r, g, b, a), None to use voxel colors</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Mesh</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def fromVoxelModel(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
     &#34;&#34;&#34;
     Generate a mesh object from a VoxelModel object.
 
@@ -832,17 +2327,17 @@ def fromVoxelModel(cls, voxel_model, resolution: float = -1):
 
     Example:
 
-    ``mesh1 = Mesh.fromVoxelModel(model1)``
+    ``mesh1 = vf.Mesh.fromVoxelModel(model1)``
 
     ----
 
-    :param voxel_model: VoxelModel object to be converted to a mesh
-    :param resolution: Number of voxels per mm, -1 to use model resolution
-    :return: Mesh
+    Args:
+        voxel_model: VoxelModel object to be converted to a mesh
+        color: Mesh color in the format (r, g, b, a), None to use voxel colors
+    
+    Returns:
+        Mesh
     &#34;&#34;&#34;
-    if resolution &lt; 0:
-        resolution = voxel_model.resolution
-
     voxel_model_fit = voxel_model.fitWorkspace()
     voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
     model_materials = voxel_model_fit.materials
@@ -851,9 +2346,7 @@ def fromVoxelModel(cls, voxel_model, resolution: float = -1):
     # Find exterior voxels
     exterior_voxels_array = voxel_model_fit.difference(voxel_model_fit.erode(radius=1, connectivity=1)).voxels
     
-    x_len = len(voxel_model_array[:, 0, 0])
-    y_len = len(voxel_model_array[0, :, 0])
-    z_len = len(voxel_model_array[0, 0, :])
+    x_len, y_len, z_len = voxel_model_array.shape
     
     # Create list of exterior voxel coordinates
     exterior_voxels_coords = []
@@ -869,46 +2362,243 @@ def fromVoxelModel(cls, voxel_model, resolution: float = -1):
     # Initialize arrays
     verts = []
     verts_colors = []
+    verts_indices = np.zeros((x_len+1, y_len+1, z_len+1))
     tris = []
     vi = 1  # Tracks current vertex index
 
     # Loop through voxel_model_array data
     for voxel_coords in tqdm(exterior_voxels_coords, desc=&#39;Meshing&#39;):
-        x = voxel_coords[0]
-        y = voxel_coords[1]
-        z = voxel_coords[2]
+        x, y, z = voxel_coords
 
-        r = 0
-        g = 0
-        b = 0
+        if color is None:
+            r = 0
+            g = 0
+            b = 0
 
-        for i in range(voxel_model.materials.shape[1]-1):
-            r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;r&#39;]
-            g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;g&#39;]
-            b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;b&#39;]
+            for i in range(voxel_model.materials.shape[1]-1):
+                r = r + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;r&#39;]
+                g = g + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;g&#39;]
+                b = b + model_materials[voxel_model_array[x, y, z]][i+1] * material_properties[i][&#39;b&#39;]
 
-        r = 1 if r &gt; 1 else r
-        g = 1 if g &gt; 1 else g
-        b = 1 if b &gt; 1 else b
+            r = 1 if r &gt; 1 else r
+            g = 1 if g &gt; 1 else g
+            b = 1 if b &gt; 1 else b
 
-        a = 1 - model_materials[voxel_model_array[x, y, z]][1]
+            a = 1 - model_materials[voxel_model_array[x, y, z]][1]
 
-        voxel_color = [r, g, b, a]
+            voxel_color = [r, g, b, a]
+        else:
+            voxel_color = list(color)
 
         # Add cube vertices
-        new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, model_offsets, resolution, x, y, z, vi)
+        new_verts, verts_indices, new_tris, vi = addVerticesAndTriangles(voxel_model_array, verts_indices, model_offsets, x, y, z, vi)
         verts += new_verts
         tris += new_tris
 
         # Apply color to all vertices
-        for i in range(0, np.count_nonzero(verts_indices)):
+        for i in range(len(new_verts)):
             verts_colors.append(voxel_color)
 
-    verts = np.array(verts)
-    verts_colors = np.array(verts_colors)
-    tris = np.array(tris)
+    verts = np.array(verts, dtype=np.float32)
+    verts_colors = np.array(verts_colors, dtype=np.float32)
+    tris = np.array(tris, dtype=np.uint32)
 
-    return cls(voxel_model_array, verts, verts_colors, tris, resolution)</code></pre>
+    return cls(voxel_model_array, verts, verts_colors, tris, voxel_model.resolution)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.marchingCubes"><code class="name flex">
+<span>def <span class="ident">marchingCubes</span></span>(<span>voxel_model: <a title="voxelfuse.voxel_model.VoxelModel" href="voxel_model.html#voxelfuse.voxel_model.VoxelModel">VoxelModel</a>, smooth: bool = False, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate a mesh object from a VoxelModel object using a marching cubes algorithm.</p>
+<p>This meshing approach is best suited to high resolution models where some smoothing is acceptable.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>voxel_model</code></strong></dt>
+<dd>VoxelModel object to be converted to a mesh</dd>
+<dt><strong><code>smooth</code></strong></dt>
+<dd>Enable smoothing</dd>
+<dt><strong><code>color</code></strong></dt>
+<dd>Mesh color in the format (r, g, b, a)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def marchingCubes(cls, voxel_model: VoxelModel, smooth: bool = False, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+    &#34;&#34;&#34;
+    Generate a mesh object from a VoxelModel object using a marching cubes algorithm.
+
+    This meshing approach is best suited to high resolution models where some smoothing is acceptable.
+
+    Args:
+        voxel_model: VoxelModel object to be converted to a mesh
+        smooth: Enable smoothing
+        color: Mesh color in the format (r, g, b, a)
+    
+    Returns:
+        None
+    &#34;&#34;&#34;
+    voxel_model_fit = voxel_model.fitWorkspace().getOccupied()
+    voxels = voxel_model_fit.voxels.astype(np.uint16)
+    x, y, z = voxels.shape
+    model_offsets = voxel_model_fit.coords
+
+    voxels_padded = np.zeros((x + 2, y + 2, z + 2))
+    voxels_padded[1:-1, 1:-1, 1:-1] = voxels
+
+    if smooth:
+        voxels_padded = mcubes.smooth(voxels_padded)
+        levelset = 0
+    else:
+        levelset = 0.5
+
+    verts, tris = mcubes.marching_cubes(voxels_padded, levelset)
+
+    # Shift model to align with origin
+    verts = np.subtract(verts, 0.5)
+    verts[:, 0] = np.add(verts[:, 0], model_offsets[0])
+    verts[:, 1] = np.add(verts[:, 1], model_offsets[1])
+    verts[:, 2] = np.add(verts[:, 2], model_offsets[2])
+
+    verts_colors = generateColors(len(verts), color)
+
+    return cls(voxels_padded, verts, verts_colors, tris, voxel_model.resolution)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.simpleSquares"><code class="name flex">
+<span>def <span class="ident">simpleSquares</span></span>(<span>voxel_model: <a title="voxelfuse.voxel_model.VoxelModel" href="voxel_model.html#voxelfuse.voxel_model.VoxelModel">VoxelModel</a>, color: Tuple[float, float, float, float] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate a mesh object from a VoxelModel object using large square faces.</p>
+<p>This function can greatly reduce the file size of generated meshes. However, it may not correctly recognize
+small (1 voxel) model features and currently produces files with a nonstandard vertex arrangement. Use at your own
+risk.</p>
+<hr>
+<p>Example:</p>
+<p><code>mesh1 = vf.Mesh.simpleSquares(model1)</code></p>
+<hr>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>voxel_model</code></strong></dt>
+<dd>VoxelModel object to be converted to a mesh</dd>
+<dt><strong><code>color</code></strong></dt>
+<dd>Mesh color in the format (r, g, b, a), None to use voxel colors</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Mesh</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def simpleSquares(cls, voxel_model: VoxelModel, color: Tuple[float, float, float, float] = None):
+    &#34;&#34;&#34;
+    Generate a mesh object from a VoxelModel object using large square faces.
+
+    This function can greatly reduce the file size of generated meshes. However, it may not correctly recognize
+    small (1 voxel) model features and currently produces files with a nonstandard vertex arrangement. Use at your own
+    risk.
+
+    ----
+
+    Example:
+
+    ``mesh1 = vf.Mesh.simpleSquares(model1)``
+
+    ----
+
+    Args:
+        voxel_model: VoxelModel object to be converted to a mesh
+        color: Mesh color in the format (r, g, b, a), None to use voxel colors
+    
+    Returns:
+        Mesh
+    &#34;&#34;&#34;
+    voxel_model_fit = voxel_model.fitWorkspace()
+    voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
+    model_materials = voxel_model_fit.materials
+    model_offsets = voxel_model_fit.coords
+
+    x_len, y_len, z_len = voxel_model_array.shape
+
+    # Determine vertex types
+    vert_type = np.zeros((x_len + 1, y_len + 1, z_len + 1), dtype=np.uint8)
+    vert_color = np.zeros((x_len + 1, y_len + 1, z_len + 1, 4), dtype=np.float32)
+    for x in tqdm(range(x_len), desc=&#39;Finding voxel vertices&#39;):
+        for y in range(y_len):
+            for z in range(z_len):
+                if voxel_model_array[x, y, z] &gt; 0:
+                    vert_type[x:x+2, y:y+2, z:z+2] = 1 # Type 1 = occupied/exterior
+
+                    if color is None:
+                        r = 0
+                        g = 0
+                        b = 0
+
+                        for i in range(voxel_model.materials.shape[1] - 1):
+                            r = r + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i][&#39;r&#39;]
+                            g = g + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i][&#39;g&#39;]
+                            b = b + model_materials[voxel_model_array[x, y, z]][i + 1] * material_properties[i][&#39;b&#39;]
+
+                        r = 1 if r &gt; 1 else r
+                        g = 1 if g &gt; 1 else g
+                        b = 1 if b &gt; 1 else b
+
+                        a = 1 - model_materials[voxel_model_array[x, y, z]][1]
+
+                        voxel_color = np.array([r, g, b, a])
+                    else:
+                        voxel_color = np.array(color)
+
+                    for cx in range(x, x+2):
+                        for cy in range(y, y+2):
+                            for cz in range(z, z+2):
+                                vert_color[cx, cy, cz, :] = voxel_color
+
+    for x in tqdm(range(1, x_len), desc=&#39;Finding interior vertices&#39;):
+        for y in range(1, y_len):
+            for z in range(1, z_len):
+                vert_type = markInterior(vert_type, x, y, z)
+
+    for x in tqdm(range(0, x_len+1), desc=&#39;Finding feature vertices&#39;):
+        for y in range(0, y_len+1):
+            for z in range(0, z_len+1):
+                vert_type = markInsideCorner(vert_type, x, y, z)
+
+    # Initialize arrays
+    vi = 0 # Tracks current vertex index
+    verts = []
+    colors = []
+    tris = []
+    quads = []
+    vert_index = np.multiply(np.ones_like(vert_type, dtype=np.int32), -1)
+
+    for x in tqdm(range(x_len + 1), desc=&#39;Meshing&#39;):
+        for y in range(y_len + 1):
+            for z in range(z_len + 1):
+                dirs = [[1, 1, 0], [1, 0, 1], [0, 1, 1]]
+                for d in dirs:
+                    vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads = findSquare(vi, vert_type, vert_index, vert_color, voxel_model_array, x, y, z, d[0], d[1], d[2])
+                    verts += new_verts
+                    colors += new_colors
+                    tris += new_tris
+                    quads += new_quads
+
+    verts = np.array(verts, dtype=np.float32)
+    colors = np.array(colors, dtype=np.float32)
+    tris = np.array(tris, dtype=np.uint32)
+    quads = np.array(quads, dtype=np.uint32)
+
+    # Shift model to align with origin
+    verts[:, 0] = np.add(verts[:, 0], model_offsets[0])
+    verts[:, 1] = np.add(verts[:, 1], model_offsets[1])
+    verts[:, 2] = np.add(verts[:, 2], model_offsets[2])
+
+    return cls(voxel_model_array, verts, colors, tris, voxel_model.resolution)</code></pre>
 </details>
 </dd>
 </dl>
@@ -919,19 +2609,17 @@ def fromVoxelModel(cls, voxel_model, resolution: float = -1):
 </code></dt>
 <dd>
 <div class="desc"><p>Save a copy of the mesh with the specified name and file format.</p>
-<hr class="docutils" />
+<hr>
 <p>Example:</p>
-<p><span class="docutils literal"><span class="pre">mesh1.export('result.stl')</span></span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<p><code>mesh1.export('result.stl')</code></p>
+<hr>
+<h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>filename</code></strong></dt>
-<dd><p>File name with extension</p></dd>
+<dd>File name with extension</dd>
 </dl>
-<h2 id="returns">Returns:</h2>
-<dl>
-<dd><p>None</p></dd>
-</dl></div>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -948,15 +2636,430 @@ def fromVoxelModel(cls, voxel_model, resolution: float = -1):
 
     ----
 
-    :param filename: File name with extension
-    :return: None
+    Args:
+        filename: File name with extension
+    
+    Returns:
+        None
     &#34;&#34;&#34;
+    # Adjust coordinate scale
+    verts = np.divide(self.verts, self.res)
+
     cells = {
         &#34;triangle&#34;: self.tris
     }
 
-    output_mesh = meshio.Mesh(self.verts, cells)
+    output_mesh = meshio.Mesh(verts, cells)
     meshio.write(filename, output_mesh)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.plot"><code class="name flex">
+<span>def <span class="ident">plot</span></span>(<span>self, plot=None, name: str = 'mesh', wireframe: bool = True, mm_scale: bool = False, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add mesh to a K3D plot in Jupyter Notebook.</p>
+<p>Additional display options:</p>
+<ul>
+<li>flat_shading: <code>bool</code>. Whether mesh should display with flat shading.</li>
+<li>opacity: <code>float</code>. Opacity of mesh.</li>
+<li>volume: <code>array_like</code>. 3D array of <code>float</code></li>
+<li>volume_bounds: <code>array_like</code>. 6-element tuple specifying the bounds of the volume data (x0, x1, y0, y1, z0, z1)</li>
+<li>opacity_function: <code>array</code>. A list of float tuples (attribute value, opacity), sorted by attribute value. The first tuples should have value 0.0, the last 1.0; opacity is in the range 0.0 to 1.0.</li>
+<li>side: <code>string</code>. Control over which side to render for a mesh. Legal values are <code>front</code>, <code>back</code>, <code>double</code>.</li>
+<li>texture: <code>bytes</code>. Image data in a specific format.</li>
+<li>texture_file_format: <code>str</code>. Format of the data, it should be the second part of MIME format of type 'image/', for example 'jpeg', 'png', 'gif', 'tiff'.</li>
+<li>uvs: <code>array_like</code>. Array of float uvs for the texturing, coresponding to each vertex.</li>
+<li>kwargs: <code>dict</code>. Dictionary arguments to configure transform and model_matrix.</li>
+</ul>
+<p>More information available at: <a href="https://github.com/K3D-tools/K3D-jupyter">https://github.com/K3D-tools/K3D-jupyter</a></p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>plot</code></strong></dt>
+<dd>Plot object to add mesh to</dd>
+<dt><strong><code>name</code></strong></dt>
+<dd>Mesh name</dd>
+<dt><strong><code>wireframe</code></strong></dt>
+<dd>Enable displaying mesh as a wireframe</dd>
+<dt><strong><code>mm_scale</code></strong></dt>
+<dd>Enable to use a mm plot scale, disable to use a voxel plot scale</dd>
+<dt><strong><code>kwargs</code></strong></dt>
+<dd>Additional display options (see above)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>K3D plot object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot(self, plot = None, name: str = &#39;mesh&#39;, wireframe: bool = True, mm_scale: bool = False, **kwargs):
+    &#34;&#34;&#34;
+    Add mesh to a K3D plot in Jupyter Notebook.
+
+    Additional display options:
+
+    - flat_shading: `bool`. Whether mesh should display with flat shading.
+    - opacity: `float`. Opacity of mesh.
+    - volume: `array_like`. 3D array of `float`
+    - volume_bounds: `array_like`. 6-element tuple specifying the bounds of the volume data (x0, x1, y0, y1, z0, z1)
+    - opacity_function: `array`. A list of float tuples (attribute value, opacity), sorted by attribute value. The first tuples should have value 0.0, the last 1.0; opacity is in the range 0.0 to 1.0.
+    - side: `string`. Control over which side to render for a mesh. Legal values are `front`, `back`, `double`.
+    - texture: `bytes`. Image data in a specific format.
+    - texture_file_format: `str`. Format of the data, it should be the second part of MIME format of type &#39;image/&#39;, for example &#39;jpeg&#39;, &#39;png&#39;, &#39;gif&#39;, &#39;tiff&#39;.
+    - uvs: `array_like`. Array of float uvs for the texturing, coresponding to each vertex.
+    - kwargs: `dict`. Dictionary arguments to configure transform and model_matrix.
+
+    More information available at: https://github.com/K3D-tools/K3D-jupyter
+
+    Args:
+        plot: Plot object to add mesh to
+        name: Mesh name
+        wireframe: Enable displaying mesh as a wireframe
+        mm_scale: Enable to use a mm plot scale, disable to use a voxel plot scale
+        kwargs: Additional display options (see above)
+    
+    Returns:
+        K3D plot object
+    &#34;&#34;&#34;
+    # Get verts
+    verts = self.verts
+
+    # Adjust coordinate scale
+    if mm_scale:
+        verts = np.divide(verts, self.res)
+
+    # Get tris
+    tris = self.tris
+
+    # Get colors
+    colors = []
+    for c in self.colors:
+        colors.append(rgb_to_hex(c[0], c[1], c[2]))
+    colors = np.array(colors, dtype=np.uint32)
+
+    # Plot
+    if plot is None:
+        plot = k3d.plot()
+
+    plot += k3d.mesh(verts.astype(np.float32), tris.astype(np.uint32), colors=colors, name=name, wireframe=wireframe, **kwargs)
+    return plot</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.scale"><code class="name flex">
+<span>def <span class="ident">scale</span></span>(<span>self, factor: float)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Apply a scaling factor to a mesh.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>factor</code></strong></dt>
+<dd>Scaling factor</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Mesh</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def scale(self, factor: float):
+    &#34;&#34;&#34;
+    Apply a scaling factor to a mesh.
+
+    Args:
+        factor: Scaling factor
+    
+    Returns:
+        Mesh
+    &#34;&#34;&#34;
+    new_mesh = Mesh.copy(self)
+    new_mesh.verts = np.multiply(self.verts, factor)
+    return new_mesh</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.setColor"><code class="name flex">
+<span>def <span class="ident">setColor</span></span>(<span>self, color: Tuple[float, float, float, float])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Change the color of a mesh.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>color</code></strong></dt>
+<dd>Mesh color in the format (r, g, b, a)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Mesh</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setColor(self, color: Tuple[float, float, float, float]):
+    &#34;&#34;&#34;
+    Change the color of a mesh.
+
+    Args:
+        color: Mesh color in the format (r, g, b, a)
+    
+    Returns:
+        Mesh
+    &#34;&#34;&#34;
+    new_mesh = Mesh.copy(self)
+    new_mesh.colors = generateColors(len(self.verts), color)
+    return new_mesh</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.setResolution"><code class="name flex">
+<span>def <span class="ident">setResolution</span></span>(<span>self, resolution: float)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Change the defined resolution of a mesh.</p>
+<p>The mesh resolution will determine the scale of plots and exported mesh files.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>resolution</code></strong></dt>
+<dd>Number of voxels per mm (higher number = finer resolution)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Mesh</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setResolution(self, resolution: float):
+    &#34;&#34;&#34;
+    Change the defined resolution of a mesh.
+
+    The mesh resolution will determine the scale of plots and exported mesh files.
+
+    Args:
+        resolution: Number of voxels per mm (higher number = finer resolution)
+    
+    Returns:
+        Mesh
+    &#34;&#34;&#34;
+    new_mesh = Mesh.copy(self)
+    new_mesh.res = resolution
+    return new_mesh</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.simplify"><code class="name flex">
+<span>def <span class="ident">simplify</span></span>(<span>self, percent_verts: float, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Simplify a mesh to contain a given percentage of the original number of vertices.</p>
+<p>More information on the simplification algorithm is available at: <a href="https://github.com/jannessm/quadric-mesh-simplification">https://github.com/jannessm/quadric-mesh-simplification</a></p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>percent_verts</code></strong></dt>
+<dd>Percentage of vertex count allowed in the result mesh, 0-1</dd>
+<dt><strong><code>color</code></strong></dt>
+<dd>Mesh color in the format (r, g, b, a)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Mesh</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def simplify(self, percent_verts: float, color: Tuple[float, float, float, float] = (0.8, 0.8, 0.8, 1)):
+    &#34;&#34;&#34;
+    Simplify a mesh to contain a given percentage of the original number of vertices.
+
+    More information on the simplification algorithm is available at: https://github.com/jannessm/quadric-mesh-simplification
+
+    Args:
+        percent_verts: Percentage of vertex count allowed in the result mesh, 0-1
+        color: Mesh color in the format (r, g, b, a)
+    
+    Returns:
+        Mesh
+    &#34;&#34;&#34;
+    num_verts = self.verts.shape[0]
+    target_verts = num_verts * percent_verts
+
+    new_verts, new_tris = simplify_mesh(positions=self.verts.astype(np.double), face=self.tris.astype(np.uint32), num_nodes=target_verts)
+    verts_colors = generateColors(len(new_verts), color)
+
+    return Mesh(np.copy(self.model), new_verts, verts_colors, new_tris, self.res)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.translate"><code class="name flex">
+<span>def <span class="ident">translate</span></span>(<span>self, vector: Tuple[float, float, float])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Translate a model by the specified vector.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>vector</code></strong></dt>
+<dd>Translation vector in voxels</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Mesh</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def translate(self, vector: Tuple[float, float, float]):
+    &#34;&#34;&#34;
+    Translate a model by the specified vector.
+
+    Args:
+        vector: Translation vector in voxels
+    
+    Returns:
+        Mesh
+    &#34;&#34;&#34;
+    new_mesh = Mesh.copy(self)
+    new_mesh.verts[:, 0] = np.add(self.verts[:, 0], vector[0])
+    new_mesh.verts[:, 1] = np.add(self.verts[:, 1], vector[1])
+    new_mesh.verts[:, 2] = np.add(self.verts[:, 2], vector[2])
+    return new_mesh</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.translateMM"><code class="name flex">
+<span>def <span class="ident">translateMM</span></span>(<span>self, vector: Tuple[float, float, float])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Translate a model by the specified vector.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>vector</code></strong></dt>
+<dd>Translation vector in mm</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Mesh</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def translateMM(self, vector: Tuple[float, float, float]):
+    &#34;&#34;&#34;
+    Translate a model by the specified vector.
+
+    Args:
+        vector: Translation vector in mm
+    
+    Returns:
+        Mesh
+    &#34;&#34;&#34;
+    xV = vector[0] * self.res
+    yV = vector[1] * self.res
+    zV = vector[2] * self.res
+    new_mesh = self.translate((xV, yV, zV))
+    return new_mesh</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.mesh.Mesh.viewer"><code class="name flex">
+<span>def <span class="ident">viewer</span></span>(<span>self, grids: bool = False, drawEdges: bool = True, edgeColor: Tuple[float, float, float, float] = (0, 0, 0, 0.5), positionOffset: Tuple[int, int, int] = (0, 0, 0), viewAngle: Tuple[int, int, int] = (40, 30, 300), resolution: Tuple[int, int] = (1280, 720), name: str = 'Plot 1', export: bool = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Display the mesh in a 3D viewer window.</p>
+<p>This function will block program execution until viewer window is closed</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>grids</code></strong></dt>
+<dd>Enable/disable display of XYZ axes and grids</dd>
+<dt><strong><code>drawEdges</code></strong></dt>
+<dd>Enable/disable display of voxel edges</dd>
+<dt><strong><code>edgeColor</code></strong></dt>
+<dd>Set display color of voxel edges</dd>
+<dt><strong><code>positionOffset</code></strong></dt>
+<dd>Offset of the camera target from the center of the model in voxels</dd>
+<dt><strong><code>viewAngle</code></strong></dt>
+<dd>Elevation, Azimuth, and Distance of the camera</dd>
+<dt><strong><code>resolution</code></strong></dt>
+<dd>Window resolution in px</dd>
+<dt><strong><code>name</code></strong></dt>
+<dd>Plot window name</dd>
+<dt><strong><code>export</code></strong></dt>
+<dd>Enable/disable exporting a screenshot of the plot</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def viewer(self, grids: bool = False, drawEdges: bool = True,
+           edgeColor: Tuple[float, float, float, float] = (0, 0, 0, 0.5),
+           positionOffset: Tuple[int, int, int] = (0, 0, 0), viewAngle: Tuple[int, int, int] = (40, 30, 300),
+           resolution: Tuple[int, int] = (1280, 720), name: str = &#39;Plot 1&#39;, export: bool = False):
+    &#34;&#34;&#34;
+    Display the mesh in a 3D viewer window.
+
+    This function will block program execution until viewer window is closed
+
+    Args:
+        grids: Enable/disable display of XYZ axes and grids
+        drawEdges: Enable/disable display of voxel edges
+        edgeColor: Set display color of voxel edges
+        positionOffset: Offset of the camera target from the center of the model in voxels
+        viewAngle: Elevation, Azimuth, and Distance of the camera
+        resolution: Window resolution in px
+        name: Plot window name
+        export: Enable/disable exporting a screenshot of the plot
+    
+    Returns:
+        None
+    &#34;&#34;&#34;
+    app = qtw.QApplication(sys.argv)
+
+    mesh_data = pgo.MeshData(vertexes=self.verts, faces=self.tris, vertexColors=self.colors, faceColors=None)
+    mesh_item = pgo.GLMeshItem(meshdata=mesh_data, shader=&#39;balloon&#39;, drawEdges=drawEdges, edgeColor=edgeColor,
+                               smooth=False, computeNormals=False, glOptions=&#39;translucent&#39;)
+
+    widget = pgo.GLViewWidget()
+    widget.setBackgroundColor(&#39;w&#39;)
+    widget.addItem(mesh_item)
+
+    if grids:
+        # Add grids
+        gx = pgo.GLGridItem()
+        gx.setSize(x=50, y=50, z=50)
+        gx.rotate(90, 0, 1, 0)
+        gx.translate(-0.5, 24.5, 24.5)
+        widget.addItem(gx)
+        gy = pgo.GLGridItem()
+        gy.setSize(x=50, y=50, z=50)
+        gy.rotate(90, 1, 0, 0)
+        gy.translate(24.5, -0.5, 24.5)
+        widget.addItem(gy)
+        gz = pgo.GLGridItem()
+        gz.setSize(x=50, y=50, z=50)
+        gz.translate(24.5, 24.5, -0.5)
+        widget.addItem(gz)
+
+        # Add axes
+        ptsx = np.array([[-0.5, -0.5, -0.5], [50, -0.5, -0.5]])
+        pltx = pgo.GLLinePlotItem(pos=ptsx, color=(1, 0, 0, 1), width=1, antialias=True)
+        widget.addItem(pltx)
+        ptsy = np.array([[-0.5, -0.5, -0.5], [-0.5, 50, -0.5]])
+        plty = pgo.GLLinePlotItem(pos=ptsy, color=(0, 1, 0, 1), width=1, antialias=True)
+        widget.addItem(plty)
+        ptsz = np.array([[-0.5, -0.5, -0.5], [-0.5, -0.5, 50]])
+        pltz = pgo.GLLinePlotItem(pos=ptsz, color=(0, 0, 1, 1), width=1, antialias=True)
+        widget.addItem(pltz)
+
+    # Set plot options
+    widget.opts[&#39;center&#39;] = qg.QVector3D(((self.model.shape[0] / self.res) / 2) + positionOffset[0],
+                                         ((self.model.shape[1] / self.res) / 2) + positionOffset[1],
+                                         ((self.model.shape[2] / self.res) / 2) + positionOffset[2])
+    widget.opts[&#39;elevation&#39;] = viewAngle[0]
+    widget.opts[&#39;azimuth&#39;] = viewAngle[1]
+    widget.opts[&#39;distance&#39;] = viewAngle[2]
+    widget.resize(resolution[0], resolution[1])
+
+    # Show plot
+    widget.setWindowTitle(str(name))
+    widget.show()
+
+    app.processEvents()
+
+    # if export: # TODO: Fix export code
+    #     widget.paintGL()
+    #     widget.grabFrameBuffer().save(str(name) + &#39;.png&#39;)
+
+    print(&#39;Close viewer to resume program&#39;)
+    app.exec_()
+    app.quit()</code></pre>
 </details>
 </dd>
 </dl>
@@ -978,18 +3081,32 @@ def fromVoxelModel(cls, voxel_model, resolution: float = -1):
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="voxelfuse.mesh.addVerticesAndTriangles" href="#voxelfuse.mesh.addVerticesAndTriangles">addVerticesAndTriangles</a></code></li>
-<li><code><a title="voxelfuse.mesh.check_adjacent_x" href="#voxelfuse.mesh.check_adjacent_x">check_adjacent_x</a></code></li>
-<li><code><a title="voxelfuse.mesh.check_adjacent_y" href="#voxelfuse.mesh.check_adjacent_y">check_adjacent_y</a></code></li>
-<li><code><a title="voxelfuse.mesh.check_adjacent_z" href="#voxelfuse.mesh.check_adjacent_z">check_adjacent_z</a></code></li>
+<li><code><a title="voxelfuse.mesh.check_adjacent" href="#voxelfuse.mesh.check_adjacent">check_adjacent</a></code></li>
+<li><code><a title="voxelfuse.mesh.findSquare" href="#voxelfuse.mesh.findSquare">findSquare</a></code></li>
+<li><code><a title="voxelfuse.mesh.generateColors" href="#voxelfuse.mesh.generateColors">generateColors</a></code></li>
+<li><code><a title="voxelfuse.mesh.markInsideCorner" href="#voxelfuse.mesh.markInsideCorner">markInsideCorner</a></code></li>
+<li><code><a title="voxelfuse.mesh.markInterior" href="#voxelfuse.mesh.markInterior">markInterior</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
 <h4><code><a title="voxelfuse.mesh.Mesh" href="#voxelfuse.mesh.Mesh">Mesh</a></code></h4>
-<ul class="">
+<ul class="two-column">
+<li><code><a title="voxelfuse.mesh.Mesh.copy" href="#voxelfuse.mesh.Mesh.copy">copy</a></code></li>
 <li><code><a title="voxelfuse.mesh.Mesh.export" href="#voxelfuse.mesh.Mesh.export">export</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.fromMeshFile" href="#voxelfuse.mesh.Mesh.fromMeshFile">fromMeshFile</a></code></li>
 <li><code><a title="voxelfuse.mesh.Mesh.fromVoxelModel" href="#voxelfuse.mesh.Mesh.fromVoxelModel">fromVoxelModel</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.marchingCubes" href="#voxelfuse.mesh.Mesh.marchingCubes">marchingCubes</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.plot" href="#voxelfuse.mesh.Mesh.plot">plot</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.scale" href="#voxelfuse.mesh.Mesh.scale">scale</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.setColor" href="#voxelfuse.mesh.Mesh.setColor">setColor</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.setResolution" href="#voxelfuse.mesh.Mesh.setResolution">setResolution</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.simpleSquares" href="#voxelfuse.mesh.Mesh.simpleSquares">simpleSquares</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.simplify" href="#voxelfuse.mesh.Mesh.simplify">simplify</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.translate" href="#voxelfuse.mesh.Mesh.translate">translate</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.translateMM" href="#voxelfuse.mesh.Mesh.translateMM">translateMM</a></code></li>
+<li><code><a title="voxelfuse.mesh.Mesh.viewer" href="#voxelfuse.mesh.Mesh.viewer">viewer</a></code></li>
 </ul>
 </li>
 </ul>
@@ -998,7 +3115,7 @@ def fromVoxelModel(cls, voxel_model, resolution: float = -1):
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2.dev21+g6d35cca</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 </body>
 </html>

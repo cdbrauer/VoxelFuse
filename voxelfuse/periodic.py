@@ -23,13 +23,16 @@ def gyroid(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: T
     However, due to the voxel-based representation, this "surface" will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     """
     s = (2 * math.pi) / scale  # scaling multipler
 
@@ -61,13 +64,16 @@ def schwarzP(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords:
     However, due to the voxel-based representation, this "surface" will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     """
     s = (2 * math.pi) / scale  # scaling multipler
 
@@ -99,13 +105,16 @@ def schwarzD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords:
     However, due to the voxel-based representation, this "surface" will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     """
     s = (2 * math.pi) / scale # scaling multipler
 
@@ -138,13 +147,16 @@ def FRD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tupl
     However, due to the voxel-based representation, this "surface" will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     """
     s = (2 * math.pi) / scale # scaling multipler
 

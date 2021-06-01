@@ -34,11 +34,12 @@ class Mesh:
         """
         Initialize a Mesh object.
 
-        :param voxels: Voxel data array
-        :param verts: List of coordinates of surface vertices
-        :param verts_colors: List of colors associated with each vertex
-        :param tris: List of the sets of vertices associated with triangular faces
-        :param resolution: Number of voxels per mm
+        Args:
+            voxels: Voxel data array
+            verts: List of coordinates of surface vertices
+            verts_colors: List of colors associated with each vertex
+            tris: List of the sets of vertices associated with triangular faces
+            resolution: Number of voxels per mm
         """
         if voxels is not None:
             self.model = voxels
@@ -63,9 +64,12 @@ class Mesh:
 
         ----
 
-        :param filename: File name with extension
-        :param color: Mesh color in the format (r, g, b, a)
-        :return: Mesh
+        Args:
+            filename: File name with extension
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            Mesh
         """
         # Open file
         data = meshio.read(filename)
@@ -107,9 +111,12 @@ class Mesh:
 
         ----
 
-        :param voxel_model: VoxelModel object to be converted to a mesh
-        :param color: Mesh color in the format (r, g, b, a), None to use voxel colors
-        :return: Mesh
+        Args:
+            voxel_model: VoxelModel object to be converted to a mesh
+            color: Mesh color in the format (r, g, b, a), None to use voxel colors
+        
+        Returns:
+            Mesh
         """
         voxel_model_fit = voxel_model.fitWorkspace()
         voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
@@ -195,9 +202,12 @@ class Mesh:
 
         ----
 
-        :param voxel_model: VoxelModel object to be converted to a mesh
-        :param color: Mesh color in the format (r, g, b, a), None to use voxel colors
-        :return: Mesh
+        Args:
+            voxel_model: VoxelModel object to be converted to a mesh
+            color: Mesh color in the format (r, g, b, a), None to use voxel colors
+        
+        Returns:
+            Mesh
         """
         voxel_model_fit = voxel_model.fitWorkspace()
         voxel_model_array = voxel_model_fit.voxels.astype(np.uint16)
@@ -288,10 +298,13 @@ class Mesh:
 
         This meshing approach is best suited to high resolution models where some smoothing is acceptable.
 
-        :param voxel_model: VoxelModel object to be converted to a mesh
-        :param smooth: Enable smoothing
-        :param color: Mesh color in the format (r, g, b, a)
-        :return: None
+        Args:
+            voxel_model: VoxelModel object to be converted to a mesh
+            smooth: Enable smoothing
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            None
         """
         voxel_model_fit = voxel_model.fitWorkspace().getOccupied()
         voxels = voxel_model_fit.voxels.astype(np.uint16)
@@ -324,8 +337,11 @@ class Mesh:
         """
         Initialize a Mesh that is a copy of another mesh.
 
-        :param mesh: Reference Mesh object
-        :return: Mesh
+        Args:
+            mesh: Reference Mesh object
+        
+        Returns:
+            Mesh
         """
         new_mesh = cls(np.copy(mesh.model), np.copy(mesh.verts), np.copy(mesh.colors), np.copy(mesh.tris), mesh.res)
         return new_mesh
@@ -336,8 +352,11 @@ class Mesh:
 
         The mesh resolution will determine the scale of plots and exported mesh files.
 
-        :param resolution: Number of voxels per mm (higher number = finer resolution)
-        :return: Mesh
+        Args:
+            resolution: Number of voxels per mm (higher number = finer resolution)
+        
+        Returns:
+            Mesh
         """
         new_mesh = Mesh.copy(self)
         new_mesh.res = resolution
@@ -347,8 +366,11 @@ class Mesh:
         """
         Apply a scaling factor to a mesh.
 
-        :param factor: Scaling factor
-        :return: Mesh
+        Args:
+            factor: Scaling factor
+        
+        Returns:
+            Mesh
         """
         new_mesh = Mesh.copy(self)
         new_mesh.verts = np.multiply(self.verts, factor)
@@ -360,9 +382,12 @@ class Mesh:
 
         More information on the simplification algorithm is available at: https://github.com/jannessm/quadric-mesh-simplification
 
-        :param percent_verts: Percentage of vertex count allowed in the result mesh, 0-1
-        :param color: Mesh color in the format (r, g, b, a)
-        :return: Mesh
+        Args:
+            percent_verts: Percentage of vertex count allowed in the result mesh, 0-1
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            Mesh
         """
         num_verts = self.verts.shape[0]
         target_verts = num_verts * percent_verts
@@ -376,8 +401,11 @@ class Mesh:
         """
         Translate a model by the specified vector.
 
-        :param vector: Translation vector in voxels
-        :return: Mesh
+        Args:
+            vector: Translation vector in voxels
+        
+        Returns:
+            Mesh
         """
         new_mesh = Mesh.copy(self)
         new_mesh.verts[:, 0] = np.add(self.verts[:, 0], vector[0])
@@ -389,8 +417,11 @@ class Mesh:
         """
         Translate a model by the specified vector.
 
-        :param vector: Translation vector in mm
-        :return: Mesh
+        Args:
+            vector: Translation vector in mm
+        
+        Returns:
+            Mesh
         """
         xV = vector[0] * self.res
         yV = vector[1] * self.res
@@ -402,8 +433,11 @@ class Mesh:
         """
         Change the color of a mesh.
 
-        :param color: Mesh color in the format (r, g, b, a)
-        :return: Mesh
+        Args:
+            color: Mesh color in the format (r, g, b, a)
+        
+        Returns:
+            Mesh
         """
         new_mesh = Mesh.copy(self)
         new_mesh.colors = generateColors(len(self.verts), color)
@@ -414,37 +448,29 @@ class Mesh:
         Add mesh to a K3D plot in Jupyter Notebook.
 
         Additional display options:
-            flat_shading: `bool`.
-                Whether mesh should display with flat shading.
-            opacity: `float`.
-                Opacity of mesh.
-            volume: `array_like`.
-                3D array of `float`
-            volume_bounds: `array_like`.
-                6-element tuple specifying the bounds of the volume data (x0, x1, y0, y1, z0, z1)
-            opacity_function: `array`.
-                A list of float tuples (attribute value, opacity), sorted by attribute value. The first
-                typles should have value 0.0, the last 1.0; opacity is in the range 0.0 to 1.0.
-            side: `string`.
-                Control over which side to render for a mesh. Legal values are `front`, `back`, `double`.
-            texture: `bytes`.
-                Image data in a specific format.
-            texture_file_format: `str`.
-                Format of the data, it should be the second part of MIME format of type 'image/',
-                for example 'jpeg', 'png', 'gif', 'tiff'.
-            uvs: `array_like`.
-                Array of float uvs for the texturing, coresponding to each vertex.
-            kwargs: `dict`.
-                Dictionary arguments to configure transform and model_matrix.
+
+        - flat_shading: `bool`. Whether mesh should display with flat shading.
+        - opacity: `float`. Opacity of mesh.
+        - volume: `array_like`. 3D array of `float`
+        - volume_bounds: `array_like`. 6-element tuple specifying the bounds of the volume data (x0, x1, y0, y1, z0, z1)
+        - opacity_function: `array`. A list of float tuples (attribute value, opacity), sorted by attribute value. The first tuples should have value 0.0, the last 1.0; opacity is in the range 0.0 to 1.0.
+        - side: `string`. Control over which side to render for a mesh. Legal values are `front`, `back`, `double`.
+        - texture: `bytes`. Image data in a specific format.
+        - texture_file_format: `str`. Format of the data, it should be the second part of MIME format of type 'image/', for example 'jpeg', 'png', 'gif', 'tiff'.
+        - uvs: `array_like`. Array of float uvs for the texturing, coresponding to each vertex.
+        - kwargs: `dict`. Dictionary arguments to configure transform and model_matrix.
 
         More information available at: https://github.com/K3D-tools/K3D-jupyter
 
-        :param plot: Plot object to add mesh to
-        :param name: Mesh name
-        :param wireframe: Enable displaying mesh as a wireframe
-        :param mm_scale: Enable to use a mm plot scale, disable to use a voxel plot scale
-        :param kwargs: Additional display options (see above)
-        :return: K3D plot object
+        Args:
+            plot: Plot object to add mesh to
+            name: Mesh name
+            wireframe: Enable displaying mesh as a wireframe
+            mm_scale: Enable to use a mm plot scale, disable to use a voxel plot scale
+            kwargs: Additional display options (see above)
+        
+        Returns:
+            K3D plot object
         """
         # Get verts
         verts = self.verts
@@ -478,15 +504,18 @@ class Mesh:
 
         This function will block program execution until viewer window is closed
 
-        :param grids: Enable/disable display of XYZ axes and grids
-        :param drawEdges: Enable/disable display of voxel edges
-        :param edgeColor: Set display color of voxel edges
-        :param positionOffset: Offset of the camera target from the center of the model in voxels
-        :param viewAngle: Elevation, Azimuth, and Distance of the camera
-        :param resolution: Window resolution in px
-        :param name: Plot window name
-        :param export: Enable/disable exporting a screenshot of the plot
-        :return: None
+        Args:
+            grids: Enable/disable display of XYZ axes and grids
+            drawEdges: Enable/disable display of voxel edges
+            edgeColor: Set display color of voxel edges
+            positionOffset: Offset of the camera target from the center of the model in voxels
+            viewAngle: Elevation, Azimuth, and Distance of the camera
+            resolution: Window resolution in px
+            name: Plot window name
+            export: Enable/disable exporting a screenshot of the plot
+        
+        Returns:
+            None
         """
         app = qtw.QApplication(sys.argv)
 
@@ -562,8 +591,11 @@ class Mesh:
 
         ----
 
-        :param filename: File name with extension
-        :return: None
+        Args:
+            filename: File name with extension
+        
+        Returns:
+            None
         """
         # Adjust coordinate scale
         verts = np.divide(self.verts, self.res)
@@ -580,9 +612,12 @@ def generateColors(n: int, color: Tuple[float, float, float, float] = (0.8, 0.8,
     """
     Generate a colors list with the given number of elements
 
-    :param n: Number of vertices in target model
-    :param color: Mesh color in the format (r, g, b, a)
-    :return: List of vertex colors
+    Args:
+        n: Number of vertices in target model
+        color: Mesh color in the format (r, g, b, a)
+    
+    Returns:
+        List of vertex colors
     """
     verts_colors = []
     voxel_color = list(color)
@@ -596,16 +631,18 @@ def check_adjacent(input_model: np.ndarray, x_coord: int, y_coord: int, z_coord:
     """
     Check if a target voxel has another voxel adjacent to it in the specified direction.
 
-    :param input_model: VoxelModel.voxels
-    :param x_coord: Target voxel X location
-    :param y_coord: Target voxel Y location
-    :param z_coord: Target voxel Z location
-    :param x_dir: Specify X direction and distance (usually 1 or -1)
-    :param y_dir: Specify Y direction and distance (usually 1 or -1)
-    :param z_dir: Specify Z direction and distance (usually 1 or -1)
-    :return: Adjacent voxel present/not present
+    Args:
+        input_model: VoxelModel.voxels
+        x_coord: Target voxel X location
+        y_coord: Target voxel Y location
+        z_coord: Target voxel Z location
+        x_dir: Specify X direction and distance (usually 1 or -1)
+        y_dir: Specify Y direction and distance (usually 1 or -1)
+        z_dir: Specify Z direction and distance (usually 1 or -1)
+    
+    Returns:
+        Adjacent voxel present/not present
     """
-    y_len = len(input_model[0, :, 0])
     x_coord_new = x_coord+x_dir
     y_coord_new = y_coord+y_dir
     z_coord_new = z_coord+z_dir
@@ -624,14 +661,17 @@ def addVerticesAndTriangles(voxel_model_array: np.ndarray, verts_indices: np.nda
     """
     Find the applicable mesh vertices and triangles for a target voxel.
 
-    :param voxel_model_array: VoxelModel.voxels
-    :param verts_indices: verts indices array
-    :param model_offsets: VoxelModel.coords
-    :param x: Target voxel X location
-    :param y: Target voxel Y location
-    :param z: Target voxel Z location
-    :param vi: Current vertex index
-    :return: New verts, Updated verts indices array, New tris, Updated current vert index
+    Args:
+        voxel_model_array: VoxelModel.voxels
+        verts_indices: verts indices array
+        model_offsets: VoxelModel.coords
+        x: Target voxel X location
+        y: Target voxel Y location
+        z: Target voxel Z location
+        vi: Current vertex index
+
+    Returns:
+        New verts, Updated verts indices array, New tris, Updated current vert index
     """
     adjacent = [
         [check_adjacent(voxel_model_array, x, y, z, 1, 0, 0), check_adjacent(voxel_model_array, x, y, z, -1, 0, 0)],
@@ -738,11 +778,14 @@ def markInterior(vert_type: np.ndarray, x: int, y: int, z: int):
     """
     Determine if target voxel is an interior voxel.
 
-    :param vert_type: Array of vertex types
-    :param x: Target voxel X
-    :param y: Target voxel Y
-    :param z: Target voxel Z
-    :return: Updated array of vertex types
+    Args:
+        vert_type: Array of vertex types
+        x: Target voxel X
+        y: Target voxel Y
+        z: Target voxel Z
+
+    Returns:
+        Updated array of vertex types
     """
     if np.all(vert_type[x-1:x+2, y-1:y+2, z-1:z+2] != 0):
         vert_type[x, y, z] = 3 # Type 3 = interior/already included in a square
@@ -753,11 +796,14 @@ def markInsideCorner(vert_type, x, y, z):
     """
     Determine if target voxel is an inside corner.
 
-    :param vert_type: Array of vertex types
-    :param x: Target voxel X
-    :param y: Target voxel Y
-    :param z: Target voxel Z
-    :return: Updated array of vertex types
+    Args:
+        vert_type: Array of vertex types
+        x: Target voxel X
+        y: Target voxel Y
+        z: Target voxel Z
+
+    Returns:
+        Updated array of vertex types
     """
     x_len, y_len, z_len = vert_type.shape
     adjacent_empty = [True, True, True, True, True, True]
@@ -795,18 +841,21 @@ def findSquare(vi: int, vert_type: np.ndarray, vert_index: np.ndarray, vert_colo
     """
     Find the largest square starting from a given point and generate the corresponding points and tris.
 
-    :param vi: Current vertex index
-    :param vert_type: Array of vertex types
-    :param vert_index: Array of vertex indices
-    :param vert_color: Array of vertex colors
-    :param voxel_model_array: Voxel data array
-    :param x: Target voxel X
-    :param y: Target voxel Y
-    :param z: Target voxel Z
-    :param dx: Square search step in X
-    :param dy: Square search step in Y
-    :param dz: Square search step in Z
-    :return: vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads
+    Args:
+        vi: Current vertex index
+        vert_type: Array of vertex types
+        vert_index: Array of vertex indices
+        vert_color: Array of vertex colors
+        voxel_model_array: Voxel data array
+        x: Target voxel X
+        y: Target voxel Y
+        z: Target voxel Z
+        dx: Square search step in X
+        dy: Square search step in Y
+        dz: Square search step in Z
+
+    Returns:
+        vi, vert_type, vert_index, new_verts, new_colors, new_tris, new_quads
     """
     x_len, y_len, z_len = vert_type.shape
     new_verts = []
