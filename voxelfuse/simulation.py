@@ -143,7 +143,8 @@ class Simulation:
         size adjusted to maintain their position in the exported simulation.
         Models located at negative coordinate values will be shifted to the origin.
 
-        :param voxel_model: VoxelModel
+        Args:
+            voxel_model: VoxelModel
         """
         # Simulation ID and start date
         self.id = id_number
@@ -221,8 +222,11 @@ class Simulation:
         """
         Create new Simulation object with the same settings as an existing Simulation object.
 
-        :param simulation: Simulation to copy
-        :return: Simulation
+        Args:
+            simulation: Simulation to copy
+        
+        Returns:
+            Simulation
         """
         # Create new simulation object and copy attribute values
         new_simulation = cls(simulation.__model)
@@ -251,8 +255,11 @@ class Simulation:
         size adjusted to maintain their position in the exported simulation.
         Models located at negative coordinate values will be shifted to the origin.
 
-        :param voxel_model: VoxelModel
-        :return: None
+        Args:
+            voxel_model: VoxelModel
+        
+        Returns:
+            None
         """
         # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
         self.__model = ((VoxelModel.copy(voxel_model).fitWorkspace()) | empty(num_materials=(voxel_model.materials.shape[1] - 1))).removeDuplicateMaterials()
@@ -264,9 +271,12 @@ class Simulation:
         Environment damping can be used to simulate fluid environments. 0 represents
         a vacuum and larger values represent a viscous fluid.
 
-        :param bond: Voxel bond damping (0-1)
-        :param environment: Environment damping (0-0.1)
-        :return: None
+        Args:
+            bond: Voxel bond damping (0-1)
+            environment: Environment damping (0-0.1)
+        
+        Returns:
+            None
         """
         self.__dampingBond = bond
         self.__dampingEnvironment = environment
@@ -278,9 +288,12 @@ class Simulation:
         A damping value of 0 represents completely elastic collisions and
         higher values represent inelastic collisions.
 
-        :param enable: Enable/disable collisions
-        :param damping: Collision damping (0-2)
-        :return: None
+        Args:
+            enable: Enable/disable collisions
+            damping: Collision damping (0-2)
+        
+        Returns:
+            None
         """
         self.__collisionEnable = enable
         self.__collisionDamping = damping
@@ -289,8 +302,11 @@ class Simulation:
         """
         Set hydrogel model parameters.
 
-        :param enable: Enable/disable hydrogel model
-        :return: None
+        Args:
+            enable: Enable/disable hydrogel model
+        
+        Returns:
+            None
         """
         self.__hydrogelModelEnable = enable
 
@@ -298,9 +314,12 @@ class Simulation:
         """
         Set simulation stop condition.
 
-        :param condition: Stop condition type, set using StopCondition class
-        :param value: Stop condition value
-        :return: None
+        Args:
+            condition: Stop condition type, set using StopCondition class
+            value: Stop condition value
+        
+        Returns:
+            None
         """
         self.__stopConditionType = condition
         self.__stopConditionValue = value
@@ -309,8 +328,11 @@ class Simulation:
         """
         Set simulation equilibrium mode.
 
-        :param enable: Enable/disable equilibrium mode
-        :return: None
+        Args:
+            enable: Enable/disable equilibrium mode
+        
+        Returns:
+            None
         """
         self.__equilibriumModeEnable = enable
 
@@ -318,10 +340,13 @@ class Simulation:
         """
         Set simulation gravity parameters.
 
-        :param enable: Enable/disable gravity
-        :param value: Acceleration due to gravity in m/sec^2
-        :param enable_floor: Enable/disable ground plane
-        :return: None
+        Args:
+            enable: Enable/disable gravity
+            value: Acceleration due to gravity in m/sec^2
+            enable_floor: Enable/disable ground plane
+        
+        Returns:
+            None
         """
         self.__gravityEnable = enable
         self.__gravityValue = value
@@ -331,10 +356,13 @@ class Simulation:
         """
         Set a fixed environment temperature.
 
-        :param enable: Enable/disable temperature
-        :param base_temp: Temperature in degrees C
-        :param growth_amplitude: Set to 1 to enable expansion from base size
-        :return: None
+        Args:
+            enable: Enable/disable temperature
+            base_temp: Temperature in degrees C
+            growth_amplitude: Set to 1 to enable expansion from base size
+        
+        Returns:
+            None
         """
         self.__temperatureEnable = enable
         self.__temperatureBaseValue = base_temp
@@ -346,13 +374,16 @@ class Simulation:
         Set a varying environment temperature.
 
 
-        :param enable: Enable/disable temperature
-        :param base_temp: Base temperature in degrees C
-        :param amplitude: Temperature fluctuation amplitude
-        :param period: Temperature fluctuation period
-        :param offset: Temperature offset (not currently supported)
-        :param growth_amplitude: Set to 1 to enable expansion from base size
-        :return: None
+        Args:
+            enable: Enable/disable temperature
+            base_temp: Base temperature in degrees C
+            amplitude: Temperature fluctuation amplitude
+            period: Temperature fluctuation period
+            offset: Temperature offset (not currently supported)
+            growth_amplitude: Set to 1 to enable expansion from base size
+        
+        Returns:
+            None
         """
         self.__temperatureEnable = enable
         self.__temperatureBaseValue = base_temp
@@ -366,16 +397,18 @@ class Simulation:
     def getModel(self):
         """
         Get the simulation model.
-
-        :return: VoxelModel
+        
+        Returns:
+            VoxelModel
         """
         return self.__model
 
     def getVoxelDim(self):
         """
         Get the side dimension of a voxel in mm.
-
-        :return: Float
+        
+        Returns:
+            Float
         """
         res = self.__model.resolution
         return (1.0/res) * 0.001
@@ -383,56 +416,63 @@ class Simulation:
     def getDamping(self):
         """
         Get simulation damping parameters.
-
-        :return: Voxel bond damping, Environment damping
+        
+        Returns:
+            Voxel bond damping, Environment damping
         """
         return self.__dampingBond, self.__dampingEnvironment
 
     def getCollision(self):
         """
         Get simulation collision parameters.
-
-        :return: Enable/disable collisions, Collision damping
+        
+        Returns:
+            Enable/disable collisions, Collision damping
         """
         return self.__collisionEnable, self.__collisionDamping
 
     def getHydrogelModel(self):
         """
         Get hydrogel model parameters.
-
-        :return: Enable/disable hydrogel model
+        
+        Returns:
+            Enable/disable hydrogel model
         """
         return self.__hydrogelModelEnable
 
     def getStopCondition(self):
         """
         Get simulation stop condition.
-
-        :return: Stop condition type, Stop condition value
+        
+        Returns:
+            Stop condition type, Stop condition value
         """
         return self.__stopConditionType, self.__stopConditionValue
 
     def getEquilibriumMode(self):
         """
         Get simulation equilibrium mode.
-
-        :return: Enable/disable equilibrium mode
+        
+        Returns:
+            Enable/disable equilibrium mode
         """
         return self.__equilibriumModeEnable
 
     def getGravity(self):
         """
         Get simulation gravity parameters.
-
-        :return: Enable/disable gravity, Acceleration due to gravity in m/sec^2, Enable/disable ground plane
+        
+        Returns:
+            Enable/disable gravity, Acceleration due to gravity in m/sec^2, Enable/disable ground plane
         """
         return self.__gravityEnable, self.__gravityValue, self.__floorEnable
 
     def getThermal(self):
         """
         Get simulation temperature parameters.
-
-        :return: Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period, Temperature offset
+        
+        Returns:
+            Enable/disable temperature, Base temperature in degrees C, Enable/disable temperature fluctuation, Temperature fluctuation amplitude, Temperature fluctuation period, Temperature offset
         """
         return self.__temperatureEnable, self.__temperatureBaseValue, self.__temperatureVaryEnable, self.__temperatureVaryAmplitude, self.__temperatureVaryPeriod, self.__temperatureVaryOffset
 
@@ -447,8 +487,9 @@ class Simulation:
     def clearBoundaryConditions(self):
         """
         Remove all boundary conditions from a Simulation object.
-
-        :return: None
+        
+        Returns:
+            None
         """
         self.__bcRegions = []
         # self.__bcVoxels = []
@@ -469,14 +510,17 @@ class Simulation:
         will be applied. If a bit is set to 1, the DOF will be fixed and the displacement will be
         applied.
 
-        :param position: Position in voxels
-        :param fixed_dof: Fixed degrees of freedom
-        :param force: Force vector in N
-        :param displacement: Displacement vector in mm
-        :param torque: Torque values in Nm
-        :param angular_displacement: Angular displacement values in deg
-        :param name: Boundary condition name
-        :return: None
+        Args:
+            position: Position in voxels
+            fixed_dof: Fixed degrees of freedom
+            force: Force vector in N
+            displacement: Displacement vector in mm
+            torque: Torque values in Nm
+            angular_displacement: Angular displacement values in deg
+            name: Boundary condition name
+        
+        Returns:
+            None
         """
         x = position[0] - self.__model.coords[0]
         y = position[1] - self.__model.coords[1]
@@ -511,15 +555,18 @@ class Simulation:
         a bit is set to 1, the DOF will be fixed and the displacement will be
         applied.
 
-        :param position: Box corner position (0-1)
-        :param size: Box size (0-1)
-        :param fixed_dof: Fixed degrees of freedom
-        :param force: Force vector in N
-        :param displacement: Displacement vector in mm
-        :param torque: Torque values in Nm
-        :param angular_displacement: Angular displacement values in deg
-        :param name: Boundary condition name
-        :return: None
+        Args:
+            position: Box corner position (0-1)
+            size: Box size (0-1)
+            fixed_dof: Fixed degrees of freedom
+            force: Force vector in N
+            displacement: Displacement vector in mm
+            torque: Torque values in Nm
+            angular_displacement: Angular displacement values in deg
+            name: Boundary condition name
+        
+        Returns:
+            None
         """
         bc = _BCRegion(name, BCShape.BOX, position, size, 0, fixed_dof, force, displacement, torque, angular_displacement)
         self.__bcRegions.append(bc)
@@ -543,15 +590,18 @@ class Simulation:
         a bit is set to 1, the DOF will be fixed and the displacement will be
         applied.
 
-        :param position: Sphere center position (0-1)
-        :param radius: Sphere radius (0-1)
-        :param fixed_dof: Fixed degrees of freedom
-        :param force: Force vector in N
-        :param displacement: Displacement vector in mm
-        :param torque: Torque values in Nm
-        :param angular_displacement: Angular displacement values in deg
-        :param name: Boundary condition name
-        :return: None
+        Args:
+            position: Sphere center position (0-1)
+            radius: Sphere radius (0-1)
+            fixed_dof: Fixed degrees of freedom
+            force: Force vector in N
+            displacement: Displacement vector in mm
+            torque: Torque values in Nm
+            angular_displacement: Angular displacement values in deg
+            name: Boundary condition name
+        
+        Returns:
+            None
         """
         bc = _BCRegion(name, BCShape.SPHERE, position, (0.0, 0.0, 0.0), radius, fixed_dof, force, displacement, torque, angular_displacement)
         self.__bcRegions.append(bc)
@@ -576,17 +626,20 @@ class Simulation:
         a bit is set to 1, the DOF will be fixed and the displacement will be
         applied.
 
-        :param position: Boundary condition origin position (0-1)
-        :param axis: Cylinder axis (0-2)
-        :param height: Cylinder height (0-1)
-        :param radius: Cylinder radius (0-1)
-        :param fixed_dof: Fixed degrees of freedom
-        :param force: Force vector in N
-        :param displacement: Displacement vector in mm
-        :param torque: Torque values in Nm
-        :param angular_displacement: Angular displacement values in deg
-        :param name: Boundary condition name
-        :return: None
+        Args:
+            position: Boundary condition origin position (0-1)
+            axis: Cylinder axis (0-2)
+            height: Cylinder height (0-1)
+            radius: Cylinder radius (0-1)
+            fixed_dof: Fixed degrees of freedom
+            force: Force vector in N
+            displacement: Displacement vector in mm
+            torque: Torque values in Nm
+            angular_displacement: Angular displacement values in deg
+            name: Boundary condition name
+        
+        Returns:
+            None
         """
         size = [0.0, 0.0, 0.0]
         size[axis.value] = height
@@ -596,8 +649,9 @@ class Simulation:
     def clearSensors(self):
         """
         Remove all sensors from a Simulation object.
-
-        :return: None
+        
+        Returns:
+            None
         """
         self.__sensors = []
 
@@ -605,10 +659,13 @@ class Simulation:
         """
         Add a sensor to a voxel.
 
-        :param location: Sensor location in voxels
-        :param axis: Sensor measurement axis
-        :param name: Sensor name
-        :return: None
+        Args:
+            location: Sensor location in voxels
+            axis: Sensor measurement axis
+            name: Sensor name
+        
+        Returns:
+            None
         """
         x = location[0] - self.__model.coords[0]
         y = location[1] - self.__model.coords[1]
@@ -623,8 +680,9 @@ class Simulation:
     def clearDisconnections(self):
         """
         Clear all disconnected voxel bonds.
-
-        :return: None
+        
+        Returns:
+            None
         """
         self.__disconnections = []
 
@@ -632,9 +690,12 @@ class Simulation:
         """
         Specify a pair of voxels which should be disconnected
 
-        :param voxel_1: Coordinates in voxels
-        :param voxel_2: Coordinates in voxels
-        :return: None
+        Args:
+            voxel_1: Coordinates in voxels
+            voxel_2: Coordinates in voxels
+        
+        Returns:
+            None
         """
         dc = _Disconnection(voxel_1, voxel_2)
         self.__disconnections.append(dc)
@@ -643,9 +704,12 @@ class Simulation:
         """
         Add a new temperature control group and select it.
 
-        :param locations: Control element locations in voxels as a list of tuples
-        :param name: Group name
-        :return: None
+        Args:
+            locations: Control element locations in voxels as a list of tuples
+            name: Group name
+        
+        Returns:
+            None
         """
         # Enable temperature control
         self.__temperatureEnable = True
@@ -672,8 +736,11 @@ class Simulation:
         """
         Remove a temperature control group by index.
 
-        :param index: Temperature control group index
-        :return: Name of removed group
+        Args:
+            index: Temperature control group index
+        
+        Returns:
+            Name of removed group
         """
         group = self.__localTempControls.pop(index)
         self.__currentTempControlGroup = len(self.__localTempControls)-1
@@ -683,16 +750,20 @@ class Simulation:
         """
         Select which keyframe new temperature control elements should be added to.
 
-        :param index: Temperature control group index
-        :return: None
+        Args:
+            index: Temperature control group index
+        
+        Returns:
+            None
         """
         self.__currentTempControlGroup = index
 
     def clearTempControlGroups(self):
         """
         Clear all temperature control groups.
-
-        :return: None
+        
+        Returns:
+            None
         """
         self.__currentTempControlGroup = 0
         self.__localTempControls = []
@@ -702,8 +773,9 @@ class Simulation:
         Remove invalid temperature control groups.
 
         Invalid groups have no keyframes, or have no target voxels.
-
-        :return: Number of groups removed
+        
+        Returns:
+            Number of groups removed
         """
         removed_groups = []
         for g in range(len(self.__localTempControls)):
@@ -731,8 +803,9 @@ class Simulation:
     def clearKeyframes(self):
         """
         Remove all keyframes assigned to the current temperature control group.
-
-        :return: None
+        
+        Returns:
+            None
         """
         g = self.__currentTempControlGroup
         self.__localTempControls[g].keyframes = []
@@ -742,16 +815,19 @@ class Simulation:
         """
         Add a keyframe to a temperature control group.
 
-        :param time_value: Time at which keyframe should take effect (sec)
-        :param amplitude_pos: Control element positive temperature amplitude (deg C)
-        :param amplitude_neg: Control element negative temperature amplitude (deg C)
-        :param percent_pos: Percent of period spanned by positive temperature amplitude (0-1)
-        :param period: Period of the control signal (sec)
-        :param phase_offset: Control element phase offset for time-varying thermal (rad)
-        :param temp_offset: Control element temperature offset for time-varying thermal (deg C)
-        :param const_temp: Enable/disable setting a constant target temperature that respects heating/cooling rates
-        :param square_wave: Enable/disable converting signal to a square wave (positive -> a = amplitude1, negative -> a = 0)
-        :return: None
+        Args:
+            time_value: Time at which keyframe should take effect (sec)
+            amplitude_pos: Control element positive temperature amplitude (deg C)
+            amplitude_neg: Control element negative temperature amplitude (deg C)
+            percent_pos: Percent of period spanned by positive temperature amplitude (0-1)
+            period: Period of the control signal (sec)
+            phase_offset: Control element phase offset for time-varying thermal (rad)
+            temp_offset: Control element temperature offset for time-varying thermal (deg C)
+            const_temp: Enable/disable setting a constant target temperature that respects heating/cooling rates
+            square_wave: Enable/disable converting signal to a square wave (positive -> a = amplitude1, negative -> a = 0)
+        
+        Returns:
+            None
         """
         amplitude_pos = max(amplitude_pos, 0) # amplitude_pos must be positive
 
@@ -765,8 +841,9 @@ class Simulation:
     def initializeTempMap(self):
         """
         Initialize temperature control groups to which keyframes will be stored when using applyTempMap.
-
-        :return: None
+        
+        Returns:
+            None
         """
         # Clear any existing temperature controls
         self.clearTempControlGroups()
@@ -789,16 +866,19 @@ class Simulation:
 
         This function relies on the temperature control groups being in a specific order. initializeTempMap should be called prior to running this function.
 
-        :param time_value: Time at which keyframe should take effect (sec)
-        :param amp_pos_map: Array of target positive temperature amplitudes for each voxel (deg C)
-        :param amp_neg_map: Array of target negative temperature amplitudes for each voxel (deg C)
-        :param percent_pos_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
-        :param period_map: Array of signal periods for each voxel (sec)
-        :param phase_map: Array of phase offsets for each voxel (rad)
-        :param offset_map: Array of temperature offsets for each voxel (deg C)
-        :param const_temp_map: Array of boolean values to enable/disable constant temperature mode
-        :param square_wave_map: Array of boolean values to enable/disable square wave mode
-        :return: None
+        Args:
+            time_value: Time at which keyframe should take effect (sec)
+            amp_pos_map: Array of target positive temperature amplitudes for each voxel (deg C)
+            amp_neg_map: Array of target negative temperature amplitudes for each voxel (deg C)
+            percent_pos_map: Array containing percent of period spanned by positive temperature amplitude for each voxel
+            period_map: Array of signal periods for each voxel (sec)
+            phase_map: Array of phase offsets for each voxel (rad)
+            offset_map: Array of temperature offsets for each voxel (deg C)
+            const_temp_map: Array of boolean values to enable/disable constant temperature mode
+            square_wave_map: Array of boolean values to enable/disable square wave mode
+        
+        Returns:
+            None
         """
         # Get map size
         x_len = amp_pos_map.shape[0]
@@ -868,9 +948,12 @@ class Simulation:
         The .vxa file type can be opened using VoxCad simulation software. However, it
         cannot currently be reopened by a VoxelFuse script.
 
-        :param filename: File name
-        :param compression: Enable/disable voxel data compression
-        :return: None
+        Args:
+            filename: File name
+            compression: Enable/disable voxel data compression
+        
+        Returns:
+            None
         """
         self.cleanTempControlGroups()
         f = open(filename + '.vxa', 'w+')
@@ -892,8 +975,11 @@ class Simulation:
         """
         Write simulation parameters to a text file using the .vxa format.
 
-        :param f: File to write to
-        :return: None
+        Args:
+            f: File to write to
+        
+        Returns:
+            None
         """
         # Simulator settings
         writeOpen(f, 'Simulator', 0)
@@ -939,8 +1025,11 @@ class Simulation:
         """
         Write simulation environment parameters to a text file using the .vxa format.
 
-        :param f: File to write to
-        :return: None
+        Args:
+            f: File to write to
+        
+        Returns:
+            None
         """
         # Environment settings
         writeOpen(f, 'Environment', 0)
@@ -1000,8 +1089,11 @@ class Simulation:
         """
         Write voxel sensors to a text file using the .vxa format.
 
-        :param f: File to write to
-        :return: None
+        Args:
+            f: File to write to
+        
+        Returns:
+            None
         """
         writeOpen(f, 'Sensors', 0)
         for sensor in self.__sensors:
@@ -1017,8 +1109,11 @@ class Simulation:
         """
         Write temperature control element to a text file using the .vxa format.
 
-        :param f: File to write to
-        :return: None
+        Args:
+            f: File to write to
+        
+        Returns:
+            None
         """
         writeData(f, 'EnableHydrogelModel', int(self.__hydrogelModelEnable), 0)
 
@@ -1056,8 +1151,11 @@ class Simulation:
         """
         Write bond disconnections to a text file using the .vxa format.
 
-        :param f: File to write to
-        :return: None
+        Args:
+            f: File to write to
+        
+        Returns:
+            None
         """
         writeOpen(f, 'Disconnections', 0)
         for dc in self.__disconnections:
@@ -1077,14 +1175,17 @@ class Simulation:
 
         History files can be viewed using https://github.com/voxcraft/voxcraft-viz
 
-        :param filename: File name for .vxa and .xml files
-        :param value_map: Index of the desired value map type
-        :param log_interval: Set the step interval at which sensor log entries should be recorded, -1 to disable log
-        :param history_interval: Set the step interval at which history file entries should be recorded, -1 for default interval
-        :param delete_files: Enable/disable deleting simulation file when process is complete
-        :param voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
-        :param wsl: Enable/disable using Windows Subsystem for Linux with bundled Voxelyze
-        :return: None
+        Args:
+            filename: File name for .vxa and .xml files
+            value_map: Index of the desired value map type
+            log_interval: Set the step interval at which sensor log entries should be recorded, -1 to disable log
+            history_interval: Set the step interval at which history file entries should be recorded, -1 for default interval
+            delete_files: Enable/disable deleting simulation file when process is complete
+            voxelyze_on_path: Enable/disable using system Voxelyze rather than bundled Voxelyze
+            wsl: Enable/disable using Windows Subsystem for Linux with bundled Voxelyze
+        
+        Returns:
+            None
         """
         # Generate results file/directory names
         filename = filename + '_' + str(self.id)
@@ -1226,11 +1327,14 @@ class Simulation:
 
         ----
 
-        :param filename: File name
-        :param delete_files: Enable/disable deleting simulation file when VoxCad is closed
-        :param voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
-        :param wsl: Enable/disable using Windows Subsystem for Linux with bundled VoxCad
-        :return: None
+        Args:
+            filename: File name
+            delete_files: Enable/disable deleting simulation file when VoxCad is closed
+            voxcad_on_path: Enable/disable using system VoxCad rather than bundled VoxCad
+            wsl: Enable/disable using Windows Subsystem for Linux with bundled VoxCad
+        
+        Returns:
+            None
         """
         # Generate file name
         filename = filename + '_' + str(self.id)
@@ -1264,8 +1368,11 @@ class Simulation:
         """
         Saves a simulation's results dictionary to a .csv file.
 
-        :param filename: Name of output file
-        :return:
+        Args:
+            filename: Name of output file
+
+        Returns:
+            None
         """
         # Get result table keys and size
         keys = list(self.results[0].keys())
@@ -1302,9 +1409,10 @@ class MultiSimulation:
         """
         Initialize a MultiSimulation object.
 
-        :param setup_fcn: Function to use for initializing Simulation objects. Should take a single tuple as an input and return a single Simulation object.
-        :param setup_params: List containing the desired input tuples for setup_fcn
-        :param thread_count: Maximum number of CPU threads, -1 to auto-detect
+        Args:
+            setup_fcn: Function to use for initializing Simulation objects. Should take a single tuple as an input and return a single Simulation object.
+            setup_params: List containing the desired input tuples for setup_fcn
+            thread_count: Maximum number of CPU threads, -1 to auto-detect
         """
         self.__setup_fcn = setup_fcn
         self.__setup_params = setup_params
@@ -1324,8 +1432,9 @@ class MultiSimulation:
     def getParams(self):
         """
         Get the current simulation setup parameters.
-
-        :return: List containing the current input tuples for setup_fcn
+        
+        Returns:
+            List containing the current input tuples for setup_fcn
         """
         return self.__setup_params
 
@@ -1333,8 +1442,11 @@ class MultiSimulation:
         """
         Update the simulation setup parameters.
 
-        :param setup_params: List containing the desired input tuples for setup_fcn
-        :return: None
+        Args:
+            setup_params: List containing the desired input tuples for setup_fcn
+        
+        Returns:
+            None
         """
         self.__setup_params = setup_params
         self.displacement_result = multiprocessing.Array('d', len(setup_params))
@@ -1343,8 +1455,9 @@ class MultiSimulation:
     def confirmSimCount(self):
         """
         Print the number of simulations to be run and confirm that the user would like to continue.
-
-        :return: None
+        
+        Returns:
+            None
         """
         # Check if results directory already exists
         dirname = 'sim_results_' + str(date.today())
@@ -1361,9 +1474,12 @@ class MultiSimulation:
 
         History files can be viewed using https://github.com/voxcraft/voxcraft-viz
 
-        :param enable_log: Enable saving sensor log files
-        :param fine_log: If enabled, save entries in sensor logs and history files 100x as frequently
-        :return: None
+        Args:
+            enable_log: Enable saving sensor log files
+            fine_log: If enabled, save entries in sensor logs and history files 100x as frequently
+        
+        Returns:
+            None
         """
         # Save start time
         time_started = time.time()
@@ -1399,9 +1515,12 @@ class MultiSimulation:
         """
         Export a CSV file containing simulation setup parameters and the corresponding simulation results.
 
-        :param filename: File name
-        :param labels: Column headers for simulation setup parameters
-        :return: None
+        Args:
+            filename: File name
+            labels: Column headers for simulation setup parameters
+        
+        Returns:
+            None
         """
         # Add labels for results
         labels.append('Displacement (m)')
@@ -1441,9 +1560,12 @@ class MultiSimulation:
         """
         Export VXA files for all or specified simulation configurations.
 
-        :param filename: File name
-        :param config_number: Config to export, -1 to export all configs
-        :return: None
+        Args:
+            filename: File name
+            config_number: Config to export, -1 to export all configs
+        
+        Returns:
+            None
         """
         if config_number == -1:
             for config in tqdm(self.__setup_params, desc='Saving simulations'):
@@ -1459,9 +1581,12 @@ def poolInit(disp_result_array, t_result_array):
     """
     Initialize shared result variables.
 
-    :param disp_result_array: Multiprocessing array to hold displacement results
-    :param t_result_array: Multiprocessing array to hold time results
-    :return: None
+    Args:
+        disp_result_array: Multiprocessing array to hold displacement results
+        t_result_array: Multiprocessing array to hold time results
+
+    Returns:
+        None
     """
     global disp_result, t_result
     disp_result = disp_result_array
@@ -1471,8 +1596,11 @@ def simProcess(simulation: Simulation):
     """
     Simulation process.
 
-    :param simulation: Simulation object to run
-    :return: None
+    Args:
+        simulation: Simulation object to run
+
+    Returns:
+        None
     """
     print('Process ' + str(simulation.id) + ' starting')
 
@@ -1498,8 +1626,11 @@ def simProcessLog(simulation: Simulation):
     """
     Simulation process.
 
-    :param simulation: Simulation object to run
-    :return: None
+    Args:
+        simulation: Simulation object to run
+
+    Returns:
+        None
     """
     print('Process ' + str(simulation.id) + ' starting')
 
@@ -1525,8 +1656,11 @@ def simProcessLogFine(simulation: Simulation):
     """
     Simulation process.
 
-    :param simulation: Simulation object to run
-    :return: None
+    Args:
+        simulation: Simulation object to run
+
+    Returns:
+        None
     """
     print('Process ' + str(simulation.id) + ' starting')
 

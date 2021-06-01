@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2.dev21+g6d35cca" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>voxelfuse.periodic API documentation</title>
 <meta name="description" content="Functions for generating triply periodic structures …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -40,9 +40,9 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 import math
 import numpy as np
 from typing import Tuple
-from voxelfuse.voxel_model import VoxelModel, generateMaterials
-from voxelfuse.materials import material_properties
 from tqdm import tqdm
+
+from voxelfuse.voxel_model import VoxelModel, generateMaterials
 
 def gyroid(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1):
     &#34;&#34;&#34;
@@ -54,13 +54,16 @@ def gyroid(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: T
     However, due to the voxel-based representation, this &#34;surface&#34; will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     &#34;&#34;&#34;
     s = (2 * math.pi) / scale  # scaling multipler
 
@@ -92,13 +95,16 @@ def schwarzP(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords:
     However, due to the voxel-based representation, this &#34;surface&#34; will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     &#34;&#34;&#34;
     s = (2 * math.pi) / scale  # scaling multipler
 
@@ -130,13 +136,16 @@ def schwarzD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords:
     However, due to the voxel-based representation, this &#34;surface&#34; will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     &#34;&#34;&#34;
     s = (2 * math.pi) / scale # scaling multipler
 
@@ -169,13 +178,16 @@ def FRD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tupl
     However, due to the voxel-based representation, this &#34;surface&#34; will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     &#34;&#34;&#34;
     s = (2 * math.pi) / scale # scaling multipler
 
@@ -211,30 +223,28 @@ def FRD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tupl
 </code></dt>
 <dd>
 <div class="desc"><p>Generate a FRD surface over a rectangular region.</p>
-<p>This function will generate two models representing the &quot;positive&quot; and
-&quot;negative&quot; halves of the pattern. If a thin surface is desired,
+<p>This function will generate two models representing the "positive" and
+"negative" halves of the pattern. If a thin surface is desired,
 these two models can be dilated and the intersection of the results found.
-However, due to the voxel-based representation, this &quot;surface&quot; will have
+However, due to the voxel-based representation, this "surface" will have
 a non-zero thickness.</p>
-<h2 id="args">Args:</h2>
+<h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
-<dd><p>Size of rectangular region</p></dd>
+<dd>Size of rectangular region</dd>
 <dt><strong><code>scale</code></strong></dt>
-<dd><p>Period of the surface function in voxels</p></dd>
+<dd>Period of the surface function in voxels</dd>
 <dt><strong><code>coords</code></strong></dt>
-<dd><p>Model origin coordinates</p></dd>
+<dd>Model origin coordinates</dd>
 <dt><strong><code>material1</code></strong></dt>
-<dd><p>Material index for negative model, corresponds to materials.py</p></dd>
+<dd>Material index for negative model, corresponds to materials.py</dd>
 <dt><strong><code>material2</code></strong></dt>
-<dd><p>Material index for positive model, corresponds to materials.py</p></dd>
+<dd>Material index for positive model, corresponds to materials.py</dd>
 <dt><strong><code>resolution</code></strong></dt>
-<dd><p>Number of voxels per mm</p></dd>
+<dd>Number of voxels per mm</dd>
 </dl>
-<h2 id="returns">Returns:</h2>
-<dl>
-<dd><p>Negative model, Positive model</p></dd>
-</dl></div>
+<h2 id="returns">Returns</h2>
+<p>Negative model, Positive model</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -249,13 +259,16 @@ a non-zero thickness.</p>
     However, due to the voxel-based representation, this &#34;surface&#34; will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     &#34;&#34;&#34;
     s = (2 * math.pi) / scale # scaling multipler
 
@@ -284,30 +297,28 @@ a non-zero thickness.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Generate a Gyroid pattern over a rectangular region.</p>
-<p>This function will generate two models representing the &quot;positive&quot; and
-&quot;negative&quot; halves of the pattern. If a thin surface is desired,
+<p>This function will generate two models representing the "positive" and
+"negative" halves of the pattern. If a thin surface is desired,
 these two models can be dilated and the intersection of the results found.
-However, due to the voxel-based representation, this &quot;surface&quot; will have
+However, due to the voxel-based representation, this "surface" will have
 a non-zero thickness.</p>
-<h2 id="args">Args:</h2>
+<h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
-<dd><p>Size of rectangular region</p></dd>
+<dd>Size of rectangular region</dd>
 <dt><strong><code>scale</code></strong></dt>
-<dd><p>Period of the surface function in voxels</p></dd>
+<dd>Period of the surface function in voxels</dd>
 <dt><strong><code>coords</code></strong></dt>
-<dd><p>Model origin coordinates</p></dd>
+<dd>Model origin coordinates</dd>
 <dt><strong><code>material1</code></strong></dt>
-<dd><p>Material index for negative model, corresponds to materials.py</p></dd>
+<dd>Material index for negative model, corresponds to materials.py</dd>
 <dt><strong><code>material2</code></strong></dt>
-<dd><p>Material index for positive model, corresponds to materials.py</p></dd>
+<dd>Material index for positive model, corresponds to materials.py</dd>
 <dt><strong><code>resolution</code></strong></dt>
-<dd><p>Number of voxels per mm</p></dd>
+<dd>Number of voxels per mm</dd>
 </dl>
-<h2 id="returns">Returns:</h2>
-<dl>
-<dd><p>Negative model, Positive model</p></dd>
-</dl></div>
+<h2 id="returns">Returns</h2>
+<p>Negative model, Positive model</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -322,13 +333,16 @@ a non-zero thickness.</p>
     However, due to the voxel-based representation, this &#34;surface&#34; will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     &#34;&#34;&#34;
     s = (2 * math.pi) / scale  # scaling multipler
 
@@ -356,30 +370,28 @@ a non-zero thickness.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Generate a Schwarz D-surface over a rectangular region.</p>
-<p>This function will generate two models representing the &quot;positive&quot; and
-&quot;negative&quot; halves of the pattern. If a thin surface is desired,
+<p>This function will generate two models representing the "positive" and
+"negative" halves of the pattern. If a thin surface is desired,
 these two models can be dilated and the intersection of the results found.
-However, due to the voxel-based representation, this &quot;surface&quot; will have
+However, due to the voxel-based representation, this "surface" will have
 a non-zero thickness.</p>
-<h2 id="args">Args:</h2>
+<h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
-<dd><p>Size of rectangular region</p></dd>
+<dd>Size of rectangular region</dd>
 <dt><strong><code>scale</code></strong></dt>
-<dd><p>Period of the surface function in voxels</p></dd>
+<dd>Period of the surface function in voxels</dd>
 <dt><strong><code>coords</code></strong></dt>
-<dd><p>Model origin coordinates</p></dd>
+<dd>Model origin coordinates</dd>
 <dt><strong><code>material1</code></strong></dt>
-<dd><p>Material index for negative model, corresponds to materials.py</p></dd>
+<dd>Material index for negative model, corresponds to materials.py</dd>
 <dt><strong><code>material2</code></strong></dt>
-<dd><p>Material index for positive model, corresponds to materials.py</p></dd>
+<dd>Material index for positive model, corresponds to materials.py</dd>
 <dt><strong><code>resolution</code></strong></dt>
-<dd><p>Number of voxels per mm</p></dd>
+<dd>Number of voxels per mm</dd>
 </dl>
-<h2 id="returns">Returns:</h2>
-<dl>
-<dd><p>Negative model, Positive model</p></dd>
-</dl></div>
+<h2 id="returns">Returns</h2>
+<p>Negative model, Positive model</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -394,13 +406,16 @@ a non-zero thickness.</p>
     However, due to the voxel-based representation, this &#34;surface&#34; will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     &#34;&#34;&#34;
     s = (2 * math.pi) / scale # scaling multipler
 
@@ -429,30 +444,28 @@ a non-zero thickness.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Generate a Schwarz P-surface over a rectangular region.</p>
-<p>This function will generate two models representing the &quot;positive&quot; and
-&quot;negative&quot; halves of the pattern. If a thin surface is desired,
+<p>This function will generate two models representing the "positive" and
+"negative" halves of the pattern. If a thin surface is desired,
 these two models can be dilated and the intersection of the results found.
-However, due to the voxel-based representation, this &quot;surface&quot; will have
+However, due to the voxel-based representation, this "surface" will have
 a non-zero thickness.</p>
-<h2 id="args">Args:</h2>
+<h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
-<dd><p>Size of rectangular region</p></dd>
+<dd>Size of rectangular region</dd>
 <dt><strong><code>scale</code></strong></dt>
-<dd><p>Period of the surface function in voxels</p></dd>
+<dd>Period of the surface function in voxels</dd>
 <dt><strong><code>coords</code></strong></dt>
-<dd><p>Model origin coordinates</p></dd>
+<dd>Model origin coordinates</dd>
 <dt><strong><code>material1</code></strong></dt>
-<dd><p>Material index for negative model, corresponds to materials.py</p></dd>
+<dd>Material index for negative model, corresponds to materials.py</dd>
 <dt><strong><code>material2</code></strong></dt>
-<dd><p>Material index for positive model, corresponds to materials.py</p></dd>
+<dd>Material index for positive model, corresponds to materials.py</dd>
 <dt><strong><code>resolution</code></strong></dt>
-<dd><p>Number of voxels per mm</p></dd>
+<dd>Number of voxels per mm</dd>
 </dl>
-<h2 id="returns">Returns:</h2>
-<dl>
-<dd><p>Negative model, Positive model</p></dd>
-</dl></div>
+<h2 id="returns">Returns</h2>
+<p>Negative model, Positive model</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -467,13 +480,16 @@ a non-zero thickness.</p>
     However, due to the voxel-based representation, this &#34;surface&#34; will have
     a non-zero thickness.
 
-    :param size: Size of rectangular region
-    :param scale: Period of the surface function in voxels
-    :param coords: Model origin coordinates
-    :param material1: Material index for negative model, corresponds to materials.py
-    :param material2: Material index for positive model, corresponds to materials.py
-    :param resolution: Number of voxels per mm
-    :return: Negative model, Positive model
+    Args:
+        size: Size of rectangular region
+        scale: Period of the surface function in voxels
+        coords: Model origin coordinates
+        material1: Material index for negative model, corresponds to materials.py
+        material2: Material index for positive model, corresponds to materials.py
+        resolution: Number of voxels per mm
+    
+    Returns:
+        Negative model, Positive model
     &#34;&#34;&#34;
     s = (2 * math.pi) / scale  # scaling multipler
 
@@ -524,7 +540,7 @@ a non-zero thickness.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2.dev21+g6d35cca</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 </body>
 </html>

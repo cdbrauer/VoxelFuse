@@ -13,8 +13,11 @@ def import_gcode(filename: str):
     """
     Import the lines of a gcode file to a list
 
-    :param filename: File name with extension
-    :return: List of gcode lines
+    Args:
+        filename: File name with extension
+    
+    Returns:
+        List of gcode lines
     """
     file = open(filename, 'r')
     print("File opened: "+file.name)
@@ -26,9 +29,12 @@ def export(filename: str, lines: List[str]):
     """
     Export a list of strings to a gcode file.
 
-    :param filename: File name with extension
-    :param lines: List of gcode lines
-    :return: None
+    Args:
+        filename: File name with extension
+        lines: List of gcode lines
+    
+    Returns:
+        None
     """
     file = open(filename, 'w')
     print("File created: "+file.name)
@@ -42,9 +48,12 @@ def remove_to_string(gcode: List[str], string: str):
     find_voxels can be used before this command to add comments before the
     start of each voxel layer.
 
-    :param gcode: List of gcode lines
-    :param string: Comment string to find
-    :return: None
+    Args:
+        gcode: List of gcode lines
+        string: Comment string to find
+    
+    Returns:
+        None
     """
     for i in range(len(gcode)):
         if gcode[i][0] != ';':
@@ -59,9 +68,12 @@ def pause_before_voxel(gcode: List[str], voxel: int):
     Before using this command, use find_voxels to add comments before the start
     of each voxel layer.
 
-    :param gcode: List of gcode lines
-    :param voxel: Voxel layer
-    :return: None
+    Args:
+        gcode: List of gcode lines
+        voxel: Voxel layer
+    
+    Returns:
+        None
     """
     for i in range(len(gcode)):
         if gcode[i] == (';V' + str(voxel) + '\n'):
@@ -83,9 +95,12 @@ def find_voxels(gcode: List[str], voxel_size: float = 1):
     also be used with remove_to_string to remove initialization code before the
     first voxel layer.
 
-    :param gcode: List of gcode lines
-    :param voxel_size: Size of voxels in mm
-    :return: None
+    Args:
+        gcode: List of gcode lines
+        voxel_size: Size of voxels in mm
+    
+    Returns:
+        None
     """
     voxel = 0
 
