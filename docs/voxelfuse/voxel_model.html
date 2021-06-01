@@ -39,16 +39,18 @@ Copyright 2021 - Cole Brauer, Dan Aukes
 
 import os
 import subprocess
-import meshio
 import numpy as np
+import meshio
+import k3d
 import zlib
 import base64
+from enum import Enum
+from typing import Union as TypeUnion, Tuple, TextIO
+from tqdm import tqdm
 from scipy import ndimage
 from numba import njit, prange, cuda
-from tqdm import tqdm
-from enum import Enum
-from typing import Tuple, TextIO
 from pyvox.parser import VoxParser
+
 from voxelfuse.materials import *
 
 # Floating point error threshold for rounding to zero
@@ -96,17 +98,25 @@ class VoxelModel:
     VoxelModel object that stores geometry, position, and material information.
     &#34;&#34;&#34;
 
-    def __init__(self, voxels, materials, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
+    def __init__(self, voxels: np.ndarray, materials: TypeUnion[int, np.ndarray] = None, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
         &#34;&#34;&#34;
         Initialize a VoxelModel object.
 
         :param voxels: Array storing the index of the material present at each voxel
-        :param materials: Array of all material mixtures present in model, material format: (a, m0, m1, ... mn)
+        :param materials: Material index (int), or array of all material mixtures present in model with material format: (a, m0, m1, ... mn)
         :param coords: Model origin coordinates
         :param resolution: Number of voxels per mm (higher number = finer resolution)
         &#34;&#34;&#34;
         self.voxels = np.copy(voxels) # Use np.copy to break references
-        self.materials = np.copy(materials)
+
+        # Determine how materials were specified and create the materials array accordingly
+        if materials is None:
+            self.materials = generateMaterials(1)
+        elif isinstance(materials, int):
+            self.materials = generateMaterials(materials)
+        else:
+            self.materials = np.copy(materials)
+
         self.coords = coords
         self.resolution = resolution
         self.components = np.zeros_like(voxels)
@@ -121,7 +131,7 @@ class VoxelModel:
 
         Example:
 
-        ``model1 = VoxelModel.fromVoxFile(&#39;cylinder-red.vox&#39;, (0, 5, 0), 1)``
+        ``model1 = vf.VoxelModel.fromVoxFile(&#39;cylinder-red.vox&#39;, (0, 5, 0), 1)``
 
         ----
 
@@ -160,13 +170,13 @@ class VoxelModel:
 
         Example:
 
-        ``model1 = VoxelModel.fromMeshFile(&#39;center.stl&#39;, (67, 3, 0), 2, 1)``
+        ``model1 = vf.VoxelModel.fromMeshFile(&#39;center.stl&#39;, (67, 3, 0), 2, 1)``
 
         ____
 
         :param filename: File name with extension
         :param coords: Model origin coordinates
-        :param material: Material index corresponding to materials.py
+        :param material: Material id corresponding to materials.py
         :param resolution: Number of voxels per mm
         :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
         :return: VoxelModel
@@ -216,8 +226,7 @@ class VoxelModel:
         xyz_mid = np.concatenate((xyz_mid, xyz_mid[:, 0:1] * 0 + 1), 1)
 
         # Create list of indices of each voxel
-        ijk_mid = np.array(
-            np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing=&#39;ij&#39;))
+        ijk_mid = np.array(np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing=&#39;ij&#39;))
         ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
         ijk_mid2 = ijk_mid.reshape(-1, 3)
 
@@ -226,7 +235,7 @@ class VoxelModel:
 
         lmn = ijk_mid2[np.unique(jj)]
 
-        voxels = np.zeros(ijk_mid.shape[:3], dtype=np.bool)
+        voxels = np.zeros(ijk_mid.shape[:3], dtype=np.bool_)
         voxels[lmn[:, 0], lmn[:, 1], lmn[:, 2]] = True
 
         new_model =  cls(voxels, generateMaterials(material), coords=coords, resolution=resolution).fitWorkspace()
@@ -243,14 +252,14 @@ class VoxelModel:
         :return: VoxelModel
         &#34;&#34;&#34;
         modelData = np.zeros(size, dtype=np.uint16)
-        materials = np.zeros((1, num_materials + 1), dtype=np.float)
+        materials = np.zeros((1, num_materials + 1), dtype=np.float32)
         new_model = cls(modelData, materials, resolution=resolution)
         return new_model
 
     @classmethod
     def emptyLike(cls, voxel_model):
         &#34;&#34;&#34;
-        Initialize an empty VoxelModel with the same size, coords, and resolution as another model.
+        Initialize an empty VoxelModel with the same size, materials, coords, and resolution as another model.
 
         :param voxel_model: Reference VoxelModel object
         :return: VoxelModel
@@ -272,6 +281,15 @@ class VoxelModel:
         return new_model
 
     # Property update operations ##############################
+    def setResolution(self, res: float):
+        &#34;&#34;&#34;
+        Change the resolution of a model.
+
+        :return: None
+        &#34;&#34;&#34;
+        new_model = VoxelModel.copy(self)
+        new_model.resolution = res
+        return new_model
 
     def fitWorkspace(self):
         &#34;&#34;&#34;
@@ -395,11 +413,11 @@ class VoxelModel:
         :param connectivity: Connectivity of structuring element (1-3)
         :return: VoxelModel
         &#34;&#34;&#34;
-        mask = np.array(self.voxels[:, :, :] &gt; 0, dtype=np.bool)
+        mask = np.array(self.voxels[:, :, :] &gt; 0, dtype=np.bool_)
         struct = ndimage.generate_binary_structure(3, connectivity)
         new_model = VoxelModel.copy(self)
         new_model.components, new_model.numComponents = ndimage.label(mask, structure=struct)
-        new_model.components = new_model.components.astype(dtype=np.uint8)
+        new_model.components = np.uint8(new_model.components)
         return new_model
 
     # Selection operations ##############################
@@ -421,7 +439,7 @@ class VoxelModel:
         :param material: Material index corresponding to the materials array for the model
         :return: VoxelModel
         &#34;&#34;&#34;
-        mask = np.array(self.voxels == material, dtype=np.bool)
+        mask = np.array(self.voxels == material, dtype=np.bool_)
         materials = np.zeros((2, self.materials.shape[1]), dtype=np.float32)
         materials[1] = self.materials[material]
         return VoxelModel(mask.astype(int), materials, self.coords, self.resolution)
@@ -455,7 +473,7 @@ class VoxelModel:
         :param component: Component label to isolate
         :return: VoxelModel
         &#34;&#34;&#34;
-        mask = np.array(self.components == component, dtype=np.bool)
+        mask = np.array(self.components == component, dtype=np.bool_)
         new_voxels = np.multiply(self.voxels, mask)
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
@@ -480,7 +498,7 @@ class VoxelModel:
 
         :return: VoxelModel
         &#34;&#34;&#34;
-        mask = np.array(self.voxels == 0, dtype=np.bool)
+        mask = np.array(self.voxels == 0, dtype=np.bool_)
         return VoxelModel(mask, self.materials[0:2, :], self.coords, self.resolution)
 
     def __invert__(self):
@@ -499,7 +517,7 @@ class VoxelModel:
 
         :return: VoxelModel
         &#34;&#34;&#34;
-        mask = np.array(self.voxels != 0, dtype=np.bool)
+        mask = np.array(self.voxels != 0, dtype=np.bool_)
         return VoxelModel(mask, self.materials[0:2, :], self.coords, self.resolution)
 
     def getBoundingBox(self):
@@ -529,7 +547,7 @@ class VoxelModel:
 
         ----
 
-        :param material: Material index corresponding to materials.py
+        :param material: Material id corresponding to materials.py
         :return: VoxelModel
         &#34;&#34;&#34;
         new_voxels = self.getOccupied().voxels # Converts input model to a mask, no effect if input is already a mask
@@ -604,7 +622,7 @@ class VoxelModel:
 
         # Paper uses a symmetric difference operation combined with the left/right intersection
         # A condensed version of this operation is used here for code simplicity
-        mask = np.array(a == 0, dtype=np.bool)
+        mask = np.array(a == 0, dtype=np.bool_)
         new_voxels = np.multiply(b, mask)
         new_voxels = new_voxels + a # material from left model takes priority
 
@@ -638,7 +656,7 @@ class VoxelModel:
         &#34;&#34;&#34;
         checkResolution(self, model_to_sub)
         a, b, new_coords = alignDims(self, model_to_sub)
-        mask = np.array(b == 0, dtype=np.bool)
+        mask = np.array(b == 0, dtype=np.bool_)
         new_voxels = np.multiply(a, mask)
         return VoxelModel(new_voxels, self.materials, new_coords, self.resolution)
 
@@ -664,7 +682,7 @@ class VoxelModel:
         &#34;&#34;&#34;
         checkResolution(self, model_2)
         a, b, new_coords = alignDims(self, model_2)
-        mask = np.logical_and(np.array(a != 0, dtype=np.bool), np.array(b != 0, dtype=np.bool))
+        mask = np.logical_and(np.array(a != 0, dtype=np.bool_), np.array(b != 0, dtype=np.bool_))
 
         # Paper provides for left/right intersection
         # For code simplicity, only a left intersection is provided here
@@ -711,8 +729,8 @@ class VoxelModel:
         b = b + i_offset
         b[b == i_offset] = 0
 
-        mask1 = np.array(b == 0, dtype=np.bool)
-        mask2 = np.array(a == 0, dtype=np.bool)
+        mask1 = np.array(b == 0, dtype=np.bool_)
+        mask2 = np.array(a == 0, dtype=np.bool_)
 
         new_voxels = np.multiply(a, mask1) + np.multiply(b, mask2)
 
@@ -1020,7 +1038,7 @@ class VoxelModel:
 
     # Morphology Operations ##############################
 
-    def dilate(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3): # TODO: Preserve overlapping materials?
+    def dilate(self, radius: int = 1, plane: Axes = Axes.XYZ, struct_type: Struct = Struct.STANDARD, connectivity: int = 3): # TODO: Preserve overlapping materials?
         &#34;&#34;&#34;
         Dilate a model along the specified axes.
 
@@ -1036,7 +1054,7 @@ class VoxelModel:
 
         :param radius: Dilation radius in voxels
         :param plane: Dilation directions, set using Axes class
-        :param structType: Shape of structuring element, set using Struct class
+        :param struct_type: Shape of structuring element, set using Struct class
         :param connectivity: Connectivity of structuring element (1-3)
         :return: VoxelModel
         &#34;&#34;&#34;
@@ -1050,7 +1068,7 @@ class VoxelModel:
         new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.uint16)
         new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
 
-        if structType == Struct.SPHERE:
+        if struct_type == Struct.SPHERE:
             struct = structSphere(radius, plane)
             new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
         else: # Struct.STANDARD
@@ -1059,6 +1077,23 @@ class VoxelModel:
                 new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
 
         return VoxelModel(new_voxels, self.materials, (self.coords[0] - radius, self.coords[1] - radius, self.coords[2] - radius), self.resolution)
+
+    def __lshift__(self, radius):
+        &#34;&#34;&#34;
+        Dilate a model in all three axes.
+
+        Overload left shift operator (&lt;&lt;) for VoxelModel objects with dilate().
+
+        Uses:
+
+        - plane = Axes.XYZ
+        - struct_type = Struct.STANDARD
+        - connectivity = 3
+
+        :param radius: Dilation radius in voxels
+        :return: VoxelModel
+        &#34;&#34;&#34;
+        return self.dilate(radius)
 
     def dilateBounded(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
         &#34;&#34;&#34;
@@ -1085,7 +1120,7 @@ class VoxelModel:
 
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
-    def erode(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
+    def erode(self, radius: int = 1, plane: Axes = Axes.XYZ, struct_type: Struct = Struct.STANDARD, connectivity: int = 3):
         &#34;&#34;&#34;
         Erode a model along the specified axes.
 
@@ -1101,7 +1136,7 @@ class VoxelModel:
 
         :param radius: Erosion radius in voxels
         :param plane: Erosion directions, set using Axes class
-        :param structType: Shape of structuring element, set using Struct class
+        :param struct_type: Shape of structuring element, set using Struct class
         :param connectivity: Connectivity of structuring element (1-3)
         :return: VoxelModel
         &#34;&#34;&#34;
@@ -1109,9 +1144,9 @@ class VoxelModel:
             return VoxelModel.copy(self)
 
         new_voxels = np.copy(self.voxels)
-        mask = np.array(new_voxels != 0, dtype=np.bool)
+        mask = np.array(new_voxels != 0, dtype=np.bool_)
 
-        if structType == Struct.SPHERE:
+        if struct_type == Struct.SPHERE:
             struct = structSphere(radius, plane)
             mask = ndimage.binary_erosion(mask, structure=struct)
         else: # Struct.STANDARD
@@ -1121,6 +1156,23 @@ class VoxelModel:
         new_voxels = np.multiply(new_voxels, mask)
 
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
+
+    def __rshift__(self, radius):
+        &#34;&#34;&#34;
+        Erode a model in all three axes.
+
+        Overload right shift operator (&gt;&gt;) for VoxelModel objects with erode().
+
+        Uses:
+
+        - plane = Axes.XYZ
+        - struct_type = Struct.STANDARD
+        - connectivity = 3
+
+        :param radius: Dilation radius in voxels
+        :return: VoxelModel
+        &#34;&#34;&#34;
+        return self.erode(radius)
 
     def closing(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
         &#34;&#34;&#34;
@@ -1159,7 +1211,7 @@ class VoxelModel:
             return VoxelModel.copy(self)
 
         new_voxels = np.copy(self.voxels)
-        mask = np.array(new_voxels != 0, dtype=np.bool)
+        mask = np.array(new_voxels != 0, dtype=np.bool_)
 
         if structType == Struct.SPHERE:
             struct = structSphere(radius, plane)
@@ -1420,13 +1472,16 @@ class VoxelModel:
         &#34;&#34;&#34;
         if axis == Axes.X:
             plane = (1, 2)
+            sign = 1
         elif axis == Axes.Y:
-            plane = (0, 2)
+            plane = (2, 0)
+            sign = -1 # For some reason, Y rotates the opposite direction than expected
         else: # axis == Axes.Z
             plane = (0, 1)
+            sign = 1
 
         centerCoords = self.getCenter()
-        new_voxels = ndimage.rotate(self.voxels, angle, plane, order=0)
+        new_voxels = ndimage.rotate(self.voxels, sign*angle, plane, order=0)
         new_model = VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
         new_model = new_model.setCenter(centerCoords)
 
@@ -1449,6 +1504,32 @@ class VoxelModel:
 
         centerCoords = self.getCenter()
         new_voxels = np.rot90(self.voxels, times, axes=plane)
+        new_model = VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
+        new_model = new_model.setCenter(centerCoords)
+
+        return new_model
+
+    def mirror(self, axes: Axes = Axes.X):
+        &#34;&#34;&#34;
+        Mirror a model along the given axes.
+
+        This operation will mirror ALONG the given axes. For example:
+
+        - Axes.X performs a mirror about the YZ plane
+        - Axes.XY performs a mirror about the YZ plane and the XZ plane
+        - Axes.XYZ performs a mirror along all three axes
+
+        :param axes: Axes for mirror operation, set using Axes class
+        :return: VoxelModel
+        &#34;&#34;&#34;
+        flip_axis = []
+        for i in range(len(axes.value)):
+            if axes.value[i]:
+                flip_axis.append(i)
+        flip_axis = tuple(flip_axis)
+
+        centerCoords = self.getCenter()
+        new_voxels = np.flip(self.voxels, flip_axis)
         new_model = VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
         new_model = new_model.setCenter(centerCoords)
 
@@ -1544,6 +1625,15 @@ class VoxelModel:
         new_model.coords = (x_new, y_new, z_new)
         return new_model
 
+    def getCoords(self):
+        &#34;&#34;&#34;
+        Get the origin coordinates of a model.
+
+        :return: Origin coordinates in voxels
+        &#34;&#34;&#34;
+        model = self.fitWorkspace()
+        return model.coords
+
     def setCoords(self, coords: Tuple[int, int, int]):
         &#34;&#34;&#34;
         Set the origin of a model to the specified coordinates.
@@ -1554,6 +1644,55 @@ class VoxelModel:
         new_model = self.fitWorkspace()
         new_model.coords = coords
         return new_model
+
+    def getMaxCoords(self):
+        &#34;&#34;&#34;
+        Get the maximum coordinate location in a model.
+
+        This point is equal to origin coordinates + model dimensions.
+
+        :return: Maximum coordinates in voxels
+        &#34;&#34;&#34;
+        model = self.fitWorkspace()
+        x = model.coords[0] + model.voxels.shape[0]
+        y = model.coords[1] + model.voxels.shape[1]
+        z = model.coords[2] + model.voxels.shape[2]
+        return x, y, z
+
+    def getDim(self):
+        &#34;&#34;&#34;
+        Get the dimensions of model.
+
+        :return: Model dimensions in voxels
+        &#34;&#34;&#34;
+        model = self.fitWorkspace()
+        x = model.voxels.shape[0]
+        y = model.voxels.shape[1]
+        z = model.voxels.shape[2]
+        return x, y, z
+
+    def isOccupied(self, coords: Tuple[int, int, int]):
+        &#34;&#34;&#34;
+        Determine if a specific voxel is occupied.
+
+        :return: True/False
+        &#34;&#34;&#34;
+        x = coords[0] - self.coords[0]
+        y = coords[1] - self.coords[1]
+        z = coords[2] - self.coords[2]
+
+        if x &lt; 0 or x &gt;= self.voxels.shape[0]:
+            return False
+        if y &lt; 0 or y &gt;= self.voxels.shape[1]:
+            return False
+        if z &lt; 0 or z &gt;= self.voxels.shape[2]:
+            return False
+
+        v = self.voxels[x, y, z]
+        if v == 0:
+            return False
+        else:
+            return True
 
     # Model Info ##############################
 
@@ -1590,26 +1729,27 @@ class VoxelModel:
         :param material: Material index
         :return: Dictionary of material properties
         &#34;&#34;&#34;
-        avgProps = {}
+        avg_properties = {}
         for key in material_properties[0]:
             if key == &#39;name&#39; or key == &#39;process&#39;:
                 string = &#39;&#39;
                 for i in range(len(self.materials[0])-1):
                     if self.materials[material][i + 1] &gt; 0:
-                        string = string + material_properties[i][key] + &#39; &#39;
-                avgProps.update({key: string})
-            elif key == &#39;MM&#39; or key == &#39;FM&#39;:
-                var = 0
-                for i in range(len(self.materials[0])-1):
-                    if self.materials[material][i + 1] &gt; 0:
-                        var = max(var, material_properties[i][key])
-                avgProps.update({key: var})
+                        current_material_data = getMaterialData(i)
+                        string = string + current_material_data[key] + &#39; &#39;
+                avg_properties.update({key: string})
+            elif key == &#39;MM&#39; or key == &#39;MMD&#39; or key == &#39;FM&#39; or key == &#39;HG&#39; or key == &#39;HGM&#39;:
+                material_id = self.materials[material][1:].argmax()
+                current_material_data = getMaterialData(material_id)
+                var = current_material_data[key]
+                avg_properties.update({key: var})
             else:
                 var = 0
                 for i in range(len(self.materials[0])-1):
-                    var = var + self.materials[material][i + 1] * material_properties[i][key]
-                avgProps.update({key: var})
-        return avgProps
+                    current_material_data = getMaterialData(i)
+                    var = var + self.materials[material][i + 1] * current_material_data[key]
+                avg_properties.update({key: var})
+        return avg_properties
 
     def getSSData(self, material):
         &#34;&#34;&#34;
@@ -1620,17 +1760,46 @@ class VoxelModel:
         TODO: Make this average multiple stress-strain curves
 
         :param material: Material index
-        :return: Dictionary of material properties
+        :return: Dictionary of stress-strain data
         &#34;&#34;&#34;
-        materialIndex = self.materials[material][1:].argmax()
+        material_id = self.materials[material][1:].argmax()
+        current_material_data = getMaterialData(material_id)
 
         try:
-            SSData = {&#39;stress&#39;:ss_data[materialIndex][&#39;stress&#39;], &#39;strain&#39;:ss_data[materialIndex][&#39;strain&#39;]}
+            ss_data_index = current_material_data[&#39;MMD&#39;]
+            current_ss_data = next((item for item in ss_data if item[&#39;id&#39;] == ss_data_index), None)
+            if current_ss_data is None:
+                raise KeyError
         except KeyError:
-            print(&#39;Stress-strain data not available for &#39; + ss_data[materialIndex][&#39;name&#39;])
-            SSData = None
+            print(&#39;Stress-strain data not available for &#39; + current_material_data[&#39;name&#39;])
+            current_ss_data = None
 
-        return SSData
+        return current_ss_data
+
+    def getHGModel(self, material):
+        &#34;&#34;&#34;
+        Get the hydrogel model parameters for a row in a model&#39;s material array.
+
+        This is currently returned based on the material present in the highest percentage.
+
+        TODO: Make this average multiple model parameters
+
+        :param material: Material index
+        :return: Dictionary of hydrogel model parameters
+        &#34;&#34;&#34;
+        material_id = self.materials[material][1:].argmax()
+        current_material_data = getMaterialData(material_id)
+
+        try:
+            hg_model_index = current_material_data[&#39;HGM&#39;]
+            current_hg_model = next((item for item in hg_models if item[&#39;id&#39;] == hg_model_index), None)
+            if current_hg_model is None:
+                raise KeyError
+        except KeyError:
+            print(&#39;Hydrogel model data not available for &#39; + current_material_data[&#39;name&#39;])
+            current_hg_model = None
+
+        return current_hg_model
 
     def getVoxelProperties(self, coords: Tuple[int, int, int]):
         &#34;&#34;&#34;
@@ -1843,6 +2012,60 @@ class VoxelModel:
 
     # File IO ##############################
 
+    # Add model to a K3D plot in Jupyter Notebook
+    def plot(self, plot=None, name: str = &#39;model&#39;, wireframe: bool = False, **kwargs):
+        &#34;&#34;&#34;
+        Add model to a K3D plot.
+
+        Additional display options:
+            opacity: `float`.
+                Opacity of voxels.
+            outlines: `bool`.
+                Whether mesh should display with outlines.
+            outlines_color: `int`.
+                Packed RGB color of the resulting outlines (0xff0000 is red, 0xff is blue)
+            kwargs: `dict`.
+                Dictionary arguments to configure transform and model_matrix.
+
+        More information available at: https://github.com/K3D-tools/K3D-jupyter
+
+        :param plot: Plot object to add model to
+        :param name: Model name
+        :param wireframe: Enable displaying model as a wireframe
+        :param kwargs: Additional display options (see above)
+        :return: K3D plot object
+        &#34;&#34;&#34;
+        model = self.fitWorkspace() | VoxelModel.empty((1, 1, 1), self.resolution)
+        model = model.removeDuplicateMaterials()
+
+        # Get colors
+        colors = []
+
+        for m in model.materials:
+            r = 0
+            g = 0
+            b = 0
+
+            for i in range(1, len(m)):
+                r = r + m[i] * material_properties[i - 1][&#39;r&#39;]
+                g = g + m[i] * material_properties[i - 1][&#39;g&#39;]
+                b = b + m[i] * material_properties[i - 1][&#39;b&#39;]
+
+            r = 1 if r &gt; 1 else r
+            g = 1 if g &gt; 1 else g
+            b = 1 if b &gt; 1 else b
+
+            colors.append(rgb_to_hex(r, g, b))
+
+        colors = np.array(colors, dtype=np.uint32)[1:]
+
+        # Plot
+        if plot is None:
+            plot = k3d.plot()
+
+        plot += k3d.voxels(np.swapaxes(model.voxels, 0, 2).astype(np.uint8), color_map=colors, name=name, wireframe=wireframe, **kwargs)
+        return plot
+
     def saveVF(self, filename: str):
         &#34;&#34;&#34;
         Save model data to a .vf file
@@ -1932,7 +2155,7 @@ class VoxelModel:
 
         Example:
 
-        ``model1.openVF(&#34;test-file&#34;)``
+        ``model1 = vf.VoxelModel.openVF(&#34;test-file&#34;)``
 
         ----
 
@@ -2111,22 +2334,27 @@ class VoxelModel:
             writeClos(f, &#39;Display&#39;, 3)
 
             writeOpen(f, &#39;Mechanical&#39;, 3)
-            writeData(f, &#39;MatModel&#39;, int(avgProps[&#39;MM&#39;]), 4)
             if int(avgProps[&#39;MM&#39;]) == 3:
-                SSData = self.getSSData(row)
-                writeOpen(f, &#39;SSData&#39;, 4)
-                writeData(f, &#39;NumDataPts&#39;, len(SSData[&#39;strain&#39;]), 5)
+                current_ss_data = self.getSSData(row)
+                if current_ss_data is not None:
+                    writeData(f, &#39;MatModel&#39;, 3, 4)
+                    writeOpen(f, &#39;SSData&#39;, 4)
+                    writeData(f, &#39;NumDataPts&#39;, len(current_ss_data[&#39;strain&#39;]), 5)
 
-                writeOpen(f, &#39;StrainData&#39;, 5)
-                for point in range(len(SSData[&#39;strain&#39;])):
-                    writeData(f, &#39;Strain&#39;, SSData[&#39;strain&#39;][point], 6)
-                writeClos(f, &#39;StrainData&#39;, 5)
+                    writeOpen(f, &#39;StrainData&#39;, 5)
+                    for point in current_ss_data[&#39;strain&#39;]:
+                        writeData(f, &#39;Strain&#39;, point, 6)
+                    writeClos(f, &#39;StrainData&#39;, 5)
 
-                writeOpen(f, &#39;StressData&#39;, 5)
-                for point in range(len(SSData[&#39;stress&#39;])):
-                    writeData(f, &#39;Stress&#39;, SSData[&#39;stress&#39;][point], 6)
-                writeClos(f, &#39;StressData&#39;, 5)
-                writeClos(f, &#39;SSData&#39;, 4)
+                    writeOpen(f, &#39;StressData&#39;, 5)
+                    for point in current_ss_data[&#39;stress&#39;]:
+                        writeData(f, &#39;Stress&#39;, point, 6)
+                    writeClos(f, &#39;StressData&#39;, 5)
+                    writeClos(f, &#39;SSData&#39;, 4)
+                else:
+                    writeData(f, &#39;MatModel&#39;, 0, 4)
+            else:
+                writeData(f, &#39;MatModel&#39;, avgProps[&#39;MM&#39;], 4)
 
             writeData(f, &#39;Elastic_Mod&#39;, avgProps[&#39;E&#39;], 4)
             writeData(f, &#39;Plastic_Mod&#39;, avgProps[&#39;Z&#39;], 4)
@@ -2141,7 +2369,36 @@ class VoxelModel:
             writeData(f, &#39;uStatic&#39;, avgProps[&#39;uS&#39;], 4)
             writeData(f, &#39;uDynamic&#39;, avgProps[&#39;uD&#39;], 4)
 
-            writeClos(f, &#39;Mechanical&#39;, 3)
+            if int(avgProps[&#39;HG&#39;]) == 1:
+                current_hg_model = self.getHGModel(row)
+                if current_hg_model is not None:
+                    writeData(f, &#39;HydrogelModel&#39;, 1, 4)
+                    writeClos(f, &#39;Mechanical&#39;, 3)
+                    writeOpen(f, &#39;Hydrogel&#39;, 3)
+                    writeData(f, &#39;Name&#39;, current_hg_model[&#39;name&#39;], 4)
+                    writeData(f, &#39;VoxelDim&#39;, current_hg_model[&#39;test_voxel_dim&#39;], 4)
+                    writeData(f, &#39;IdealDisplacement&#39;, current_hg_model[&#39;ideal_displacement&#39;], 4)
+                    writeData(f, &#39;TestDisplacement&#39;, current_hg_model[&#39;test_displacement&#39;], 4)
+                    writeData(f, &#39;TimeStepCorrection&#39;, current_hg_model[&#39;test_time_step&#39;], 4)
+                    writeData(f, &#39;KpRising&#39;, current_hg_model[&#39;kp_rising&#39;], 4)
+                    writeData(f, &#39;KpFalling&#39;, current_hg_model[&#39;kp_falling&#39;], 4)
+                    writeData(f, &#39;MaxTemp&#39;, current_hg_model[&#39;ideal_max_temp&#39;], 4)
+                    writeData(f, &#39;MinTemp&#39;, current_hg_model[&#39;ideal_min_temp&#39;], 4)
+                    writeData(f, &#39;TestMax&#39;, current_hg_model[&#39;test_max_temp&#39;], 4)
+                    writeData(f, &#39;TestMin&#39;, current_hg_model[&#39;test_min_temp&#39;], 4)
+                    writeData(f, &#39;C0&#39;, current_hg_model[&#39;c0&#39;], 4)
+                    writeData(f, &#39;C1&#39;, current_hg_model[&#39;c1&#39;], 4)
+                    writeData(f, &#39;C2&#39;, current_hg_model[&#39;c2&#39;], 4)
+                    writeData(f, &#39;C3&#39;, current_hg_model[&#39;c3&#39;], 4)
+                    writeData(f, &#39;C4&#39;, current_hg_model[&#39;c4&#39;], 4)
+                    writeData(f, &#39;C5&#39;, current_hg_model[&#39;c5&#39;], 4)
+                    writeClos(f, &#39;Hydrogel&#39;, 3)
+                else:
+                    writeData(f, &#39;HydrogelModel&#39;, 0, 4)
+                    writeClos(f, &#39;Mechanical&#39;, 3)
+            else:
+                writeData(f, &#39;HydrogelModel&#39;, 0, 4)
+                writeClos(f, &#39;Mechanical&#39;, 3)
             writeClos(f, &#39;Material&#39;, 2)
         writeClos(f, &#39;Palette&#39;, 1)
 
@@ -2187,7 +2444,7 @@ class GpuSettings:
     Object to store GPU settings.
 
     After initializing and configuring the GPU settings, use applySettings() to
-    apply them. Changes will only persist for the current python session.
+    apply them. Changes will only persist for the current Python session.
 
     For persistent GPU settings, configure these environment variables:
 
@@ -2201,7 +2458,7 @@ class GpuSettings:
 
     ``gpu = GpuSettings()``
 
-    ``print(&#39;Default CUDA settings:&#39;) + str(gpu.CUDA_enable) + &#39;, &#39; + str(gpu.CUDA_device))``
+    ``print(&#39;Default CUDA settings:&#39; + str(gpu.CUDA_enable) + &#39;, &#39; + str(gpu.CUDA_device))``
 
     ``gpu.setCUDA(True, 1)``
 
@@ -2248,6 +2505,36 @@ class GpuSettings:
         os.environ[&#39;VF_CUDA_DEVICE&#39;] = str(self.CUDA_device)
 
 # Helper functions ##############################################################
+def rgb_to_hex(r: float, g: float, b: float):
+    &#34;&#34;&#34;
+    Convert RGB values to a single hexadecimal value.
+
+    :param r: Red percentage (0-1)
+    :param g: Green percentage (0-1)
+    :param b: Blue percentage (0-1)
+    :return: Hexadecimal color as an integer
+    &#34;&#34;&#34;
+    r = round(r * 255)
+    g = round(g * 255)
+    b = round(b * 255)
+    hex_str = &#39;0x{:02x}{:02x}{:02x}&#39;.format(r, g, b)
+    return int(hex_str, base=16)
+
+def getMaterialData(material_id):
+    &#34;&#34;&#34;
+    Get the material data for a specific material id.
+
+    :param material_id: Material id corresponding to materials.py
+    :return: Dictionary of material properties
+    &#34;&#34;&#34;
+    current_material_data = next((item for item in material_properties if item[&#39;id&#39;] == material_id))
+
+    if current_material_data is None:
+        print(&#39;Material data not available for id &#39; + str(material_id) + &#39; -- using first nonzero material&#39;)
+        current_material_data = next((item for item in material_properties if item[&#39;id&#39;] != 0))
+
+    return current_material_data
+
 def makeMesh(filename: str, delete_files: bool = True, gmsh_on_path: bool = False):
     &#34;&#34;&#34;
     Import mesh data from file
@@ -2367,7 +2654,7 @@ def structSphere(radius: int, plane: Axes):
     :return: Structuring element array
     &#34;&#34;&#34;
     diameter = (radius * 2) + 1
-    struct = np.zeros((diameter, diameter, diameter), dtype=np.bool)
+    struct = np.zeros((diameter, diameter, diameter), dtype=np.bool_)
     for x in range(diameter):
         for y in range(diameter):
             for z in range(diameter):
@@ -2423,11 +2710,11 @@ def generateMaterials(m):
     &#34;&#34;&#34;
     Generate the materials table for a single-material VoxelModel.
 
-    :param m: Material index corresponding to materials.py
+    :param m: Material id corresponding to materials.py
     :return: Array containing the specified material and the empty material
     &#34;&#34;&#34;
-    materials = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
+    materials = np.zeros(len(material_properties) + 1, dtype=np.float32)
+    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float32)
     material_vector[0] = 1
     material_vector[m+1] = 1
     materials = np.vstack((materials, material_vector))
@@ -2685,9 +2972,7 @@ def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len, error_spre
 <span>def <span class="ident">alignDims</span></span>(<span>modelA, modelB)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Make object dimensions compatible for solid body operations.</p>
-<p>This function accounts for location coordinates.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>modelA</code></strong></dt>
 <dd><p>Input model A</p></dd>
@@ -2749,11 +3034,7 @@ def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len, error_spre
 <span>def <span class="ident">checkResolution</span></span>(<span>modelA, modelB)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Check if model resolutions are compatible for solid geometry operations.</p>
-<p>Incompatible resolutions will print an error. This will not prevent the
-operation from running, but it may indicate that the models are at
-different scales or that a resolution value has been incorrectly set.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>modelA</code></strong></dt>
 <dd><p>Input model A</p></dd>
@@ -2880,11 +3161,10 @@ def findFilledVoxels(a, b):
 <span>def <span class="ident">generateMaterials</span></span>(<span>m)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate the materials table for a single-material VoxelModel.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>m</code></strong></dt>
-<dd><p>Material index corresponding to materials.py</p></dd>
+<dd><p>Material id corresponding to materials.py</p></dd>
 </dl>
 <h2 id="returns">Returns:</h2>
 <dl>
@@ -2898,23 +3178,55 @@ def findFilledVoxels(a, b):
     &#34;&#34;&#34;
     Generate the materials table for a single-material VoxelModel.
 
-    :param m: Material index corresponding to materials.py
+    :param m: Material id corresponding to materials.py
     :return: Array containing the specified material and the empty material
     &#34;&#34;&#34;
-    materials = np.zeros(len(material_properties) + 1, dtype=np.float)
-    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float)
+    materials = np.zeros(len(material_properties) + 1, dtype=np.float32)
+    material_vector = np.zeros(len(material_properties) + 1, dtype=np.float32)
     material_vector[0] = 1
     material_vector[m+1] = 1
     materials = np.vstack((materials, material_vector))
     return materials</code></pre>
 </details>
 </dd>
+<dt id="voxelfuse.voxel_model.getMaterialData"><code class="name flex">
+<span>def <span class="ident">getMaterialData</span></span>(<span>material_id)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="args">Args:</h2>
+<dl>
+<dt><strong><code>material_id</code></strong></dt>
+<dd><p>Material id corresponding to materials.py</p></dd>
+</dl>
+<h2 id="returns">Returns:</h2>
+<dl>
+<dd><p>Dictionary of material properties</p></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getMaterialData(material_id):
+    &#34;&#34;&#34;
+    Get the material data for a specific material id.
+
+    :param material_id: Material id corresponding to materials.py
+    :return: Dictionary of material properties
+    &#34;&#34;&#34;
+    current_material_data = next((item for item in material_properties if item[&#39;id&#39;] == material_id))
+
+    if current_material_data is None:
+        print(&#39;Material data not available for id &#39; + str(material_id) + &#39; -- using first nonzero material&#39;)
+        current_material_data = next((item for item in material_properties if item[&#39;id&#39;] != 0))
+
+    return current_material_data</code></pre>
+</details>
+</dd>
 <dt id="voxelfuse.voxel_model.makeMesh"><code class="name flex">
 <span>def <span class="ident">makeMesh</span></span>(<span>filename: str, delete_files: bool = True, gmsh_on_path: bool = False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Import mesh data from file</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>filename</code></strong></dt>
 <dd><p>File name with extension</p></dd>
@@ -2977,12 +3289,48 @@ def findFilledVoxels(a, b):
     return data</code></pre>
 </details>
 </dd>
+<dt id="voxelfuse.voxel_model.rgb_to_hex"><code class="name flex">
+<span>def <span class="ident">rgb_to_hex</span></span>(<span>r: float, g: float, b: float)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="args">Args:</h2>
+<dl>
+<dt><strong><code>r</code></strong></dt>
+<dd><p>Red percentage (0-1)</p></dd>
+<dt><strong><code>g</code></strong></dt>
+<dd><p>Green percentage (0-1)</p></dd>
+<dt><strong><code>b</code></strong></dt>
+<dd><p>Blue percentage (0-1)</p></dd>
+</dl>
+<h2 id="returns">Returns:</h2>
+<dl>
+<dd><p>Hexadecimal color as an integer</p></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rgb_to_hex(r: float, g: float, b: float):
+    &#34;&#34;&#34;
+    Convert RGB values to a single hexadecimal value.
+
+    :param r: Red percentage (0-1)
+    :param g: Green percentage (0-1)
+    :param b: Blue percentage (0-1)
+    :return: Hexadecimal color as an integer
+    &#34;&#34;&#34;
+    r = round(r * 255)
+    g = round(g * 255)
+    b = round(b * 255)
+    hex_str = &#39;0x{:02x}{:02x}{:02x}&#39;.format(r, g, b)
+    return int(hex_str, base=16)</code></pre>
+</details>
+</dd>
 <dt id="voxelfuse.voxel_model.structSphere"><code class="name flex">
 <span>def <span class="ident">structSphere</span></span>(<span>radius: int, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a spherical structuring element.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>radius</code></strong></dt>
 <dd><p>Radius of structuring element in voxels</p></dd>
@@ -3006,7 +3354,7 @@ def findFilledVoxels(a, b):
     :return: Structuring element array
     &#34;&#34;&#34;
     diameter = (radius * 2) + 1
-    struct = np.zeros((diameter, diameter, diameter), dtype=np.bool)
+    struct = np.zeros((diameter, diameter, diameter), dtype=np.bool_)
     for x in range(diameter):
         for y in range(diameter):
             for z in range(diameter):
@@ -3035,12 +3383,7 @@ def findFilledVoxels(a, b):
 <span>def <span class="ident">structStandard</span></span>(<span>connectivity: int, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a 3x3x3 structuring element with the specified connectivity.</p>
-<p>Outer face of structuring element illustrated for connectivity values 1-3:</p>
-<p>0,0,0 | 0,1,0 | 1,1,1</p>
-<p>0,1,0 | 1,1,1 | 1,1,1</p>
-<p>0,0,0 | 0,1,0 | 1,1,1</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>connectivity</code></strong></dt>
 <dd><p>Connectivity of structuring element (1-3)</p></dd>
@@ -3088,11 +3431,7 @@ def findFilledVoxels(a, b):
 <span>def <span class="ident">toFullMaterials</span></span>(<span>voxels, materials, n_materials)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Convert from index-based material mixture storage to storing
-full material mixtures at every voxel.</p>
-<p>This representation requires much more memory, but is
-needed for some operations. Also see toIndexedMaterials().</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>voxels</code></strong></dt>
 <dd><p>VoxelModel.voxels</p></dd>
@@ -3142,10 +3481,7 @@ def toFullMaterials(voxels, materials, n_materials):
 <span>def <span class="ident">toIndexedMaterials</span></span>(<span>voxels, model, resolution)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Convert from storing full material mixtures at every voxel
-to index-based material mixture storage.</p>
-<p>Also see toFullMaterials().</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>voxels</code></strong></dt>
 <dd><p>Model data array</p></dd>
@@ -3197,11 +3533,10 @@ to index-based material mixture storage.</p>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.writeClos"><code class="name flex">
-<span>def <span class="ident">writeClos</span></span>(<span>f: TextIO, name: str, tab_level: int = 0)</span>
+<span>def <span class="ident">writeClos</span></span>(<span>f: <class 'TextIO'>, name: str, tab_level: int = 0)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Write a closing tag.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>f</code></strong></dt>
 <dd><p>File object</p></dd>
@@ -3233,11 +3568,10 @@ to index-based material mixture storage.</p>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.writeData"><code class="name flex">
-<span>def <span class="ident">writeData</span></span>(<span>f: TextIO, name: str, value, tab_level: int = 0)</span>
+<span>def <span class="ident">writeData</span></span>(<span>f: <class 'TextIO'>, name: str, value, tab_level: int = 0)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Write a data element and the surrounding tags.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>f</code></strong></dt>
 <dd><p>File object</p></dd>
@@ -3274,11 +3608,10 @@ to index-based material mixture storage.</p>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.writeHeader"><code class="name flex">
-<span>def <span class="ident">writeHeader</span></span>(<span>f: TextIO, version: str, encoding: str)</span>
+<span>def <span class="ident">writeHeader</span></span>(<span>f: <class 'TextIO'>, version: str, encoding: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Write XML file header</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>f</code></strong></dt>
 <dd><p>File object</p></dd>
@@ -3308,11 +3641,10 @@ to index-based material mixture storage.</p>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.writeOpen"><code class="name flex">
-<span>def <span class="ident">writeOpen</span></span>(<span>f: TextIO, name: str, tab_level: int = 0)</span>
+<span>def <span class="ident">writeOpen</span></span>(<span>f: <class 'TextIO'>, name: str, tab_level: int = 0)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Write an opening tag.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>f</code></strong></dt>
 <dd><p>File object</p></dd>
@@ -3450,14 +3782,14 @@ to index-based material mixture storage.</p>
 <dd>
 <div class="desc"><p>Object to store GPU settings.</p>
 <p>After initializing and configuring the GPU settings, use applySettings() to
-apply them. Changes will only persist for the current python session.</p>
+apply them. Changes will only persist for the current Python session.</p>
 <p>For persistent GPU settings, configure these environment variables:</p>
 <p><code>VF_CUDA_ENABLE = 1</code> </p>
 <p><code>VF_CUDA_DEVICE = &lt;desired GPU ID&gt;</code></p>
 <hr>
 <p>Example:</p>
 <p><code>gpu = GpuSettings()</code></p>
-<p><code>print('Default CUDA settings:') + str(gpu.CUDA_enable) + ', ' + str(gpu.CUDA_device))</code></p>
+<p><code>print('Default CUDA settings:' + str(gpu.CUDA_enable) + ', ' + str(gpu.CUDA_device))</code></p>
 <p><code>gpu.setCUDA(True, 1)</code></p>
 <p><code>gpu.applySettings()</code></p>
 <hr>
@@ -3471,7 +3803,7 @@ apply them. Changes will only persist for the current python session.</p>
     Object to store GPU settings.
 
     After initializing and configuring the GPU settings, use applySettings() to
-    apply them. Changes will only persist for the current python session.
+    apply them. Changes will only persist for the current Python session.
 
     For persistent GPU settings, configure these environment variables:
 
@@ -3485,7 +3817,7 @@ apply them. Changes will only persist for the current python session.</p>
 
     ``gpu = GpuSettings()``
 
-    ``print(&#39;Default CUDA settings:&#39;) + str(gpu.CUDA_enable) + &#39;, &#39; + str(gpu.CUDA_device))``
+    ``print(&#39;Default CUDA settings:&#39; + str(gpu.CUDA_enable) + &#39;, &#39; + str(gpu.CUDA_device))``
 
     ``gpu.setCUDA(True, 1)``
 
@@ -3537,9 +3869,7 @@ apply them. Changes will only persist for the current python session.</p>
 <span>def <span class="ident">applySettings</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Apply GPU settings as overrides.</p>
-<p>These changes will only persist for the current python session.</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>None</p></dd>
 </dl></div>
@@ -3563,8 +3893,7 @@ apply them. Changes will only persist for the current python session.</p>
 <span>def <span class="ident">setCUDA</span></span>(<span>self, CUDA_enable: bool = True, CUDA_device: int = 0)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Set overrides for CUDA settings.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>CUDA_enable</code></strong></dt>
 <dd><p>Enable/disable CUDA acceleration</p></dd>
@@ -3676,17 +4005,15 @@ apply them. Changes will only persist for the current python session.</p>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel"><code class="flex name class">
 <span>class <span class="ident">VoxelModel</span></span>
-<span>(</span><span>voxels, materials, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1)</span>
+<span>(</span><span>voxels: numpy.ndarray, materials: Union[int, numpy.ndarray] = None, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>VoxelModel object that stores geometry, position, and material information.</p>
-<p>Initialize a VoxelModel object.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>voxels</code></strong></dt>
 <dd><p>Array storing the index of the material present at each voxel</p></dd>
 <dt><strong><code>materials</code></strong></dt>
-<dd><p>Array of all material mixtures present in model, material format: (a, m0, m1, &hellip; mn)</p></dd>
+<dd><p>Material index (int), or array of all material mixtures present in model with material format: (a, m0, m1, &hellip; mn)</p></dd>
 <dt><strong><code>coords</code></strong></dt>
 <dd><p>Model origin coordinates</p></dd>
 <dt><strong><code>resolution</code></strong></dt>
@@ -3701,17 +4028,25 @@ apply them. Changes will only persist for the current python session.</p>
     VoxelModel object that stores geometry, position, and material information.
     &#34;&#34;&#34;
 
-    def __init__(self, voxels, materials, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
+    def __init__(self, voxels: np.ndarray, materials: TypeUnion[int, np.ndarray] = None, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1):
         &#34;&#34;&#34;
         Initialize a VoxelModel object.
 
         :param voxels: Array storing the index of the material present at each voxel
-        :param materials: Array of all material mixtures present in model, material format: (a, m0, m1, ... mn)
+        :param materials: Material index (int), or array of all material mixtures present in model with material format: (a, m0, m1, ... mn)
         :param coords: Model origin coordinates
         :param resolution: Number of voxels per mm (higher number = finer resolution)
         &#34;&#34;&#34;
         self.voxels = np.copy(voxels) # Use np.copy to break references
-        self.materials = np.copy(materials)
+
+        # Determine how materials were specified and create the materials array accordingly
+        if materials is None:
+            self.materials = generateMaterials(1)
+        elif isinstance(materials, int):
+            self.materials = generateMaterials(materials)
+        else:
+            self.materials = np.copy(materials)
+
         self.coords = coords
         self.resolution = resolution
         self.components = np.zeros_like(voxels)
@@ -3726,7 +4061,7 @@ apply them. Changes will only persist for the current python session.</p>
 
         Example:
 
-        ``model1 = VoxelModel.fromVoxFile(&#39;cylinder-red.vox&#39;, (0, 5, 0), 1)``
+        ``model1 = vf.VoxelModel.fromVoxFile(&#39;cylinder-red.vox&#39;, (0, 5, 0), 1)``
 
         ----
 
@@ -3765,13 +4100,13 @@ apply them. Changes will only persist for the current python session.</p>
 
         Example:
 
-        ``model1 = VoxelModel.fromMeshFile(&#39;center.stl&#39;, (67, 3, 0), 2, 1)``
+        ``model1 = vf.VoxelModel.fromMeshFile(&#39;center.stl&#39;, (67, 3, 0), 2, 1)``
 
         ____
 
         :param filename: File name with extension
         :param coords: Model origin coordinates
-        :param material: Material index corresponding to materials.py
+        :param material: Material id corresponding to materials.py
         :param resolution: Number of voxels per mm
         :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
         :return: VoxelModel
@@ -3821,8 +4156,7 @@ apply them. Changes will only persist for the current python session.</p>
         xyz_mid = np.concatenate((xyz_mid, xyz_mid[:, 0:1] * 0 + 1), 1)
 
         # Create list of indices of each voxel
-        ijk_mid = np.array(
-            np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing=&#39;ij&#39;))
+        ijk_mid = np.array(np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing=&#39;ij&#39;))
         ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
         ijk_mid2 = ijk_mid.reshape(-1, 3)
 
@@ -3831,7 +4165,7 @@ apply them. Changes will only persist for the current python session.</p>
 
         lmn = ijk_mid2[np.unique(jj)]
 
-        voxels = np.zeros(ijk_mid.shape[:3], dtype=np.bool)
+        voxels = np.zeros(ijk_mid.shape[:3], dtype=np.bool_)
         voxels[lmn[:, 0], lmn[:, 1], lmn[:, 2]] = True
 
         new_model =  cls(voxels, generateMaterials(material), coords=coords, resolution=resolution).fitWorkspace()
@@ -3848,14 +4182,14 @@ apply them. Changes will only persist for the current python session.</p>
         :return: VoxelModel
         &#34;&#34;&#34;
         modelData = np.zeros(size, dtype=np.uint16)
-        materials = np.zeros((1, num_materials + 1), dtype=np.float)
+        materials = np.zeros((1, num_materials + 1), dtype=np.float32)
         new_model = cls(modelData, materials, resolution=resolution)
         return new_model
 
     @classmethod
     def emptyLike(cls, voxel_model):
         &#34;&#34;&#34;
-        Initialize an empty VoxelModel with the same size, coords, and resolution as another model.
+        Initialize an empty VoxelModel with the same size, materials, coords, and resolution as another model.
 
         :param voxel_model: Reference VoxelModel object
         :return: VoxelModel
@@ -3877,6 +4211,15 @@ apply them. Changes will only persist for the current python session.</p>
         return new_model
 
     # Property update operations ##############################
+    def setResolution(self, res: float):
+        &#34;&#34;&#34;
+        Change the resolution of a model.
+
+        :return: None
+        &#34;&#34;&#34;
+        new_model = VoxelModel.copy(self)
+        new_model.resolution = res
+        return new_model
 
     def fitWorkspace(self):
         &#34;&#34;&#34;
@@ -4000,11 +4343,11 @@ apply them. Changes will only persist for the current python session.</p>
         :param connectivity: Connectivity of structuring element (1-3)
         :return: VoxelModel
         &#34;&#34;&#34;
-        mask = np.array(self.voxels[:, :, :] &gt; 0, dtype=np.bool)
+        mask = np.array(self.voxels[:, :, :] &gt; 0, dtype=np.bool_)
         struct = ndimage.generate_binary_structure(3, connectivity)
         new_model = VoxelModel.copy(self)
         new_model.components, new_model.numComponents = ndimage.label(mask, structure=struct)
-        new_model.components = new_model.components.astype(dtype=np.uint8)
+        new_model.components = np.uint8(new_model.components)
         return new_model
 
     # Selection operations ##############################
@@ -4026,7 +4369,7 @@ apply them. Changes will only persist for the current python session.</p>
         :param material: Material index corresponding to the materials array for the model
         :return: VoxelModel
         &#34;&#34;&#34;
-        mask = np.array(self.voxels == material, dtype=np.bool)
+        mask = np.array(self.voxels == material, dtype=np.bool_)
         materials = np.zeros((2, self.materials.shape[1]), dtype=np.float32)
         materials[1] = self.materials[material]
         return VoxelModel(mask.astype(int), materials, self.coords, self.resolution)
@@ -4060,7 +4403,7 @@ apply them. Changes will only persist for the current python session.</p>
         :param component: Component label to isolate
         :return: VoxelModel
         &#34;&#34;&#34;
-        mask = np.array(self.components == component, dtype=np.bool)
+        mask = np.array(self.components == component, dtype=np.bool_)
         new_voxels = np.multiply(self.voxels, mask)
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
@@ -4085,7 +4428,7 @@ apply them. Changes will only persist for the current python session.</p>
 
         :return: VoxelModel
         &#34;&#34;&#34;
-        mask = np.array(self.voxels == 0, dtype=np.bool)
+        mask = np.array(self.voxels == 0, dtype=np.bool_)
         return VoxelModel(mask, self.materials[0:2, :], self.coords, self.resolution)
 
     def __invert__(self):
@@ -4104,7 +4447,7 @@ apply them. Changes will only persist for the current python session.</p>
 
         :return: VoxelModel
         &#34;&#34;&#34;
-        mask = np.array(self.voxels != 0, dtype=np.bool)
+        mask = np.array(self.voxels != 0, dtype=np.bool_)
         return VoxelModel(mask, self.materials[0:2, :], self.coords, self.resolution)
 
     def getBoundingBox(self):
@@ -4134,7 +4477,7 @@ apply them. Changes will only persist for the current python session.</p>
 
         ----
 
-        :param material: Material index corresponding to materials.py
+        :param material: Material id corresponding to materials.py
         :return: VoxelModel
         &#34;&#34;&#34;
         new_voxels = self.getOccupied().voxels # Converts input model to a mask, no effect if input is already a mask
@@ -4209,7 +4552,7 @@ apply them. Changes will only persist for the current python session.</p>
 
         # Paper uses a symmetric difference operation combined with the left/right intersection
         # A condensed version of this operation is used here for code simplicity
-        mask = np.array(a == 0, dtype=np.bool)
+        mask = np.array(a == 0, dtype=np.bool_)
         new_voxels = np.multiply(b, mask)
         new_voxels = new_voxels + a # material from left model takes priority
 
@@ -4243,7 +4586,7 @@ apply them. Changes will only persist for the current python session.</p>
         &#34;&#34;&#34;
         checkResolution(self, model_to_sub)
         a, b, new_coords = alignDims(self, model_to_sub)
-        mask = np.array(b == 0, dtype=np.bool)
+        mask = np.array(b == 0, dtype=np.bool_)
         new_voxels = np.multiply(a, mask)
         return VoxelModel(new_voxels, self.materials, new_coords, self.resolution)
 
@@ -4269,7 +4612,7 @@ apply them. Changes will only persist for the current python session.</p>
         &#34;&#34;&#34;
         checkResolution(self, model_2)
         a, b, new_coords = alignDims(self, model_2)
-        mask = np.logical_and(np.array(a != 0, dtype=np.bool), np.array(b != 0, dtype=np.bool))
+        mask = np.logical_and(np.array(a != 0, dtype=np.bool_), np.array(b != 0, dtype=np.bool_))
 
         # Paper provides for left/right intersection
         # For code simplicity, only a left intersection is provided here
@@ -4316,8 +4659,8 @@ apply them. Changes will only persist for the current python session.</p>
         b = b + i_offset
         b[b == i_offset] = 0
 
-        mask1 = np.array(b == 0, dtype=np.bool)
-        mask2 = np.array(a == 0, dtype=np.bool)
+        mask1 = np.array(b == 0, dtype=np.bool_)
+        mask2 = np.array(a == 0, dtype=np.bool_)
 
         new_voxels = np.multiply(a, mask1) + np.multiply(b, mask2)
 
@@ -4625,7 +4968,7 @@ apply them. Changes will only persist for the current python session.</p>
 
     # Morphology Operations ##############################
 
-    def dilate(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3): # TODO: Preserve overlapping materials?
+    def dilate(self, radius: int = 1, plane: Axes = Axes.XYZ, struct_type: Struct = Struct.STANDARD, connectivity: int = 3): # TODO: Preserve overlapping materials?
         &#34;&#34;&#34;
         Dilate a model along the specified axes.
 
@@ -4641,7 +4984,7 @@ apply them. Changes will only persist for the current python session.</p>
 
         :param radius: Dilation radius in voxels
         :param plane: Dilation directions, set using Axes class
-        :param structType: Shape of structuring element, set using Struct class
+        :param struct_type: Shape of structuring element, set using Struct class
         :param connectivity: Connectivity of structuring element (1-3)
         :return: VoxelModel
         &#34;&#34;&#34;
@@ -4655,7 +4998,7 @@ apply them. Changes will only persist for the current python session.</p>
         new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.uint16)
         new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
 
-        if structType == Struct.SPHERE:
+        if struct_type == Struct.SPHERE:
             struct = structSphere(radius, plane)
             new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
         else: # Struct.STANDARD
@@ -4664,6 +5007,23 @@ apply them. Changes will only persist for the current python session.</p>
                 new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
 
         return VoxelModel(new_voxels, self.materials, (self.coords[0] - radius, self.coords[1] - radius, self.coords[2] - radius), self.resolution)
+
+    def __lshift__(self, radius):
+        &#34;&#34;&#34;
+        Dilate a model in all three axes.
+
+        Overload left shift operator (&lt;&lt;) for VoxelModel objects with dilate().
+
+        Uses:
+
+        - plane = Axes.XYZ
+        - struct_type = Struct.STANDARD
+        - connectivity = 3
+
+        :param radius: Dilation radius in voxels
+        :return: VoxelModel
+        &#34;&#34;&#34;
+        return self.dilate(radius)
 
     def dilateBounded(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
         &#34;&#34;&#34;
@@ -4690,7 +5050,7 @@ apply them. Changes will only persist for the current python session.</p>
 
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
 
-    def erode(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
+    def erode(self, radius: int = 1, plane: Axes = Axes.XYZ, struct_type: Struct = Struct.STANDARD, connectivity: int = 3):
         &#34;&#34;&#34;
         Erode a model along the specified axes.
 
@@ -4706,7 +5066,7 @@ apply them. Changes will only persist for the current python session.</p>
 
         :param radius: Erosion radius in voxels
         :param plane: Erosion directions, set using Axes class
-        :param structType: Shape of structuring element, set using Struct class
+        :param struct_type: Shape of structuring element, set using Struct class
         :param connectivity: Connectivity of structuring element (1-3)
         :return: VoxelModel
         &#34;&#34;&#34;
@@ -4714,9 +5074,9 @@ apply them. Changes will only persist for the current python session.</p>
             return VoxelModel.copy(self)
 
         new_voxels = np.copy(self.voxels)
-        mask = np.array(new_voxels != 0, dtype=np.bool)
+        mask = np.array(new_voxels != 0, dtype=np.bool_)
 
-        if structType == Struct.SPHERE:
+        if struct_type == Struct.SPHERE:
             struct = structSphere(radius, plane)
             mask = ndimage.binary_erosion(mask, structure=struct)
         else: # Struct.STANDARD
@@ -4726,6 +5086,23 @@ apply them. Changes will only persist for the current python session.</p>
         new_voxels = np.multiply(new_voxels, mask)
 
         return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
+
+    def __rshift__(self, radius):
+        &#34;&#34;&#34;
+        Erode a model in all three axes.
+
+        Overload right shift operator (&gt;&gt;) for VoxelModel objects with erode().
+
+        Uses:
+
+        - plane = Axes.XYZ
+        - struct_type = Struct.STANDARD
+        - connectivity = 3
+
+        :param radius: Dilation radius in voxels
+        :return: VoxelModel
+        &#34;&#34;&#34;
+        return self.erode(radius)
 
     def closing(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
         &#34;&#34;&#34;
@@ -4764,7 +5141,7 @@ apply them. Changes will only persist for the current python session.</p>
             return VoxelModel.copy(self)
 
         new_voxels = np.copy(self.voxels)
-        mask = np.array(new_voxels != 0, dtype=np.bool)
+        mask = np.array(new_voxels != 0, dtype=np.bool_)
 
         if structType == Struct.SPHERE:
             struct = structSphere(radius, plane)
@@ -5025,13 +5402,16 @@ apply them. Changes will only persist for the current python session.</p>
         &#34;&#34;&#34;
         if axis == Axes.X:
             plane = (1, 2)
+            sign = 1
         elif axis == Axes.Y:
-            plane = (0, 2)
+            plane = (2, 0)
+            sign = -1 # For some reason, Y rotates the opposite direction than expected
         else: # axis == Axes.Z
             plane = (0, 1)
+            sign = 1
 
         centerCoords = self.getCenter()
-        new_voxels = ndimage.rotate(self.voxels, angle, plane, order=0)
+        new_voxels = ndimage.rotate(self.voxels, sign*angle, plane, order=0)
         new_model = VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
         new_model = new_model.setCenter(centerCoords)
 
@@ -5054,6 +5434,32 @@ apply them. Changes will only persist for the current python session.</p>
 
         centerCoords = self.getCenter()
         new_voxels = np.rot90(self.voxels, times, axes=plane)
+        new_model = VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
+        new_model = new_model.setCenter(centerCoords)
+
+        return new_model
+
+    def mirror(self, axes: Axes = Axes.X):
+        &#34;&#34;&#34;
+        Mirror a model along the given axes.
+
+        This operation will mirror ALONG the given axes. For example:
+
+        - Axes.X performs a mirror about the YZ plane
+        - Axes.XY performs a mirror about the YZ plane and the XZ plane
+        - Axes.XYZ performs a mirror along all three axes
+
+        :param axes: Axes for mirror operation, set using Axes class
+        :return: VoxelModel
+        &#34;&#34;&#34;
+        flip_axis = []
+        for i in range(len(axes.value)):
+            if axes.value[i]:
+                flip_axis.append(i)
+        flip_axis = tuple(flip_axis)
+
+        centerCoords = self.getCenter()
+        new_voxels = np.flip(self.voxels, flip_axis)
         new_model = VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
         new_model = new_model.setCenter(centerCoords)
 
@@ -5149,6 +5555,15 @@ apply them. Changes will only persist for the current python session.</p>
         new_model.coords = (x_new, y_new, z_new)
         return new_model
 
+    def getCoords(self):
+        &#34;&#34;&#34;
+        Get the origin coordinates of a model.
+
+        :return: Origin coordinates in voxels
+        &#34;&#34;&#34;
+        model = self.fitWorkspace()
+        return model.coords
+
     def setCoords(self, coords: Tuple[int, int, int]):
         &#34;&#34;&#34;
         Set the origin of a model to the specified coordinates.
@@ -5159,6 +5574,55 @@ apply them. Changes will only persist for the current python session.</p>
         new_model = self.fitWorkspace()
         new_model.coords = coords
         return new_model
+
+    def getMaxCoords(self):
+        &#34;&#34;&#34;
+        Get the maximum coordinate location in a model.
+
+        This point is equal to origin coordinates + model dimensions.
+
+        :return: Maximum coordinates in voxels
+        &#34;&#34;&#34;
+        model = self.fitWorkspace()
+        x = model.coords[0] + model.voxels.shape[0]
+        y = model.coords[1] + model.voxels.shape[1]
+        z = model.coords[2] + model.voxels.shape[2]
+        return x, y, z
+
+    def getDim(self):
+        &#34;&#34;&#34;
+        Get the dimensions of model.
+
+        :return: Model dimensions in voxels
+        &#34;&#34;&#34;
+        model = self.fitWorkspace()
+        x = model.voxels.shape[0]
+        y = model.voxels.shape[1]
+        z = model.voxels.shape[2]
+        return x, y, z
+
+    def isOccupied(self, coords: Tuple[int, int, int]):
+        &#34;&#34;&#34;
+        Determine if a specific voxel is occupied.
+
+        :return: True/False
+        &#34;&#34;&#34;
+        x = coords[0] - self.coords[0]
+        y = coords[1] - self.coords[1]
+        z = coords[2] - self.coords[2]
+
+        if x &lt; 0 or x &gt;= self.voxels.shape[0]:
+            return False
+        if y &lt; 0 or y &gt;= self.voxels.shape[1]:
+            return False
+        if z &lt; 0 or z &gt;= self.voxels.shape[2]:
+            return False
+
+        v = self.voxels[x, y, z]
+        if v == 0:
+            return False
+        else:
+            return True
 
     # Model Info ##############################
 
@@ -5195,26 +5659,27 @@ apply them. Changes will only persist for the current python session.</p>
         :param material: Material index
         :return: Dictionary of material properties
         &#34;&#34;&#34;
-        avgProps = {}
+        avg_properties = {}
         for key in material_properties[0]:
             if key == &#39;name&#39; or key == &#39;process&#39;:
                 string = &#39;&#39;
                 for i in range(len(self.materials[0])-1):
                     if self.materials[material][i + 1] &gt; 0:
-                        string = string + material_properties[i][key] + &#39; &#39;
-                avgProps.update({key: string})
-            elif key == &#39;MM&#39; or key == &#39;FM&#39;:
-                var = 0
-                for i in range(len(self.materials[0])-1):
-                    if self.materials[material][i + 1] &gt; 0:
-                        var = max(var, material_properties[i][key])
-                avgProps.update({key: var})
+                        current_material_data = getMaterialData(i)
+                        string = string + current_material_data[key] + &#39; &#39;
+                avg_properties.update({key: string})
+            elif key == &#39;MM&#39; or key == &#39;MMD&#39; or key == &#39;FM&#39; or key == &#39;HG&#39; or key == &#39;HGM&#39;:
+                material_id = self.materials[material][1:].argmax()
+                current_material_data = getMaterialData(material_id)
+                var = current_material_data[key]
+                avg_properties.update({key: var})
             else:
                 var = 0
                 for i in range(len(self.materials[0])-1):
-                    var = var + self.materials[material][i + 1] * material_properties[i][key]
-                avgProps.update({key: var})
-        return avgProps
+                    current_material_data = getMaterialData(i)
+                    var = var + self.materials[material][i + 1] * current_material_data[key]
+                avg_properties.update({key: var})
+        return avg_properties
 
     def getSSData(self, material):
         &#34;&#34;&#34;
@@ -5225,17 +5690,46 @@ apply them. Changes will only persist for the current python session.</p>
         TODO: Make this average multiple stress-strain curves
 
         :param material: Material index
-        :return: Dictionary of material properties
+        :return: Dictionary of stress-strain data
         &#34;&#34;&#34;
-        materialIndex = self.materials[material][1:].argmax()
+        material_id = self.materials[material][1:].argmax()
+        current_material_data = getMaterialData(material_id)
 
         try:
-            SSData = {&#39;stress&#39;:ss_data[materialIndex][&#39;stress&#39;], &#39;strain&#39;:ss_data[materialIndex][&#39;strain&#39;]}
+            ss_data_index = current_material_data[&#39;MMD&#39;]
+            current_ss_data = next((item for item in ss_data if item[&#39;id&#39;] == ss_data_index), None)
+            if current_ss_data is None:
+                raise KeyError
         except KeyError:
-            print(&#39;Stress-strain data not available for &#39; + ss_data[materialIndex][&#39;name&#39;])
-            SSData = None
+            print(&#39;Stress-strain data not available for &#39; + current_material_data[&#39;name&#39;])
+            current_ss_data = None
 
-        return SSData
+        return current_ss_data
+
+    def getHGModel(self, material):
+        &#34;&#34;&#34;
+        Get the hydrogel model parameters for a row in a model&#39;s material array.
+
+        This is currently returned based on the material present in the highest percentage.
+
+        TODO: Make this average multiple model parameters
+
+        :param material: Material index
+        :return: Dictionary of hydrogel model parameters
+        &#34;&#34;&#34;
+        material_id = self.materials[material][1:].argmax()
+        current_material_data = getMaterialData(material_id)
+
+        try:
+            hg_model_index = current_material_data[&#39;HGM&#39;]
+            current_hg_model = next((item for item in hg_models if item[&#39;id&#39;] == hg_model_index), None)
+            if current_hg_model is None:
+                raise KeyError
+        except KeyError:
+            print(&#39;Hydrogel model data not available for &#39; + current_material_data[&#39;name&#39;])
+            current_hg_model = None
+
+        return current_hg_model
 
     def getVoxelProperties(self, coords: Tuple[int, int, int]):
         &#34;&#34;&#34;
@@ -5448,6 +5942,60 @@ apply them. Changes will only persist for the current python session.</p>
 
     # File IO ##############################
 
+    # Add model to a K3D plot in Jupyter Notebook
+    def plot(self, plot=None, name: str = &#39;model&#39;, wireframe: bool = False, **kwargs):
+        &#34;&#34;&#34;
+        Add model to a K3D plot.
+
+        Additional display options:
+            opacity: `float`.
+                Opacity of voxels.
+            outlines: `bool`.
+                Whether mesh should display with outlines.
+            outlines_color: `int`.
+                Packed RGB color of the resulting outlines (0xff0000 is red, 0xff is blue)
+            kwargs: `dict`.
+                Dictionary arguments to configure transform and model_matrix.
+
+        More information available at: https://github.com/K3D-tools/K3D-jupyter
+
+        :param plot: Plot object to add model to
+        :param name: Model name
+        :param wireframe: Enable displaying model as a wireframe
+        :param kwargs: Additional display options (see above)
+        :return: K3D plot object
+        &#34;&#34;&#34;
+        model = self.fitWorkspace() | VoxelModel.empty((1, 1, 1), self.resolution)
+        model = model.removeDuplicateMaterials()
+
+        # Get colors
+        colors = []
+
+        for m in model.materials:
+            r = 0
+            g = 0
+            b = 0
+
+            for i in range(1, len(m)):
+                r = r + m[i] * material_properties[i - 1][&#39;r&#39;]
+                g = g + m[i] * material_properties[i - 1][&#39;g&#39;]
+                b = b + m[i] * material_properties[i - 1][&#39;b&#39;]
+
+            r = 1 if r &gt; 1 else r
+            g = 1 if g &gt; 1 else g
+            b = 1 if b &gt; 1 else b
+
+            colors.append(rgb_to_hex(r, g, b))
+
+        colors = np.array(colors, dtype=np.uint32)[1:]
+
+        # Plot
+        if plot is None:
+            plot = k3d.plot()
+
+        plot += k3d.voxels(np.swapaxes(model.voxels, 0, 2).astype(np.uint8), color_map=colors, name=name, wireframe=wireframe, **kwargs)
+        return plot
+
     def saveVF(self, filename: str):
         &#34;&#34;&#34;
         Save model data to a .vf file
@@ -5537,7 +6085,7 @@ apply them. Changes will only persist for the current python session.</p>
 
         Example:
 
-        ``model1.openVF(&#34;test-file&#34;)``
+        ``model1 = vf.VoxelModel.openVF(&#34;test-file&#34;)``
 
         ----
 
@@ -5716,22 +6264,27 @@ apply them. Changes will only persist for the current python session.</p>
             writeClos(f, &#39;Display&#39;, 3)
 
             writeOpen(f, &#39;Mechanical&#39;, 3)
-            writeData(f, &#39;MatModel&#39;, int(avgProps[&#39;MM&#39;]), 4)
             if int(avgProps[&#39;MM&#39;]) == 3:
-                SSData = self.getSSData(row)
-                writeOpen(f, &#39;SSData&#39;, 4)
-                writeData(f, &#39;NumDataPts&#39;, len(SSData[&#39;strain&#39;]), 5)
+                current_ss_data = self.getSSData(row)
+                if current_ss_data is not None:
+                    writeData(f, &#39;MatModel&#39;, 3, 4)
+                    writeOpen(f, &#39;SSData&#39;, 4)
+                    writeData(f, &#39;NumDataPts&#39;, len(current_ss_data[&#39;strain&#39;]), 5)
 
-                writeOpen(f, &#39;StrainData&#39;, 5)
-                for point in range(len(SSData[&#39;strain&#39;])):
-                    writeData(f, &#39;Strain&#39;, SSData[&#39;strain&#39;][point], 6)
-                writeClos(f, &#39;StrainData&#39;, 5)
+                    writeOpen(f, &#39;StrainData&#39;, 5)
+                    for point in current_ss_data[&#39;strain&#39;]:
+                        writeData(f, &#39;Strain&#39;, point, 6)
+                    writeClos(f, &#39;StrainData&#39;, 5)
 
-                writeOpen(f, &#39;StressData&#39;, 5)
-                for point in range(len(SSData[&#39;stress&#39;])):
-                    writeData(f, &#39;Stress&#39;, SSData[&#39;stress&#39;][point], 6)
-                writeClos(f, &#39;StressData&#39;, 5)
-                writeClos(f, &#39;SSData&#39;, 4)
+                    writeOpen(f, &#39;StressData&#39;, 5)
+                    for point in current_ss_data[&#39;stress&#39;]:
+                        writeData(f, &#39;Stress&#39;, point, 6)
+                    writeClos(f, &#39;StressData&#39;, 5)
+                    writeClos(f, &#39;SSData&#39;, 4)
+                else:
+                    writeData(f, &#39;MatModel&#39;, 0, 4)
+            else:
+                writeData(f, &#39;MatModel&#39;, avgProps[&#39;MM&#39;], 4)
 
             writeData(f, &#39;Elastic_Mod&#39;, avgProps[&#39;E&#39;], 4)
             writeData(f, &#39;Plastic_Mod&#39;, avgProps[&#39;Z&#39;], 4)
@@ -5746,7 +6299,36 @@ apply them. Changes will only persist for the current python session.</p>
             writeData(f, &#39;uStatic&#39;, avgProps[&#39;uS&#39;], 4)
             writeData(f, &#39;uDynamic&#39;, avgProps[&#39;uD&#39;], 4)
 
-            writeClos(f, &#39;Mechanical&#39;, 3)
+            if int(avgProps[&#39;HG&#39;]) == 1:
+                current_hg_model = self.getHGModel(row)
+                if current_hg_model is not None:
+                    writeData(f, &#39;HydrogelModel&#39;, 1, 4)
+                    writeClos(f, &#39;Mechanical&#39;, 3)
+                    writeOpen(f, &#39;Hydrogel&#39;, 3)
+                    writeData(f, &#39;Name&#39;, current_hg_model[&#39;name&#39;], 4)
+                    writeData(f, &#39;VoxelDim&#39;, current_hg_model[&#39;test_voxel_dim&#39;], 4)
+                    writeData(f, &#39;IdealDisplacement&#39;, current_hg_model[&#39;ideal_displacement&#39;], 4)
+                    writeData(f, &#39;TestDisplacement&#39;, current_hg_model[&#39;test_displacement&#39;], 4)
+                    writeData(f, &#39;TimeStepCorrection&#39;, current_hg_model[&#39;test_time_step&#39;], 4)
+                    writeData(f, &#39;KpRising&#39;, current_hg_model[&#39;kp_rising&#39;], 4)
+                    writeData(f, &#39;KpFalling&#39;, current_hg_model[&#39;kp_falling&#39;], 4)
+                    writeData(f, &#39;MaxTemp&#39;, current_hg_model[&#39;ideal_max_temp&#39;], 4)
+                    writeData(f, &#39;MinTemp&#39;, current_hg_model[&#39;ideal_min_temp&#39;], 4)
+                    writeData(f, &#39;TestMax&#39;, current_hg_model[&#39;test_max_temp&#39;], 4)
+                    writeData(f, &#39;TestMin&#39;, current_hg_model[&#39;test_min_temp&#39;], 4)
+                    writeData(f, &#39;C0&#39;, current_hg_model[&#39;c0&#39;], 4)
+                    writeData(f, &#39;C1&#39;, current_hg_model[&#39;c1&#39;], 4)
+                    writeData(f, &#39;C2&#39;, current_hg_model[&#39;c2&#39;], 4)
+                    writeData(f, &#39;C3&#39;, current_hg_model[&#39;c3&#39;], 4)
+                    writeData(f, &#39;C4&#39;, current_hg_model[&#39;c4&#39;], 4)
+                    writeData(f, &#39;C5&#39;, current_hg_model[&#39;c5&#39;], 4)
+                    writeClos(f, &#39;Hydrogel&#39;, 3)
+                else:
+                    writeData(f, &#39;HydrogelModel&#39;, 0, 4)
+                    writeClos(f, &#39;Mechanical&#39;, 3)
+            else:
+                writeData(f, &#39;HydrogelModel&#39;, 0, 4)
+                writeClos(f, &#39;Mechanical&#39;, 3)
             writeClos(f, &#39;Material&#39;, 2)
         writeClos(f, &#39;Palette&#39;, 1)
 
@@ -5793,8 +6375,7 @@ apply them. Changes will only persist for the current python session.</p>
 <span>def <span class="ident">copy</span></span>(<span>voxel_model)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Initialize an VoxelModel that is a copy of another model.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>voxel_model</code></strong></dt>
 <dd><p>Reference VoxelModel object</p></dd>
@@ -5822,11 +6403,10 @@ def copy(cls, voxel_model):
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.empty"><code class="name flex">
-<span>def <span class="ident">empty</span></span>(<span>size: Tuple[int, int, int], resolution: float = 1, num_materials: int = 14)</span>
+<span>def <span class="ident">empty</span></span>(<span>size: Tuple[int, int, int], resolution: float = 1, num_materials: int = 15)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Initialize an empty VoxelModel.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
 <dd><p>Size of the empty model in voxels</p></dd>
@@ -5854,7 +6434,7 @@ def empty(cls, size: Tuple[int, int, int], resolution: float = 1, num_materials:
     :return: VoxelModel
     &#34;&#34;&#34;
     modelData = np.zeros(size, dtype=np.uint16)
-    materials = np.zeros((1, num_materials + 1), dtype=np.float)
+    materials = np.zeros((1, num_materials + 1), dtype=np.float32)
     new_model = cls(modelData, materials, resolution=resolution)
     return new_model</code></pre>
 </details>
@@ -5863,8 +6443,7 @@ def empty(cls, size: Tuple[int, int, int], resolution: float = 1, num_materials:
 <span>def <span class="ident">emptyLike</span></span>(<span>voxel_model)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Initialize an empty VoxelModel with the same size, coords, and resolution as another model.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>voxel_model</code></strong></dt>
 <dd><p>Reference VoxelModel object</p></dd>
@@ -5880,7 +6459,7 @@ def empty(cls, size: Tuple[int, int, int], resolution: float = 1, num_materials:
 <pre><code class="python">@classmethod
 def emptyLike(cls, voxel_model):
     &#34;&#34;&#34;
-    Initialize an empty VoxelModel with the same size, coords, and resolution as another model.
+    Initialize an empty VoxelModel with the same size, materials, coords, and resolution as another model.
 
     :param voxel_model: Reference VoxelModel object
     :return: VoxelModel
@@ -5893,19 +6472,14 @@ def emptyLike(cls, voxel_model):
 <span>def <span class="ident">fromMeshFile</span></span>(<span>filename: str, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1, gmsh_on_path: bool = False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create a VoxelModel from an imported mesh file.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model1 = <span class="pre">VoxelModel.fromMeshFile('center.stl',</span> (67, 3, 0), 2, 1)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>filename</code></strong></dt>
 <dd><p>File name with extension</p></dd>
 <dt><strong><code>coords</code></strong></dt>
 <dd><p>Model origin coordinates</p></dd>
 <dt><strong><code>material</code></strong></dt>
-<dd><p>Material index corresponding to materials.py</p></dd>
+<dd><p>Material id corresponding to materials.py</p></dd>
 <dt><strong><code>resolution</code></strong></dt>
 <dd><p>Number of voxels per mm</p></dd>
 <dt><strong><code>gmsh_on_path</code></strong></dt>
@@ -5928,13 +6502,13 @@ def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), m
 
     Example:
 
-    ``model1 = VoxelModel.fromMeshFile(&#39;center.stl&#39;, (67, 3, 0), 2, 1)``
+    ``model1 = vf.VoxelModel.fromMeshFile(&#39;center.stl&#39;, (67, 3, 0), 2, 1)``
 
     ____
 
     :param filename: File name with extension
     :param coords: Model origin coordinates
-    :param material: Material index corresponding to materials.py
+    :param material: Material id corresponding to materials.py
     :param resolution: Number of voxels per mm
     :param gmsh_on_path: Enable/disable using system gmsh rather than bundled gmsh
     :return: VoxelModel
@@ -5984,8 +6558,7 @@ def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), m
     xyz_mid = np.concatenate((xyz_mid, xyz_mid[:, 0:1] * 0 + 1), 1)
 
     # Create list of indices of each voxel
-    ijk_mid = np.array(
-        np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing=&#39;ij&#39;))
+    ijk_mid = np.array(np.meshgrid(np.r_[:len(xx_mid)], np.r_[:len(yy_mid)], np.r_[:len(zz_mid)], indexing=&#39;ij&#39;))
     ijk_mid = ijk_mid.transpose(1, 2, 3, 0)
     ijk_mid2 = ijk_mid.reshape(-1, 3)
 
@@ -5994,7 +6567,7 @@ def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), m
 
     lmn = ijk_mid2[np.unique(jj)]
 
-    voxels = np.zeros(ijk_mid.shape[:3], dtype=np.bool)
+    voxels = np.zeros(ijk_mid.shape[:3], dtype=np.bool_)
     voxels[lmn[:, 0], lmn[:, 1], lmn[:, 2]] = True
 
     new_model =  cls(voxels, generateMaterials(material), coords=coords, resolution=resolution).fitWorkspace()
@@ -6005,12 +6578,7 @@ def fromMeshFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), m
 <span>def <span class="ident">fromVoxFile</span></span>(<span>filename: str, coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create a VoxelModel from an imported .vox file.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model1 = <span class="pre">VoxelModel.fromVoxFile('cylinder-red.vox',</span> (0, 5, 0), 1)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>filename</code></strong></dt>
 <dd><p>File name with extension</p></dd>
@@ -6036,7 +6604,7 @@ def fromVoxFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), re
 
     Example:
 
-    ``model1 = VoxelModel.fromVoxFile(&#39;cylinder-red.vox&#39;, (0, 5, 0), 1)``
+    ``model1 = vf.VoxelModel.fromVoxFile(&#39;cylinder-red.vox&#39;, (0, 5, 0), 1)``
 
     ----
 
@@ -6071,15 +6639,7 @@ def fromVoxFile(cls, filename: str, coords: Tuple[int, int, int] = (0, 0, 0), re
 <span>def <span class="ident">openVF</span></span>(<span>filename: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Load model data from a .vf file</p>
-<p>This method will create a new VoxelModel object using the data from the .vf file.
-Material attributes are stored in the materials.py file, so the same version of
-this file must be used when saving and opening models.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal"><span class="pre">model1.openVF(&quot;test-file&quot;)</span></span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>filename</code></strong></dt>
 <dd><p>File name</p></dd>
@@ -6105,7 +6665,7 @@ def openVF(cls, filename: str):
 
     Example:
 
-    ``model1.openVF(&#34;test-file&#34;)``
+    ``model1 = vf.VoxelModel.openVF(&#34;test-file&#34;)``
 
     ----
 
@@ -6200,20 +6760,7 @@ def openVF(cls, filename: str):
 <span>def <span class="ident">add</span></span>(<span>self, model_to_add)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Find the material-wise addition of two models.</p>
-<p>The materials of the result are calculated by adding the material vectors for each voxel together.</p>
-<p>Example -- Adding a voxel containing material 1 and a voxel containing material 3:</p>
-<p>&gt;&gt; Voxel A = [1, 0, 1, 0, 0]</p>
-<p>&gt;&gt; Voxel B = [1, 0, 0, 0, 1]</p>
-<p>&gt;&gt; A + B = [1, 0, 1, 0, 1]</p>
-<p>&gt;&gt; Scale Result (see Cleanup Operations) → [1, 0, 0.5, 0, 0.5]</p>
-<p>This operation can also be applied using the addition operator (+).</p>
-<hr class="docutils" />
-<p>Examples:</p>
-<p><span class="docutils literal">model3 = model1.add(model2)</span></p>
-<p><span class="docutils literal">model3 = model1 + model2</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>model_to_add</code></strong></dt>
 <dd><p>VoxelModel to add to self</p></dd>
@@ -6289,15 +6836,7 @@ def openVF(cls, filename: str):
 <span>def <span class="ident">blur</span></span>(<span>self, radius: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Apply a Gaussian blur with the defined radius to the entire model.</p>
-<p>The blur radius corresponds to two times the standard deviation
-(2 * sigma) of the Gaussian distribution. The blurred effect is limited
-to voxels that were occupied by material in the input model.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model2 = model1.blur(2)</span></p>
-<p>___</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>radius</code></strong></dt>
 <dd><p>Blur radius in voxels</p></dd>
@@ -6348,16 +6887,7 @@ to voxels that were occupied by material in the input model.</p>
 <span>def <span class="ident">blurRegion</span></span>(<span>self, radius: float, region)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Apply a Gaussian blur with the defined radius to voxels that intersect with the region model.</p>
-<p>The blur radius corresponds to two times the standard deviation
-(2 * sigma) of the Gaussian distribution. The blurred effect is limited
-to voxels that were occupied by material in the intersection result
-and the material of the region model is ignored.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model2 = model1.blurRegion(3, regionModel)</span></p>
-<p>___</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>radius</code></strong></dt>
 <dd><p>Blur radius in voxels</p></dd>
@@ -6403,8 +6933,7 @@ and the material of the region model is ignored.</p>
 <span>def <span class="ident">clearNull</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Set all null material percentages to zero.</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>VoxelModel</p></dd>
 </dl></div>
@@ -6427,16 +6956,7 @@ and the material of the region model is ignored.</p>
 <span>def <span class="ident">clearance</span></span>(<span>self, method: <a title="voxelfuse.voxel_model.Process" href="#voxelfuse.voxel_model.Process">Process</a>, material: int = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a model representing the clearance region of a model.</p>
-<p>The clearance region for a given process and part represents regions that
-will be affected by the process acting on the part. Clearance can be
-used to identify regions of a model that conflict with the manufacturing
-of another model.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">modelResult = model1.clearance(Process.PRINT)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>method</code></strong></dt>
 <dd><p>Target manufacturing method, set using Process class</p></dd>
@@ -6487,11 +7007,7 @@ of another model.</p>
 <span>def <span class="ident">closing</span></span>(<span>self, radius: int = 1, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.XYZ, structType: <a title="voxelfuse.voxel_model.Struct" href="#voxelfuse.voxel_model.Struct">Struct</a> = Struct.STANDARD, connectivity: int = 3)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Apply a closing algorithm along the specified axes.</p>
-<p>This algorithm consists of dilation followed by erosion and will remove small holes.
-Depending on the structuring element used, this will apply a chamfer or fillet effect
-to inside corners.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>radius</code></strong></dt>
 <dd><p>Radius for dilation/erosion in voxels</p></dd>
@@ -6534,12 +7050,7 @@ to inside corners.</p>
 <span>def <span class="ident">difference</span></span>(<span>self, model_to_sub)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Find the geometric difference of two models.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model3 = model1.difference(model2)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>model_to_sub</code></strong></dt>
 <dd><p>VoxelModel to subtract from self</p></dd>
@@ -6569,28 +7080,22 @@ to inside corners.</p>
     &#34;&#34;&#34;
     checkResolution(self, model_to_sub)
     a, b, new_coords = alignDims(self, model_to_sub)
-    mask = np.array(b == 0, dtype=np.bool)
+    mask = np.array(b == 0, dtype=np.bool_)
     new_voxels = np.multiply(a, mask)
     return VoxelModel(new_voxels, self.materials, new_coords, self.resolution)</code></pre>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.dilate"><code class="name flex">
-<span>def <span class="ident">dilate</span></span>(<span>self, radius: int = 1, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.XYZ, structType: <a title="voxelfuse.voxel_model.Struct" href="#voxelfuse.voxel_model.Struct">Struct</a> = Struct.STANDARD, connectivity: int = 3)</span>
+<span>def <span class="ident">dilate</span></span>(<span>self, radius: int = 1, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.XYZ, struct_type: <a title="voxelfuse.voxel_model.Struct" href="#voxelfuse.voxel_model.Struct">Struct</a> = Struct.STANDARD, connectivity: int = 3)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Dilate a model along the specified axes.</p>
-<hr class="docutils" />
-<p>Examples:</p>
-<p><span class="docutils literal">model2 = model1.dilate(3)</span></p>
-<p><span class="docutils literal">model4 = model3.dilate(1, Axes.XY, Struct.SPHERE, 2)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>radius</code></strong></dt>
 <dd><p>Dilation radius in voxels</p></dd>
 <dt><strong><code>plane</code></strong></dt>
 <dd><p>Dilation directions, set using Axes class</p></dd>
-<dt><strong><code>structType</code></strong></dt>
+<dt><strong><code>struct_type</code></strong></dt>
 <dd><p>Shape of structuring element, set using Struct class</p></dd>
 <dt><strong><code>connectivity</code></strong></dt>
 <dd><p>Connectivity of structuring element (1-3)</p></dd>
@@ -6603,7 +7108,7 @@ to inside corners.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def dilate(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3): # TODO: Preserve overlapping materials?
+<pre><code class="python">def dilate(self, radius: int = 1, plane: Axes = Axes.XYZ, struct_type: Struct = Struct.STANDARD, connectivity: int = 3): # TODO: Preserve overlapping materials?
     &#34;&#34;&#34;
     Dilate a model along the specified axes.
 
@@ -6619,7 +7124,7 @@ to inside corners.</p>
 
     :param radius: Dilation radius in voxels
     :param plane: Dilation directions, set using Axes class
-    :param structType: Shape of structuring element, set using Struct class
+    :param struct_type: Shape of structuring element, set using Struct class
     :param connectivity: Connectivity of structuring element (1-3)
     :return: VoxelModel
     &#34;&#34;&#34;
@@ -6633,7 +7138,7 @@ to inside corners.</p>
     new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.uint16)
     new_voxels[radius:-radius, radius:-radius, radius:-radius] = self.voxels
 
-    if structType == Struct.SPHERE:
+    if struct_type == Struct.SPHERE:
         struct = structSphere(radius, plane)
         new_voxels = ndimage.grey_dilation(new_voxels, footprint=struct)
     else: # Struct.STANDARD
@@ -6648,8 +7153,7 @@ to inside corners.</p>
 <span>def <span class="ident">dilateBounded</span></span>(<span>self, radius: int = 1, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.XYZ, structType: <a title="voxelfuse.voxel_model.Struct" href="#voxelfuse.voxel_model.Struct">Struct</a> = Struct.STANDARD, connectivity: int = 3)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Dilate a model along the specified axes without increasing the size of its bounding box.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>radius</code></strong></dt>
 <dd><p>Dilation radius in voxels</p></dd>
@@ -6698,11 +7202,7 @@ to inside corners.</p>
 <span>def <span class="ident">dither</span></span>(<span>self, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=False, radius=1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Apply material-wise dithering to a model.</p>
-<p>Applying dithering will modify the model so that each voxel contains material in only a single material channel.
-Regions of the model which contained mixtures of materials will be converted to distributions of adjacent single
-material voxels.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>use_full</code></strong></dt>
 <dd><p>Enabling will use a Stucki error diffusion filter. Disabling will use the provided values for x, y, and z error</p></dd>
@@ -6763,18 +7263,7 @@ material voxels.</p>
 <span>def <span class="ident">divide</span></span>(<span>self, other)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Find the material-wise division of two models.</p>
-<p>The materials of the result are calculated for each voxel by dividing
-the first material vector by the second. This function also supports
-division by a scalar.</p>
-<p>This operation can also be applied using the division operator (/).</p>
-<hr class="docutils" />
-<p>Examples:</p>
-<p><span class="docutils literal">model3 = model1.divide(model2)</span></p>
-<p><span class="docutils literal">model3 = model1 / model2</span></p>
-<p><span class="docutils literal">model5 = model4 / 3</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>other</code></strong></dt>
 <dd><p>VoxelModel to divide self by</p></dd>
@@ -6854,22 +7343,16 @@ division by a scalar.</p>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.erode"><code class="name flex">
-<span>def <span class="ident">erode</span></span>(<span>self, radius: int = 1, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.XYZ, structType: <a title="voxelfuse.voxel_model.Struct" href="#voxelfuse.voxel_model.Struct">Struct</a> = Struct.STANDARD, connectivity: int = 3)</span>
+<span>def <span class="ident">erode</span></span>(<span>self, radius: int = 1, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.XYZ, struct_type: <a title="voxelfuse.voxel_model.Struct" href="#voxelfuse.voxel_model.Struct">Struct</a> = Struct.STANDARD, connectivity: int = 3)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Erode a model along the specified axes.</p>
-<hr class="docutils" />
-<p>Examples:</p>
-<p><span class="docutils literal">model2 = model1.erode(5, connectivity=2)</span></p>
-<p><span class="docutils literal">model4 = model3.erode(2, Axes.X, Struct.SPHERE, 1)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>radius</code></strong></dt>
 <dd><p>Erosion radius in voxels</p></dd>
 <dt><strong><code>plane</code></strong></dt>
 <dd><p>Erosion directions, set using Axes class</p></dd>
-<dt><strong><code>structType</code></strong></dt>
+<dt><strong><code>struct_type</code></strong></dt>
 <dd><p>Shape of structuring element, set using Struct class</p></dd>
 <dt><strong><code>connectivity</code></strong></dt>
 <dd><p>Connectivity of structuring element (1-3)</p></dd>
@@ -6882,7 +7365,7 @@ division by a scalar.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def erode(self, radius: int = 1, plane: Axes = Axes.XYZ, structType: Struct = Struct.STANDARD, connectivity: int = 3):
+<pre><code class="python">def erode(self, radius: int = 1, plane: Axes = Axes.XYZ, struct_type: Struct = Struct.STANDARD, connectivity: int = 3):
     &#34;&#34;&#34;
     Erode a model along the specified axes.
 
@@ -6898,7 +7381,7 @@ division by a scalar.</p>
 
     :param radius: Erosion radius in voxels
     :param plane: Erosion directions, set using Axes class
-    :param structType: Shape of structuring element, set using Struct class
+    :param struct_type: Shape of structuring element, set using Struct class
     :param connectivity: Connectivity of structuring element (1-3)
     :return: VoxelModel
     &#34;&#34;&#34;
@@ -6906,9 +7389,9 @@ division by a scalar.</p>
         return VoxelModel.copy(self)
 
     new_voxels = np.copy(self.voxels)
-    mask = np.array(new_voxels != 0, dtype=np.bool)
+    mask = np.array(new_voxels != 0, dtype=np.bool_)
 
-    if structType == Struct.SPHERE:
+    if struct_type == Struct.SPHERE:
         struct = structSphere(radius, plane)
         mask = ndimage.binary_erosion(mask, structure=struct)
     else: # Struct.STANDARD
@@ -6924,10 +7407,7 @@ division by a scalar.</p>
 <span>def <span class="ident">fitWorkspace</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Remove excess empty space from a model.</p>
-<p>Resize the workspace around a model to remove excess empty space.
-Model coordinates are updated to reflect the change.</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>VoxelModel</p></dd>
 </dl></div>
@@ -7007,8 +7487,7 @@ Model coordinates are updated to reflect the change.</p>
 <span>def <span class="ident">getBoundingBox</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get all voxels contained in the bounding box of the input model.</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>VoxelModel</p></dd>
 </dl></div>
@@ -7034,8 +7513,7 @@ Model coordinates are updated to reflect the change.</p>
 <span>def <span class="ident">getCenter</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Find the coordinates of the center of a model.</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>Center coordinates in voxels</p></dd>
 </dl></div>
@@ -7063,11 +7541,7 @@ Model coordinates are updated to reflect the change.</p>
 <span>def <span class="ident">getComponents</span></span>(<span>self, connectivity: int = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Update component labels for a model.</p>
-<p>This function uses a disconnected components algorithm and assumes that adjacent
-voxels with different materials are connected. Connectivity can be set to 1-3
-and defines the shape of the structuring element.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>connectivity</code></strong></dt>
 <dd><p>Connectivity of structuring element (1-3)</p></dd>
@@ -7091,20 +7565,109 @@ and defines the shape of the structuring element.</p>
     :param connectivity: Connectivity of structuring element (1-3)
     :return: VoxelModel
     &#34;&#34;&#34;
-    mask = np.array(self.voxels[:, :, :] &gt; 0, dtype=np.bool)
+    mask = np.array(self.voxels[:, :, :] &gt; 0, dtype=np.bool_)
     struct = ndimage.generate_binary_structure(3, connectivity)
     new_model = VoxelModel.copy(self)
     new_model.components, new_model.numComponents = ndimage.label(mask, structure=struct)
-    new_model.components = new_model.components.astype(dtype=np.uint8)
+    new_model.components = np.uint8(new_model.components)
     return new_model</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.getCoords"><code class="name flex">
+<span>def <span class="ident">getCoords</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="returns">Returns:</h2>
+<dl>
+<dd><p>Origin coordinates in voxels</p></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getCoords(self):
+    &#34;&#34;&#34;
+    Get the origin coordinates of a model.
+
+    :return: Origin coordinates in voxels
+    &#34;&#34;&#34;
+    model = self.fitWorkspace()
+    return model.coords</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.getDim"><code class="name flex">
+<span>def <span class="ident">getDim</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="returns">Returns:</h2>
+<dl>
+<dd><p>Model dimensions in voxels</p></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getDim(self):
+    &#34;&#34;&#34;
+    Get the dimensions of model.
+
+    :return: Model dimensions in voxels
+    &#34;&#34;&#34;
+    model = self.fitWorkspace()
+    x = model.voxels.shape[0]
+    y = model.voxels.shape[1]
+    z = model.voxels.shape[2]
+    return x, y, z</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.getHGModel"><code class="name flex">
+<span>def <span class="ident">getHGModel</span></span>(<span>self, material)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="args">Args:</h2>
+<dl>
+<dt><strong><code>material</code></strong></dt>
+<dd><p>Material index</p></dd>
+</dl>
+<h2 id="returns">Returns:</h2>
+<dl>
+<dd><p>Dictionary of hydrogel model parameters</p></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getHGModel(self, material):
+    &#34;&#34;&#34;
+    Get the hydrogel model parameters for a row in a model&#39;s material array.
+
+    This is currently returned based on the material present in the highest percentage.
+
+    TODO: Make this average multiple model parameters
+
+    :param material: Material index
+    :return: Dictionary of hydrogel model parameters
+    &#34;&#34;&#34;
+    material_id = self.materials[material][1:].argmax()
+    current_material_data = getMaterialData(material_id)
+
+    try:
+        hg_model_index = current_material_data[&#39;HGM&#39;]
+        current_hg_model = next((item for item in hg_models if item[&#39;id&#39;] == hg_model_index), None)
+        if current_hg_model is None:
+            raise KeyError
+    except KeyError:
+        print(&#39;Hydrogel model data not available for &#39; + current_material_data[&#39;name&#39;])
+        current_hg_model = None
+
+    return current_hg_model</code></pre>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.getMaterialProperties"><code class="name flex">
 <span>def <span class="ident">getMaterialProperties</span></span>(<span>self, material)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get the average material properties of a row in a model's material array.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>material</code></strong></dt>
 <dd><p>Material index</p></dd>
@@ -7124,34 +7687,61 @@ and defines the shape of the structuring element.</p>
     :param material: Material index
     :return: Dictionary of material properties
     &#34;&#34;&#34;
-    avgProps = {}
+    avg_properties = {}
     for key in material_properties[0]:
         if key == &#39;name&#39; or key == &#39;process&#39;:
             string = &#39;&#39;
             for i in range(len(self.materials[0])-1):
                 if self.materials[material][i + 1] &gt; 0:
-                    string = string + material_properties[i][key] + &#39; &#39;
-            avgProps.update({key: string})
-        elif key == &#39;MM&#39; or key == &#39;FM&#39;:
-            var = 0
-            for i in range(len(self.materials[0])-1):
-                if self.materials[material][i + 1] &gt; 0:
-                    var = max(var, material_properties[i][key])
-            avgProps.update({key: var})
+                    current_material_data = getMaterialData(i)
+                    string = string + current_material_data[key] + &#39; &#39;
+            avg_properties.update({key: string})
+        elif key == &#39;MM&#39; or key == &#39;MMD&#39; or key == &#39;FM&#39; or key == &#39;HG&#39; or key == &#39;HGM&#39;:
+            material_id = self.materials[material][1:].argmax()
+            current_material_data = getMaterialData(material_id)
+            var = current_material_data[key]
+            avg_properties.update({key: var})
         else:
             var = 0
             for i in range(len(self.materials[0])-1):
-                var = var + self.materials[material][i + 1] * material_properties[i][key]
-            avgProps.update({key: var})
-    return avgProps</code></pre>
+                current_material_data = getMaterialData(i)
+                var = var + self.materials[material][i + 1] * current_material_data[key]
+            avg_properties.update({key: var})
+    return avg_properties</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.getMaxCoords"><code class="name flex">
+<span>def <span class="ident">getMaxCoords</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="returns">Returns:</h2>
+<dl>
+<dd><p>Maximum coordinates in voxels</p></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getMaxCoords(self):
+    &#34;&#34;&#34;
+    Get the maximum coordinate location in a model.
+
+    This point is equal to origin coordinates + model dimensions.
+
+    :return: Maximum coordinates in voxels
+    &#34;&#34;&#34;
+    model = self.fitWorkspace()
+    x = model.coords[0] + model.voxels.shape[0]
+    y = model.coords[1] + model.voxels.shape[1]
+    z = model.coords[2] + model.voxels.shape[2]
+    return x, y, z</code></pre>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.getOccupied"><code class="name flex">
 <span>def <span class="ident">getOccupied</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get all voxels occupied by the input model.</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>VoxelModel</p></dd>
 </dl></div>
@@ -7165,7 +7755,7 @@ and defines the shape of the structuring element.</p>
 
     :return: VoxelModel
     &#34;&#34;&#34;
-    mask = np.array(self.voxels != 0, dtype=np.bool)
+    mask = np.array(self.voxels != 0, dtype=np.bool_)
     return VoxelModel(mask, self.materials[0:2, :], self.coords, self.resolution)</code></pre>
 </details>
 </dd>
@@ -7173,17 +7763,14 @@ and defines the shape of the structuring element.</p>
 <span>def <span class="ident">getSSData</span></span>(<span>self, material)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get the stress-strain data for a row in a model's material array.</p>
-<p>This is currently returned based on the material present in the highest percentage.</p>
-<p>TODO: Make this average multiple stress-strain curves</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>material</code></strong></dt>
 <dd><p>Material index</p></dd>
 </dl>
 <h2 id="returns">Returns:</h2>
 <dl>
-<dd><p>Dictionary of material properties</p></dd>
+<dd><p>Dictionary of stress-strain data</p></dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -7198,31 +7785,28 @@ and defines the shape of the structuring element.</p>
     TODO: Make this average multiple stress-strain curves
 
     :param material: Material index
-    :return: Dictionary of material properties
+    :return: Dictionary of stress-strain data
     &#34;&#34;&#34;
-    materialIndex = self.materials[material][1:].argmax()
+    material_id = self.materials[material][1:].argmax()
+    current_material_data = getMaterialData(material_id)
 
     try:
-        SSData = {&#39;stress&#39;:ss_data[materialIndex][&#39;stress&#39;], &#39;strain&#39;:ss_data[materialIndex][&#39;strain&#39;]}
+        ss_data_index = current_material_data[&#39;MMD&#39;]
+        current_ss_data = next((item for item in ss_data if item[&#39;id&#39;] == ss_data_index), None)
+        if current_ss_data is None:
+            raise KeyError
     except KeyError:
-        print(&#39;Stress-strain data not available for &#39; + ss_data[materialIndex][&#39;name&#39;])
-        SSData = None
+        print(&#39;Stress-strain data not available for &#39; + current_material_data[&#39;name&#39;])
+        current_ss_data = None
 
-    return SSData</code></pre>
+    return current_ss_data</code></pre>
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.getUnoccupied"><code class="name flex">
 <span>def <span class="ident">getUnoccupied</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get all voxels not occupied by the input model.</p>
-<p>This operation can also be applied using the invert operator (~).</p>
-<hr class="docutils" />
-<p>Examples:</p>
-<p><span class="docutils literal">model2 = model1.getUnoccupied()</span></p>
-<p><span class="docutils literal">model2 = ~model1</span></p>
-<hr class="docutils" />
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>VoxelModel</p></dd>
 </dl></div>
@@ -7248,7 +7832,7 @@ and defines the shape of the structuring element.</p>
 
     :return: VoxelModel
     &#34;&#34;&#34;
-    mask = np.array(self.voxels == 0, dtype=np.bool)
+    mask = np.array(self.voxels == 0, dtype=np.bool_)
     return VoxelModel(mask, self.materials[0:2, :], self.coords, self.resolution)</code></pre>
 </details>
 </dd>
@@ -7256,8 +7840,7 @@ and defines the shape of the structuring element.</p>
 <span>def <span class="ident">getVolume</span></span>(<span>self, component: int = 0, material: int = 0)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get the volume of a model or model component.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>component</code></strong></dt>
 <dd><p>Component label to measure, set to 0 for all components</p></dd>
@@ -7294,8 +7877,7 @@ and defines the shape of the structuring element.</p>
 <span>def <span class="ident">getVoxelDim</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get the side dimension of a voxel in mm.</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>Float</p></dd>
 </dl></div>
@@ -7317,8 +7899,7 @@ and defines the shape of the structuring element.</p>
 <span>def <span class="ident">getVoxelProperties</span></span>(<span>self, coords: Tuple[int, int, int])</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get the average material properties of a specific voxel.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>coords</code></strong></dt>
 <dd><p>Voxel coordinates</p></dd>
@@ -7345,15 +7926,7 @@ and defines the shape of the structuring element.</p>
 <span>def <span class="ident">intersection</span></span>(<span>self, model_2)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Find the geometric intersection of two models.</p>
-<p>The materials from self will be used in the resulting model.
-This operation can also be applied using the AND operator (&amp;)</p>
-<hr class="docutils" />
-<p>Examples:</p>
-<p><span class="docutils literal">model3 = model1.intersection(model2)</span></p>
-<p><span class="docutils literal">model3 = model1 &amp; model2</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>model_2</code></strong></dt>
 <dd><p>VoxelModel to intersect with self</p></dd>
@@ -7388,7 +7961,7 @@ This operation can also be applied using the AND operator (&amp;)</p>
     &#34;&#34;&#34;
     checkResolution(self, model_2)
     a, b, new_coords = alignDims(self, model_2)
-    mask = np.logical_and(np.array(a != 0, dtype=np.bool), np.array(b != 0, dtype=np.bool))
+    mask = np.logical_and(np.array(a != 0, dtype=np.bool_), np.array(b != 0, dtype=np.bool_))
 
     # Paper provides for left/right intersection
     # For code simplicity, only a left intersection is provided here
@@ -7398,14 +7971,47 @@ This operation can also be applied using the AND operator (&amp;)</p>
     return VoxelModel(new_voxels, materials, new_coords, self.resolution)</code></pre>
 </details>
 </dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.isOccupied"><code class="name flex">
+<span>def <span class="ident">isOccupied</span></span>(<span>self, coords: Tuple[int, int, int])</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="returns">Returns:</h2>
+<dl>
+<dd><p>True/False</p></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def isOccupied(self, coords: Tuple[int, int, int]):
+    &#34;&#34;&#34;
+    Determine if a specific voxel is occupied.
+
+    :return: True/False
+    &#34;&#34;&#34;
+    x = coords[0] - self.coords[0]
+    y = coords[1] - self.coords[1]
+    z = coords[2] - self.coords[2]
+
+    if x &lt; 0 or x &gt;= self.voxels.shape[0]:
+        return False
+    if y &lt; 0 or y &gt;= self.voxels.shape[1]:
+        return False
+    if z &lt; 0 or z &gt;= self.voxels.shape[2]:
+        return False
+
+    v = self.voxels[x, y, z]
+    if v == 0:
+        return False
+    else:
+        return True</code></pre>
+</details>
+</dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.isolateComponent"><code class="name flex">
 <span>def <span class="ident">isolateComponent</span></span>(<span>self, component: int)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Isolate a component by its component label.</p>
-<p>Component labels must first be updated with getComponents.
-Unrecognized component labels will return an empty object.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>component</code></strong></dt>
 <dd><p>Component label to isolate</p></dd>
@@ -7428,7 +8034,7 @@ Unrecognized component labels will return an empty object.</p>
     :param component: Component label to isolate
     :return: VoxelModel
     &#34;&#34;&#34;
-    mask = np.array(self.components == component, dtype=np.bool)
+    mask = np.array(self.components == component, dtype=np.bool_)
     new_voxels = np.multiply(self.voxels, mask)
     return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)</code></pre>
 </details>
@@ -7437,12 +8043,7 @@ Unrecognized component labels will return an empty object.</p>
 <span>def <span class="ident">isolateLayer</span></span>(<span>self, layer: int)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get all voxels in a specified layer.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model2 = model1.isolateLayer(8)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>layer</code></strong></dt>
 <dd><p>Voxel layer to isolate</p></dd>
@@ -7479,12 +8080,7 @@ Unrecognized component labels will return an empty object.</p>
 <span>def <span class="ident">isolateMaterial</span></span>(<span>self, material: int)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Get all voxels with a specified material.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model2 = model1.isolateMaterial(4)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>material</code></strong></dt>
 <dd><p>Material index corresponding to the materials array for the model</p></dd>
@@ -7512,7 +8108,7 @@ Unrecognized component labels will return an empty object.</p>
     :param material: Material index corresponding to the materials array for the model
     :return: VoxelModel
     &#34;&#34;&#34;
-    mask = np.array(self.voxels == material, dtype=np.bool)
+    mask = np.array(self.voxels == material, dtype=np.bool_)
     materials = np.zeros((2, self.materials.shape[1]), dtype=np.float32)
     materials[1] = self.materials[material]
     return VoxelModel(mask.astype(int), materials, self.coords, self.resolution)</code></pre>
@@ -7522,18 +8118,7 @@ Unrecognized component labels will return an empty object.</p>
 <span>def <span class="ident">keepout</span></span>(<span>self, method: <a title="voxelfuse.voxel_model.Process" href="#voxelfuse.voxel_model.Process">Process</a>, material: int = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a model representing the keep-out region of a model.</p>
-<p>The keep-out region for a given process and part represents material which
-the process may not modify while creating the part. This feature primarily
-applies to subtractive processes. It includes material that will be present
-in the final part and regions of the workspace that cannot be accessed
-without affecting this material. In general, additive processes will have
-no keep-out region because they deposit material from the bottom up.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">modelResult = model1.keepout(Process.MILL)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>method</code></strong></dt>
 <dd><p>Target manufacturing method, set using Process class</p></dd>
@@ -7582,21 +8167,55 @@ no keep-out region because they deposit material from the bottom up.</p>
     return new_model</code></pre>
 </details>
 </dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.mirror"><code class="name flex">
+<span>def <span class="ident">mirror</span></span>(<span>self, axes: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.X)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="args">Args:</h2>
+<dl>
+<dt><strong><code>axes</code></strong></dt>
+<dd><p>Axes for mirror operation, set using Axes class</p></dd>
+</dl>
+<h2 id="returns">Returns:</h2>
+<dl>
+<dd><p>VoxelModel</p></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def mirror(self, axes: Axes = Axes.X):
+    &#34;&#34;&#34;
+    Mirror a model along the given axes.
+
+    This operation will mirror ALONG the given axes. For example:
+
+    - Axes.X performs a mirror about the YZ plane
+    - Axes.XY performs a mirror about the YZ plane and the XZ plane
+    - Axes.XYZ performs a mirror along all three axes
+
+    :param axes: Axes for mirror operation, set using Axes class
+    :return: VoxelModel
+    &#34;&#34;&#34;
+    flip_axis = []
+    for i in range(len(axes.value)):
+        if axes.value[i]:
+            flip_axis.append(i)
+    flip_axis = tuple(flip_axis)
+
+    centerCoords = self.getCenter()
+    new_voxels = np.flip(self.voxels, flip_axis)
+    new_model = VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
+    new_model = new_model.setCenter(centerCoords)
+
+    return new_model</code></pre>
+</details>
+</dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.multiply"><code class="name flex">
 <span>def <span class="ident">multiply</span></span>(<span>self, other)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Find the material-wise multiplication of two models.</p>
-<p>The materials of the result are calculated by multiplying the material vectors
-for each voxel. This function also supports multiplication by a scalar.</p>
-<p>This operation can also be applied using the multiplication operator (*).</p>
-<hr class="docutils" />
-<p>Examples:</p>
-<p><span class="docutils literal">model3 = model1.multiply(model2)</span></p>
-<p><span class="docutils literal">model3 = model1 * model2</span></p>
-<p><span class="docutils literal">model5 = model4 * 3</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>other</code></strong></dt>
 <dd><p>VoxelModel to multiply with self</p></dd>
@@ -7674,11 +8293,7 @@ for each voxel. This function also supports multiplication by a scalar.</p>
 <span>def <span class="ident">opening</span></span>(<span>self, radius: int = 1, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.XYZ, structType: <a title="voxelfuse.voxel_model.Struct" href="#voxelfuse.voxel_model.Struct">Struct</a> = Struct.STANDARD, connectivity: int = 3)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Apply an opening algorithm along the specified axes.</p>
-<p>This algorithm consists of erosion followed by dilation and will remove small features.
-Depending on the structuring element used, this will apply a chamfer or fillet effect
-to outside corners.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>radius</code></strong></dt>
 <dd><p>Radius for dilation/erosion in voxels</p></dd>
@@ -7715,7 +8330,7 @@ to outside corners.</p>
         return VoxelModel.copy(self)
 
     new_voxels = np.copy(self.voxels)
-    mask = np.array(new_voxels != 0, dtype=np.bool)
+    mask = np.array(new_voxels != 0, dtype=np.bool_)
 
     if structType == Struct.SPHERE:
         struct = structSphere(radius, plane)
@@ -7729,18 +8344,88 @@ to outside corners.</p>
     return VoxelModel(new_voxels, self.materials, self.coords, self.resolution)</code></pre>
 </details>
 </dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.plot"><code class="name flex">
+<span>def <span class="ident">plot</span></span>(<span>self, plot=None, name: str = 'model', wireframe: bool = False, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="args">Args:</h2>
+<dl>
+<dt><strong><code>plot</code></strong></dt>
+<dd><p>Plot object to add model to</p></dd>
+<dt><strong><code>name</code></strong></dt>
+<dd><p>Model name</p></dd>
+<dt><strong><code>wireframe</code></strong></dt>
+<dd><p>Enable displaying model as a wireframe</p></dd>
+<dt><strong><code>kwargs</code></strong></dt>
+<dd><p>Additional display options (see above)</p></dd>
+</dl>
+<h2 id="returns">Returns:</h2>
+<dl>
+<dd><p>K3D plot object</p></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot(self, plot=None, name: str = &#39;model&#39;, wireframe: bool = False, **kwargs):
+    &#34;&#34;&#34;
+    Add model to a K3D plot.
+
+    Additional display options:
+        opacity: `float`.
+            Opacity of voxels.
+        outlines: `bool`.
+            Whether mesh should display with outlines.
+        outlines_color: `int`.
+            Packed RGB color of the resulting outlines (0xff0000 is red, 0xff is blue)
+        kwargs: `dict`.
+            Dictionary arguments to configure transform and model_matrix.
+
+    More information available at: https://github.com/K3D-tools/K3D-jupyter
+
+    :param plot: Plot object to add model to
+    :param name: Model name
+    :param wireframe: Enable displaying model as a wireframe
+    :param kwargs: Additional display options (see above)
+    :return: K3D plot object
+    &#34;&#34;&#34;
+    model = self.fitWorkspace() | VoxelModel.empty((1, 1, 1), self.resolution)
+    model = model.removeDuplicateMaterials()
+
+    # Get colors
+    colors = []
+
+    for m in model.materials:
+        r = 0
+        g = 0
+        b = 0
+
+        for i in range(1, len(m)):
+            r = r + m[i] * material_properties[i - 1][&#39;r&#39;]
+            g = g + m[i] * material_properties[i - 1][&#39;g&#39;]
+            b = b + m[i] * material_properties[i - 1][&#39;b&#39;]
+
+        r = 1 if r &gt; 1 else r
+        g = 1 if g &gt; 1 else g
+        b = 1 if b &gt; 1 else b
+
+        colors.append(rgb_to_hex(r, g, b))
+
+    colors = np.array(colors, dtype=np.uint32)[1:]
+
+    # Plot
+    if plot is None:
+        plot = k3d.plot()
+
+    plot += k3d.voxels(np.swapaxes(model.voxels, 0, 2).astype(np.uint8), color_map=colors, name=name, wireframe=wireframe, **kwargs)
+    return plot</code></pre>
+</details>
+</dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.projection"><code class="name flex">
 <span>def <span class="ident">projection</span></span>(<span>self, direction: <a title="voxelfuse.voxel_model.Dir" href="#voxelfuse.voxel_model.Dir">Dir</a>, material: int = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a model representing all voxels within the workspace that contain
-material or that lie in the specified direction with respect to a voxel
-that contains material.</p>
-<p>---</p>
-<p>Example:</p>
-<p><span class="docutils literal">modelResult = model1.projection(Dir.DOWN)</span></p>
-<p>---</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>direction</code></strong></dt>
 <dd><p>Projection direction, set using Dir class</p></dd>
@@ -7811,10 +8496,7 @@ that contains material.</p>
 <span>def <span class="ident">removeDuplicateMaterials</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Remove duplicate rows from a model's material array.</p>
-<p>This function can be greatly accelerated using CUDA. For more information on how to enable CUDA in VoxelFuse,
-see the GpuSettings class.</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>VoxelModel</p></dd>
 </dl></div>
@@ -7871,12 +8553,7 @@ see the GpuSettings class.</p>
 <span>def <span class="ident">removeNegatives</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Remove negative material values from a model (these have no physical meaning).</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model2 = model1.removeNegatives()</span></p>
-<p>___</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>VoxelModel</p></dd>
 </dl></div>
@@ -7910,10 +8587,7 @@ see the GpuSettings class.</p>
 <span>def <span class="ident">rotate</span></span>(<span>self, angle: float, axis: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.Z)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Rotate a model about its center.</p>
-<p>Floating point errors may slightly affect the angle of the resulting model.
-To rotate a model in precise 90 degree increments, use rotate90().</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>angle</code></strong></dt>
 <dd><p>Angle of rotation in degrees</p></dd>
@@ -7941,13 +8615,16 @@ To rotate a model in precise 90 degree increments, use rotate90().</p>
     &#34;&#34;&#34;
     if axis == Axes.X:
         plane = (1, 2)
+        sign = 1
     elif axis == Axes.Y:
-        plane = (0, 2)
+        plane = (2, 0)
+        sign = -1 # For some reason, Y rotates the opposite direction than expected
     else: # axis == Axes.Z
         plane = (0, 1)
+        sign = 1
 
     centerCoords = self.getCenter()
-    new_voxels = ndimage.rotate(self.voxels, angle, plane, order=0)
+    new_voxels = ndimage.rotate(self.voxels, sign*angle, plane, order=0)
     new_model = VoxelModel(new_voxels, self.materials, self.coords, self.resolution)
     new_model = new_model.setCenter(centerCoords)
 
@@ -7958,8 +8635,7 @@ To rotate a model in precise 90 degree increments, use rotate90().</p>
 <span>def <span class="ident">rotate90</span></span>(<span>self, times: int = 1, axis: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.Z)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Rotate a model about its center in increments of 90 degrees.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>times</code></strong></dt>
 <dd><p>Number of 90 degree increments to rotate model</p></dd>
@@ -8001,8 +8677,7 @@ To rotate a model in precise 90 degree increments, use rotate90().</p>
 <span>def <span class="ident">round</span></span>(<span>self, toNearest: float = 0.1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Round material percentages to nearest multiple of an input value.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>toNearest</code></strong></dt>
 <dd><p>Value to round to</p></dd>
@@ -8040,17 +8715,7 @@ To rotate a model in precise 90 degree increments, use rotate90().</p>
 <span>def <span class="ident">saveVF</span></span>(<span>self, filename: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Save model data to a .vf file</p>
-<p>The native VoxelFuse file format stores the same information as the attributes of
-a VoxelModel object. This includes geometry and material mixture data. Material
-attributes remain stored in the materials.py file, so the same version of
-this file must be used when saving and opening models. The .vf file type can be reopened
-by a VoxelFuse script.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal"><span class="pre">modelResult.saveVF(&quot;test-file&quot;)</span></span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>filename</code></strong></dt>
 <dd><p>File name</p></dd>
@@ -8144,20 +8809,7 @@ by a VoxelFuse script.</p>
 <span>def <span class="ident">saveVXC</span></span>(<span>self, filename: str, compression: bool = False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Save model data to a .vxc file</p>
-<p>The VoxCad file format stores geometry and full material palette data. The material
-palette includes the properties for each material and material mixtures are
-converted into distinct palette entries.</p>
-<p>This format supports compression for the voxel data. Enabling compression allows
-for larger models, but it may introduce geometry errors that particularly affect
-small models.</p>
-<p>The .vxc file type can be opened using VoxCad simulation software. However, it
-cannot currently be reopened by a VoxelFuse script.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal"><span class="pre">modelResult.saveVXC(&quot;test-file&quot;,</span> compression=False)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>filename</code></strong></dt>
 <dd><p>File name</p></dd>
@@ -8215,12 +8867,7 @@ cannot currently be reopened by a VoxelFuse script.</p>
 <span>def <span class="ident">scale</span></span>(<span>self, factor: float, adjustResolution: bool = True)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Scale a model.</p>
-<p>If adjustResolution is enabled, the resolution attribute of the model will
-also be multiplied by the scaling factor.
-Enable adjustResolution if using this operation to change the resolution of a model.
-Disable adjustResolution if using this operation to change the size of a model.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>factor</code></strong></dt>
 <dd><p>Scale factor</p></dd>
@@ -8276,15 +8923,7 @@ Disable adjustResolution if using this operation to change the size of a model.<
 <span>def <span class="ident">scaleNull</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Scale null material values to make all voxels contain 100% material.</p>
-<p>Voxels that contained less than 100% material will contain the same material percentages as
-before, but will have varying density. Voxels that contained greater than 100% material
-will be scaled using scaleValues().</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model2 = model1.scaleNull()</span></p>
-<p>___</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>VoxelModel</p></dd>
 </dl></div>
@@ -8323,8 +8962,7 @@ will be scaled using scaleValues().</p>
 <span>def <span class="ident">scaleToSize</span></span>(<span>self, size: Tuple[int, int, int])</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Scale a model to fit the given dimensions.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
 <dd><p>Target dimensions in voxels</p></dd>
@@ -8365,13 +9003,7 @@ will be scaled using scaleValues().</p>
 <span>def <span class="ident">scaleValues</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Scale nonzero material values to make all voxels contain 100% material while
-maintaining the ratio between materials.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model2 = model1.scaleValues()</span></p>
-<p>___</p>
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>VoxelModel</p></dd>
 </dl></div>
@@ -8406,8 +9038,7 @@ maintaining the ratio between materials.</p>
 <span>def <span class="ident">setCenter</span></span>(<span>self, coords: Tuple[float, float, float])</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Set the center of a model to the specified coordinates.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>coords</code></strong></dt>
 <dd><p>Target coordinates in voxels</p></dd>
@@ -8441,8 +9072,7 @@ maintaining the ratio between materials.</p>
 <span>def <span class="ident">setCoords</span></span>(<span>self, coords: Tuple[int, int, int])</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Set the origin of a model to the specified coordinates.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>coords</code></strong></dt>
 <dd><p>Target coordinates in voxels</p></dd>
@@ -8471,8 +9101,7 @@ maintaining the ratio between materials.</p>
 <span>def <span class="ident">setDensity</span></span>(<span>self, density: float = 1.0)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Set the density of all voxels.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>density</code></strong></dt>
 <dd><p>Target density value</p></dd>
@@ -8504,16 +9133,10 @@ maintaining the ratio between materials.</p>
 <span>def <span class="ident">setMaterial</span></span>(<span>self, material: int)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Set the material of all voxels in a model.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">model2 = model1.getBoundingBox()</span></p>
-<p><span class="docutils literal">model3 = model2.setMaterial(2)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>material</code></strong></dt>
-<dd><p>Material index corresponding to materials.py</p></dd>
+<dd><p>Material id corresponding to materials.py</p></dd>
 </dl>
 <h2 id="returns">Returns:</h2>
 <dl>
@@ -8537,7 +9160,7 @@ maintaining the ratio between materials.</p>
 
     ----
 
-    :param material: Material index corresponding to materials.py
+    :param material: Material id corresponding to materials.py
     :return: VoxelModel
     &#34;&#34;&#34;
     new_voxels = self.getOccupied().voxels # Converts input model to a mask, no effect if input is already a mask
@@ -8554,16 +9177,7 @@ maintaining the ratio between materials.</p>
 <span>def <span class="ident">setMaterialVector</span></span>(<span>self, material_vector)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Set the material of all voxels in a model.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">material_vector = np.zeros(len(materials) + 1)</span></p>
-<p><span class="docutils literal">material_vector[0] = 1 # Set a to 1</span></p>
-<p><span class="docutils literal">material_vector[3] = 0.3 # Set material 3 to 30%</span></p>
-<p><span class="docutils literal">material_vector[4] = 0.7 # Set material 4 to 70%</span></p>
-<p><span class="docutils literal">model2 = model1.setMaterialVector(material_vector)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>material_vector</code></strong></dt>
 <dd><p>Material mixture vector, format: (a, m0, m1, &hellip; mn)</p></dd>
@@ -8606,26 +9220,34 @@ maintaining the ratio between materials.</p>
     return VoxelModel(new_voxels, materials, self.coords, self.resolution)</code></pre>
 </details>
 </dd>
+<dt id="voxelfuse.voxel_model.VoxelModel.setResolution"><code class="name flex">
+<span>def <span class="ident">setResolution</span></span>(<span>self, res: float)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="returns">Returns:</h2>
+<dl>
+<dd><p>None</p></dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setResolution(self, res: float):
+    &#34;&#34;&#34;
+    Change the resolution of a model.
+
+    :return: None
+    &#34;&#34;&#34;
+    new_model = VoxelModel.copy(self)
+    new_model.resolution = res
+    return new_model</code></pre>
+</details>
+</dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.subtract"><code class="name flex">
 <span>def <span class="ident">subtract</span></span>(<span>self, model_to_sub)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Find the material-wise difference of two models.</p>
-<p>The materials of the result are calculated for each voxel by subtracting the
-second material vector from the first.</p>
-<p>Example -- Subtracting a voxel containing material 3 from the result of the
-addition example:</p>
-<p>&gt;&gt; Voxel A = [1, 0, 0.5, 0, 0.5]</p>
-<p>&gt;&gt; Voxel B = [1, 0, 0, 0, 1]</p>
-<p>&gt;&gt; A - B = [1, 0, 0.5, 0, -0.5]</p>
-<p>&gt;&gt; Remove negatives (see Cleanup Operations) → [1, 0, 0.5, 0, 0]</p>
-<p>This operation can also be applied using the subtraction operator (-).</p>
-<hr class="docutils" />
-<p>Examples:</p>
-<p><span class="docutils literal">model3 = model1.subtract(model2)</span></p>
-<p><span class="docutils literal">model3 = model1 - model2</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>model_to_sub</code></strong></dt>
 <dd><p>VoxelModel to subtract from self</p></dd>
@@ -8703,13 +9325,7 @@ addition example:</p>
 <span>def <span class="ident">support</span></span>(<span>self, method: <a title="voxelfuse.voxel_model.Process" href="#voxelfuse.voxel_model.Process">Process</a>, r1: int = 1, r2: int = 1, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.XY, material: int = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a model representing where support material may be added to an
-object as characterized by the process that is used to remove the supports.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">modelResult = model1.support(Process.LASER)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>method</code></strong></dt>
 <dd><p>Target support removal method, set using Process class</p></dd>
@@ -8762,8 +9378,7 @@ based on proximity to empty regions that are inaccessible to the removal process
 <span>def <span class="ident">translate</span></span>(<span>self, vector: Tuple[int, int, int])</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Translate a model by the specified vector.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>vector</code></strong></dt>
 <dd><p>Translation vector in voxels</p></dd>
@@ -8793,8 +9408,7 @@ based on proximity to empty regions that are inaccessible to the removal process
 <span>def <span class="ident">translateMM</span></span>(<span>self, vector: Tuple[float, float, float])</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Translate a model by the specified vector.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>vector</code></strong></dt>
 <dd><p>Translation vector in mm</p></dd>
@@ -8826,16 +9440,7 @@ based on proximity to empty regions that are inaccessible to the removal process
 <span>def <span class="ident">union</span></span>(<span>self, model_to_add)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Find the geometric union of two models.</p>
-<p>The materials from self will take priority in overlapping areas
-of the resulting model. This operation can also be applied using
-the OR operator (|)</p>
-<hr class="docutils" />
-<p>Examples:</p>
-<p><span class="docutils literal">model3 = model1.union(model2)</span></p>
-<p><span class="docutils literal">model3 = model1 | model2</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>model_to_add</code></strong></dt>
 <dd><p>VoxelModel to union with self</p></dd>
@@ -8879,7 +9484,7 @@ the OR operator (|)</p>
 
     # Paper uses a symmetric difference operation combined with the left/right intersection
     # A condensed version of this operation is used here for code simplicity
-    mask = np.array(a == 0, dtype=np.bool)
+    mask = np.array(a == 0, dtype=np.bool_)
     new_voxels = np.multiply(b, mask)
     new_voxels = new_voxels + a # material from left model takes priority
 
@@ -8890,12 +9495,7 @@ the OR operator (|)</p>
 <span>def <span class="ident">userSupport</span></span>(<span>self, support_model, method: <a title="voxelfuse.voxel_model.Process" href="#voxelfuse.voxel_model.Process">Process</a>, r1: int = 1, r2: int = 1, plane: <a title="voxelfuse.voxel_model.Axes" href="#voxelfuse.voxel_model.Axes">Axes</a> = Axes.XY, material: int = -1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a model representing the intersection of the supportable region and a user support model.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">modelResult = model1.userSupport(model2, Process.LASER)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>support_model</code></strong></dt>
 <dd><p>User provided support model</p></dd>
@@ -8953,13 +9553,7 @@ based on proximity to empty regions that are inaccessible to the removal process
 <span>def <span class="ident">web</span></span>(<span>self, method: <a title="voxelfuse.voxel_model.Process" href="#voxelfuse.voxel_model.Process">Process</a>, r1: int = 1, r2: int = 1, layer: int = -1, material=1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a model representing the scrap material surrounding a model.</p>
-<p>Web can be used in the creation of supports or layer alignment fixtures.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">modelResult = model1.web(Process.LASER, 1, 5)</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>method</code></strong></dt>
 <dd><p>Target web removal method, set using Process class</p></dd>
@@ -9010,13 +9604,10 @@ based on proximity to empty regions that are inaccessible to the removal process
 </details>
 </dd>
 <dt id="voxelfuse.voxel_model.VoxelModel.writeVXCData"><code class="name flex">
-<span>def <span class="ident">writeVXCData</span></span>(<span>self, f: TextIO, compression: bool = False)</span>
+<span>def <span class="ident">writeVXCData</span></span>(<span>self, f: <class 'TextIO'>, compression: bool = False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Write geometry and material data to a text file using the .vxc format.</p>
-<p>The VXC/VXA format stores geometry as a 3D grid of single-digit decimal numbers. As such, it is limited to 9
-distinct materials.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>f</code></strong></dt>
 <dd><p>File to write to</p></dd>
@@ -9085,22 +9676,27 @@ distinct materials.</p>
         writeClos(f, &#39;Display&#39;, 3)
 
         writeOpen(f, &#39;Mechanical&#39;, 3)
-        writeData(f, &#39;MatModel&#39;, int(avgProps[&#39;MM&#39;]), 4)
         if int(avgProps[&#39;MM&#39;]) == 3:
-            SSData = self.getSSData(row)
-            writeOpen(f, &#39;SSData&#39;, 4)
-            writeData(f, &#39;NumDataPts&#39;, len(SSData[&#39;strain&#39;]), 5)
+            current_ss_data = self.getSSData(row)
+            if current_ss_data is not None:
+                writeData(f, &#39;MatModel&#39;, 3, 4)
+                writeOpen(f, &#39;SSData&#39;, 4)
+                writeData(f, &#39;NumDataPts&#39;, len(current_ss_data[&#39;strain&#39;]), 5)
 
-            writeOpen(f, &#39;StrainData&#39;, 5)
-            for point in range(len(SSData[&#39;strain&#39;])):
-                writeData(f, &#39;Strain&#39;, SSData[&#39;strain&#39;][point], 6)
-            writeClos(f, &#39;StrainData&#39;, 5)
+                writeOpen(f, &#39;StrainData&#39;, 5)
+                for point in current_ss_data[&#39;strain&#39;]:
+                    writeData(f, &#39;Strain&#39;, point, 6)
+                writeClos(f, &#39;StrainData&#39;, 5)
 
-            writeOpen(f, &#39;StressData&#39;, 5)
-            for point in range(len(SSData[&#39;stress&#39;])):
-                writeData(f, &#39;Stress&#39;, SSData[&#39;stress&#39;][point], 6)
-            writeClos(f, &#39;StressData&#39;, 5)
-            writeClos(f, &#39;SSData&#39;, 4)
+                writeOpen(f, &#39;StressData&#39;, 5)
+                for point in current_ss_data[&#39;stress&#39;]:
+                    writeData(f, &#39;Stress&#39;, point, 6)
+                writeClos(f, &#39;StressData&#39;, 5)
+                writeClos(f, &#39;SSData&#39;, 4)
+            else:
+                writeData(f, &#39;MatModel&#39;, 0, 4)
+        else:
+            writeData(f, &#39;MatModel&#39;, avgProps[&#39;MM&#39;], 4)
 
         writeData(f, &#39;Elastic_Mod&#39;, avgProps[&#39;E&#39;], 4)
         writeData(f, &#39;Plastic_Mod&#39;, avgProps[&#39;Z&#39;], 4)
@@ -9115,7 +9711,36 @@ distinct materials.</p>
         writeData(f, &#39;uStatic&#39;, avgProps[&#39;uS&#39;], 4)
         writeData(f, &#39;uDynamic&#39;, avgProps[&#39;uD&#39;], 4)
 
-        writeClos(f, &#39;Mechanical&#39;, 3)
+        if int(avgProps[&#39;HG&#39;]) == 1:
+            current_hg_model = self.getHGModel(row)
+            if current_hg_model is not None:
+                writeData(f, &#39;HydrogelModel&#39;, 1, 4)
+                writeClos(f, &#39;Mechanical&#39;, 3)
+                writeOpen(f, &#39;Hydrogel&#39;, 3)
+                writeData(f, &#39;Name&#39;, current_hg_model[&#39;name&#39;], 4)
+                writeData(f, &#39;VoxelDim&#39;, current_hg_model[&#39;test_voxel_dim&#39;], 4)
+                writeData(f, &#39;IdealDisplacement&#39;, current_hg_model[&#39;ideal_displacement&#39;], 4)
+                writeData(f, &#39;TestDisplacement&#39;, current_hg_model[&#39;test_displacement&#39;], 4)
+                writeData(f, &#39;TimeStepCorrection&#39;, current_hg_model[&#39;test_time_step&#39;], 4)
+                writeData(f, &#39;KpRising&#39;, current_hg_model[&#39;kp_rising&#39;], 4)
+                writeData(f, &#39;KpFalling&#39;, current_hg_model[&#39;kp_falling&#39;], 4)
+                writeData(f, &#39;MaxTemp&#39;, current_hg_model[&#39;ideal_max_temp&#39;], 4)
+                writeData(f, &#39;MinTemp&#39;, current_hg_model[&#39;ideal_min_temp&#39;], 4)
+                writeData(f, &#39;TestMax&#39;, current_hg_model[&#39;test_max_temp&#39;], 4)
+                writeData(f, &#39;TestMin&#39;, current_hg_model[&#39;test_min_temp&#39;], 4)
+                writeData(f, &#39;C0&#39;, current_hg_model[&#39;c0&#39;], 4)
+                writeData(f, &#39;C1&#39;, current_hg_model[&#39;c1&#39;], 4)
+                writeData(f, &#39;C2&#39;, current_hg_model[&#39;c2&#39;], 4)
+                writeData(f, &#39;C3&#39;, current_hg_model[&#39;c3&#39;], 4)
+                writeData(f, &#39;C4&#39;, current_hg_model[&#39;c4&#39;], 4)
+                writeData(f, &#39;C5&#39;, current_hg_model[&#39;c5&#39;], 4)
+                writeClos(f, &#39;Hydrogel&#39;, 3)
+            else:
+                writeData(f, &#39;HydrogelModel&#39;, 0, 4)
+                writeClos(f, &#39;Mechanical&#39;, 3)
+        else:
+            writeData(f, &#39;HydrogelModel&#39;, 0, 4)
+            writeClos(f, &#39;Mechanical&#39;, 3)
         writeClos(f, &#39;Material&#39;, 2)
     writeClos(f, &#39;Palette&#39;, 1)
 
@@ -9161,14 +9786,7 @@ distinct materials.</p>
 <span>def <span class="ident">xor</span></span>(<span>self, model_2)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Find the geometric exclusive or of two models.</p>
-<p>This operation can also be applied using the XOR operator (^)</p>
-<hr class="docutils" />
-<p>Examples:</p>
-<p><span class="docutils literal">model3 = model1.xor(model2)</span></p>
-<p><span class="docutils literal">model3 = model1 ^ model2</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>model_2</code></strong></dt>
 <dd><p>VoxelModel to xor with self</p></dd>
@@ -9208,8 +9826,8 @@ distinct materials.</p>
     b = b + i_offset
     b[b == i_offset] = 0
 
-    mask1 = np.array(b == 0, dtype=np.bool)
-    mask2 = np.array(a == 0, dtype=np.bool)
+    mask1 = np.array(b == 0, dtype=np.bool_)
+    mask2 = np.array(a == 0, dtype=np.bool_)
 
     new_voxels = np.multiply(a, mask1) + np.multiply(b, mask2)
 
@@ -9240,7 +9858,9 @@ distinct materials.</p>
 <li><code><a title="voxelfuse.voxel_model.ditherOptimized" href="#voxelfuse.voxel_model.ditherOptimized">ditherOptimized</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.findFilledVoxels" href="#voxelfuse.voxel_model.findFilledVoxels">findFilledVoxels</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.generateMaterials" href="#voxelfuse.voxel_model.generateMaterials">generateMaterials</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.getMaterialData" href="#voxelfuse.voxel_model.getMaterialData">getMaterialData</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.makeMesh" href="#voxelfuse.voxel_model.makeMesh">makeMesh</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.rgb_to_hex" href="#voxelfuse.voxel_model.rgb_to_hex">rgb_to_hex</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.structSphere" href="#voxelfuse.voxel_model.structSphere">structSphere</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.structStandard" href="#voxelfuse.voxel_model.structStandard">structStandard</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.toFullMaterials" href="#voxelfuse.voxel_model.toFullMaterials">toFullMaterials</a></code></li>
@@ -9321,7 +9941,11 @@ distinct materials.</p>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getBoundingBox" href="#voxelfuse.voxel_model.VoxelModel.getBoundingBox">getBoundingBox</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getCenter" href="#voxelfuse.voxel_model.VoxelModel.getCenter">getCenter</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getComponents" href="#voxelfuse.voxel_model.VoxelModel.getComponents">getComponents</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.getCoords" href="#voxelfuse.voxel_model.VoxelModel.getCoords">getCoords</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.getDim" href="#voxelfuse.voxel_model.VoxelModel.getDim">getDim</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.getHGModel" href="#voxelfuse.voxel_model.VoxelModel.getHGModel">getHGModel</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getMaterialProperties" href="#voxelfuse.voxel_model.VoxelModel.getMaterialProperties">getMaterialProperties</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.getMaxCoords" href="#voxelfuse.voxel_model.VoxelModel.getMaxCoords">getMaxCoords</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getOccupied" href="#voxelfuse.voxel_model.VoxelModel.getOccupied">getOccupied</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getSSData" href="#voxelfuse.voxel_model.VoxelModel.getSSData">getSSData</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getUnoccupied" href="#voxelfuse.voxel_model.VoxelModel.getUnoccupied">getUnoccupied</a></code></li>
@@ -9329,13 +9953,16 @@ distinct materials.</p>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getVoxelDim" href="#voxelfuse.voxel_model.VoxelModel.getVoxelDim">getVoxelDim</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.getVoxelProperties" href="#voxelfuse.voxel_model.VoxelModel.getVoxelProperties">getVoxelProperties</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.intersection" href="#voxelfuse.voxel_model.VoxelModel.intersection">intersection</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.isOccupied" href="#voxelfuse.voxel_model.VoxelModel.isOccupied">isOccupied</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.isolateComponent" href="#voxelfuse.voxel_model.VoxelModel.isolateComponent">isolateComponent</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.isolateLayer" href="#voxelfuse.voxel_model.VoxelModel.isolateLayer">isolateLayer</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.isolateMaterial" href="#voxelfuse.voxel_model.VoxelModel.isolateMaterial">isolateMaterial</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.keepout" href="#voxelfuse.voxel_model.VoxelModel.keepout">keepout</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.mirror" href="#voxelfuse.voxel_model.VoxelModel.mirror">mirror</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.multiply" href="#voxelfuse.voxel_model.VoxelModel.multiply">multiply</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.openVF" href="#voxelfuse.voxel_model.VoxelModel.openVF">openVF</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.opening" href="#voxelfuse.voxel_model.VoxelModel.opening">opening</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.plot" href="#voxelfuse.voxel_model.VoxelModel.plot">plot</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.projection" href="#voxelfuse.voxel_model.VoxelModel.projection">projection</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.removeDuplicateMaterials" href="#voxelfuse.voxel_model.VoxelModel.removeDuplicateMaterials">removeDuplicateMaterials</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.removeNegatives" href="#voxelfuse.voxel_model.VoxelModel.removeNegatives">removeNegatives</a></code></li>
@@ -9353,6 +9980,7 @@ distinct materials.</p>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.setDensity" href="#voxelfuse.voxel_model.VoxelModel.setDensity">setDensity</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.setMaterial" href="#voxelfuse.voxel_model.VoxelModel.setMaterial">setMaterial</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.setMaterialVector" href="#voxelfuse.voxel_model.VoxelModel.setMaterialVector">setMaterialVector</a></code></li>
+<li><code><a title="voxelfuse.voxel_model.VoxelModel.setResolution" href="#voxelfuse.voxel_model.VoxelModel.setResolution">setResolution</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.subtract" href="#voxelfuse.voxel_model.VoxelModel.subtract">subtract</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.support" href="#voxelfuse.voxel_model.VoxelModel.support">support</a></code></li>
 <li><code><a title="voxelfuse.voxel_model.VoxelModel.translate" href="#voxelfuse.voxel_model.VoxelModel.translate">translate</a></code></li>

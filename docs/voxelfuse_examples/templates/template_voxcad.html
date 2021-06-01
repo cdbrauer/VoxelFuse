@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2.dev21+g6d35cca" />
-<title>voxelfuse_examples.voxelyze_integration.vxc_export API documentation</title>
-<meta name="description" content="Export a VoxelFuse model as a .vxc file that can be imported into VoxCad …" />
+<title>voxelfuse_examples.templates.template_voxcad API documentation</title>
+<meta name="description" content="Template for creating scripts using VoxCad simulation …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -19,46 +19,39 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>voxelfuse_examples.voxelyze_integration.vxc_export</code></h1>
+<h1 class="title">Module <code>voxelfuse_examples.templates.template_voxcad</code></h1>
 </header>
 <section id="section-intro">
-<p>Export a VoxelFuse model as a .vxc file that can be imported into VoxCad.</p>
+<p>Template for creating scripts using VoxCad simulation.</p>
 <hr>
-<p>Copyright 2020 - Cole Brauer, Dan Aukes</p>
+<p>Copyright 2021 - Cole Brauer, Dan Aukes</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
-Export a VoxelFuse model as a .vxc file that can be imported into VoxCad.
+Template for creating scripts using VoxCad simulation.
 
 ----
 
-Copyright 2020 - Cole Brauer, Dan Aukes
+Copyright 2021 - Cole Brauer, Dan Aukes
 &#34;&#34;&#34;
 
-from voxelfuse.voxel_model import VoxelModel
-from voxelfuse.mesh import Mesh
-from voxelfuse.primitives import *
+# Import Library
+import voxelfuse as vf
 
+# Start Application
 if __name__==&#39;__main__&#39;:
-    # app1 = qg.QApplication(sys.argv)
+    # Create Models
+    model = vf.sphere(5)
 
-    model1 = cube(5, (0, 0, 0), material=1)
-    model2 = cube(5, (4, 0, 3), material=8)
-    model3 = cube(5, (8, 0, 6), material=3)
+    # Process Models
+    modelResult = model.dilate(3, vf.Axes.XY)
+    modelResult = modelResult.translate((0, 0, 20))
 
-    modelResult = (model1 + model2).scaleValues() | model3
-
-    # Save VXC file
-    modelResult.saveVXC(&#34;test-file&#34;, compression=False)
-    modelResult.saveVF(&#34;test-file&#34;)
-
-    # Create mesh data
-    mesh1 = Mesh.fromVoxelModel(modelResult)
-
-    # Create plot
-    mesh1.viewer()</code></pre>
+    # Create simulation and launch
+    simulation = vf.Simulation(modelResult)
+    simulation.runSimVoxCad()</code></pre>
 </details>
 </section>
 <section>
@@ -78,7 +71,7 @@ if __name__==&#39;__main__&#39;:
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="voxelfuse_examples.voxelyze_integration" href="index.html">voxelfuse_examples.voxelyze_integration</a></code></li>
+<li><code><a title="voxelfuse_examples.templates" href="index.html">voxelfuse_examples.templates</a></code></li>
 </ul>
 </li>
 </ul>

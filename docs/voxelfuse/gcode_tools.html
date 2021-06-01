@@ -141,8 +141,7 @@ def find_voxels(gcode: List[str], voxel_size: float = 1):
 <span>def <span class="ident">export</span></span>(<span>filename: str, lines: List[str])</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Export a list of strings to a gcode file.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>filename</code></strong></dt>
 <dd><p>File name with extension</p></dd>
@@ -175,15 +174,7 @@ def find_voxels(gcode: List[str], voxel_size: float = 1):
 <span>def <span class="ident">find_voxels</span></span>(<span>gcode: List[str], voxel_size: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Insert comments before each voxel layer.</p>
-<p>Voxels are determined based on the position of the Z-axis and the specified
-voxel dimension. Comments are formatted as follows:</p>
-<p><span class="docutils literal">;V0</span></p>
-<p><span class="docutils literal">;Start of voxel 0</span></p>
-<p>pause_before_voxel references the <span class="docutils literal">;V0</span> line of the comment. This line can
-also be used with remove_to_string to remove initialization code before the
-first voxel layer.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>gcode</code></strong></dt>
 <dd><p>List of gcode lines</p></dd>
@@ -233,8 +224,7 @@ first voxel layer.</p>
 <span>def <span class="ident">import_gcode</span></span>(<span>filename: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Import the lines of a gcode file to a list</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>filename</code></strong></dt>
 <dd><p>File name with extension</p></dd>
@@ -265,10 +255,7 @@ first voxel layer.</p>
 <span>def <span class="ident">pause_before_voxel</span></span>(<span>gcode: List[str], voxel: int)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Insert a pause command (M601) before a specified voxel layer.</p>
-<p>Before using this command, use find_voxels to add comments before the start
-of each voxel layer.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>gcode</code></strong></dt>
 <dd><p>List of gcode lines</p></dd>
@@ -304,10 +291,7 @@ of each voxel layer.</p>
 <span>def <span class="ident">remove_to_string</span></span>(<span>gcode: List[str], string: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Remove all gcode commands before a specified comment string.</p>
-<p>find_voxels can be used before this command to add comments before the
-start of each voxel layer.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>gcode</code></strong></dt>
 <dd><p>List of gcode lines</p></dd>

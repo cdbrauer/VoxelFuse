@@ -40,9 +40,9 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 import math
 import numpy as np
 from typing import Tuple
-from voxelfuse.voxel_model import VoxelModel, generateMaterials
-from voxelfuse.materials import material_properties
 from tqdm import tqdm
+
+from voxelfuse.voxel_model import VoxelModel, generateMaterials
 
 def gyroid(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1):
     &#34;&#34;&#34;
@@ -210,13 +210,7 @@ def FRD(size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tupl
 <span>def <span class="ident">FRD</span></span>(<span>size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a FRD surface over a rectangular region.</p>
-<p>This function will generate two models representing the &quot;positive&quot; and
-&quot;negative&quot; halves of the pattern. If a thin surface is desired,
-these two models can be dilated and the intersection of the results found.
-However, due to the voxel-based representation, this &quot;surface&quot; will have
-a non-zero thickness.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
 <dd><p>Size of rectangular region</p></dd>
@@ -283,13 +277,7 @@ a non-zero thickness.</p>
 <span>def <span class="ident">gyroid</span></span>(<span>size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a Gyroid pattern over a rectangular region.</p>
-<p>This function will generate two models representing the &quot;positive&quot; and
-&quot;negative&quot; halves of the pattern. If a thin surface is desired,
-these two models can be dilated and the intersection of the results found.
-However, due to the voxel-based representation, this &quot;surface&quot; will have
-a non-zero thickness.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
 <dd><p>Size of rectangular region</p></dd>
@@ -355,13 +343,7 @@ a non-zero thickness.</p>
 <span>def <span class="ident">schwarzD</span></span>(<span>size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a Schwarz D-surface over a rectangular region.</p>
-<p>This function will generate two models representing the &quot;positive&quot; and
-&quot;negative&quot; halves of the pattern. If a thin surface is desired,
-these two models can be dilated and the intersection of the results found.
-However, due to the voxel-based representation, this &quot;surface&quot; will have
-a non-zero thickness.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
 <dd><p>Size of rectangular region</p></dd>
@@ -428,13 +410,7 @@ a non-zero thickness.</p>
 <span>def <span class="ident">schwarzP</span></span>(<span>size: Tuple[int, int, int] = (15, 15, 15), scale: int = 15, coords: Tuple[int, int, int] = (0, 0, 0), material1: int = 1, material2: int = 2, resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate a Schwarz P-surface over a rectangular region.</p>
-<p>This function will generate two models representing the &quot;positive&quot; and
-&quot;negative&quot; halves of the pattern. If a thin surface is desired,
-these two models can be dilated and the intersection of the results found.
-However, due to the voxel-based representation, this &quot;surface&quot; will have
-a non-zero thickness.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
 <dd><p>Size of rectangular region</p></dd>

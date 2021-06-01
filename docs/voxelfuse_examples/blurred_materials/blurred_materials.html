@@ -47,16 +47,10 @@ User inputs a model and the program will apply blurring to requested materials.
 Copyright 2019 - Cole Brauer, Dan Aukes
 &#34;&#34;&#34;
 
-import PyQt5.QtGui as qg
-import sys
-
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
-from voxelfuse.plot import Plot
 
 if __name__==&#39;__main__&#39;:
-    app1 = qg.QApplication(sys.argv)
-
     # User preferences
     modelName = &#39;boxes.vox&#39;
     #modelName = &#39;joint2.1.vox&#39;
@@ -86,17 +80,8 @@ if __name__==&#39;__main__&#39;:
     mesh2 = Mesh.fromVoxelModel(modelResult)
 
     # Create plots
-    plot1 = Plot(mesh1, name=&#39;Input&#39;)
-    plot1.show()
-    app1.processEvents()
-    #plot1.export(&#39;input.png&#39;)
-
-    plot2 = Plot(mesh2, name=&#39;Output&#39;)
-    plot2.show()
-    app1.processEvents()
-    #plot2.export(&#39;output.png&#39;)
-
-    app1.exec_()</code></pre>
+    # mesh1.viewer(name=&#39;Input&#39;)
+    mesh2.viewer(name=&#39;Output&#39;)</code></pre>
 </details>
 </section>
 <section>

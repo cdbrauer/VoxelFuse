@@ -41,9 +41,9 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 &#34;&#34;&#34;
 
 import numpy as np
+from typing import Tuple
 import PyQt5.QtGui as qg
 import pyqtgraph.opengl as pgo
-from typing import Tuple
 
 class Plot:
     &#34;&#34;&#34;
@@ -60,9 +60,10 @@ class Plot:
         :param edgeColor: Set display color of voxel edges
         :param positionOffset: Offset of the camera target from the center of the model in voxels
         :param viewAngle: Elevation, Azimuth, and Distance of the camera
-        :param resolution: Number of voxels per mm
+        :param resolution: Window resolution in px
         :param name: Plot window name
         &#34;&#34;&#34;
+        print(&#34;WARNING: Plot class is deprecated and will be removed in later versions. Please use &#39;plot&#39; or &#39;viewer&#39; from the Mesh class instead.&#34;)
         self.mesh = mesh
         self.grids = grids
         self.drawEdges = drawEdges
@@ -189,9 +190,7 @@ class Plot:
 <span>(</span><span>mesh, grids: bool = False, drawEdges: bool = True, edgeColor: Tuple[float, float, float, float] = (0, 0, 0, 0.5), positionOffset: Tuple[int, int, int] = (0, 0, 0), viewAngle: Tuple[int, int, int] = (40, 30, 300), resolution: Tuple[int, int] = (1280, 720), name: str = 'Plot 1')</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Plot object that can be displayed or exported.</p>
-<p>Initialize a Plot object from a Mesh object.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>mesh</code></strong></dt>
 <dd><p>Mesh object to be plotted</p></dd>
@@ -206,7 +205,7 @@ class Plot:
 <dt><strong><code>viewAngle</code></strong></dt>
 <dd><p>Elevation, Azimuth, and Distance of the camera</p></dd>
 <dt><strong><code>resolution</code></strong></dt>
-<dd><p>Number of voxels per mm</p></dd>
+<dd><p>Window resolution in px</p></dd>
 <dt><strong><code>name</code></strong></dt>
 <dd><p>Plot window name</p></dd>
 </dl></div>
@@ -229,9 +228,10 @@ class Plot:
         :param edgeColor: Set display color of voxel edges
         :param positionOffset: Offset of the camera target from the center of the model in voxels
         :param viewAngle: Elevation, Azimuth, and Distance of the camera
-        :param resolution: Number of voxels per mm
+        :param resolution: Window resolution in px
         :param name: Plot window name
         &#34;&#34;&#34;
+        print(&#34;WARNING: Plot class is deprecated and will be removed in later versions. Please use &#39;plot&#39; or &#39;viewer&#39; from the Mesh class instead.&#34;)
         self.mesh = mesh
         self.grids = grids
         self.drawEdges = drawEdges
@@ -349,17 +349,7 @@ class Plot:
 <span>def <span class="ident">export</span></span>(<span>self, filename: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Save a screenshot of the last generated plot widget with the specified name and file format.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">app1 = qg.QApplication(sys.argv)</span></p>
-<p><span class="docutils literal">plot1 = Plot(mesh1)</span></p>
-<p><span class="docutils literal">plot1.show()</span></p>
-<p><span class="docutils literal">app1.processEvents()</span></p>
-<p><span class="docutils literal"><span class="pre">plot1.export('result.png')</span></span></p>
-<p><span class="docutils literal">app1.exec_()</span></p>
-<hr class="docutils" />
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>filename</code></strong></dt>
 <dd><p>File name with extension</p></dd>
@@ -406,16 +396,7 @@ class Plot:
 <span>def <span class="ident">show</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate an display widget based on the plot settings and display it.</p>
-<hr class="docutils" />
-<p>Example:</p>
-<p><span class="docutils literal">app1 = qg.QApplication(sys.argv)</span></p>
-<p><span class="docutils literal">plot1 = Plot(mesh1)</span></p>
-<p><span class="docutils literal">plot1.show()</span></p>
-<p><span class="docutils literal">app1.processEvents()</span></p>
-<p><span class="docutils literal">app1.exec_()</span></p>
-<hr class="docutils" />
-<h2 id="returns">Returns:</h2>
+<div class="desc"><h2 id="returns">Returns:</h2>
 <dl>
 <dd><p>None</p></dd>
 </dl></div>

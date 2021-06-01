@@ -39,6 +39,7 @@ Copyright 2020 - Cole Brauer, Dan Aukes
 
 import numpy as np
 from typing import Tuple
+
 from voxelfuse.voxel_model import VoxelModel, generateMaterials
 from voxelfuse.materials import material_properties
 
@@ -208,8 +209,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <span>def <span class="ident">cone</span></span>(<span>min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create a VoxelModel containing a cylinder.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>min_radius</code></strong></dt>
 <dd><p>Point radius of cone in voxels</p></dd>
@@ -267,8 +267,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <span>def <span class="ident">cube</span></span>(<span>size: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create a VoxelModel containing a cube.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
 <dd><p>Length of cube side in voxels</p></dd>
@@ -306,8 +305,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <span>def <span class="ident">cuboid</span></span>(<span>size: Tuple[int, int, int] = (1, 1, 1), coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create a VoxelModel containing a cuboid.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>size</code></strong></dt>
 <dd><p>Lengths of cuboid sides in voxels</p></dd>
@@ -345,8 +343,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <span>def <span class="ident">cylinder</span></span>(<span>radius: int = 1, height: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create a VoxelModel containing a cylinder.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>radius</code></strong></dt>
 <dd><p>Radius of cylinder in voxels</p></dd>
@@ -397,11 +394,10 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 </details>
 </dd>
 <dt id="voxelfuse.primitives.empty"><code class="name flex">
-<span>def <span class="ident">empty</span></span>(<span>coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1, num_materials: int = 14)</span>
+<span>def <span class="ident">empty</span></span>(<span>coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1, num_materials: int = 15)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create a VoxelModel containing a single empty voxel at the specified coordinates.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>coords</code></strong></dt>
 <dd><p>Model origin coordinates</p></dd>
@@ -437,8 +433,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <span>def <span class="ident">pyramid</span></span>(<span>min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create a VoxelModel containing a cylinder.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>min_radius</code></strong></dt>
 <dd><p>Point radius of pyramid in voxels</p></dd>
@@ -492,8 +487,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <span>def <span class="ident">sphere</span></span>(<span>radius: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create a VoxelModel containing a sphere.</p>
-<h2 id="args">Args:</h2>
+<div class="desc"><h2 id="args">Args:</h2>
 <dl>
 <dt><strong><code>radius</code></strong></dt>
 <dd><p>Radius of sphere in voxels</p></dd>
