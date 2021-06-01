@@ -72,7 +72,7 @@ The voxelfuse library can be installed using pip.
 
 [VoxCad](https://www.creativemachineslab.com/voxcad.html) is used for running interactive simulations in a GUI. Windows/Linux binaries are included with the library.
 
-A custom version of [Voxelyze](https://github.com/jonhiller/Voxelyze) is used for most simulation features. Windows/Linux binaries included with the library. Multiprocess simulation features require that [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) is configured.
+A custom version of [Voxelyze](https://github.com/jonhiller/Voxelyze) is used for most simulation features. Windows/Linux binaries are included with the library. To use multiprocess simulation features on Windows, [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) must be configured.
 
 [voxcraft-viz](https://github.com/voxcraft/voxcraft-viz) can be used to view simulation history files (must be installed separately).
 
