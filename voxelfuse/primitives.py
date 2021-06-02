@@ -25,12 +25,9 @@ def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1, num_m
     Returns:
         VoxelModel
     """
-    model_data = np.zeros((1, 1, 1), dtype=np.uint16)
-    materials = np.zeros((1, num_materials + 1), dtype=np.float32)
-    model = VoxelModel(model_data, materials, coords=coords, resolution=resolution)
-    return model
+    return VoxelModel.empty((1, 1, 1), coords, resolution, num_materials)
 
-def cube(size: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def cube(size: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     """
     Create a VoxelModel containing a cube.
 
@@ -47,7 +44,7 @@ def cube(size: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int 
     model = VoxelModel(model_data, generateMaterials(material), coords=coords, resolution=resolution)
     return model
 
-def cuboid(size: Tuple[int, int, int] = (1, 1, 1), coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def cuboid(size: Tuple[int, int, int], coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     """
     Create a VoxelModel containing a cuboid.
 
@@ -64,7 +61,7 @@ def cuboid(size: Tuple[int, int, int] = (1, 1, 1), coords: Tuple[int, int, int] 
     model = VoxelModel(model_data, generateMaterials(material), coords=coords, resolution=resolution)
     return model
 
-def sphere(radius: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def sphere(radius: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     """
     Create a VoxelModel containing a sphere.
 
@@ -94,7 +91,7 @@ def sphere(radius: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: 
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-radius, coords[1]-radius, coords[2]-radius), resolution=resolution)
     return model
 
-def cylinder(radius: int = 1, height: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def cylinder(radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     """
     Create a VoxelModel containing a cylinder.
 
@@ -125,7 +122,7 @@ def cylinder(radius: int = 1, height: int = 1, coords: Tuple[int, int, int] = (0
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-radius, coords[1]-radius, coords[2]), resolution=resolution)
     return model
 
-def cone(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def cone(min_radius: int, max_radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     """
     Create a VoxelModel containing a cylinder.
 
@@ -158,7 +155,7 @@ def cone(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tupl
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
     return model
 
-def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def pyramid(min_radius: int, max_radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     """
     Create a VoxelModel containing a cylinder.
 
@@ -185,4 +182,34 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
             model_data[radius:-radius, radius:-radius, z].fill(1)
 
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
+    return model
+
+def prism(size: Tuple[int, int, int], point_offset: int = 0, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    """
+    Create a VoxelModel containing a prism.
+
+    Args:
+        size: Size of prism in voxels (base,
+        point_offset: Distance that prism point is offset from model center in voxels
+        coords: Model origin coordinates
+        material: Material index corresponding to materials.py
+        resolution: Number of voxels per mm
+
+    Returns:
+        VoxelModel
+    """
+    point_pos = (size[0]/2) + point_offset
+    min_x = min(0, round(point_pos))
+    max_x = max(size[0], round(point_pos))
+    dx = max_x - min_x
+    model_data = np.zeros((dx, size[1], size[2]), dtype=np.uint16)
+
+    for z in range(size[2]):
+        width = (size[0]/size[2])*(size[2] - z)
+        side_1_index = round((point_pos/size[2])*z) - min_x
+        side_2_index = round((point_pos/size[2])*z + width) - min_x
+
+        model_data[side_1_index:side_2_index, :, z].fill(1)
+
+    model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0] + min_x, coords[1], coords[2]), resolution=resolution)
     return model
