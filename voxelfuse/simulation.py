@@ -1421,8 +1421,7 @@ class MultiSimulation:
             self.__thread_count = thread_count
         else:
             max_threads = os.cpu_count()
-            self.__thread_count = max(1,
-                                      max_threads - 2)  # Default to leaving 1 core (2 threads) free, minimum of 1 thread
+            self.__thread_count = max(1, max_threads - 2)  # Default to leaving 1 core (2 threads) free, minimum of 1 thread
 
             # Initialize result arrays
         self.total_time = 0
@@ -1511,20 +1510,22 @@ class MultiSimulation:
         time_finished = time.time()
         self.total_time = time_finished - time_started
 
-    def export(self, filename: str, labels: List[str]):
+    def export(self, filename: str, labels: List[str], parameters_only: bool = False):
         """
         Export a CSV file containing simulation setup parameters and the corresponding simulation results.
 
         Args:
             filename: File name
             labels: Column headers for simulation setup parameters
+            parameters_only: Only export setup parameters and not simulation results
         
         Returns:
             None
         """
         # Add labels for results
-        labels.append('Displacement (m)')
-        labels.append('Simulation Time (s)')
+        if not parameters_only:
+            labels.append('Displacement (m)')
+            labels.append('Simulation Time (s)')
 
         # Get result table size
         rows = len(self.__setup_params)
@@ -1535,7 +1536,9 @@ class MultiSimulation:
         print('Saving file: ' + f.name)
 
         # Write sim info
-        f.write('Simulation Elapsed Time (mins),' + str(self.total_time / 60.0) + '\n')
+        if not parameters_only:
+            f.write('Simulation Elapsed Time (mins),' + str(self.total_time / 60.0) + '\n')
+
         f.write('Trial Count,' + str(rows) + '\n')
         f.write('Max Thread Count,' + str(self.__thread_count) + '\n')
         f.write('\n')
@@ -1549,8 +1552,11 @@ class MultiSimulation:
         for r in range(rows):
             for c in range(cols - 2):
                 f.write(str(self.__setup_params[r][c]) + ',')
-            f.write(str(self.displacement_result[r]) + ',')
-            f.write(str(self.time_result[r]))
+
+            if not parameters_only:
+                f.write(str(self.displacement_result[r]) + ',')
+                f.write(str(self.time_result[r]) + ',')
+
             f.write('\n')
 
         # Close file
