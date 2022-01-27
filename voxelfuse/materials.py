@@ -51,21 +51,21 @@ material_properties =\
      {'id': 5,  'name':'Rubber',   'process':'3dp', 'r':0.20, 'g':0.20, 'b':0.20, 'p':0.930, 'v':0.50, 'E':1.8180e6, 'G':1.000e9, 'Z':0, 'eY':3.223e6, 'eF':3.164e6, 'SY':1.025, 'SF':1.028, 'CTE':0.1e-6, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':3, 'MMD':1, 'FM':1, 'HG': 0, 'HGM': 0}, # u is for rubber-asphalt
 
      # Hydrogel type 1
-     {'id': 6,  'name':'C H-Gel 1', 'process':'ins', 'r':0.00, 'g':0.60, 'b':0.60, 'p':1.000, 'v':0.4, 'E':5e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 1},
-     {'id': 7,  'name':'M H-Gel 1', 'process':'ins', 'r':0.60, 'g':0.00, 'b':0.60, 'p':1.000, 'v':0.4, 'E':5e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 1},
-     {'id': 8,  'name':'Y H-Gel 1', 'process':'ins', 'r':0.60, 'g':0.60, 'b':0.00, 'p':1.000, 'v':0.4, 'E':5e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 1},
+     {'id': 6,  'name':'C H-Gel 1', 'process':'ins', 'r':0.00, 'g':0.60, 'b':0.60, 'p':1.000, 'v':0.4, 'E':37e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 1},
+     {'id': 7,  'name':'M H-Gel 1', 'process':'ins', 'r':0.60, 'g':0.00, 'b':0.60, 'p':1.000, 'v':0.4, 'E':37e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 1},
+     {'id': 8,  'name':'Y H-Gel 1', 'process':'ins', 'r':0.60, 'g':0.60, 'b':0.00, 'p':1.000, 'v':0.4, 'E':37e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 1},
 
      # Hydrogel type 2
-     {'id': 9,  'name':'C H-Gel 2',  'process':'ins', 'r':0.00, 'g':1.00, 'b':1.00, 'p':1.000, 'v':0.4, 'E':5e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 2},
-     {'id': 10, 'name':'M H-Gel 2',  'process':'ins', 'r':1.00, 'g':0.00, 'b':1.00, 'p':1.000, 'v':0.4, 'E':5e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 2},
-     {'id': 11, 'name':'Y H-Gel 2',  'process':'ins', 'r':1.00, 'g':1.00, 'b':0.00, 'p':1.000, 'v':0.4, 'E':5e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 2},
+     {'id': 9,  'name':'C H-Gel 2',  'process':'ins', 'r':0.00, 'g':1.00, 'b':1.00, 'p':1.000, 'v':0.4, 'E':58e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 2},
+     {'id': 10, 'name':'M H-Gel 2',  'process':'ins', 'r':1.00, 'g':0.00, 'b':1.00, 'p':1.000, 'v':0.4, 'E':58e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 2},
+     {'id': 11, 'name':'Y H-Gel 2',  'process':'ins', 'r':1.00, 'g':1.00, 'b':0.00, 'p':1.000, 'v':0.4, 'E':58e3,  'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':-0.016, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 1, 'HGM': 2},
 
      # Similar properties to rubber, but with lower yield and failure points
      {'id': 12, 'name':'Adhesive', 'process':'3dp', 'r':0.30, 'g':0.30, 'b':0.30, 'p':0.930, 'v':0.50, 'E':1.8180e6, 'G':1.000e9, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':0.1e-6, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':3, 'MMD':2, 'FM':1, 'HG': 0, 'HGM': 0},
 
      # For use as a sensor element - similar hardness to hydrogel, low mass, no thermal expansion
-     {'id': 13, 'name':'Low Mass Soft', 'process':'3dp', 'r':0.80, 'g':0.40, 'b':0.00, 'p':0.01, 'v':0.50, 'E':5e3, 'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':0, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 0, 'HGM': 0},
-     {'id': 14, 'name':'Low Mass Hard', 'process':'3dp', 'r':1.00, 'g':0.60, 'b':0.00, 'p':0.01, 'v':0.50, 'E':5e4, 'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':0, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 0, 'HGM': 0}]
+     {'id': 13, 'name':'Low Mass Soft', 'process':'3dp', 'r':0.80, 'g':0.40, 'b':0.00, 'p':0.01, 'v':0.50, 'E':50e3, 'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':0, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 0, 'HGM': 0},
+     {'id': 14, 'name':'Low Mass Hard', 'process':'3dp', 'r':1.00, 'g':0.60, 'b':0.00, 'p':0.01, 'v':0.50, 'E':50e4, 'G':1.8e3, 'Z':0, 'eY':1.4e6, 'eF':1.301e6, 'SY':0.6606, 'SF':0.6776, 'CTE':0, 'TP':0, 'uS':0.9, 'uD':0.8, 'MM':0, 'MMD':0, 'FM':0, 'HG': 0, 'HGM': 0}]
 
 # Stress-strain curves for use when 'MM' = 3
 ss_data = [{'id': 1,
@@ -83,7 +83,7 @@ hg_models = [{'id': 1,
               'test_voxel_dim': 0.005,
               'ideal_displacement': 2.0,
               'ideal_max_temp': 45.0,
-              'ideal_min_temp': 20.0,
+              'ideal_min_temp': 15.0,
               'test_displacement': 1.65,
               'test_max_temp': 43.0,
               'test_min_temp': 15.32,
@@ -101,7 +101,7 @@ hg_models = [{'id': 1,
               'test_voxel_dim': 0.005,
               'ideal_displacement': 2.0,
               'ideal_max_temp': 45.0,
-              'ideal_min_temp': 20.0,
+              'ideal_min_temp': 15.0,
               'test_displacement': 1.65,
               'test_max_temp': 43.0,
               'test_min_temp': 15.32,

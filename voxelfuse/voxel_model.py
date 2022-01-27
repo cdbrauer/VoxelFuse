@@ -218,21 +218,22 @@ class VoxelModel:
         return new_model
 
     @classmethod
-    def empty(cls, size: Tuple[int, int, int], resolution: float = 1, num_materials: int = len(material_properties)):
+    def empty(cls, size: Tuple[int, int, int], coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1, num_materials: int = len(material_properties)):
         """
         Initialize an empty VoxelModel.
 
         Args:
             size: Size of the empty model in voxels
+            coords: Model origin coordinates
             resolution: Number of voxels per mm
             num_materials: Number of material types in materials vector
 
         Returns:
             VoxelModel
         """
-        modelData = np.zeros(size, dtype=np.uint16)
+        model_data = np.zeros(size, dtype=np.uint16)
         materials = np.zeros((1, num_materials + 1), dtype=np.float32)
-        new_model = cls(modelData, materials, resolution=resolution)
+        new_model = cls(model_data, materials, coords=coords, resolution=resolution)
         return new_model
 
     @classmethod
@@ -2197,7 +2198,7 @@ class VoxelModel:
         Returns:
             K3D plot object
         """
-        model = self.fitWorkspace() | VoxelModel.empty((1, 1, 1), self.resolution)
+        model = self.fitWorkspace() | VoxelModel.empty((1, 1, 1), resolution=self.resolution)
         model = model.removeDuplicateMaterials()
 
         # Get colors
@@ -2443,7 +2444,7 @@ class VoxelModel:
         f = open(filename + '.vxc', 'w+')
         print('Saving file: ' + f.name)
 
-        empty_model = VoxelModel.empty((1,1,1), self.resolution)
+        empty_model = VoxelModel.empty((1,1,1), resolution=self.resolution)
         export_model = (VoxelModel.copy(self).fitWorkspace()) | empty_model  # Fit workspace and union with an empty object at the origin to clear offsets if object is raised
         export_model.coords = (0, 0, 0)  # Set coords to zero to move object to origin if it is at negative coordinates
 
