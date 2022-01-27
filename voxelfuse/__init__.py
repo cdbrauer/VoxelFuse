@@ -138,7 +138,7 @@ Copyright 2021 - Cole Brauer, Dan Aukes
 """
 
 name = "voxelfuse"
-__version__ = "1.2.8"
+__version__ = "1.2.9"
 
 from voxelfuse.voxel_model import VoxelModel, Axes, Dir, Process, Struct, GpuSettings
 from voxelfuse.mesh import Mesh
