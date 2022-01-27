@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>voxelfuse.primitives API documentation</title>
 <meta name="description" content="Functions for generating primitive solids …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -56,12 +56,9 @@ def empty(coords: Tuple[int, int, int] = (0, 0, 0), resolution: float = 1, num_m
     Returns:
         VoxelModel
     &#34;&#34;&#34;
-    model_data = np.zeros((1, 1, 1), dtype=np.uint16)
-    materials = np.zeros((1, num_materials + 1), dtype=np.float32)
-    model = VoxelModel(model_data, materials, coords=coords, resolution=resolution)
-    return model
+    return VoxelModel.empty((1, 1, 1), coords, resolution, num_materials)
 
-def cube(size: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def cube(size: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a cube.
 
@@ -78,7 +75,7 @@ def cube(size: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int 
     model = VoxelModel(model_data, generateMaterials(material), coords=coords, resolution=resolution)
     return model
 
-def cuboid(size: Tuple[int, int, int] = (1, 1, 1), coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def cuboid(size: Tuple[int, int, int], coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a cuboid.
 
@@ -95,7 +92,7 @@ def cuboid(size: Tuple[int, int, int] = (1, 1, 1), coords: Tuple[int, int, int] 
     model = VoxelModel(model_data, generateMaterials(material), coords=coords, resolution=resolution)
     return model
 
-def sphere(radius: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def sphere(radius: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a sphere.
 
@@ -108,7 +105,7 @@ def sphere(radius: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: 
     Returns:
         VoxelModel
     &#34;&#34;&#34;
-    diameter = (radius*2) + 1
+    diameter = (radius*2) + 1 # +1 ensures there is a voxel centered on the origin
     model_data = np.zeros((diameter, diameter, diameter), dtype=np.uint16)
 
     for x in range(diameter):
@@ -125,7 +122,48 @@ def sphere(radius: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: 
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-radius, coords[1]-radius, coords[2]-radius), resolution=resolution)
     return model
 
-def cylinder(radius: int = 1, height: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def ellipsoid(size: Tuple[int, int, int], coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    &#34;&#34;&#34;
+    Create a VoxelModel containing an ellipsoid.
+
+    Args:
+        size: Lengths of ellipsoid principal semi-axes in voxels
+        coords: Model origin coordinates
+        material: Material index corresponding to materials.py
+        resolution: Number of voxels per mm
+
+    Returns:
+        VoxelModel
+    &#34;&#34;&#34;
+    # lengths of principal semi-axes
+    a, b, c = size
+
+    # bounding box size (+1 ensures there is a voxel centered on the origin)
+    dx = (a*2) + 1
+    dy = (b*2) + 1
+    dz = (c*2) + 1
+    model_data = np.zeros((dx, dy, dz), dtype=np.uint16)
+
+    # check each voxel in the bounding box and determine if it falls inside the ellipsoid
+    for x in range(dx):
+        for y in range(dy):
+            for z in range(dz):
+                # get coords relative to origin
+                xx = (x - a)
+                yy = (y - b)
+                zz = (z - c)
+
+                # apply ellipsoid formula
+                f = np.sqrt(((xx ** 2) / (a **2)) +
+                            ((yy ** 2) / (b **2)) +
+                            ((zz ** 2) / (c **2)))
+                if f &lt; 1:
+                    model_data[x, y, z] = 1
+
+    model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0] - a, coords[1] - b, coords[2] - c), resolution=resolution)
+    return model
+
+def cylinder(radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a cylinder.
 
@@ -156,7 +194,7 @@ def cylinder(radius: int = 1, height: int = 1, coords: Tuple[int, int, int] = (0
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-radius, coords[1]-radius, coords[2]), resolution=resolution)
     return model
 
-def cone(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def cone(min_radius: int, max_radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a cylinder.
 
@@ -189,7 +227,7 @@ def cone(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tupl
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
     return model
 
-def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+def pyramid(min_radius: int, max_radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a cylinder.
 
@@ -216,6 +254,36 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
             model_data[radius:-radius, radius:-radius, z].fill(1)
 
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-max_radius, coords[1]-max_radius, coords[2]), resolution=resolution)
+    return model
+
+def prism(size: Tuple[int, int, int], point_offset: int = 0, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    &#34;&#34;&#34;
+    Create a VoxelModel containing a prism.
+
+    Args:
+        size: Size of prism in voxels (base,
+        point_offset: Distance that prism point is offset from model center in voxels
+        coords: Model origin coordinates
+        material: Material index corresponding to materials.py
+        resolution: Number of voxels per mm
+
+    Returns:
+        VoxelModel
+    &#34;&#34;&#34;
+    point_pos = (size[0]/2) + point_offset
+    min_x = min(0, round(point_pos))
+    max_x = max(size[0], round(point_pos))
+    dx = max_x - min_x
+    model_data = np.zeros((dx, size[1], size[2]), dtype=np.uint16)
+
+    for z in range(size[2]):
+        width = (size[0]/size[2])*(size[2] - z)
+        side_1_index = round((point_pos/size[2])*z) - min_x
+        side_2_index = round((point_pos/size[2])*z + width) - min_x
+
+        model_data[side_1_index:side_2_index, :, z].fill(1)
+
+    model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0] + min_x, coords[1], coords[2]), resolution=resolution)
     return model</code></pre>
 </details>
 </section>
@@ -227,7 +295,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="voxelfuse.primitives.cone"><code class="name flex">
-<span>def <span class="ident">cone</span></span>(<span>min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
+<span>def <span class="ident">cone</span></span>(<span>min_radius: int, max_radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create a VoxelModel containing a cylinder.</p>
@@ -252,7 +320,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def cone(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+<pre><code class="python">def cone(min_radius: int, max_radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a cylinder.
 
@@ -287,7 +355,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 </details>
 </dd>
 <dt id="voxelfuse.primitives.cube"><code class="name flex">
-<span>def <span class="ident">cube</span></span>(<span>size: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
+<span>def <span class="ident">cube</span></span>(<span>size: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create a VoxelModel containing a cube.</p>
@@ -308,7 +376,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def cube(size: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+<pre><code class="python">def cube(size: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a cube.
 
@@ -327,7 +395,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 </details>
 </dd>
 <dt id="voxelfuse.primitives.cuboid"><code class="name flex">
-<span>def <span class="ident">cuboid</span></span>(<span>size: Tuple[int, int, int] = (1, 1, 1), coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
+<span>def <span class="ident">cuboid</span></span>(<span>size: Tuple[int, int, int], coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create a VoxelModel containing a cuboid.</p>
@@ -348,7 +416,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def cuboid(size: Tuple[int, int, int] = (1, 1, 1), coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+<pre><code class="python">def cuboid(size: Tuple[int, int, int], coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a cuboid.
 
@@ -367,7 +435,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 </details>
 </dd>
 <dt id="voxelfuse.primitives.cylinder"><code class="name flex">
-<span>def <span class="ident">cylinder</span></span>(<span>radius: int = 1, height: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
+<span>def <span class="ident">cylinder</span></span>(<span>radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create a VoxelModel containing a cylinder.</p>
@@ -390,7 +458,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def cylinder(radius: int = 1, height: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+<pre><code class="python">def cylinder(radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a cylinder.
 
@@ -419,6 +487,70 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
     model_data = np.repeat(model_data, height, 2)
 
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-radius, coords[1]-radius, coords[2]), resolution=resolution)
+    return model</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.primitives.ellipsoid"><code class="name flex">
+<span>def <span class="ident">ellipsoid</span></span>(<span>size: Tuple[int, int, int], coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create a VoxelModel containing an ellipsoid.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>size</code></strong></dt>
+<dd>Lengths of ellipsoid principal semi-axes in voxels</dd>
+<dt><strong><code>coords</code></strong></dt>
+<dd>Model origin coordinates</dd>
+<dt><strong><code>material</code></strong></dt>
+<dd>Material index corresponding to materials.py</dd>
+<dt><strong><code>resolution</code></strong></dt>
+<dd>Number of voxels per mm</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>VoxelModel</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def ellipsoid(size: Tuple[int, int, int], coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    &#34;&#34;&#34;
+    Create a VoxelModel containing an ellipsoid.
+
+    Args:
+        size: Lengths of ellipsoid principal semi-axes in voxels
+        coords: Model origin coordinates
+        material: Material index corresponding to materials.py
+        resolution: Number of voxels per mm
+
+    Returns:
+        VoxelModel
+    &#34;&#34;&#34;
+    # lengths of principal semi-axes
+    a, b, c = size
+
+    # bounding box size (+1 ensures there is a voxel centered on the origin)
+    dx = (a*2) + 1
+    dy = (b*2) + 1
+    dz = (c*2) + 1
+    model_data = np.zeros((dx, dy, dz), dtype=np.uint16)
+
+    # check each voxel in the bounding box and determine if it falls inside the ellipsoid
+    for x in range(dx):
+        for y in range(dy):
+            for z in range(dz):
+                # get coords relative to origin
+                xx = (x - a)
+                yy = (y - b)
+                zz = (z - c)
+
+                # apply ellipsoid formula
+                f = np.sqrt(((xx ** 2) / (a **2)) +
+                            ((yy ** 2) / (b **2)) +
+                            ((zz ** 2) / (c **2)))
+                if f &lt; 1:
+                    model_data[x, y, z] = 1
+
+    model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0] - a, coords[1] - b, coords[2] - c), resolution=resolution)
     return model</code></pre>
 </details>
 </dd>
@@ -454,14 +586,66 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
     Returns:
         VoxelModel
     &#34;&#34;&#34;
-    model_data = np.zeros((1, 1, 1), dtype=np.uint16)
-    materials = np.zeros((1, num_materials + 1), dtype=np.float32)
-    model = VoxelModel(model_data, materials, coords=coords, resolution=resolution)
+    return VoxelModel.empty((1, 1, 1), coords, resolution, num_materials)</code></pre>
+</details>
+</dd>
+<dt id="voxelfuse.primitives.prism"><code class="name flex">
+<span>def <span class="ident">prism</span></span>(<span>size: Tuple[int, int, int], point_offset: int = 0, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create a VoxelModel containing a prism.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>size</code></strong></dt>
+<dd>Size of prism in voxels (base,</dd>
+<dt><strong><code>point_offset</code></strong></dt>
+<dd>Distance that prism point is offset from model center in voxels</dd>
+<dt><strong><code>coords</code></strong></dt>
+<dd>Model origin coordinates</dd>
+<dt><strong><code>material</code></strong></dt>
+<dd>Material index corresponding to materials.py</dd>
+<dt><strong><code>resolution</code></strong></dt>
+<dd>Number of voxels per mm</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>VoxelModel</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def prism(size: Tuple[int, int, int], point_offset: int = 0, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    &#34;&#34;&#34;
+    Create a VoxelModel containing a prism.
+
+    Args:
+        size: Size of prism in voxels (base,
+        point_offset: Distance that prism point is offset from model center in voxels
+        coords: Model origin coordinates
+        material: Material index corresponding to materials.py
+        resolution: Number of voxels per mm
+
+    Returns:
+        VoxelModel
+    &#34;&#34;&#34;
+    point_pos = (size[0]/2) + point_offset
+    min_x = min(0, round(point_pos))
+    max_x = max(size[0], round(point_pos))
+    dx = max_x - min_x
+    model_data = np.zeros((dx, size[1], size[2]), dtype=np.uint16)
+
+    for z in range(size[2]):
+        width = (size[0]/size[2])*(size[2] - z)
+        side_1_index = round((point_pos/size[2])*z) - min_x
+        side_2_index = round((point_pos/size[2])*z + width) - min_x
+
+        model_data[side_1_index:side_2_index, :, z].fill(1)
+
+    model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0] + min_x, coords[1], coords[2]), resolution=resolution)
     return model</code></pre>
 </details>
 </dd>
 <dt id="voxelfuse.primitives.pyramid"><code class="name flex">
-<span>def <span class="ident">pyramid</span></span>(<span>min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
+<span>def <span class="ident">pyramid</span></span>(<span>min_radius: int, max_radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create a VoxelModel containing a cylinder.</p>
@@ -486,7 +670,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+<pre><code class="python">def pyramid(min_radius: int, max_radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a cylinder.
 
@@ -517,7 +701,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 </details>
 </dd>
 <dt id="voxelfuse.primitives.sphere"><code class="name flex">
-<span>def <span class="ident">sphere</span></span>(<span>radius: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
+<span>def <span class="ident">sphere</span></span>(<span>radius: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create a VoxelModel containing a sphere.</p>
@@ -538,7 +722,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def sphere(radius: int = 1, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+<pre><code class="python">def sphere(radius: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
     &#34;&#34;&#34;
     Create a VoxelModel containing a sphere.
 
@@ -551,7 +735,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
     Returns:
         VoxelModel
     &#34;&#34;&#34;
-    diameter = (radius*2) + 1
+    diameter = (radius*2) + 1 # +1 ensures there is a voxel centered on the origin
     model_data = np.zeros((diameter, diameter, diameter), dtype=np.uint16)
 
     for x in range(diameter):
@@ -591,7 +775,9 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 <li><code><a title="voxelfuse.primitives.cube" href="#voxelfuse.primitives.cube">cube</a></code></li>
 <li><code><a title="voxelfuse.primitives.cuboid" href="#voxelfuse.primitives.cuboid">cuboid</a></code></li>
 <li><code><a title="voxelfuse.primitives.cylinder" href="#voxelfuse.primitives.cylinder">cylinder</a></code></li>
+<li><code><a title="voxelfuse.primitives.ellipsoid" href="#voxelfuse.primitives.ellipsoid">ellipsoid</a></code></li>
 <li><code><a title="voxelfuse.primitives.empty" href="#voxelfuse.primitives.empty">empty</a></code></li>
+<li><code><a title="voxelfuse.primitives.prism" href="#voxelfuse.primitives.prism">prism</a></code></li>
 <li><code><a title="voxelfuse.primitives.pyramid" href="#voxelfuse.primitives.pyramid">pyramid</a></code></li>
 <li><code><a title="voxelfuse.primitives.sphere" href="#voxelfuse.primitives.sphere">sphere</a></code></li>
 </ul>
@@ -600,7 +786,7 @@ def pyramid(min_radius: int = 0, max_radius: int = 4, height: int = 5, coords: T
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 </body>
 </html>
