@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
-<title>voxelfuse_examples.blurred_materials API documentation</title>
-<meta name="description" content="" />
+<title>voxelfuse_examples.primitive_generation.prism API documentation</title>
+<meta name="description" content="Generate a series of prism solids …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -19,18 +19,53 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Namespace <code>voxelfuse_examples.blurred_materials</code></h1>
+<h1 class="title">Module <code>voxelfuse_examples.primitive_generation.prism</code></h1>
 </header>
 <section id="section-intro">
+<p>Generate a series of prism solids.</p>
+<hr>
+<p>Copyright 2021 - Cole Brauer, Dan Aukes</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Generate a series of prism solids.
+
+----
+
+Copyright 2021 - Cole Brauer, Dan Aukes
+&#34;&#34;&#34;
+
+import time
+import voxelfuse as vf
+
+if __name__==&#39;__main__&#39;:
+    # Save start time
+    t1 = time.time()
+
+    model1 = vf.prism((50, 25, 80), 0)
+    model2 = vf.prism((50, 20, 40), -40, (80, 0, 0))
+    model3 = vf.prism((80, 15, 50), 40, (160, 0, 0))
+
+    model_result = model1 | model2 | model3
+
+    # Create mesh data
+    mesh1 = vf.Mesh.marchingCubes(model_result)
+
+    # Get elapsed time
+    t2 = time.time()
+    time_mesh = t2 - t1
+    print(&#39;Time to generate mesh: &#39; + str(time_mesh) + &#39; sec&#39;)
+
+    # Save mesh
+    mesh1.export(&#39;prism-set.stl&#39;)
+
+    # Create plot
+    mesh1.viewer(grids=True, name=&#39;prism set&#39;)</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="voxelfuse_examples.blurred_materials.blurred_materials" href="blurred_materials.html">voxelfuse_examples.blurred_materials.blurred_materials</a></code></dt>
-<dd>
-<div class="desc"><p>Multimaterial 3D printing with blurring/dithering …</p></div>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -47,12 +82,7 @@
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="voxelfuse_examples" href="../index.html">voxelfuse_examples</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="voxelfuse_examples.blurred_materials.blurred_materials" href="blurred_materials.html">voxelfuse_examples.blurred_materials.blurred_materials</a></code></li>
+<li><code><a title="voxelfuse_examples.primitive_generation" href="index.html">voxelfuse_examples.primitive_generation</a></code></li>
 </ul>
 </li>
 </ul>
