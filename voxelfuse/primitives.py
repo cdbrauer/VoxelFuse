@@ -74,7 +74,7 @@ def sphere(radius: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int 
     Returns:
         VoxelModel
     """
-    diameter = (radius*2) + 1
+    diameter = (radius*2) + 1 # +1 ensures there is a voxel centered on the origin
     model_data = np.zeros((diameter, diameter, diameter), dtype=np.uint16)
 
     for x in range(diameter):
@@ -89,6 +89,47 @@ def sphere(radius: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int 
                     model_data[x, y, z] = 1
 
     model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0]-radius, coords[1]-radius, coords[2]-radius), resolution=resolution)
+    return model
+
+def ellipsoid(size: Tuple[int, int, int], coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):
+    """
+    Create a VoxelModel containing an ellipsoid.
+
+    Args:
+        size: Lengths of ellipsoid principal semi-axes in voxels
+        coords: Model origin coordinates
+        material: Material index corresponding to materials.py
+        resolution: Number of voxels per mm
+
+    Returns:
+        VoxelModel
+    """
+    # lengths of principal semi-axes
+    a, b, c = size
+
+    # bounding box size (+1 ensures there is a voxel centered on the origin)
+    dx = (a*2) + 1
+    dy = (b*2) + 1
+    dz = (c*2) + 1
+    model_data = np.zeros((dx, dy, dz), dtype=np.uint16)
+
+    # check each voxel in the bounding box and determine if it falls inside the ellipsoid
+    for x in range(dx):
+        for y in range(dy):
+            for z in range(dz):
+                # get coords relative to origin
+                xx = (x - a)
+                yy = (y - b)
+                zz = (z - c)
+
+                # apply ellipsoid formula
+                f = np.sqrt(((xx ** 2) / (a **2)) +
+                            ((yy ** 2) / (b **2)) +
+                            ((zz ** 2) / (c **2)))
+                if f < 1:
+                    model_data[x, y, z] = 1
+
+    model = VoxelModel(model_data, generateMaterials(material), coords=(coords[0] - a, coords[1] - b, coords[2] - c), resolution=resolution)
     return model
 
 def cylinder(radius: int, height: int, coords: Tuple[int, int, int] = (0, 0, 0), material: int = 1, resolution: float = 1):

@@ -19,8 +19,9 @@ if __name__=='__main__':
     model4 = vf.cylinder(5, 15, (44, 5, 0), 4)
     model5 = vf.cone(1, 5, 15, (57, 5, 0), 5)
     model6 = vf.pyramid(0, 5, 15, (70, 5, 0), 6)
+    model7 = vf.ellipsoid((8, 10, 6), (85, 10, 5), 7)
 
-    model_result = model1 | model2 | model3 | model4 | model5 | model6
+    model_result = model1 | model2 | model3 | model4 | model5 | model6 | model7
 
     # Create mesh data
     # mesh1 = vf.Mesh.fromVoxelModel(model_result)
