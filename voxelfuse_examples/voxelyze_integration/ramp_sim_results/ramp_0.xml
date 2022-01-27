@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<SimResults>
+	<Sensor>
+		<Location>5 5 15</Location>
+		<Position>0.0331246 0.00194826 0.00332973</Position>
+		<InitialPosition>0.0055 0.0055 0.0155</InitialPosition>
+		<Velocity>-0.00200995 0.00247406 -0.00116758</Velocity>
+		<AngularVelocity>-0.769682 -0.785477 -0.204736</AngularVelocity>
+		<KineticE>5.4557e-12</KineticE>
+		<Yielded>0</Yielded>
+		<Strain>0.00035172 0.000304215 0.000143888</Strain>
+		<Pressure>-inf</Pressure>
+		<BondStress>-10.2427</BondStress>
+		<FailStress>0</FailStress>
+		<SafetyFactor>0</SafetyFactor>
+		<Volume>1.0008e-09</Volume>
+	</Sensor>
+</SimResults>
